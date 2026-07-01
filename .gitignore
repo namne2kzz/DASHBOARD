@@ -22,6 +22,11 @@
 # ── .NET build outputs ──────────────────────────────────────────────────────
 **/bin/
 **/obj/
+
+# ── .NET local/dev appsettings (may contain real connection strings) ─────────
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/appsettings.*.local.json
 *.pubxml
 *.pubxml.user
 
