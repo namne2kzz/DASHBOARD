@@ -1,0 +1,43 @@
+<ul class="select-none text-sm">
+  @if (nodes().length === 0) {
+    <li class="px-3 py-2 text-slate-400 italic">{{ 'tree.noNodes' | resource }}</li>
+  }
+  @for (node of nodes(); track trackById($index, node)) {
+    <ng-container *ngTemplateOutlet="nodeTpl; context: { $implicit: node, depth: 0 }" />
+  }
+</ul>
+
+<ng-template #nodeTpl let-node let-depth="depth">
+  <li>
+    <div
+      class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 cursor-pointer transition-colors"
+      [style.padding-left]="(depth * 16 + 8) + 'px'"
+      [ngClass]="isSelected(node)
+        ? 'bg-sky-100 text-sky-700 font-medium'
+        : 'text-slate-700 hover:bg-slate-100'"
+      (click)="hasChildren(node) ? toggle(node) : select(node)"
+    >
+      @if (hasChildren(node)) {
+        <span
+          class="text-xs text-slate-400 w-4 transition-transform"
+          [ngClass]="isExpanded(node) ? 'rotate-90' : ''"
+          (click)="$event.stopPropagation(); toggle(node)"
+        >▶</span>
+      } @else {
+        <span class="w-4"></span>
+      }
+      @if (node.icon) {
+        <span>{{ node.icon }}</span>
+      }
+      <span class="truncate" (click)="select(node)">{{ node.label }}</span>
+    </div>
+
+    @if (hasChildren(node) && isExpanded(node)) {
+      <ul>
+        @for (child of node.children; track trackById($index, child)) {
+          <ng-container *ngTemplateOutlet="nodeTpl; context: { $implicit: child, depth: depth + 1 }" />
+        }
+      </ul>
+    }
+  </li>
+</ng-template>

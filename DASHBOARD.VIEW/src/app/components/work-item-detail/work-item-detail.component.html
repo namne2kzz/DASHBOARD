@@ -1,0 +1,402 @@
+@if (visible()) {
+<form
+  [formGroup]="form"
+  class="fixed inset-0 z-50 flex flex-col bg-slate-950"
+  (ngSubmit)="save()"
+>
+
+  <!-- ── loading overlay ──────────────────────────────────── -->
+  @if (board.dialogLoading()) {
+    <div class="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+      <div class="rounded-xl border border-slate-700 bg-slate-900 px-6 py-4 text-sm text-slate-300 shadow-2xl">
+        Loading…
+      </div>
+    </div>
+  }
+
+  <!-- ── top bar ────────────────────────────────────────────── -->
+  <div class="flex shrink-0 items-center gap-3 border-b border-slate-800 bg-slate-950 px-6 py-3">
+
+    <div class="flex items-center gap-2">
+      <!-- type icon badge -->
+      <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1" [ngClass]="typeIconClasses()">
+        @switch (currentType()) {
+          @case ('user-story') {
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h8"/>
+            </svg>
+          }
+          @case ('bug') {
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M8 2h8l1 6H7L8 2z"/><path d="M7 8h10v2a5 5 0 0 1-10 0V8z"/><path d="M12 15v3M9 22h6"/>
+            </svg>
+          }
+          @case ('task') {
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          }
+          @case ('improvement') {
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+          }
+          @case ('test-plan') {
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+              <path stroke-linecap="round" d="M9 12h6M9 16h4"/>
+            </svg>
+          }
+        }
+      </div>
+
+      <span class="text-xs font-semibold uppercase tracking-wide" [ngClass]="workItemTypeColors[currentType()]">
+        {{ workItemTypeLabels[currentType()] }}
+      </span>
+
+      @if (isEdit()) {
+        <span class="text-slate-600">·</span>
+        <span class="font-mono text-sm text-slate-400">{{ board.dialogTask()?.customId || ('#' + board.dialogTask()?.workItemNumber) }}</span>
+      }
+    </div>
+
+    <div class="flex-1 overflow-y-auto"></div>
+
+    <div class="flex items-center gap-2">
+      <!-- @if (isEdit()) {
+        <button type="button"
+          class="rounded-xl border border-rose-700/40 px-3 py-1.5 text-sm text-rose-400 transition hover:bg-rose-500/10"
+          (click)="delete()">Delete</button>
+      } -->
+      <button type="submit"
+        class="rounded-xl bg-sky-500 px-4 py-1.5 text-sm font-semibold text-slate-950 shadow-md shadow-sky-500/20 transition hover:bg-sky-400 disabled:opacity-50"
+        [disabled]="form.invalid || !form.dirty">
+        {{ isEdit() ? 'Save' : 'Create' }}
+      </button>
+      <button type="button"
+        class="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-800 hover:text-slate-100"
+        (click)="cancel()" title="Close">
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── title ──────────────────────────────────────────────── -->
+  <div class="shrink-0 border-b border-slate-800 px-6 py-4">
+    <input formControlName="title" type="text"
+      class="w-full bg-transparent text-2xl font-bold text-slate-50 outline-none placeholder:text-slate-600"
+      placeholder="Work item title…" autocomplete="off"/>
+    @if (form.controls.title.touched && form.controls.title.invalid) {
+      <p class="mt-1 text-xs text-rose-400">Title is required.</p>
+    }
+  </div>
+
+  <!-- ── tab bar ────────────────────────────────────────────── -->
+  <div class="flex shrink-0 gap-1 border-b border-slate-800 px-6">
+    <button type="button"
+      class="relative px-4 py-2.5 text-sm font-medium transition"
+      [class.text-sky-400]="activeTab() === 'details'"
+      [class.text-slate-400]="activeTab() !== 'details'"
+      (click)="activeTab.set('details')">
+      Details
+      @if (activeTab() === 'details') {
+        <span class="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-sky-400"></span>
+      }
+    </button>
+    <button type="button"
+      class="relative px-4 py-2.5 text-sm font-medium transition"
+      [class.text-sky-400]="activeTab() === 'discussion'"
+      [class.text-slate-400]="activeTab() !== 'discussion'"
+      (click)="activeTab.set('discussion')">
+      Discussion
+      @if (discussionEntries().length > 0) {
+        <span class="ml-1.5 rounded-full bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold text-slate-300">
+          {{ discussionEntries().length }}
+        </span>
+      }
+      @if (activeTab() === 'discussion') {
+        <span class="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-sky-400"></span>
+      }
+    </button>
+    <button type="button"
+      class="relative px-4 py-2.5 text-sm font-medium transition"
+      [class.text-sky-400]="activeTab() === 'history'"
+      [class.text-slate-400]="activeTab() !== 'history'"
+      (click)="activeTab.set('history')">
+      History
+      @if (activeTab() === 'history') {
+        <span class="absolute inset-x-0 bottom-0 h-0.5 rounded-t-full bg-sky-400"></span>
+      }
+    </button>
+  </div>
+
+  <!-- ── tab content ────────────────────────────────────────── -->
+  <div class="custom-scroll flex-1 overflow-y-auto">
+
+    <!-- DETAILS ─────────────────────────────────────────────── -->
+    @if (activeTab() === 'details') {
+      <div class="mx-auto max-w-5xl px-6 py-6">
+        <div class="flex flex-col gap-6 lg:flex-row lg:gap-8">
+
+          <!-- left: main fields -->
+          <div class="flex min-w-0 flex-1 flex-col gap-5">
+
+            <!-- Description (all types) -->
+            <div class="flex flex-col gap-1.5">
+              <label class="field-label">Description</label>
+              <textarea formControlName="description" rows="4"
+                class="field-textarea" placeholder="Describe the work item…"></textarea>
+            </div>
+
+            <!-- ── Type-specific fields ───────────────────────── -->
+            <ng-container
+              [ngComponentOutlet]="currentTypeFieldsComponent()"
+              [ngComponentOutletInputs]="{ form: form }">
+            </ng-container>
+
+            <!-- Wiki Links (all types) -->
+            @if (isEdit() && savedWikiLinks().length > 0) {
+              <div class="flex flex-col gap-2">
+                <label class="field-label">Wiki Links</label>
+                <div class="flex flex-wrap gap-2">
+                  @for (link of savedWikiLinks(); track link) {
+                    <button type="button"
+                      class="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/60 px-2.5 py-1 text-xs text-sky-400 transition hover:border-sky-500/40 hover:bg-sky-500/10"
+                      (click)="openWikiLink(link)">
+                      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.172 13.828a4 4 0 0 0 5.656 0l4-4a4 4 0 1 0-5.656-5.656l-1.1 1.1"/>
+                      </svg>
+                      {{ wikiLinkLabel(link) }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <div class="flex flex-col gap-1.5">
+              <label class="field-label">Wiki Links <span class="font-normal text-slate-500">(one per line)</span></label>
+              <textarea formControlName="wikiLinksText" rows="2"
+                class="field-textarea font-mono text-xs"
+                placeholder="/wiki/W-101&#10;/wiki/W-202"></textarea>
+            </div>
+
+          </div><!-- /left -->
+
+          <!-- right: meta sidebar -->
+          <div class="flex w-full shrink-0 flex-col gap-4 lg:w-64">
+
+            <div class="flex flex-col gap-1.5">
+              <label class="field-label">State</label>
+              <select formControlName="state" class="field-select">
+                @for (s of currentTypeStates(); track s) {
+                  <option [ngValue]="s">{{ stateLabels[s] }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="field-label">Priority</label>
+              <select formControlName="priority" class="field-select">
+                @for (p of priorityOptions; track p.id) {
+                  <option [value]="p.id">{{ p.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="field-label">Assigned To</label>
+              <select formControlName="assignedToId" class="field-select">
+                <option value="">Unassigned</option>
+                @for (m of members.members(); track m.userId) {
+                  <option [value]="m.userId">{{ m.userName }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="field-label">Sprint</label>
+              <select formControlName="sprint" class="field-select">
+                @for (s of sprintOptions; track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="border-t border-slate-800 pt-4 flex flex-col gap-4">
+              <div class="flex flex-col gap-1.5">
+                <label class="field-label">Implement In Build</label>
+                <input formControlName="implementInBuild" type="text"
+                  class="field-input" placeholder="e.g. 2.4.1"/>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="field-label">Fixed In Version</label>
+                <input formControlName="fixedInVersion" type="text"
+                  class="field-input" placeholder="e.g. v2.5.0"/>
+              </div>
+            </div>
+
+          </div><!-- /sidebar -->
+        </div>
+      </div>
+    }
+
+    <!-- DISCUSSION ──────────────────────────────────────────── -->
+    @if (activeTab() === 'discussion') {
+      <div class="mx-auto flex max-w-3xl flex-col gap-4 px-6 py-6">
+
+        @if (isEdit()) {
+          <div class="flex flex-col gap-2">
+            <textarea rows="3"
+              class="field-textarea"
+              placeholder="Write a comment…"
+              [ngModel]="commentDraft()"
+              [ngModelOptions]="{ standalone: true }"
+              (ngModelChange)="commentDraft.set($event)"></textarea>
+            <div class="flex justify-end">
+              <button type="button"
+                class="rounded-xl bg-sky-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:opacity-50"
+                [disabled]="!commentDraft().trim()"
+                (click)="postComment()">Post comment</button>
+            </div>
+          </div>
+        }
+
+        @if (discussionEntries().length === 0) {
+          <p class="py-8 text-center text-sm text-slate-500">No comments yet.</p>
+        } @else {
+          <div class="flex flex-col gap-3">
+            @for (d of discussionEntries(); track d.id) {
+              <div class="flex gap-3">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ring-2 ring-slate-900"
+                  [ngClass]="members.getMember(d.authorId)?.avatarClass ?? 'bg-slate-700'"
+                  [title]="d.authorName ?? members.displayName(d.authorId)">
+                  {{ members.initials(d.authorName ?? members.displayName(d.authorId)) }}
+                </div>
+                <div class="flex-1 rounded-xl border border-slate-800/80 bg-slate-900/50 px-4 py-3">
+                  <div class="mb-1.5 flex items-center gap-2">
+                    <span class="text-xs font-semibold text-slate-300">
+                      {{ d.authorName ?? members.displayName(d.authorId) }}
+                    </span>
+                    <span class="text-[11px] text-slate-500">{{ d.createdAt | localDate }}</span>
+                  </div>
+                  <p class="whitespace-pre-wrap text-sm leading-relaxed text-slate-200">{{ d.body }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- HISTORY ─────────────────────────────────────────────── -->
+    @if (activeTab() === 'history') {
+      <div class="mx-auto max-w-3xl px-6 py-6">
+        @if (historyEntries().length === 0) {
+          <div class="flex flex-col items-center justify-center py-16 text-slate-500">
+            <svg class="mb-3 h-10 w-10 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+            </svg>
+            <p class="text-sm">No changes recorded yet.</p>
+          </div>
+        } @else {
+
+          <!-- State progression strip -->
+          @if (stateTimeline().length > 0) {
+            <div class="mb-6 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3">
+              <p class="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">State Progression</p>
+              <div class="flex flex-wrap items-center gap-y-3">
+                @for (entry of stateTimeline(); track $index; let last = $last) {
+                  <div class="flex flex-col items-center gap-1">
+                    <span class="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                      [ngClass]="[stateBadgeClasses[entry.state], last ? 'ring-2' : 'ring-1']">
+                      {{ stateLabels[entry.state] }}
+                    </span>
+                    @if (entry.authorName) {
+                      <span class="text-[10px] leading-tight text-slate-500">{{ entry.authorName }}</span>
+                      <span class="text-[10px] leading-tight text-slate-600">{{ entry.createdAt | localDate }}</span>
+                    }
+                  </div>
+                  @if (!last) {
+                    <svg class="mx-1.5 mb-3 h-3.5 w-3.5 shrink-0 self-start mt-2 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  }
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Assignee history strip -->
+          @if (assigneeTimeline().length > 0) {
+            <div class="mb-6 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3">
+              <p class="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Assignment History</p>
+              <div class="flex flex-wrap items-center gap-y-3">
+                @for (entry of assigneeTimeline(); track $index; let last = $last) {
+                  <div class="flex flex-col items-center gap-1">
+                    @if (entry.assigneeName) {
+                      <div class="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-slate-200"
+                        [ngClass]="last ? 'bg-sky-500/15 ring-2 ring-sky-500/50' : 'bg-slate-700/80 ring-1 ring-slate-600'">
+                        <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-sky-600 text-[9px] font-bold text-white">
+                          {{ members.initials(entry.assigneeName) }}
+                        </span>
+                        {{ entry.assigneeName }}
+                      </div>
+                    } @else {
+                      <span class="inline-flex items-center rounded-full border border-dashed px-2.5 py-1 text-xs text-slate-500"
+                        [ngClass]="last ? 'border-slate-500 ring-2 ring-slate-600' : 'border-slate-700'">
+                        Unassigned
+                      </span>
+                    }
+                    @if (entry.authorName) {
+                      <span class="text-[10px] leading-tight text-slate-500">{{ entry.authorName }}</span>
+                      <span class="text-[10px] leading-tight text-slate-600">{{ entry.createdAt | localDate }}</span>
+                    }
+                  </div>
+                  @if (!last) {
+                    <svg class="mx-1.5 mb-3 mt-2 h-3.5 w-3.5 shrink-0 self-start text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                  }
+                }
+              </div>
+            </div>
+          }
+
+          <ol class="relative border-l border-slate-800">
+            @for (entry of historyEntries(); track entry.id) {
+              <li class="mb-6 ml-6">
+                <!-- dot -->
+                <span class="absolute -left-2 flex h-4 w-4 items-center justify-center rounded-full bg-slate-800 ring-4 ring-slate-950">
+                  <span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+                </span>
+
+                <div class="flex items-start gap-3">
+                  <!-- avatar -->
+                  <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ring-2 ring-slate-900"
+                    [ngClass]="members.getMember(entry.authorId)?.avatarClass ?? entry.authorAvatar"
+                    [title]="entry.authorName">
+                    {{ members.initials(entry.authorName) }}
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <span class="text-xs font-semibold text-slate-300">{{ entry.authorName }}</span>
+                      <span class="text-[11px] text-slate-500">{{ entry.createdAt | localDate }}</span>
+                    </div>
+                    <p class="mt-0.5 text-sm text-slate-400">{{ entry.message }}</p>
+                  </div>
+                </div>
+              </li>
+            }
+          </ol>
+        }
+      </div>
+    }
+
+  </div>
+</form>
+}

@@ -1,0 +1,131 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    exclude:
+      - '*.md'
+      - docs/**
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+variables:
+  buildConfiguration: 'Release'
+  dotnetVersion: '10.0.x'
+  nodeVersion: '22.x'
+  containerRegistry: '$(ACR_NAME).azurecr.io'
+  imageRepository: '$(APP_NAME)'
+
+stages:
+  - stage: Build_Test
+    displayName: 'Build & Test'
+    jobs:
+      - job: Backend
+        displayName: '.NET Backend'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: UseDotNet@2
+            inputs:
+              packageType: 'sdk'
+              version: $(dotnetVersion)
+
+          - script: dotnet restore
+            displayName: 'Restore NuGet packages'
+            workingDirectory: DASHBOARD
+
+          - script: dotnet build --configuration $(buildConfiguration) --warnaserror
+            displayName: 'Build (warnings as errors)'
+            workingDirectory: DASHBOARD
+
+          - script: |
+              dotnet test \
+                --configuration $(buildConfiguration) \
+                --collect:"XPlat Code Coverage" \
+                --results-directory $(Agent.TempDirectory)/TestResults \
+                --logger trx
+            displayName: 'Run tests'
+            workingDirectory: DASHBOARD
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '$(Agent.TempDirectory)/TestResults/**/*.trx'
+
+      - job: Frontend
+        displayName: 'Angular Frontend'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: $(nodeVersion)
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+            workingDirectory: DASHBOARD.VIEW
+
+          - script: npx tsc --noEmit
+            displayName: 'TypeScript check'
+            workingDirectory: DASHBOARD.VIEW
+
+          - script: ng lint
+            displayName: 'ESLint'
+            workingDirectory: DASHBOARD.VIEW
+
+          - script: ng test --watch=false --browsers=ChromeHeadless --code-coverage
+            displayName: 'Unit tests'
+            workingDirectory: DASHBOARD.VIEW
+
+          - script: ng build --configuration production
+            displayName: 'Production build'
+            workingDirectory: DASHBOARD.VIEW
+
+  - stage: Deploy_Dev
+    displayName: 'Deploy → Dev'
+    dependsOn: Build_Test
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - deployment: Deploy
+        environment: 'dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    docker build -t $(containerRegistry)/$(imageRepository):$(Build.BuildId) .
+                    docker push $(containerRegistry)/$(imageRepository):$(Build.BuildId)
+                  displayName: 'Build & push Docker image'
+                  workingDirectory: DASHBOARD
+
+                - task: KubernetesManifest@0
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'aks-dev'
+                    namespace: 'dev'
+                    manifests: 'DASHBOARD/k8s/manifests/*.yml'
+                    containers: '$(containerRegistry)/$(imageRepository):$(Build.BuildId)'
+
+  - stage: Deploy_Prod
+    displayName: 'Deploy → Production'
+    dependsOn: Deploy_Dev
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: Deploy
+        environment: 'production'  # Requires manual approval in Azure DevOps
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: KubernetesManifest@0
+                  inputs:
+                    action: 'deploy'
+                    kubernetesServiceConnection: 'aks-prod'
+                    namespace: 'production'
+                    manifests: 'DASHBOARD/k8s/manifests/*.yml'
+                    containers: '$(containerRegistry)/$(imageRepository):$(Build.BuildId)'

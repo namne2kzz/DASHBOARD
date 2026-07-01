@@ -1,0 +1,12 @@
+:host {
+  display: contents;
+}
+
+.cdk-drag-preview {
+  border-radius: 0.5rem;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.45);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.35;
+}

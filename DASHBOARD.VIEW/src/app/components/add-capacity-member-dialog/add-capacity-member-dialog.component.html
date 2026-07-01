@@ -1,0 +1,129 @@
+<form class="space-y-4" (ngSubmit)="submit()">
+
+  <!-- Member search -->
+  <div>
+    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+      Member <span class="text-rose-400">*</span>
+    </label>
+
+    @if (selectedMember(); as m) {
+      <!-- Selected state -->
+      <div class="flex items-center gap-3 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2.5">
+        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ring-2 ring-slate-900"
+          [ngClass]="m.avatarClass">
+          {{ members.initials(m.userName) }}
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-xs font-medium text-slate-200">{{ m.userName }}</p>
+          <p class="truncate text-[11px] text-slate-500">{{ m.userEmail }}</p>
+        </div>
+        <button type="button" class="text-slate-500 transition hover:text-slate-200" (click)="clearSelection()">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    } @else {
+      <!-- Search input -->
+      <div class="relative">
+        <svg class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          name="search"
+          placeholder="Search name or email…"
+          autocomplete="off"
+          class="w-full rounded-lg border border-slate-700 bg-slate-950 py-2.5 pl-9 pr-3 text-sm text-slate-100 outline-none focus:border-sky-500"
+          [value]="search()"
+          (input)="onSearch($any($event.target).value, $any($event.target))"
+        />
+      </div>
+
+      <!-- Fixed dropdown -->
+      @if (dropdownRect(); as rect) {
+        <div
+          class="fixed z-[9990] rounded-xl border border-slate-700 bg-slate-800/95 py-1.5 shadow-2xl shadow-black/60 backdrop-blur-sm"
+          [style.top.px]="rect.top"
+          [style.left.px]="rect.left"
+          [style.width.px]="rect.width"
+        >
+          @if (filteredMembers().length === 0) {
+            <p class="px-3 py-2 text-xs text-slate-500">No results</p>
+          } @else {
+            <div class="custom-scroll overflow-y-auto" style="max-height: 11rem">
+              @for (m of filteredMembers(); track m.userId) {
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2.5 px-3 py-2 text-left transition hover:bg-slate-700/60"
+                  (click)="select(m)"
+                >
+                  <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ring-1 ring-slate-700"
+                    [ngClass]="m.avatarClass">
+                    {{ members.initials(m.userName) }}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="truncate text-xs font-medium text-slate-200">{{ m.userName }}</p>
+                    <p class="truncate text-[11px] text-slate-500">{{ m.userEmail }}</p>
+                  </div>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Capacity config — shown after member selected -->
+  @if (selectedUserId()) {
+    <div class="space-y-3 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+      <div>
+        <p class="mb-1 text-xs text-slate-500">Role</p>
+        <p class="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-300">
+          {{ roleLabel() }}
+          <span class="ml-1.5 text-xs text-slate-600">(from repo membership)</span>
+        </p>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-xs text-slate-500">Hours / day</label>
+          <input type="number" name="hoursPerDay" min="1" max="12" step="0.5"
+            class="w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors [appearance:textfield]"
+            [class]="hoursError() ? 'border-rose-600 focus:border-rose-500' : 'border-slate-700 focus:border-sky-500'"
+            [ngModel]="hoursPerDay()" (ngModelChange)="hoursPerDay.set(+$event)"
+          />
+          @if (hoursError()) {
+            <p class="mt-1 text-xs text-rose-400">{{ hoursError() }}</p>
+          }
+        </div>
+        <div>
+          <label class="mb-1 block text-xs text-slate-500">OT / day <span class="text-slate-600">(opt.)</span></label>
+          <input type="number" name="overtime" min="0" max="6" step="0.5"
+            class="w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors [appearance:textfield]"
+            [class]="overtimeError() ? 'border-rose-600 focus:border-rose-500' : 'border-slate-700 focus:border-sky-500'"
+            [ngModel]="overtime()" (ngModelChange)="overtime.set(+$event)"
+          />
+          @if (overtimeError()) {
+            <p class="mt-1 text-xs text-rose-400">{{ overtimeError() }}</p>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-3 border-t border-slate-800 pt-4">
+    <button type="button"
+      class="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 ring-1 ring-slate-700 transition hover:ring-slate-600 hover:text-slate-200"
+      (click)="cancel()"
+    >Cancel</button>
+    <button type="submit"
+      class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+      [disabled]="!canSubmit()"
+    >Add to sprint</button>
+  </div>
+
+</form>

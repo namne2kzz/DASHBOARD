@@ -1,0 +1,351 @@
+<form class="space-y-4" (ngSubmit)="submit()">
+
+  <!-- Type icon -->
+  <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1" [class]="typeIconClass()">
+    @switch (type()) {
+      @case (sprintTaskApiType.Task) {
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M9 11l3 3L22 4" />
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        </svg>
+      }
+      @case (sprintTaskApiType.Bug) {
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M8 2h8l1 6H7L8 2z" />
+          <path d="M7 8h10v2a5 5 0 0 1-10 0V8z" />
+          <path d="M12 15v3M9 22h6" />
+        </svg>
+      }
+      @case (sprintTaskApiType.TestPlan) {
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+          <rect x="9" y="3" width="6" height="4" rx="1" ry="1" />
+          <path stroke-linecap="round" d="M9 12h6M9 16h4" />
+        </svg>
+      }
+    }
+  </span>
+
+  <!-- Title -->
+  <div>
+    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+      Title <span class="text-rose-400">*</span>
+    </label>
+    <input
+      type="text"
+      name="title"
+      placeholder="Short, descriptive title"
+      class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      [ngModel]="title()"
+      (ngModelChange)="title.set($event)"
+    />
+  </div>
+
+  <!-- Description -->
+  <div>
+    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Description</label>
+    <textarea
+      name="description"
+      rows="3"
+      placeholder="Optional details…"
+      class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      [ngModel]="description()"
+      (ngModelChange)="description.set($event)"
+    ></textarea>
+  </div>
+
+  <!-- Priority + Estimate -->
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Priority</label>
+      <select
+        name="priority"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-500"
+        [ngModel]="priority()"
+        (ngModelChange)="priority.set(+$event)"
+      >
+        @for (p of priorities; track p.value) {
+          <option [ngValue]="p.value">{{ p.label }}</option>
+        }
+      </select>
+    </div>
+
+    @if (showEstimate()) {
+      <div>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Estimate <span class="normal-case text-slate-600">(hours)</span>
+        </label>
+        <input
+          type="number"
+          name="originalEstimate"
+          min="0"
+          step="0.5"
+          placeholder="e.g. 4"
+          class="w-full rounded-lg border bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors [appearance:textfield]"
+          [class]="estimateError()
+            ? 'border-rose-600 focus:border-rose-500'
+            : 'border-slate-700 focus:border-sky-500'"
+          [ngModel]="originalEstimate()"
+          (ngModelChange)="originalEstimate.set(+$event)"
+        />
+        @if (estimateError()) {
+          <p class="mt-1 text-xs text-rose-400">{{ estimateError() }}</p>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Assignee -->
+  <div>
+    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Assignee</label>
+    @if (board.capacityMembers().length > 0) {
+      <select
+        name="assignedToId"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-500"
+        [ngModel]="assignedToId()"
+        (ngModelChange)="assignedToId.set($event || null)"
+      >
+        <option value="">Unassigned</option>
+        @for (m of board.capacityMembers(); track m.userId) {
+          <option [ngValue]="m.userId">{{ m.userName }}</option>
+        }
+      </select>
+    } @else {
+      <p class="rounded-lg border border-dashed border-slate-700 px-3 py-2.5 text-xs text-slate-500">
+        No capacity members in this sprint — add members in Sprint Planning first.
+      </p>
+    }
+  </div>
+
+  <!-- Parent (User Story) picker -->
+  <div>
+    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+      Parent <span class="normal-case text-slate-600">(optional — must be a User Story)</span>
+    </label>
+
+    @if (selectedParent(); as parent) {
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-sky-700/50 bg-sky-900/20 px-3 py-2.5">
+        <div class="min-w-0">
+          <span class="font-mono text-xs text-sky-300">{{ parent.workItemNumber }}</span>
+          <span class="ml-1.5 truncate text-sm text-slate-200">{{ parent.title }}</span>
+        </div>
+        <button
+          type="button"
+          class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-rose-500/15 hover:text-rose-400"
+          (click)="clearParent()"
+          title="Remove parent"
+        >
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    } @else {
+      <input
+        type="text"
+        placeholder="Search Story by ID or title…"
+        autocomplete="off"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+        [value]="parentSearchTerm()"
+        (input)="onParentSearch($any($event.target).value, $any($event.target))"
+      />
+
+      @if (parentDropdownRect(); as rect) {
+        <div
+          class="fixed z-[9990] rounded-xl border border-slate-700 bg-slate-800/95 py-1.5 shadow-2xl shadow-black/60 backdrop-blur-sm"
+          [style.top.px]="rect.top" [style.left.px]="rect.left" [style.width.px]="rect.width"
+        >
+          @if (parentSearching()) {
+            @for (i of [1, 2, 3]; track i) {
+              <div class="flex items-center gap-2.5 px-3 py-2">
+                <div class="h-3 w-12 shrink-0 animate-pulse rounded bg-slate-700/80"></div>
+                <div class="h-2.5 flex-1 animate-pulse rounded bg-slate-700/60"></div>
+              </div>
+            }
+          } @else if (parentResults().length > 0) {
+            <div class="custom-scroll overflow-y-auto" style="max-height: 11rem">
+              @for (s of parentResults(); track s.id) {
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-slate-700/60"
+                  (click)="selectParent(s)"
+                >
+                  <span class="shrink-0 font-mono text-xs text-sky-400">{{ s.workItemNumber }}</span>
+                  <span class="truncate text-xs text-slate-200">{{ s.title }}</span>
+                </button>
+              }
+            </div>
+          } @else {
+            <p class="px-3 py-2 text-[11px] text-slate-500">No matching User Story found.</p>
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Bug-specific fields -->
+  @if (isBug()) {
+    <div class="space-y-4 rounded-xl border border-rose-800/30 bg-rose-950/10 p-3">
+      <p class="text-xs font-semibold uppercase tracking-wide text-rose-300">Bug details</p>
+
+      <div>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Steps to reproduce</label>
+        <textarea
+          name="stepsToReproduce"
+          rows="3"
+          placeholder="1. Go to…&#10;2. Click…&#10;3. Observe…"
+          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          [ngModel]="stepsToReproduce()"
+          (ngModelChange)="stepsToReproduce.set($event)"
+        ></textarea>
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Environment</label>
+        <input
+          type="text"
+          name="environment"
+          placeholder="e.g. Chrome 124, Windows 11"
+          class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          [ngModel]="environment()"
+          (ngModelChange)="environment.set($event)"
+        />
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Root cause</label>
+        <textarea
+          name="rootCause"
+          rows="3"
+          placeholder="Optional — fill in once diagnosed"
+          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          [ngModel]="rootCause()"
+          (ngModelChange)="rootCause.set($event)"
+        ></textarea>
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Solution</label>
+        <textarea
+          name="solution"
+          rows="3"
+          placeholder="Optional — fill in once resolved"
+          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          [ngModel]="solution()"
+          (ngModelChange)="solution.set($event)"
+        ></textarea>
+      </div>
+
+      <div>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Impact</label>
+        <textarea
+          name="impaction"
+          rows="3"
+          placeholder="Who/what is affected"
+          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          [ngModel]="impaction()"
+          (ngModelChange)="impaction.set($event)"
+        ></textarea>
+      </div>
+    </div>
+  }
+
+  <!-- Task + Bug shared dev notes -->
+  @if (showDevNotes()) {
+    <div class="space-y-4">
+      <div>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Unit test notes</label>
+        <textarea
+          name="unitTest"
+          rows="3"
+          placeholder="Optional"
+          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          [ngModel]="unitTest()"
+          (ngModelChange)="unitTest.set($event)"
+        ></textarea>
+      </div>
+      <div>
+        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Design review notes</label>
+        <textarea
+          name="designReview"
+          rows="3"
+          placeholder="Optional"
+          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          [ngModel]="designReview()"
+          (ngModelChange)="designReview.set($event)"
+        ></textarea>
+      </div>
+    </div>
+  }
+
+  <!-- TestPlan-specific fields -->
+  @if (isTestPlan()) {
+    <div class="space-y-3 rounded-xl border border-violet-800/30 bg-violet-950/10 p-3">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-semibold uppercase tracking-wide text-violet-300">Test steps</p>
+        <label class="flex items-center gap-1.5 text-xs text-slate-300">
+          <input
+            type="checkbox"
+            name="automated"
+            class="h-3.5 w-3.5 rounded border-slate-600 bg-slate-900 text-violet-500 focus:ring-violet-500"
+            [ngModel]="automated()"
+            (ngModelChange)="automated.set($event)"
+          />
+          Automated
+        </label>
+      </div>
+
+      <div class="space-y-2">
+        @for (step of testSteps(); track $index; let i = $index) {
+          <div class="flex items-center gap-2">
+            <span class="w-5 shrink-0 text-center text-xs text-slate-500">{{ i + 1 }}</span>
+            <input
+              type="text"
+              [name]="'testStep' + i"
+              placeholder="Step description"
+              class="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+              [ngModel]="step"
+              (ngModelChange)="updateTestStep(i, $event)"
+            />
+            <button
+              type="button"
+              class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-rose-500/15 hover:text-rose-400"
+              (click)="removeTestStep(i)"
+              title="Remove step"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-700"
+        (click)="addTestStep()"
+      >
+        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        Add step
+      </button>
+    </div>
+  }
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-3 border-t border-slate-800 pt-4">
+    <button
+      type="button"
+      class="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 ring-1 ring-slate-700 transition hover:ring-slate-600 hover:text-slate-200"
+      (click)="cancel()"
+    >Cancel</button>
+    <button
+      type="submit"
+      class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+      [disabled]="!canSubmit()"
+    >Create</button>
+  </div>
+
+</form>

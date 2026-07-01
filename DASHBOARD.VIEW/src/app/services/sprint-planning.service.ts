@@ -1,0 +1,448 @@
+import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RepositoryContextService } from './repository-context.service';
+import { SprintSelectionService } from './sprint-selection.service';
+import { PrivilegeService } from '../core/services/privilege.service';
+import { environment } from '../../environments/environment';
+import {
+  CapacityMemberApiDto,
+  SprintApiDto,
+  SprintDetailApiDto,
+  SprintTaskApiDto,
+  SprintTaskApiType,
+} from '../models/sprint-planning-api.model';
+import { BacklogItemApiDto, BacklogItemApiState, BacklogItemApiType } from '../models/backlog-api.model';
+import { SPRINT_TASK_STATE_OPTIONS } from '../core/constants/system.constant';
+import { BacklogStory, LoadState, MemberLoad, Sprint, SprintTask } from '../models/sprint-planning.model';
+
+@Injectable({ providedIn: 'root' })
+export class SprintPlanningService {
+  private readonly http            = inject(HttpClient);
+  private readonly repoCtx         = inject(RepositoryContextService);
+  private readonly sprintSelection = inject(SprintSelectionService);
+  private readonly privilege       = inject(PrivilegeService);
+  private readonly destroyRef      = inject(DestroyRef);
+
+  private readonly _detail       = signal<SprintDetailApiDto | null>(null);
+  private readonly _backlogItems = signal<BacklogItemApiDto[]>([]);
+  private readonly _loading      = signal(false);
+  private readonly _error        = signal<string | null>(null);
+
+  readonly canManageSprints  = computed(() => this.privilege.canManageSprints());
+  readonly canManageCapacity = computed(() => this.privilege.canManageCapacity());
+  readonly canEditWorkItem   = computed(() => this.privilege.canEditWorkItem());
+
+  /** True while either the shared sprint list or this page's own sprint detail is loading. */
+  readonly loading = computed(() => this._loading() || this.sprintSelection.loading());
+  readonly error   = this._error.asReadonly();
+
+  readonly sprints = computed<Sprint[]>(() =>
+    this.sprintSelection.sprints().map(s => ({
+      id: s.id, name: s.name,
+      startDate: s.startDate, endDate: s.endDate, isActive: s.isActive,
+    })),
+  );
+
+  readonly selectedSprintId = this.sprintSelection.selectedSprintId;
+
+  readonly selectedSprint = computed<Sprint | null>(() =>
+    this.sprints().find(s => s.id === this.selectedSprintId()) ?? this.sprints()[0] ?? null,
+  );
+
+  readonly capacityMembers = computed(() => this._detail()?.capacityMembers ?? []);
+  readonly daysOff         = computed(() => this._detail()?.daysOff ?? []);
+  readonly personalDaysOff = computed(() => this.daysOff().filter(d => d.userId !== null));
+  readonly teamDaysOff     = computed(() => this.daysOff().filter(d => d.userId === null));
+  readonly workingDays     = computed(() => this._detail()?.workingDays ?? 0);
+
+  readonly effectiveWorkingDays = computed(() => {
+    const detail = this._detail();
+    if (!detail) return 0;
+    const teamOffDates = new Set(
+      detail.daysOff.filter(d => d.userId === null).map(d => d.date),
+    );
+    return this.generateWorkingDates(detail.startDate, detail.endDate)
+      .filter(d => !teamOffDates.has(d)).length;
+  });
+
+  readonly memberLoads = computed<MemberLoad[]>(() => {
+    const loads   = this._detail()?.memberLoads ?? [];
+    const members = this._detail()?.capacityMembers ?? [];
+    return loads.map(l => {
+      const cap = members.find(m => m.userId === l.userId);
+      return {
+        userId:              l.userId,
+        name:                l.userName,
+        role:                cap?.role ?? 'Developer',
+        hoursPerDay:         l.hoursPerDay,
+        overtimeHoursPerDay: l.overtimeHoursPerDay,
+        personalDaysOff:     l.personalDaysOffHours,
+        capacity:            l.capacity,
+        workload:            l.workload,
+        loadPercent:         l.loadPercent,
+        state:               l.loadState,
+      };
+    });
+  });
+
+  readonly totalCapacity   = computed(() => this.memberLoads().reduce((s, m) => s + m.capacity, 0));
+  readonly totalWorkload   = computed(() => this.memberLoads().reduce((s, m) => s + m.workload, 0));
+  readonly teamLoadPercent = computed(() => this.percent(this.totalWorkload(), this.totalCapacity()));
+  readonly teamLoadState   = computed(() => this.loadState(this.teamLoadPercent()));
+
+  readonly sprintStories = computed<SprintTask[]>(() =>
+    this.flatTasks().filter(t => t.type === 'user-story'),
+  );
+
+  readonly sprintTaskRows = computed<SprintTask[]>(() =>
+    this.flatTasks().filter(t => t.type === 'task'),
+  );
+
+  readonly backlogStories = computed<BacklogStory[]>(() =>
+    this._backlogItems().map(i => ({ id: i.id, title: i.title, storyPoints: i.storyPoints })),
+  );
+
+  constructor() {
+    effect(() => {
+      const repoId = this.repoCtx.selectedRepoId();
+      this._error.set(null);
+      if (!repoId) {
+        this._detail.set(null);
+        this._backlogItems.set([]);
+        return;
+      }
+      this.loadBacklogStories(repoId);
+    });
+
+    // Load sprint detail whenever the shared sprint selection changes.
+    effect(() => {
+      const repoId   = this.repoCtx.selectedRepoId();
+      const sprintId = this.sprintSelection.selectedSprintId();
+      this._detail.set(null);
+      if (!repoId || !sprintId) return;
+      this.loadDetail(repoId, sprintId);
+    });
+  }
+
+  /** Creates a new sprint (inactive) then reloads the sprint list. @param name Sprint name. @param startDate ISO date. @param endDate ISO date. */
+  createSprint(name: string, startDate: string, endDate: string): void {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId) return;
+
+    this.http
+      .post<SprintApiDto>(this.sprintsUrl(repoId), { name, startDate, endDate })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: sprint => this.sprintSelection.addSprint(sprint),
+        error: () => this._error.set('Failed to create sprint. Check dates do not overlap existing sprints.'),
+      });
+  }
+
+  /** Selects a sprint — its detail loads automatically via the shared selection effect. @param sprintId The sprint to select. */
+  selectSprint(sprintId: string): void {
+    this.sprintSelection.selectSprint(sprintId);
+  }
+
+  /** Returns the date-based status of a sprint. @param sprint The sprint to evaluate. */
+  sprintStatus(sprint: Sprint): 'past' | 'active' | 'future' {
+    const today = new Date().toISOString().slice(0, 10);
+    if (sprint.endDate < today)   return 'past';
+    if (sprint.startDate <= today) return 'active';
+    return 'future';
+  }
+
+  /** Updates sprint name and dates. Only allowed for future sprints (startDate > today). @param name Sprint name. @param startDate ISO date. @param endDate ISO date. */
+  updateSprint(name: string, startDate: string, endDate: string): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId || !name.trim() || !startDate || !endDate || startDate >= endDate) return;
+
+    this.http
+      .put(`${this.sprintsUrl(repoId)}/${sprintId}`, { name: name.trim(), startDate, endDate })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.sprintSelection.patchSprint(sprintId, { name: name.trim(), startDate, endDate });
+          this.reloadDetail();
+        },
+        error: () => this._error.set('Failed to update sprint. Check dates do not overlap existing sprints.'),
+      });
+  }
+
+  /** @deprecated Use updateSprint instead. */
+  updateSprintDates(startDate: string, endDate: string): void {
+    const sprint = this.selectedSprint();
+    if (sprint) this.updateSprint(sprint.name, startDate, endDate);
+  }
+
+  /** Updates regular daily hours for a capacity member. @param userId Member user ID. @param value New hours value. */
+  updateHours(userId: string, value: number): void {
+    const member = this.capacityMembers().find(m => m.userId === userId);
+    if (!member) return;
+    this.upsertCapacity(member, member.hoursPerDay, value, member.overtimeHoursPerDay);
+  }
+
+  /** Updates overtime daily hours for a capacity member. @param userId Member user ID. @param value New overtime hours. */
+  updateOvertime(userId: string, value: number): void {
+    const member = this.capacityMembers().find(m => m.userId === userId);
+    if (!member) return;
+    this.upsertCapacity(member, member.hoursPerDay, member.hoursPerDay, value);
+  }
+
+  /** Adds a new member to the sprint capacity configuration. @param userId Repo member user ID. @param role Team-role (discipline) value. @param hoursPerDay Daily working hours. @param overtime Daily overtime hours. */
+  addCapacityMember(userId: string, role: string, hoursPerDay: number, overtime: number): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+
+    this.http
+      .put(
+        `${this.sprintsUrl(repoId)}/${sprintId}/capacity/members/${userId}`,
+        null,
+        { params: { role: role, hoursPerDay: hoursPerDay.toString(), overtimeHoursPerDay: overtime.toString() } },
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reloadDetail(),
+        error: () => this._error.set('Failed to add capacity member.'),
+      });
+  }
+
+  /** Adds 1h overtime for a member (capped at 6h). @param userId Member user ID. */
+  addOneHourOvertime(userId: string): void {
+    const member = this.capacityMembers().find(m => m.userId === userId);
+    if (!member) return;
+    const newOt = Math.min(6, member.overtimeHoursPerDay + 1);
+    this.upsertCapacity(member, member.hoursPerDay, member.hoursPerDay, newOt);
+  }
+
+  /** Creates a Task sub-task under a sprint story. @param parentStoryId Parent UserStory SprintTask ID. @param title Task title. @param description Optional description. @param priority Priority (0=Low…3=Critical). @param originalEstimate Estimated hours. @param assignedToId Optional assignee. */
+  createSubTask(parentStoryId: string, title: string, description: string, priority: number, originalEstimate: number, assignedToId: string | null): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId || !title.trim()) return;
+
+    const params: Record<string, string> = {
+      type:             '1', // SprintTaskType.Task
+      title:            title.trim(),
+      description:      description,
+      priority:         priority.toString(),
+      parentId:         parentStoryId,
+      originalEstimate: originalEstimate.toString(),
+    };
+    if (assignedToId) params['assignedToId'] = assignedToId;
+
+    this.http
+      .post(`${this.tasksUrl(repoId, sprintId)}`, null, { params })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reloadDetail(),
+        error: () => this._error.set('Failed to create task.'),
+      });
+  }
+
+  /** Promotes a ready backlog story into the selected sprint. @param backlogItemId Backlog item ID. */
+  moveStoryToSprint(backlogItemId: string): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+
+    this.http
+      .post(`${environment.apiBaseUrl}/repositories/${repoId}/backlog/${backlogItemId}/promote/${sprintId}`, {})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => { this.loadBacklogStories(repoId); this.reloadDetail(); },
+        error: () => this._error.set('Failed to promote story. Ensure it is in Ready state.'),
+      });
+  }
+
+  /** Removes a sprint story and restores its backlog item to Ready. @param taskId Sprint task ID. */
+  descopeStory(taskId: string): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+
+    this.http
+      .post(`${this.tasksUrl(repoId, sprintId)}/${taskId}/descope`, {})
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => { this.loadBacklogStories(repoId); this.reloadDetail(); },
+        error: () => this._error.set('Failed to de-scope story.'),
+      });
+  }
+
+  /** Updates remaining work hours on a task. @param taskId Sprint task ID. @param hours New remaining hours. */
+  updateRemainingWork(taskId: string, hours: number): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+
+    this.http
+      .patch(`${this.tasksUrl(repoId, sprintId)}/${taskId}/remaining`, null,
+        { params: { hours: hours.toString() } })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reloadDetail(),
+        error: () => this._error.set('Failed to update remaining work.'),
+      });
+  }
+
+  /** Reassigns a task to a different team member. @param taskId Sprint task ID. @param userId New assignee user ID. */
+  reassignTask(taskId: string, userId: string): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+
+    this.http
+      .patch(`${this.tasksUrl(repoId, sprintId)}/${taskId}/assign`, null,
+        { params: { assignedToId: userId } })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reloadDetail(),
+        error: () => this._error.set('Failed to reassign task.'),
+      });
+  }
+
+  /** Changes the state of a sprint task. @param taskId Sprint task ID. @param state New state string key. */
+  changeTaskState(taskId: string, state: string): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+
+    const opt = SPRINT_TASK_STATE_OPTIONS.find(o => o.value === state);
+    if (!opt) return;
+
+    this.http
+      .patch(`${this.tasksUrl(repoId, sprintId)}/${taskId}/state`, null,
+        { params: { newState: opt.api.toString() } })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reloadDetail(),
+        error: () => this._error.set('Failed to change task state.'),
+      });
+  }
+
+  /** Returns the display name of a user by ID. @param userId User ID or null. @returns Name or 'Unassigned'. */
+  userName(userId: string | null): string {
+    if (!userId) return 'Unassigned';
+    return this.memberLoads().find(m => m.userId === userId)?.name ?? 'Unknown';
+  }
+
+  /** @param state Load state. @returns Tailwind class for the progress bar. */
+  progressBarClass(state: LoadState): string {
+    switch (state) {
+      case 'safe':       return 'bg-emerald-400';
+      case 'warning':    return 'bg-amber-400';
+      case 'overloaded': return 'bg-rose-500';
+    }
+  }
+
+  /** @param percent Raw load percent. @returns Load state label. */
+  loadState(percent: number): LoadState {
+    if (percent > 120) return 'overloaded';
+    if (percent > 100) return 'warning';
+    return 'safe';
+  }
+
+  /** @param value Raw percent. @returns Value capped at 140. */
+  cappedPercent(value: number): number {
+    return Math.min(140, Math.max(0, value));
+  }
+
+  // ── Private ───────────────────────────────────────────────────────────────
+
+  private loadDetail(repoId: string, sprintId: string): void {
+    this._loading.set(true);
+    this.http.get<SprintDetailApiDto>(`${this.sprintsUrl(repoId)}/${sprintId}/detail`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  d => { this._detail.set(d); this._loading.set(false); },
+        error: () => { this._error.set('Failed to load sprint detail.'); this._loading.set(false); },
+      });
+  }
+
+  private loadBacklogStories(repoId: string): void {
+    this.http
+      .get<BacklogItemApiDto[]>(`${environment.apiBaseUrl}/repositories/${repoId}/backlog`, {
+        params: {
+          type:  BacklogItemApiType.UserStory.toString(),
+          state: BacklogItemApiState.Ready.toString(),
+        },
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({ next: items => this._backlogItems.set(items), error: () => {} });
+  }
+
+  /** Reloads the current sprint detail — call when navigating to this page to pick up external state changes. */
+  refresh(): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (repoId && sprintId) this.loadDetail(repoId, sprintId);
+  }
+
+  private reloadDetail(): void { this.refresh(); }
+
+  private upsertCapacity(member: CapacityMemberApiDto, _old: number, hoursPerDay: number, overtime: number): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+
+    this.http
+      .put(
+        `${this.sprintsUrl(repoId)}/${sprintId}/capacity/members/${member.userId}`,
+        null,
+        { params: { role: member.role.toString(), hoursPerDay: hoursPerDay.toString(), overtimeHoursPerDay: overtime.toString() } },
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reloadDetail(),
+        error: () => this._error.set('Failed to update capacity.'),
+      });
+  }
+
+  private flatTasks(): SprintTask[] {
+    const flatten = (tasks: SprintTaskApiDto[]): SprintTask[] =>
+      tasks.flatMap(t => [this.mapTask(t), ...flatten(t.subTasks)]);
+    return flatten(this._detail()?.tasks ?? []);
+  }
+
+  private mapTask(t: SprintTaskApiDto): SprintTask {
+    return {
+      id:               t.id,
+      parentId:         t.parentId,
+      type:             t.type === SprintTaskApiType.UserStory ? 'user-story' : 'task',
+      title:            t.title,
+      assignedToId:     t.assignedToId,
+      assignedToName:   t.assignedToName,
+      state:            (['new', 'backlog', 'todo', 'active', 'in-review', 'done'] as const)[t.state],
+      storyPoints:      t.storyPoints,
+      originalEstimate: t.originalEstimate,
+      remainingWork:    t.remainingWork,
+      completedWork:    t.completedWork,
+    };
+  }
+
+  private generateWorkingDates(start: string, end: string): string[] {
+    const dates: string[] = [];
+    const e = new Date(end + 'T00:00:00');
+    for (const d = new Date(start + 'T00:00:00'); d <= e; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() !== 0 && d.getDay() !== 6)
+        dates.push(d.toISOString().slice(0, 10));
+    }
+    return dates;
+  }
+
+  private percent(workload: number, capacity: number): number {
+    if (capacity === 0) return workload > 0 ? 999 : 0;
+    return Math.round((workload / capacity) * 100);
+  }
+
+  private sprintsUrl(repoId: string): string {
+    return `${environment.apiBaseUrl}/repositories/${repoId}/sprints`;
+  }
+
+  private tasksUrl(repoId: string, sprintId: string): string {
+    return `${environment.apiBaseUrl}/repositories/${repoId}/sprints/${sprintId}/tasks`;
+  }
+}

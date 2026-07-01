@@ -1,0 +1,17 @@
+<div (click)="toggle()">
+  @if (triggerTpl()) {
+    <ng-container [ngTemplateOutlet]="triggerTpl()!" />
+  }
+</div>
+
+@if (open()) {
+  <div
+    class="absolute z-50 min-w-max rounded-xl border border-slate-200 bg-white shadow-xl animate-popup"
+    [class]="positionClass()"
+    (click)="$event.stopPropagation()"
+  >
+    @if (panelTpl()) {
+      <ng-container [ngTemplateOutlet]="panelTpl()!" />
+    }
+  </div>
+}

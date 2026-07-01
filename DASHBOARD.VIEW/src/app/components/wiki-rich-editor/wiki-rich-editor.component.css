@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+:host ::ng-deep .tox-tinymce {
+  border-radius: 0.75rem !important;
+  border-color: rgb(51 65 85 / 0.8) !important;
+  overflow: hidden;
+}
+
+:host ::ng-deep .tox .tox-edit-area__iframe {
+  background: #0f172a !important;
+}

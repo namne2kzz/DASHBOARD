@@ -1,0 +1,118 @@
+<form class="space-y-5" (ngSubmit)="submit()">
+
+  <!-- Type selector -->
+  <div>
+    <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Type</p>
+    <div class="flex gap-2">
+      @for (t of types; track t) {
+        <button
+          type="button"
+          class="flex-1 rounded-lg px-3 py-2 text-sm font-semibold ring-1 transition"
+          [class]="type() === t
+            ? 'bg-sky-500/15 text-sky-200 ring-sky-500/40'
+            : 'bg-slate-950/60 text-slate-400 ring-slate-700 hover:bg-slate-800 hover:text-slate-200'"
+          (click)="type.set(t)"
+        >{{ typeLabel(t) }}</button>
+      }
+    </div>
+  </div>
+
+  <!-- Parent selector — shown for Feature and User Story -->
+  @if (type() !== 'epic') {
+    <div>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+        {{ parentLabel() }}
+      </label>
+
+      @if (parentOptions().length > 0) {
+        <!-- Searchable combobox -->
+        <div class="relative" (click)="$event.stopPropagation()">
+          <!-- Trigger -->
+          <button
+            type="button"
+            class="flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-sm transition"
+            [class]="parentId()
+              ? 'border-sky-500/50 bg-sky-500/10 text-sky-100'
+              : 'border-slate-700 bg-slate-950 text-slate-400'"
+            (click)="parentDropdownOpen.set(!parentDropdownOpen())"
+          >
+            <span class="truncate">{{ selectedParentTitle() }}</span>
+            <svg class="h-4 w-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+
+          <!-- Dropdown -->
+          @if (parentDropdownOpen()) {
+            <div class="absolute left-0 top-full z-30 mt-1 w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl">
+              <!-- Search input -->
+              <div class="p-2">
+                <input
+                  type="text"
+                  placeholder="Search…"
+                  class="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+                  [ngModel]="parentSearch()"
+                  (ngModelChange)="parentSearch.set($event)"
+                  (click)="$event.stopPropagation()"
+                />
+              </div>
+              <!-- Options list -->
+              <div class="custom-scroll h-36 overflow-y-auto">
+                @for (opt of filteredParentOptions(); track opt.id) {
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-sm transition"
+                    [class]="parentId() === opt.id
+                      ? 'bg-sky-500/15 text-sky-200'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+                    (click)="selectParent(opt.id)"
+                  >
+                    <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-sky-400/60"></span>
+                    <span class="truncate">{{ opt.title }}</span>
+                  </button>
+                }
+                @if (filteredParentOptions().length === 0) {
+                  <p class="px-3 py-2 text-xs text-slate-600">No results</p>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="rounded-lg border border-dashed border-slate-700 px-3 py-2.5 text-xs text-slate-500">
+          No {{ type() === 'feature' ? 'epics' : 'features' }} yet — create one first or leave unassigned.
+        </p>
+      }
+    </div>
+  }
+
+  <!-- Title -->
+  <div>
+    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+      Title <span class="text-rose-400">*</span>
+    </label>
+    <textarea
+      name="title"
+      rows="3"
+      placeholder="Short, descriptive title"
+      class="w-full resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      [ngModel]="title()"
+      (ngModelChange)="title.set($event)"
+    ></textarea>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-3 border-t border-slate-800 pt-4">
+    <button
+      type="button"
+      class="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 ring-1 ring-slate-700 transition hover:ring-slate-600 hover:text-slate-200"
+      (click)="cancel()"
+    >Cancel</button>
+    <button
+      type="submit"
+      class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+      [disabled]="!canSubmit()"
+    >Create {{ typeLabel(type()) }}</button>
+  </div>
+
+</form>

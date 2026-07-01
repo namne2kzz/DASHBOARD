@@ -1,0 +1,211 @@
+<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-4 py-6">
+  <div class="space-y-6">
+    <header class="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400/90">Workflow</p>
+      </div>
+    </header>
+
+    <section class="grid gap-3 md:grid-cols-4">
+      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+        <p class="text-xs uppercase text-slate-500">Columns</p>
+        <p class="mt-1 text-xl font-bold text-white">{{ board.columns().length }}</p>
+      </div>
+      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+        <p class="text-xs uppercase text-slate-500">With WIP limit</p>
+        <p class="mt-1 text-xl font-bold text-white">{{ board.wipColumns().length }}</p>
+      </div>
+      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+        <p class="text-xs uppercase text-slate-500">States mapped</p>
+        <p class="mt-1 text-xl font-bold text-white">{{ board.columns().length }} / 6</p>
+      </div>
+    </section>
+
+    <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-sm font-semibold text-slate-100">Column configuration</h2>
+        </div>
+
+        @if (board.canManageBoard()) {
+          <div class="relative shrink-0" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-slate-100"
+              [class.bg-slate-800]="sectionMenuOpen()"
+              [class.text-slate-100]="sectionMenuOpen()"
+              (click)="openSectionMenu($event)"
+              title="Column options"
+            >
+              <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
+              </svg>
+            </button>
+
+            @if (sectionMenuOpen()) {
+              <div class="absolute right-0 top-8 z-20 min-w-[150px] rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl">
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"
+                  (click)="startAddColumn()"
+                >
+                  <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                  </svg>
+                  Add column
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full min-w-[900px] text-left text-sm">
+          <thead>
+            <tr class="text-xs uppercase text-slate-500">
+              <th class="pb-2 pr-4 font-medium">Column</th>
+              <th class="pb-2 pr-4 font-medium">State</th>
+              <th class="pb-2 pr-4 font-medium">WIP limit</th>
+              <th class="pb-2 pr-4 font-medium">Mode</th>
+              <th class="pb-2 pr-4 font-medium">Current</th>
+              <th class="pb-2 pr-4 font-medium">Aging limit</th>
+              <th class="pb-2 font-medium"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800">
+            @for (column of board.columns(); track column.id) {
+              @let editing = editColId() === column.id;
+              <tr [class]="editing ? 'bg-slate-800/20' : ''" (click)="stopIfEditing($event, column.id)">
+
+                <!-- Column name — text or input -->
+                <td class="py-3 pr-4">
+                  @if (editing) {
+                    <input
+                      type="text"
+                      maxlength="100"
+                      class="w-36 rounded-lg border border-sky-500/60 bg-slate-900 px-2 py-1 text-sm font-medium text-slate-100 outline-none focus:border-sky-400"
+                      [ngModel]="editColName()"
+                      (ngModelChange)="editColName.set($event)"
+                      (keydown.enter)="saveColumnEdit(column.id)"
+                      (keydown.escape)="closeColumnEdit()"
+                    />
+                  } @else {
+                    <span class="font-medium text-slate-100">{{ column.name }}</span>
+                  }
+                </td>
+
+                <!-- State — badge or dropdown -->
+                <td class="py-3 pr-4">
+                  @if (editing) {
+                    <select
+                      class="rounded-xl border border-sky-500/60 bg-slate-900 py-1 pl-2 pr-8 text-sm text-slate-100 outline-none focus:border-sky-400"
+                      [ngModel]="editColState()"
+                      (ngModelChange)="editColState.set($event)"
+                    >
+                      @for (opt of stateOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <span class="rounded bg-slate-800 px-2 py-0.5 text-xs font-mono text-sky-300">
+                      {{ stateLabelFor(column.mappedState) }}
+                    </span>
+                  }
+                </td>
+
+                <!-- WIP limit -->
+                <td class="py-3 pr-4">
+                  <input
+                    type="number"
+                    min="0"
+                    class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    [ngModel]="column.wipLimit"
+                    (ngModelChange)="board.updateWipLimit(column.id, $event)"
+                    [disabled]="!board.canManageBoard()"
+                  />
+                </td>
+
+                <!-- Mode -->
+                <td class="py-3 pr-4">
+                  <select
+                    class="rounded-xl border border-slate-700 bg-slate-950 py-1 pl-2 pr-8 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    [ngModel]="column.wipMode"
+                    (ngModelChange)="board.setWipMode(column.id, $event)"
+                    [disabled]="!board.canManageBoard()"
+                  >
+                    <option value="soft">Soft-warning</option>
+                    <option value="hard">Hard-stop</option>
+                  </select>
+                </td>
+
+                <!-- Current -->
+                <td class="py-3 pr-4">
+                  <span class="rounded-full bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-300 ring-1 ring-slate-700">
+                    — / {{ column.wipLimit || '∞' }}
+                  </span>
+                </td>
+
+                <!-- Aging limit -->
+                <td class="py-3 pr-4">
+                  <div class="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min="1"
+                      class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50 [appearance:textfield]"
+                      [ngModel]="column.agingLimitDays"
+                      (change)="board.updateAgingLimit(column.id, $any($event.target).value)"
+                      [disabled]="!board.canManageBoard()"
+                    />
+                    <span class="text-xs text-slate-500">d</span>
+                  </div>
+                </td>
+
+                <!-- Actions -->
+                <td class="py-3">
+                  @if (board.canManageBoard()) {
+                    @if (editing) {
+                      <div class="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          class="rounded-lg bg-sky-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-sky-500 disabled:opacity-50"
+                          [disabled]="!editColName().trim()"
+                          (click)="saveColumnEdit(column.id)"
+                        >Save</button>
+                        <button
+                          type="button"
+                          class="rounded-lg bg-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-200 transition hover:bg-slate-600"
+                          (click)="closeColumnEdit()"
+                        >Cancel</button>
+                      </div>
+                    } @else {
+                      <button
+                        type="button"
+                        class="rounded-lg px-2 py-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-slate-100"
+                        (click)="openColumnEdit(column, $event)"
+                        title="Edit column"
+                      >
+                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                          <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
+                        </svg>
+                      </button>
+                    }
+                  }
+                </td>
+              </tr>
+            }
+
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+@if (addModalOpen()) {
+  <app-add-column-modal
+    (saved)="onColumnSaved($event)"
+    (cancelled)="addModalOpen.set(false)"
+  />
+}

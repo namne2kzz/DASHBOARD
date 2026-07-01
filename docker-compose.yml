@@ -1,0 +1,82 @@
+# Backing services for local DASHBOARD development.
+# Run:   docker compose up -d        (start in background)
+# Stop:  docker compose down          (keep data)
+# Reset: docker compose down -v       (wipe all data volumes)
+#
+# App (.NET API + Angular) still runs natively via `dotnet run` / `ng serve`.
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: dashboard-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-Your_strong_Pass123}"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: dashboard-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER:-guest}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS:-guest}"
+    ports:
+      - "5672:5672"     # AMQP
+      - "15672:15672"   # Management UI -> http://localhost:15672
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: dashboard-mailpit
+    ports:
+      - "1025:1025"     # SMTP (matches EmailSettings.SmtpPort)
+      - "8025:8025"     # Web UI -> http://localhost:8025
+    restart: unless-stopped
+
+  # Optional — uncomment when you start using Redis (StackExchange.Redis).
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: dashboard-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis-data:/data
+  #   restart: unless-stopped
+
+  # Optional — uncomment when you start using PostgreSQL (EF Core / Npgsql).
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: dashboard-postgres
+  #   environment:
+  #     POSTGRES_DB: dashboard
+  #     POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+  #     POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+volumes:
+  sqlserver-data:
+  rabbitmq-data:
+  # redis-data:
+  # postgres-data:

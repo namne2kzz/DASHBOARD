@@ -1,0 +1,30 @@
+/* Expandable search input — grows from width:0 to 15rem on open */
+.search-expand {
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transition:
+    max-width 0.2s ease-in-out,
+    opacity 0.15s ease-in-out;
+}
+
+.search-expand--open {
+  max-width: 15rem;
+  opacity: 1;
+}
+
+/* Collapsible dynamic query panel */
+.query-panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease-in-out;
+}
+
+.query-panel--open {
+  max-height: 20rem;
+}
+
+.query-panel__scroll {
+  max-height: 20rem;
+  overflow-y: auto;
+}

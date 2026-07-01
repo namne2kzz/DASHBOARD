@@ -1,0 +1,15 @@
+<div [formGroup]="form()" class="type-section">
+  <p class="type-section-title text-sky-400/70">User Story</p>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label">Acceptance Criteria</label>
+      <textarea formControlName="acceptanceCriteria" rows="5"
+        class="field-textarea" placeholder="Given… When… Then…"></textarea>
+    </div>
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label">Story Points</label>
+      <input formControlName="storyPoints" type="number" min="0"
+        class="field-input w-28" placeholder="—"/>
+    </div>
+  </div>
+</div>

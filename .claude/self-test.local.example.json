@@ -1,0 +1,6 @@
+{
+  "baseUrl": "http://localhost:4200",
+  "email": "REPLACE_WITH_TEST_USER_EMAIL",
+  "password": "REPLACE_WITH_TEST_USER_PASSWORD",
+  "repoCode": "REPLACE_WITH_EXISTING_REPO_CODE"
+}

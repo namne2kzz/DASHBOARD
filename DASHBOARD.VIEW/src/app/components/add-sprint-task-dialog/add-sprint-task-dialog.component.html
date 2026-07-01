@@ -1,0 +1,116 @@
+<form class="space-y-4" (ngSubmit)="submit()">
+
+  <!-- Context -->
+  <p class="text-xs text-slate-500">
+    Adding task under
+    <span class="font-semibold text-slate-300">{{ data.storyTitle }}</span>
+  </p>
+
+  <!-- Title -->
+  <div>
+    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+      Title <span class="text-rose-400">*</span>
+    </label>
+    <input
+      type="text"
+      name="title"
+      placeholder="Short, descriptive task title"
+      class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      [ngModel]="title()"
+      (ngModelChange)="title.set($event)"
+    />
+  </div>
+
+  <!-- Description -->
+  <div>
+    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Description</label>
+    <textarea
+      name="description"
+      rows="3"
+      placeholder="Optional implementation notes, acceptance criteria…"
+      class="w-full resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      [ngModel]="description()"
+      (ngModelChange)="description.set($event)"
+    ></textarea>
+  </div>
+
+  <!-- Priority + Estimate -->
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Priority</label>
+      <select
+        name="priority"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-500"
+        [ngModel]="priority()"
+        (ngModelChange)="priority.set(+$event)"
+      >
+        @for (p of priorities; track p.value) {
+          <option [ngValue]="p.value">{{ p.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div>
+      <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+        Estimate <span class="normal-case text-slate-600">(hours)</span>
+      </label>
+      <input
+        type="number"
+        name="originalEstimate"
+        min="0.5"
+        step="0.5"
+        placeholder="e.g. 4"
+        class="w-full rounded-lg border bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors [appearance:textfield]"
+        [class]="estimateError()
+          ? 'border-rose-600 focus:border-rose-500'
+          : 'border-slate-700 focus:border-sky-500'"
+        [ngModel]="originalEstimate()"
+        (ngModelChange)="originalEstimate.set(+$event)"
+      />
+      @if (estimateError()) {
+        <p class="mt-1 text-xs text-rose-400">{{ estimateError() }}</p>
+      }
+    </div>
+  </div>
+
+  <!-- Assignee -->
+  <div>
+    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Assignee</label>
+    @if (planning.memberLoads().length > 0) {
+      <select
+        name="assignedToId"
+        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-500"
+        [ngModel]="assignedToId()"
+        (ngModelChange)="assignedToId.set($event || null)"
+      >
+        <option value="">Unassigned</option>
+        @for (m of planning.memberLoads(); track m.userId) {
+          <option [ngValue]="m.userId">
+            {{ m.name }}
+            <span class="text-slate-500"> · {{ m.role }}</span>
+            @if (m.loadPercent > 100) { ⚠ }
+          </option>
+        }
+      </select>
+    } @else {
+      <p class="rounded-lg border border-dashed border-slate-700 px-3 py-2.5 text-xs text-slate-500">
+        No capacity members in this sprint — add members to the capacity table first.
+      </p>
+    }
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-3 border-t border-slate-800 pt-4">
+    <button
+      type="button"
+      class="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 ring-1 ring-slate-700 transition hover:ring-slate-600 hover:text-slate-200"
+      (click)="cancel()"
+    >Cancel</button>
+    <button
+      type="submit"
+      class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+      [disabled]="!canSubmit()"
+    >Add task</button>
+  </div>
+
+</form>

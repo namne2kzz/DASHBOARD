@@ -1,0 +1,432 @@
+<div class="flex h-full flex-col">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-slate-800/80 px-6 py-5">
+    <div>
+      <h1 class="text-lg font-semibold text-white">
+        Members
+        @if (repoCtx.selectedRepo(); as repo) {
+          <span class="ml-1.5 text-slate-500">— {{ repo.name }}</span>
+        }
+      </h1>
+      <p class="mt-0.5 text-sm text-slate-400">
+        @if (repoCtx.selectedRepo(); as repo) {
+          Members of <span class="font-medium text-slate-300">{{ repo.name }}</span> · manage roles and access.
+        } @else {
+          Manage repository members, roles, and access.
+        }
+      </p>
+    </div>
+    @if (privilege.canManageMembers()) {
+      <div class="flex items-center gap-2">
+        <button type="button" (click)="openPanel('invite-email')"
+          class="rounded-lg border border-slate-700 bg-slate-800/60 px-3.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-700 hover:text-white">
+          Invite by email
+        </button>
+        <button type="button" (click)="openPanel('add-member')"
+          class="rounded-lg bg-sky-500 px-3.5 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400">
+          + Add member
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Body -->
+  <div class="custom-scroll flex-1 overflow-y-auto p-6">
+    <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
+
+      <!-- ── Members ────────────────────────────────────────── -->
+      <section class="lg:col-span-1">
+        <div class="flex h-7 items-center">
+          <h2 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            Members ({{ filteredMembers().length }})
+          </h2>
+        </div>
+        <div class="relative mt-3">
+          <svg class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path stroke-linecap="round" d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="search" placeholder="Search name or email…"
+            [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+            class="field-input w-full !pl-8 text-xs" />
+        </div>
+
+        <div class="mt-3 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+          @if (!filteredMembers().length) {
+            <p class="px-4 py-8 text-center text-sm text-slate-500">No members found.</p>
+          } @else {
+            <div class="divide-y divide-slate-800/60">
+              @for (m of filteredMembers(); track m.memberId) {
+                <div class="flex items-center gap-3 px-4 py-3">
+
+                  <!-- Avatar -->
+                  <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white ring-2 ring-slate-900"
+                    [ngClass]="m.avatarClass">
+                    {{ membersService.initials(m.userName) }}
+                  </div>
+
+                  <!-- Name + email -->
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-xs font-medium text-slate-200">{{ m.userName }}</p>
+                    <p class="truncate text-[11px] text-slate-500">{{ m.userEmail }}</p>
+                  </div>
+
+                  <!-- Joined -->
+                  <p class="hidden w-24 shrink-0 text-right text-[11px] text-slate-600 md:block">
+                    {{ dt.format(m.joinedAt, 'MMM d, y') }}
+                  </p>
+
+                  <!-- Default role -->
+                  <div class="w-32 shrink-0">
+                    @if (privilege.canActOnMember(m.userId)) {
+                      <select class="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-2 py-1 text-xs text-slate-300 outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
+                        [ngModel]="m.defaultRole" (ngModelChange)="changeDefaultRole(m, $event)">
+                        @for (d of disciplines(); track d) {
+                          <option [value]="d">{{ d }}</option>
+                        }
+                      </select>
+                    } @else {
+                      <span class="inline-flex items-center rounded-full bg-slate-800/80 px-2 py-0.5 text-[10px] font-semibold text-slate-300 ring-1 ring-slate-700">
+                        {{ m.defaultRole }}
+                      </span>
+                    }
+                  </div>
+
+                  <!-- Role -->
+                  <div class="w-36 shrink-0">
+                    @if (privilege.canActOnMember(m.userId)) {
+                      <select class="w-full rounded-lg border border-slate-700 bg-slate-800/60 px-2 py-1 text-xs text-slate-300 outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
+                        [ngModel]="m.roleId" (ngModelChange)="assignRole(m, $event)">
+                        @for (r of assignableRoles(); track r.id) {
+                          <option [value]="r.id">{{ r.name }}</option>
+                        }
+                      </select>
+                    } @else if (m.roleName) {
+                      <span class="inline-flex items-center rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-semibold text-sky-400 ring-1 ring-sky-500/20">
+                        {{ m.roleName }}
+                      </span>
+                    } @else {
+                      <span class="text-[11px] text-slate-600">—</span>
+                    }
+                  </div>
+
+                  <!-- Remove -->
+                  <div class="flex w-7 shrink-0 justify-end">
+                    @if (privilege.canActOnMember(m.userId)) {
+                      <button type="button" (click)="removeMember(m)"
+                        class="rounded-lg p-1.5 text-slate-500 transition hover:bg-rose-500/15 hover:text-rose-400"
+                        title="Remove member">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    }
+                  </div>
+
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- ── Roles ──────────────────────────────────────────── -->
+      @if (privilege.canManageRoles()) {
+        <section class="lg:col-span-1">
+          <div class="flex h-7 items-center justify-between">
+            <h2 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Roles</h2>
+            <button type="button" (click)="openPanel('create-role')"
+              class="rounded-lg bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-400 ring-1 ring-sky-500/30 transition hover:bg-sky-500/20">
+              + New role
+            </button>
+          </div>
+
+          <div class="mt-3 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+            @if (!roleService.roles().length) {
+              <p class="px-4 py-8 text-center text-sm text-slate-500">
+                No roles defined.
+              </p>
+            } @else {
+              <div class="divide-y divide-slate-800/60">
+                @for (role of roleService.roles(); track role.id) {
+                  <div class="px-4 py-3.5">
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0 flex-1">
+                        <p class="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
+                          {{ role.name }}
+                          @if (role.isDefault) {
+                            <span class="inline-flex items-center rounded-full bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-400 ring-1 ring-amber-400/30">
+                              Default
+                            </span>
+                          }
+                        </p>
+                        @if (role.description) {
+                          <p class="mt-0.5 text-[11px] text-slate-500">{{ role.description }}</p>
+                        }
+                        @if (role.permissions.length) {
+                          <div class="mt-2 flex flex-wrap gap-1">
+                            @for (p of role.permissions; track p) {
+                              <span class="inline-flex items-center rounded-full bg-slate-800/80 px-2 py-0.5 text-[10px] font-medium text-slate-400 ring-1 ring-slate-700">
+                                {{ PERMISSION_LABELS[p] }}
+                              </span>
+                            }
+                          </div>
+                        } @else {
+                          <p class="mt-1.5 text-[11px] text-slate-600">No permissions assigned.</p>
+                        }
+                      </div>
+                      <div class="flex shrink-0 items-center gap-1">
+                        <button type="button" (click)="cloneRole(role)"
+                          class="rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/80 hover:text-white">
+                          Clone
+                        </button>
+                        @if (!role.isDefault) {
+                          <button type="button" (click)="openPanel('edit-role', role)"
+                            class="rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/80 hover:text-white">
+                            Edit
+                          </button>
+                          <button type="button" (click)="deleteRole(role)"
+                            class="rounded-lg px-2.5 py-1.5 text-xs text-rose-500/70 transition hover:bg-rose-500/10 hover:text-rose-400">
+                            Delete
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+    </div>
+  </div>
+
+  <!-- ── Modals ──────────────────────────────────────────────── -->
+  @if (activePanel()) {
+    <div class="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm" (click)="closePanel()"></div>
+
+    <!-- Add Member -->
+    @if (activePanel() === 'add-member') {
+      <div class="fixed inset-0 z-50 m-auto h-fit w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+        <h3 class="text-sm font-semibold text-white">Add Member</h3>
+        <p class="mt-1 text-xs text-slate-400">Search by name or email and assign a role.</p>
+
+        <div class="mt-4 space-y-3">
+
+          <!-- User picker -->
+          <div>
+            <label class="field-label">User</label>
+            @if (addSelectedUser(); as picked) {
+              <!-- Selected user chip -->
+              <div class="mt-1.5 flex items-center gap-2 rounded-lg border border-sky-500/40 bg-sky-500/5 px-3 py-2">
+                <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ring-1 ring-slate-700"
+                  [ngClass]="picked.avatarClass">
+                  {{ membersService.initials(picked.name) }}
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-xs font-medium text-slate-200">{{ picked.name }}</p>
+                  <p class="truncate text-[11px] text-slate-500">{{ picked.email }}</p>
+                </div>
+                <button type="button" (click)="clearSelectedUser()"
+                  class="shrink-0 rounded p-0.5 text-slate-500 transition hover:text-rose-400"
+                  title="Remove selection">
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            } @else {
+              <!-- Search input + dropdown -->
+              <div class="mt-1.5">
+                <div class="relative">
+                  <svg class="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path stroke-linecap="round" d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <input type="text" placeholder="Search name or email…" autocomplete="off"
+                    [value]="addSearchTerm()" (input)="onUserSearch($any($event.target).value, $any($event.target))"
+                    class="field-input !pl-9" />
+                </div>
+
+                <!-- Fixed dropdown -->
+                @if (addDropdownRect(); as rect) {
+                  <div class="fixed z-[9990] rounded-xl border border-slate-700 bg-slate-800/95 py-1.5 shadow-2xl shadow-black/60 backdrop-blur-sm"
+                    [style.top.px]="rect.top" [style.left.px]="rect.left" [style.width.px]="rect.width">
+
+                    @if (addSearching()) {
+                      @for (i of [1, 2, 3]; track i) {
+                        <div class="flex items-center gap-2.5 px-3 py-2">
+                          <div class="h-7 w-7 shrink-0 animate-pulse rounded-full bg-slate-700/80"></div>
+                          <div class="flex flex-1 flex-col gap-1.5">
+                            <div class="h-2.5 w-2/3 animate-pulse rounded bg-slate-700/80"></div>
+                            <div class="h-2 w-1/2 animate-pulse rounded bg-slate-700/60"></div>
+                          </div>
+                        </div>
+                      }
+                    } @else if (addSearchResults().length > 0) {
+                      <div class="custom-scroll overflow-y-auto" style="max-height: 11rem">
+                        @for (u of addSearchResults(); track u.userId) {
+                          <button type="button" (click)="selectUser(u)"
+                            class="flex w-full items-center gap-2.5 px-3 py-2 text-left transition hover:bg-slate-700/60">
+                            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ring-1 ring-slate-700"
+                              [ngClass]="u.avatarClass">
+                              {{ membersService.initials(u.name) }}
+                            </div>
+                            <div class="min-w-0">
+                              <p class="truncate text-xs font-medium text-slate-200">{{ u.name }}</p>
+                              <p class="truncate text-[11px] text-slate-500">{{ u.email }}</p>
+                            </div>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- No results -->
+                @if (!addSearching() && addSearchTerm().trim().length >= 2 && addSearchResults().length === 0) {
+                  <p class="mt-1.5 text-[11px] text-slate-500">No users found.</p>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Discipline (team role) -->
+          <div>
+            <label class="field-label">Discipline</label>
+            <select class="field-select mt-1.5"
+              [ngModel]="addDefaultRole()" (ngModelChange)="onAddDefaultRoleChange($event)">
+              @for (d of disciplines(); track d) {
+                <option [value]="d">{{ d }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Role (permissions) -->
+          <div>
+            <label class="field-label">Role</label>
+            <select class="field-select mt-1.5"
+              [ngModel]="addRoleId()" (ngModelChange)="addRoleId.set($event)">
+              @for (r of assignableRoles(); track r.id) {
+                <option [value]="r.id">{{ r.name }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Error -->
+          @if (addError()) {
+            <p class="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-400">
+              {{ addError() }}
+            </p>
+          }
+        </div>
+
+        <div class="mt-5 flex justify-end gap-2">
+          <button type="button" (click)="closePanel()"
+            class="rounded-lg px-4 py-2 text-xs font-medium text-slate-400 transition hover:text-white">
+            Cancel
+          </button>
+          <button type="button" (click)="submitAddMember()"
+            [disabled]="!addSelectedUser() || !addRoleId() || addSubmitting()"
+            class="rounded-lg bg-sky-500 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400 disabled:opacity-50">
+            {{ addSubmitting() ? 'Adding…' : 'Add member' }}
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Invite by Email -->
+    @if (activePanel() === 'invite-email') {
+      <div class="fixed inset-0 z-50 m-auto h-fit w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+        <h3 class="text-sm font-semibold text-white">Invite by Email</h3>
+        <p class="mt-1 text-xs text-slate-400">Send an invitation link — expires after 7 days.</p>
+        <div class="mt-4 space-y-3">
+          <div>
+            <label class="field-label">Email address</label>
+            <input type="email" placeholder="colleague@example.com"
+              [ngModel]="inviteEmail()" (ngModelChange)="inviteEmail.set($event)"
+              class="field-input mt-1.5" />
+          </div>
+          <div>
+            <label class="field-label">Discipline</label>
+            <select class="field-select mt-1.5"
+              [ngModel]="inviteDefaultRole()" (ngModelChange)="inviteDefaultRole.set($event)">
+              @for (d of disciplines(); track d) {
+                <option [value]="d">{{ d }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="mt-5 flex justify-end gap-2">
+          <button type="button" (click)="closePanel()"
+            class="rounded-lg px-4 py-2 text-xs font-medium text-slate-400 transition hover:text-white">Cancel</button>
+          <button type="button" (click)="submitInvite()" [disabled]="!inviteEmail().trim()"
+            class="rounded-lg bg-sky-500 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400 disabled:opacity-50">
+            Send invite
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Create / Edit Custom Role -->
+    @if (activePanel() === 'create-role' || activePanel() === 'edit-role') {
+      <div class="fixed inset-0 z-50 m-auto h-fit w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+        <div class="flex items-start justify-between gap-3">
+          <h3 class="text-sm font-semibold text-white">
+            {{ activePanel() === 'edit-role' ? 'Edit Role' : 'New Role' }}
+          </h3>
+          <button type="button" (click)="closePanel()"
+            class="-mr-1.5 -mt-1.5 shrink-0 rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-white"
+            title="Close">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+        <div class="mt-4 space-y-4">
+          <div>
+            <label class="field-label">Role name</label>
+            <input type="text" placeholder="e.g. Tech Lead"
+              [ngModel]="roleFormName()" (ngModelChange)="roleFormName.set($event)"
+              class="field-input mt-1.5" />
+          </div>
+          <div>
+            <label class="field-label">Description</label>
+            <input type="text" placeholder="Short description (optional)"
+              [ngModel]="roleFormDescription()" (ngModelChange)="roleFormDescription.set($event)"
+              class="field-input mt-1.5" />
+          </div>
+          <div>
+            <label class="field-label mb-2 block">Permissions</label>
+            <div class="grid grid-cols-2 gap-1.5">
+              @for (p of ALL_PERMISSIONS; track p) {
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs transition"
+                  [ngClass]="hasPermission(p) ? 'border-sky-500/40 bg-sky-500/5' : 'border-slate-800'">
+                  <input type="checkbox" [checked]="hasPermission(p)" (change)="togglePermission(p)"
+                    class="h-3.5 w-3.5 accent-sky-500" />
+                  <span [class.text-sky-400]="hasPermission(p)" [class.text-slate-400]="!hasPermission(p)">
+                    {{ PERMISSION_LABELS[p] }}
+                  </span>
+                </label>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="mt-5 flex justify-end gap-2">
+          <button type="button" (click)="closePanel()"
+            class="rounded-lg px-4 py-2 text-xs font-medium text-slate-400 transition hover:text-white">Cancel</button>
+          <button type="button" (click)="submitRoleForm()" [disabled]="!roleFormName().trim()"
+            class="rounded-lg bg-sky-500 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400 disabled:opacity-50">
+            {{ activePanel() === 'edit-role' ? 'Save changes' : 'Create role' }}
+          </button>
+        </div>
+      </div>
+    }
+  }
+
+</div>

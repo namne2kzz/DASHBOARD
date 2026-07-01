@@ -1,0 +1,48 @@
+<div [formGroup]="form()" class="flex flex-col gap-5">
+
+  <div class="type-section">
+    <p class="type-section-title text-amber-300/70">Task — QA</p>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Unit Test</label>
+        <textarea formControlName="unitTest" rows="3"
+          class="field-textarea" placeholder="Test coverage notes…"></textarea>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Design Review</label>
+        <textarea formControlName="designReview" rows="3"
+          class="field-textarea" placeholder="Review notes…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="type-section">
+    <p class="type-section-title text-amber-300/70">Task — Estimates</p>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Original Est. (h)</label>
+        <input formControlName="originalEstimate" type="number" min="0" step="0.5"
+          class="field-input" placeholder="—"/>
+        @if (form().controls['originalEstimate'].errors?.['min']) {
+          <p class="text-xs text-rose-400">Must be ≥ 0.</p>
+        }
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Remaining (h)</label>
+        <input formControlName="remainingWork" type="number" min="0" step="0.5"
+          class="field-input" placeholder="—"/>
+        @if (form().controls['remainingWork'].errors?.['min']) {
+          <p class="text-xs text-rose-400">Must be ≥ 0.</p>
+        } @else if (form().controls['remainingWork'].errors?.['exceedsOriginal']) {
+          <p class="text-xs text-rose-400">Cannot exceed original estimate.</p>
+        }
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Completed (h)</label>
+        <input formControlName="completedWork" type="number"
+          class="field-input opacity-60 cursor-not-allowed" placeholder="—" readonly/>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,72 @@
+.wiki-content :where(h1, h2, h3, h4) {
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.wiki-content :where(h1) {
+  font-size: 1.75rem;
+}
+
+.wiki-content :where(h2) {
+  font-size: 1.35rem;
+}
+
+.wiki-content :where(p, ul, ol) {
+  margin-bottom: 0.75em;
+  line-height: 1.65;
+  color: #cbd5e1;
+}
+
+.wiki-content :where(a) {
+  color: #38bdf8;
+  text-decoration: underline;
+}
+
+.wiki-content :where(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.wiki-content :where(th, td) {
+  border: 1px solid #334155;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.wiki-content :where(th) {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.wiki-content :where(pre, code) {
+  background: #1e293b;
+  border-radius: 0.375rem;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.wiki-content :where(pre) {
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+}
+
+.wiki-content :where(blockquote) {
+  border-left: 4px solid #0ea5e9;
+  padding-left: 1rem;
+  color: #94a3b8;
+  margin: 1rem 0;
+}
+
+.wiki-content :where(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  border: 1px solid #334155;
+}
+
+.wiki-content :where(ul, ol) {
+  padding-left: 1.5rem;
+}

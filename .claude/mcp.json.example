@@ -1,0 +1,95 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:/DEV/YourSolution"
+      ],
+      "_comment": "Thay C:/DEV/YourSolution bằng root folder của project thực tế. Claude sẽ đọc/ghi trực tiếp vào folder này."
+    },
+
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_REPLACE_WITH_YOUR_TOKEN"
+      },
+      "_comment": "Tạo token tại github.com/settings/tokens — cần quyền repo, issues, pull_requests."
+    },
+
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://USERNAME:PASSWORD@localhost:5432/YOUR_DATABASE"
+      ],
+      "_comment": "Dùng cho PostgreSQL. Claude có thể query trực tiếp để debug, verify migration, phân tích data. Chỉ dùng readonly user cho production."
+    },
+
+    "sqlserver": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-mssql"
+      ],
+      "env": {
+        "MSSQL_HOST": "localhost",
+        "MSSQL_PORT": "1433",
+        "MSSQL_DATABASE": "YOUR_DATABASE",
+        "MSSQL_USER": "YOUR_USER",
+        "MSSQL_PASSWORD": "YOUR_PASSWORD",
+        "MSSQL_ENCRYPT": "false",
+        "MSSQL_TRUST_SERVER_CERTIFICATE": "true"
+      },
+      "_comment": "Dùng cho SQL Server. Với Azure SQL thì đổi MSSQL_ENCRYPT=true và dùng connection string Azure."
+    },
+
+    "redis": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-redis",
+        "redis://localhost:6379"
+      ],
+      "_comment": "Inspect cache keys, xem TTL, debug session data. Thay URL nếu dùng Redis Cloud hoặc Azure Cache for Redis."
+    },
+
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp"
+      ],
+      "_comment": "Browser automation — Claude tự mở browser, click, fill form, chụp screenshot. Dùng để test Angular UI hoặc E2E verification. Cần: npx playwright install"
+    },
+
+    "azure-devops": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@microsoft/azure-devops-mcp"
+      ],
+      "env": {
+        "AZURE_DEVOPS_ORG_URL": "https://dev.azure.com/YOUR_ORG_NAME",
+        "AZURE_DEVOPS_PAT": "ghp_REPLACE_WITH_YOUR_AZURE_DEVOPS_PAT"
+      },
+      "_comment": "Xem work items, pipeline runs, PRs trực tiếp từ Claude. Tạo PAT tại dev.azure.com → User Settings → Personal Access Tokens. Quyền cần: Work Items (Read/Write), Code (Read), Build (Read)."
+    },
+
+    "roslyn": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "roslyn-codelens-mcp",
+        "C:/DEV/YourSolution/YourApp.sln"
+      ],
+      "_comment": "Semantic .NET code analysis qua Roslyn compiler: find symbol, find references, detect circular dependencies, dead code. Chính xác hơn filesystem text search, tiết kiệm ~10x tokens. Thay path đến .sln file thực tế."
+    }
+  }
+}

@@ -1,0 +1,117 @@
+<div
+  class="group relative cursor-pointer rounded-xl border border-slate-800/80 border-l-4 bg-slate-900/70 p-3 shadow-sm ring-1 ring-white/5"
+  [ngClass]="leftBorderClass[task().type]"
+  (click)="opened.emit(task())"
+>
+  <div class="flex gap-2">
+    <!-- drag handle -->
+    <div
+      cdkDragHandle
+      class="flex w-5 shrink-0 cursor-grab flex-col items-center justify-center gap-0.5 rounded-md bg-slate-800/40 py-2 text-slate-500 hover:bg-slate-800 hover:text-slate-300 active:cursor-grabbing"
+      title="Drag to move"
+      (click)="$event.stopPropagation()"
+    >
+      <span class="h-1 w-1 rounded-full bg-current"></span>
+      <span class="h-1 w-1 rounded-full bg-current"></span>
+      <span class="h-1 w-1 rounded-full bg-current"></span>
+      <span class="h-1 w-1 rounded-full bg-current"></span>
+      <span class="h-1 w-1 rounded-full bg-current"></span>
+      <span class="h-1 w-1 rounded-full bg-current"></span>
+    </div>
+
+    <!-- content -->
+    <div class="min-w-0 flex-1">
+      <div class="flex gap-2">
+        <!-- type icon -->
+        <div
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1"
+          [ngClass]="typeIconClass[task().type]"
+          aria-hidden="true"
+        >
+          @switch (task().type) {
+            @case ('user-story') {
+              <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                <path d="M8 7h8M8 11h8" />
+              </svg>
+            }
+            @case ('bug') {
+              <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M8 2h8l1 6H7L8 2z" />
+                <path d="M7 8h10v2a5 5 0 0 1-10 0V8z" />
+                <path d="M12 15v3M9 22h6" />
+              </svg>
+            }
+            @case ('task') {
+              <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            }
+            @case ('test-plan') {
+              <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                <rect x="9" y="3" width="6" height="4" rx="1" ry="1" />
+                <path stroke-linecap="round" d="M9 12h6M9 16h4" />
+              </svg>
+            }
+          }
+        </div>
+
+        <!-- text -->
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-mono text-slate-500">{{ task().workItemNumber }}</span>
+            <span
+              class="h-1.5 w-1.5 shrink-0 rounded-full"
+              [ngClass]="priorityDotClass[task().priority]"
+              [title]="task().priority"
+            ></span>
+          </div>
+          <h3 class="mt-0.5 line-clamp-2 text-xs font-semibold leading-snug text-slate-100">{{ task().title }}</h3>
+        </div>
+      </div>
+
+      <!-- footer: state badge + aging + assignee -->
+      <div class="mt-2 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span
+            class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1"
+            [ngClass]="stateBadge[task().apiState]"
+          >{{ stateLabel[task().apiState] }}</span>
+
+          @if (isAging()) {
+            <div class="group/aging relative shrink-0">
+              <!-- ping glow ring -->
+              <span class="absolute inset-0 rounded-full bg-orange-500/30 animate-ping"></span>
+              <span class="relative inline-flex cursor-default items-center gap-1 rounded-full bg-orange-900/50 px-1.5 py-0.5 text-[9px] font-semibold text-orange-300 ring-1 ring-orange-600/60">
+                <svg class="h-2.5 w-2.5 shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" /><path stroke-linecap="round" d="M12 6v6l4 2" />
+                </svg>
+                {{ agingDays() }}d
+              </span>
+              <div class="pointer-events-none absolute bottom-full left-0 z-50 mb-1.5 whitespace-nowrap rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs text-slate-200 shadow-lg ring-1 ring-white/10 opacity-0 transition-opacity group-hover/aging:opacity-100">
+                Stale {{ agingDays() }} day{{ agingDays() === 1 ? '' : 's' }} · limit {{ agingLimitDays() }}d
+                <span class="absolute top-full left-3 border-4 border-transparent border-t-slate-800"></span>
+              </div>
+            </div>
+          }
+        </div>
+
+        @if (members.getMember(task().assignedToId); as m) {
+          <div
+            class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white ring-2 ring-slate-900"
+            [ngClass]="m.avatarClass"
+            [title]="m.userName"
+          >{{ members.initials(m.userName) }}</div>
+        } @else if (task().assignedToName) {
+          <div
+            class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[9px] font-bold text-slate-300 ring-2 ring-slate-900"
+            [title]="task().assignedToName!"
+          >{{ task().assignedToName!.slice(0, 2).toUpperCase() }}</div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

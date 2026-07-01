@@ -1,0 +1,52 @@
+<div [formGroup]="form()" class="flex flex-col gap-5">
+
+  <div class="type-section">
+    <p class="type-section-title text-rose-400/70">Bug</p>
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Steps to Reproduce</label>
+        <textarea formControlName="stepsToReproduce" rows="4"
+          class="field-textarea" placeholder="1. Navigate to…&#10;2. Click…&#10;3. Observe…"></textarea>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Environment</label>
+        <input formControlName="environment" type="text"
+          class="field-input" placeholder="e.g. Chrome 124 / Windows 11 / Prod"/>
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label">Root Cause</label>
+          <textarea formControlName="rootCause" rows="3"
+            class="field-textarea" placeholder="Why did this happen?"></textarea>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label">Solution</label>
+          <textarea formControlName="solution" rows="3"
+            class="field-textarea" placeholder="How was it fixed?"></textarea>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Impact</label>
+        <textarea formControlName="impaction" rows="2"
+          class="field-textarea" placeholder="Who / what does this affect?"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="type-section">
+    <p class="type-section-title text-rose-400/70">Bug — QA</p>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Unit Test</label>
+        <textarea formControlName="unitTest" rows="3"
+          class="field-textarea" placeholder="Test coverage notes…"></textarea>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label class="field-label">Design Review</label>
+        <textarea formControlName="designReview" rows="3"
+          class="field-textarea" placeholder="Review notes…"></textarea>
+      </div>
+    </div>
+  </div>
+
+</div>

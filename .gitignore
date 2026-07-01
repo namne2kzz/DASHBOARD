@@ -1,0 +1,35 @@
+# ── Secrets & local overrides ──────────────────────────────────────────────
+.env
+.claude/settings.local.json
+.claude/self-test.local.json
+
+# ── IDE / tooling ───────────────────────────────────────────────────────────
+.vs/
+.idea/
+*.user
+*.suo
+
+# ── Playwright MCP output (screenshots, snapshots, console logs) ────────────
+.playwright-mcp/
+
+# ── Temporary screenshots / debug images in project root ───────────────────
+*.png
+*.jpg
+*.jpeg
+!**/assets/**/*.png
+!**/assets/**/*.jpg
+
+# ── .NET build outputs ──────────────────────────────────────────────────────
+**/bin/
+**/obj/
+*.pubxml
+*.pubxml.user
+
+# ── Angular / Node ──────────────────────────────────────────────────────────
+DASHBOARD.VIEW/node_modules/
+DASHBOARD.VIEW/dist/
+DASHBOARD.VIEW/.angular/
+
+# ── Docker & misc ───────────────────────────────────────────────────────────
+.env.*
+!.env.example

@@ -1,0 +1,223 @@
+<div class="min-h-0 flex-1 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
+
+  <!-- sticky top bar -->
+  <header class="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/90 px-6 pt-3 pb-2.5 backdrop-blur-md">
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300/90">Your Profile</p>
+  </header>
+
+  <div class="mx-auto max-w-2xl px-6 py-8 flex flex-col gap-6">
+
+    <!-- ── Identity card ──────────────────────────────────────── -->
+    <section class="flex items-center gap-5 rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+      <!-- Avatar -->
+      <div
+        class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-bold text-white shadow-lg ring-2 ring-white/10"
+        [ngClass]="user()?.avatarClass || 'bg-slate-700'"
+      >
+        {{ members.initials(user()?.name ?? '') }}
+      </div>
+
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2">
+          <h1 class="truncate text-lg font-semibold text-slate-100">{{ user()?.name }}</h1>
+          @if (user()?.isGlobalAdmin) {
+            <span class="shrink-0 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300 ring-1 ring-amber-500/30">
+              Admin
+            </span>
+          }
+        </div>
+        <p class="mt-0.5 truncate text-sm text-slate-400">{{ user()?.email }}</p>
+      </div>
+    </section>
+
+    <!-- ── Repo membership ────────────────────────────────────── -->
+    @if (repoCtx.selectedRepo(); as repo) {
+      <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+        <h2 class="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500">
+          Repository Membership
+        </h2>
+
+        <div class="flex flex-col gap-3">
+          <!-- Repo name -->
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-slate-400">Repository</span>
+            <span class="flex items-center gap-2 text-sm font-medium text-slate-200">
+              <svg class="h-3.5 w-3.5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <ellipse cx="12" cy="6" rx="8" ry="3" />
+                <path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" />
+                <path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
+              </svg>
+              {{ repo.name }}
+            </span>
+          </div>
+
+          <!-- Role -->
+          @if (role()) {
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-slate-400">Role</span>
+              <span class="rounded-full bg-sky-500/15 px-2.5 py-0.5 text-xs font-semibold text-sky-300 ring-1 ring-sky-500/30">
+                {{ role() }}
+              </span>
+            </div>
+          }
+
+          <!-- Joined date -->
+          @if (currentMember()?.joinedAt) {
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-slate-400">Joined</span>
+              <span class="text-sm text-slate-200">{{ currentMember()!.joinedAt | localDate:'MMM d, y' }}</span>
+            </div>
+
+            <!-- Days in repo -->
+            <div class="flex items-center justify-between">
+              <span class="text-sm text-slate-400">Time in repo</span>
+              <span class="text-sm font-semibold text-slate-200">
+                {{ daysInRepo() }}
+                <span class="font-normal text-slate-400">{{ daysInRepo() === 1 ? 'day' : 'days' }}</span>
+              </span>
+            </div>
+          }
+
+          <!-- Member count -->
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-slate-400">Team size</span>
+            <span class="text-sm text-slate-200">{{ repo.memberCount }} members</span>
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- ── Edit profile ───────────────────────────────────────── -->
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+      <h2 class="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500">Edit Profile</h2>
+
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="flex flex-col gap-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label">Display Name</label>
+          <input
+            formControlName="name"
+            type="text"
+            class="field-input"
+            placeholder="Your full name"
+          />
+          @if (profileForm.controls['name'].invalid && profileForm.controls['name'].dirty) {
+            <p class="text-xs text-rose-400">Name must be at least 2 characters.</p>
+          }
+        </div>
+
+        <div class="flex justify-end">
+          <button
+            type="submit"
+            class="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-500 disabled:opacity-50"
+            [disabled]="profileForm.invalid || !profileForm.dirty || savingProfile()"
+          >
+            {{ savingProfile() ? 'Saving…' : 'Save changes' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ── Change password ────────────────────────────────────── -->
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+      <h2 class="mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500">Change Password</h2>
+
+      <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="flex flex-col gap-4">
+
+        <!-- Current password -->
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label">Current Password</label>
+          <div class="relative">
+            <input
+              formControlName="currentPassword"
+              [type]="showCurrent() ? 'text' : 'password'"
+              class="field-input pr-10"
+              placeholder="Enter current password"
+            />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+              (click)="showCurrent.set(!showCurrent())">
+              @if (showCurrent()) {
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              } @else {
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- New password -->
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label">New Password</label>
+          <div class="relative">
+            <input
+              formControlName="newPassword"
+              [type]="showNew() ? 'text' : 'password'"
+              class="field-input pr-10"
+              placeholder="At least 8 characters"
+            />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+              (click)="showNew.set(!showNew())">
+              @if (showNew()) {
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              } @else {
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              }
+            </button>
+          </div>
+          @if (passwordForm.controls['newPassword'].invalid && passwordForm.controls['newPassword'].dirty) {
+            <p class="text-xs text-rose-400">Password must be at least 8 characters.</p>
+          }
+        </div>
+
+        <!-- Confirm password -->
+        <div class="flex flex-col gap-1.5">
+          <label class="field-label">Confirm New Password</label>
+          <div class="relative">
+            <input
+              formControlName="confirmPassword"
+              [type]="showConfirm() ? 'text' : 'password'"
+              class="field-input pr-10"
+              placeholder="Repeat new password"
+            />
+            <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+              (click)="showConfirm.set(!showConfirm())">
+              @if (showConfirm()) {
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              } @else {
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              }
+            </button>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button
+            type="submit"
+            class="rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 shadow-sm ring-1 ring-slate-600 transition hover:bg-slate-600 disabled:opacity-50"
+            [disabled]="passwordForm.invalid || savingPassword()"
+          >
+            {{ savingPassword() ? 'Changing…' : 'Change password' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+  </div>
+</div>

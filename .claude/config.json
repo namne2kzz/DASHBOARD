@@ -1,0 +1,45 @@
+{
+  "version": "2.0",
+  "description": "Full-Stack .NET + Angular + DB Claude Code config",
+  "model": {
+    "default": "claude-sonnet-4-6",
+    "reasoning_tasks": "claude-opus-4-7",
+    "fast_edits": "claude-haiku-4-5-20251001"
+  },
+  "stack": {
+    "backend": {
+      "framework": ".NET 10",
+      "language": "C# 14",
+      "architecture": "Clean Architecture + DDD + CQRS",
+      "orm": "Entity Framework Core 10",
+      "mediator": "MediatR 12",
+      "validation": "FluentValidation 11",
+      "testing": "xUnit + Moq + FluentAssertions"
+    },
+    "frontend": {
+      "framework": "Angular 20",
+      "language": "TypeScript 5.x",
+      "state": "Angular Signals",
+      "testing": "Jasmine + Karma / Playwright"
+    },
+    "database": {
+      "primary": "SQL Server 2022 / Azure SQL",
+      "secondary": "PostgreSQL 16",
+      "cache": "Redis 7 (StackExchange.Redis)"
+    },
+    "cloud": {
+      "provider": "Azure",
+      "services": ["AKS", "App Service", "Service Bus", "Key Vault", "Application Insights", "Azure SQL"]
+    }
+  },
+  "project_paths": {
+    "backend": "DASHBOARD",
+    "frontend": "DASHBOARD.VIEW/src/app"
+  },
+  "skills": ".claude/skills/<name>/SKILL.md",
+  "agents": ".claude/agents/<name>.md",
+  "prompts": {
+    "system": "prompts/system/expert-fullstack.md",
+    "tasks": "prompts/tasks"
+  }
+}

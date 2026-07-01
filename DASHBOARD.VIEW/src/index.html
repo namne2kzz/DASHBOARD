@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TaskDashboard</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!--
+    Apply the persisted theme synchronously, before Angular bootstraps, to
+    avoid a flash of the default theme on load. Key must match
+    StorageKeys.theme ('nxs.ui.theme'); ThemeService keeps it in sync after.
+  -->
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('nxs.ui.theme') === 'light') {
+          document.documentElement.classList.add('theme-light');
+        }
+      } catch (e) { /* localStorage unavailable — fall back to default theme */ }
+    })();
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<div [formGroup]="form()" class="type-section">
+  <p class="type-section-title text-violet-400/70">Test Plan</p>
+  <div class="flex flex-col gap-4">
+
+    <div class="flex items-center gap-3">
+      <label class="field-label mb-0">Automated</label>
+      <button type="button"
+        class="flex h-6 w-11 items-center rounded-full border transition-colors"
+        [class.bg-violet-500]="form().get('automated')?.value === true"
+        [class.border-violet-500]="form().get('automated')?.value === true"
+        [class.bg-slate-700]="form().get('automated')?.value !== true"
+        [class.border-slate-600]="form().get('automated')?.value !== true"
+        (click)="toggleAutomated()">
+        <span class="ml-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
+          [class.translate-x-5]="form().get('automated')?.value === true"></span>
+      </button>
+      <span class="text-xs text-slate-400">
+        {{ form().get('automated')?.value === true ? 'Yes' : form().get('automated')?.value === false ? 'No' : 'Not set' }}
+      </span>
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="field-label">Test Steps <span class="font-normal text-slate-500">(one per line)</span></label>
+      <textarea formControlName="testStepsText" rows="6"
+        class="field-textarea font-mono text-xs"
+        placeholder="Step 1: Open the login page&#10;Step 2: Enter valid credentials&#10;Step 3: Verify redirect to dashboard"></textarea>
+    </div>
+
+  </div>
+</div>

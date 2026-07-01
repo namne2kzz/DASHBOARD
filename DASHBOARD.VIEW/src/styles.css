@@ -1,0 +1,488 @@
+@import "quill/dist/quill.snow.css";
+@import "ngx-toastr/toastr";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+body {
+  @apply m-0 bg-slate-950 text-slate-100 antialiased;
+}
+
+/* ── Work-item detail shared field styles ──────────────────── */
+.field-label {
+  @apply text-xs font-semibold uppercase tracking-wide text-slate-400;
+}
+
+.field-input {
+  @apply w-full rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 outline-none transition hover:border-slate-600 placeholder:text-slate-600 focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/20;
+}
+
+.field-textarea {
+  @apply w-full resize-none rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-100 outline-none transition hover:border-slate-600 placeholder:text-slate-600 focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/20;
+}
+
+.field-select {
+  @apply w-full rounded-xl border border-slate-700 bg-slate-900/60 py-2 pl-3 pr-9 text-sm text-slate-100 outline-none transition hover:border-slate-600 focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/20;
+}
+
+.type-section {
+  @apply flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-900/40 p-4;
+}
+
+.type-section-title {
+  @apply text-xs font-semibold uppercase tracking-widest;
+}
+
+/* ── Native <select> — unified soft control (all selects, both themes) ──────
+   appearance reset + custom chevron so every dropdown matches the rounded,
+   soft design language without editing each template. Box geometry (radius,
+   bg, padding) still comes from .field-select / per-instance utilities; this
+   only supplies the arrow + interaction polish shared by every select.
+   NOTE: the floating option list itself is rendered by the OS/browser and can
+   only be colour-tuned (see `select option` below) — it cannot be rounded via
+   CSS. A custom listbox component would be needed for a fully styled popup. */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 1rem;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+/* Reserve room for the chevron on selects that don't use .field-select. */
+select:not(.field-select) {
+  padding-right: 2rem;
+}
+
+/* Native select — option list colours (Chrome/Edge on Windows) */
+select option {
+  background-color: #0f172a; /* slate-950 */
+  color: #e2e8f0;            /* slate-200 */
+}
+
+select option:hover,
+select option:checked {
+  background-color: #0ea5e9; /* sky-500 */
+  color: #020617;            /* slate-950 */
+}
+
+/* ── Global thin scrollbar (theme-matched) ─────────────────── */
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #334155;
+  border-radius: 9999px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #475569;
+}
+
+/* Light theme — soft sky-tinted thumb (brand sky→indigo) so it adds a touch
+   of colour instead of plain gray; the dark slate thumb is jarring on a
+   light page (e.g. the board's horizontal scrollbar). */
+html.theme-light .custom-scroll {
+  scrollbar-color: #a3c9ef transparent;
+}
+html.theme-light .custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #a3c9ef;
+}
+html.theme-light .custom-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #7fb0e6;
+}
+
+/* ── Light theme ───────────────────────────────────────────── */
+/*
+  Elevation goes TOWARD white (matching how the dark theme raises
+  surfaces toward lighter slate). Layered, readable, easy on the eyes:
+
+    page  (slate-950) #e4e9f2   soft cool gray — recedes, never glaring
+    card  (slate-900) #ffffff   clean white panels that float above page
+    well  (slate-800) #eef2f7   inset chips / icon tiles / wells on cards
+    fill  (slate-700) #dbe2ec   stronger fills (secondary buttons)
+    line  (border)    #d4dce7 / #b9c4d3   visible card + input borders
+*/
+html.theme-light {
+  color-scheme: light;
+}
+
+html.theme-light body {
+  background-color: #e4e9f2;
+  color: #1f2937;
+}
+
+/* ── Backgrounds ───────────────────────────────────────────── */
+/* slate-950 = page background. A pair of faint, viewport-anchored colour
+   glows (sky top-left, indigo top-right) give the page depth and warmth
+   instead of a flat grey. background-attachment:fixed keeps the gradient
+   pinned to the viewport, so small bg-slate-950 inputs sample a near-flat
+   colour and never look smeared. */
+html.theme-light .bg-slate-950 {
+  background-color: #e4e9f2 !important;
+  background-image:
+    radial-gradient(1150px 640px at 8% -10%, rgba(56, 189, 248, 0.20), transparent 56%),
+    radial-gradient(1050px 700px at 104% 0%, rgba(167, 139, 250, 0.18), transparent 55%),
+    radial-gradient(900px 600px at 50% 118%, rgba(99, 102, 241, 0.10), transparent 60%) !important;
+  background-attachment: fixed !important;
+  background-repeat: no-repeat !important;
+}
+html.theme-light .bg-slate-950\/90       { background-color: rgba(228,233,242,0.92) !important; }
+html.theme-light .bg-slate-950\/80       { background-color: rgba(228,233,242,0.8) !important; }
+html.theme-light .bg-slate-950\/70       { background-color: rgba(228,233,242,0.7) !important; }
+html.theme-light .bg-slate-950\/30       { background-color: rgba(228,233,242,0.3) !important; }
+
+/* slate-900 = card / panel surface → FROSTED GLASS.
+   Slightly translucent + backdrop blur + saturate, so the page's sky→violet
+   glow bleeds through and tints each card by its position (cyan top-left,
+   violet top-right) instead of flat white. A diagonal sheen adds dimension;
+   the inset top highlight (in the shadow rule below) finishes the glass look.
+   Prominent overlays (modals/menus = shadow-xl/2xl) opt back out to solid
+   white just after this, so they never pick up the dark modal scrim. */
+html.theme-light .bg-slate-900,
+html.theme-light .bg-slate-900\/90,
+html.theme-light .bg-slate-900\/80,
+html.theme-light .bg-slate-900\/70,
+html.theme-light .bg-slate-900\/60,
+html.theme-light .bg-slate-900\/50,
+html.theme-light .bg-slate-900\/40 {
+  background-color: rgba(255, 255, 255, 0.76) !important;
+  background-image: linear-gradient(152deg, rgba(255, 255, 255, 0.55) 0%, rgba(236, 242, 253, 0.12) 100%) !important;
+  -webkit-backdrop-filter: blur(13px) saturate(1.4) !important;
+  backdrop-filter: blur(13px) saturate(1.4) !important;
+}
+html.theme-light .bg-slate-900\/95       { background-color: rgba(255,255,255,0.95) !important; }
+html.theme-light .bg-slate-900\/30       { background-color: rgba(255,255,255,0.5) !important; }
+
+/* Modals & floating menus stay crisp solid white (no glass, no scrim bleed). */
+html.theme-light .bg-slate-900.shadow-2xl,
+html.theme-light .bg-slate-900.shadow-xl {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* slate-800 = inset wells / chips / icon tiles → light gray on white */
+html.theme-light .bg-slate-800           { background-color: #e9edf4 !important; }
+html.theme-light .bg-slate-800\/95       { background-color: rgba(233,237,244,0.95) !important; }
+html.theme-light .bg-slate-800\/80       { background-color: #edf1f7 !important; }
+html.theme-light .bg-slate-800\/70       { background-color: #eef2f7 !important; }
+html.theme-light .bg-slate-800\/60       { background-color: #f0f3f8 !important; }
+html.theme-light .bg-slate-800\/50       { background-color: #f1f4f9 !important; }
+html.theme-light .bg-slate-800\/40       { background-color: #f2f5f9 !important; }
+html.theme-light .bg-slate-800\/20       { background-color: #f5f7fb !important; }
+
+/* slate-700 = stronger fills (secondary buttons, scrollbars) */
+html.theme-light .bg-slate-700           { background-color: #dbe2ec !important; }
+html.theme-light .bg-slate-700\/80       { background-color: rgba(219,226,236,0.85) !important; }
+html.theme-light .bg-slate-700\/70       { background-color: rgba(219,226,236,0.75) !important; }
+html.theme-light .bg-slate-700\/60       { background-color: rgba(219,226,236,0.65) !important; }
+
+html.theme-light .bg-\[\#0c1828\]        { background-color: #ffffff !important; }
+html.theme-light .bg-\[\#0d1b2a\]        { background-color: #ffffff !important; }
+html.theme-light .bg-white\/\[0\.03\]    { background-color: rgba(15,23,42,0.035) !important; }
+html.theme-light .bg-white\/\[0\.05\]    { background-color: rgba(15,23,42,0.05) !important; }
+
+/* ── Hover backgrounds ─────────────────────────────────────── */
+html.theme-light .hover\:bg-slate-800:hover      { background-color: #e3e9f1 !important; }
+html.theme-light .hover\:bg-slate-800\/80:hover  { background-color: #e7ecf3 !important; }
+html.theme-light .hover\:bg-slate-800\/70:hover  { background-color: #e9eef4 !important; }
+html.theme-light .hover\:bg-slate-800\/60:hover  { background-color: #ebeff5 !important; }
+html.theme-light .hover\:bg-slate-700\/60:hover  { background-color: #dde4ee !important; }
+html.theme-light .hover\:bg-slate-700\/50:hover  { background-color: #e1e7f0 !important; }
+html.theme-light .hover\:bg-slate-700:hover      { background-color: #d3dbe7 !important; }
+
+/* ── Text ──────────────────────────────────────────────────── */
+html.theme-light .text-white             { color: #0f172a !important; }
+html.theme-light .text-slate-50          { color: #0f172a !important; }
+html.theme-light .text-slate-100         { color: #111827 !important; }
+html.theme-light .text-slate-200         { color: #1f2937 !important; }
+html.theme-light .text-slate-300         { color: #334155 !important; }
+html.theme-light .text-slate-400         { color: #52617a !important; }
+html.theme-light .text-slate-500         { color: #64748b !important; }
+html.theme-light .text-slate-600         { color: #76859a !important; }
+
+html.theme-light .hover\:text-white:hover      { color: #0f172a !important; }
+html.theme-light .hover\:text-slate-100:hover  { color: #111827 !important; }
+html.theme-light .hover\:text-slate-300:hover  { color: #334155 !important; }
+
+/* ── Borders — crisp hairlines (elevation carried by shadow, not heavy lines) */
+html.theme-light .border-slate-800       { border-color: #e5e9f0 !important; }
+html.theme-light .border-slate-800\/90   { border-color: rgba(229,233,240,0.9) !important; }
+html.theme-light .border-slate-800\/80   { border-color: rgba(229,233,240,0.85) !important; }
+html.theme-light .border-slate-800\/70   { border-color: rgba(229,233,240,0.75) !important; }
+html.theme-light .border-slate-700       { border-color: #cdd6e2 !important; }
+html.theme-light .border-slate-700\/70   { border-color: rgba(205,214,226,0.7) !important; }
+
+/* ── Rings ─────────────────────────────────────────────────── */
+html.theme-light .ring-white\/5          { --tw-ring-color: rgba(15,23,42,0.06) !important; }
+html.theme-light .ring-white\/\[0\.05\]  { --tw-ring-color: rgba(15,23,42,0.06) !important; }
+html.theme-light .ring-white\/\[0\.06\]  { --tw-ring-color: rgba(15,23,42,0.07) !important; }
+html.theme-light .ring-white\/10         { --tw-ring-color: rgba(15,23,42,0.1) !important; }
+html.theme-light .ring-slate-950         { --tw-ring-color: #e4e9f2 !important; }
+html.theme-light .ring-slate-900         { --tw-ring-color: #ffffff !important; }
+html.theme-light .ring-slate-600         { --tw-ring-color: #b9c4d3 !important; }
+/* slate ring used as a hairline border on chips / inputs → soft light line */
+html.theme-light .ring-slate-700         { --tw-ring-color: #c2cdda !important; }
+html.theme-light .ring-slate-700\/80     { --tw-ring-color: rgba(194,205,218,0.8) !important; }
+html.theme-light .ring-slate-700\/50     { --tw-ring-color: rgba(194,205,218,0.55) !important; }
+html.theme-light .ring-slate-800         { --tw-ring-color: #d4dce7 !important; }
+html.theme-light .ring-slate-800\/60     { --tw-ring-color: rgba(212,220,231,0.6) !important; }
+
+/* ── Gaps: remaining opacity variants in use ───────────────── */
+html.theme-light .bg-slate-950\/60       { background-color: rgba(228,233,242,0.6) !important; }
+html.theme-light .bg-slate-950\/50       { background-color: rgba(228,233,242,0.5) !important; }
+html.theme-light .bg-slate-950\/40       { background-color: rgba(228,233,242,0.4) !important; }
+html.theme-light .bg-slate-800\/90       { background-color: rgba(233,237,244,0.92) !important; }
+html.theme-light .bg-slate-700\/50       { background-color: rgba(219,226,236,0.55) !important; }
+html.theme-light .hover\:bg-slate-800\/50:hover { background-color: #f1f4f9 !important; }
+html.theme-light .hover\:border-slate-700:hover { border-color: #b9c4d3 !important; }
+html.theme-light .border-slate-800\/60   { border-color: rgba(229,233,240,0.6) !important; }
+html.theme-light .border-slate-800\/40   { border-color: rgba(229,233,240,0.4) !important; }
+html.theme-light .border-slate-700\/60   { border-color: rgba(205,214,226,0.6) !important; }
+
+/* ── Card elevation ────────────────────────────────────────────
+   White panels need a real, layered shadow to float above the page —
+   this is what makes the light theme feel crafted instead of flat.
+   Applies to every card-level surface (solid + translucent slate-900). */
+html.theme-light .bg-slate-900,
+html.theme-light .bg-slate-900\/90,
+html.theme-light .bg-slate-900\/80,
+html.theme-light .bg-slate-900\/70,
+html.theme-light .bg-slate-900\/60,
+html.theme-light .bg-slate-900\/50,
+html.theme-light .bg-slate-900\/40 {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75),
+              0 1px 2px rgba(16, 24, 40, 0.05),
+              0 6px 18px -6px rgba(30, 41, 99, 0.16) !important;
+}
+
+/* Sidebar / sticky blur panels (slate-900/95) — slim edge shadow plus a
+   faint top-to-bottom tint so the rail reads as its own surface, not a
+   flat white slab. */
+html.theme-light .bg-slate-900\/95 {
+  background-image: linear-gradient(180deg, #ffffff 0%, #f3f6fc 100%) !important;
+  box-shadow: 1px 0 0 rgba(16, 24, 40, 0.04),
+              4px 0 16px -8px rgba(16, 24, 40, 0.08) !important;
+}
+
+/* ── Select / native dropdown ──────────────────────────────── */
+/* Darker chevron so it stays visible on light select backgrounds. */
+html.theme-light select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+}
+html.theme-light select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+html.theme-light select option:hover,
+html.theme-light select option:checked {
+  background-color: #0ea5e9;
+  color: #ffffff;
+}
+
+/* ── Shared field utilities ────────────────────────────────── */
+html.theme-light .field-input,
+html.theme-light .field-textarea,
+html.theme-light .field-select {
+  background-color: #ffffff;
+  border-color: #c2cdda;
+  color: #0f172a;
+}
+html.theme-light .field-input::placeholder,
+html.theme-light .field-textarea::placeholder { color: #94a3b8; }
+
+html.theme-light .type-section {
+  background-color: #f5f8fb;
+  border-color: #d4dce7;
+}
+
+/* ── Gradient stops (board bg-gradient-to-b) ───────────────── */
+html.theme-light .from-slate-950 {
+  --tw-gradient-from: #e4e9f2 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(228,233,242,0)) !important;
+}
+html.theme-light .via-slate-950 {
+  --tw-gradient-stops: var(--tw-gradient-from), #e4e9f2, var(--tw-gradient-to, rgba(228,233,242,0)) !important;
+}
+html.theme-light .to-slate-900 {
+  --tw-gradient-to: #ffffff !important;
+}
+
+/* ── Accent text — dark theme uses light -200/300/400 tints that wash
+      out on a light background; deepen them so badges, status pills and
+      coloured icons stay legible. ──────────────────────────────── */
+html.theme-light .text-sky-200       { color: #0284c7 !important; }
+html.theme-light .text-sky-300       { color: #0284c7 !important; }
+html.theme-light .text-sky-300\/90   { color: rgba(2,132,199,0.9) !important; }
+html.theme-light .text-sky-400       { color: #0284c7 !important; }
+html.theme-light .text-sky-400\/90   { color: #0284c7 !important; }
+html.theme-light .text-sky-400\/80   { color: #0369a1 !important; }
+html.theme-light .text-sky-500\/70   { color: #0369a1 !important; }
+
+html.theme-light .text-emerald-200   { color: #047857 !important; }
+html.theme-light .text-emerald-300   { color: #059669 !important; }
+html.theme-light .text-emerald-400   { color: #059669 !important; }
+
+html.theme-light .text-amber-200     { color: #b45309 !important; }
+html.theme-light .text-amber-300     { color: #b45309 !important; }
+html.theme-light .text-amber-400     { color: #b45309 !important; }
+
+html.theme-light .text-rose-200      { color: #be123c !important; }
+html.theme-light .text-rose-300      { color: #e11d48 !important; }
+html.theme-light .text-rose-400      { color: #e11d48 !important; }
+
+html.theme-light .text-red-300       { color: #dc2626 !important; }
+html.theme-light .text-red-400       { color: #dc2626 !important; }
+
+html.theme-light .text-violet-300    { color: #7c3aed !important; }
+html.theme-light .text-violet-400    { color: #7c3aed !important; }
+
+html.theme-light .text-orange-300    { color: #ea580c !important; }
+html.theme-light .text-yellow-400    { color: #ca8a04 !important; }
+
+/* Aging / "stale" badge (task card): the dark-orange pill
+   (bg-orange-900/50 + text-orange-300) turns muddy and illegible on the
+   light board. Repaint it as a soft amber chip with a deep-orange label and
+   ring. Scoped to the badge so plain text-orange-300 elsewhere is untouched. */
+html.theme-light .bg-orange-900\/50                  { background-color: #ffedd5 !important; }
+html.theme-light .bg-orange-900\/50.text-orange-300  { color: #9a3412 !important; }
+html.theme-light .ring-orange-600\/60                { --tw-ring-color: rgba(234,88,12,0.5) !important; }
+
+/* ════════════════════════════════════════════════════════════════
+   BRAND ACCENTS (light) — inject colour & life so the UI feels
+   designed, not just "not-dark". Sky→indigo is the primary brand duo.
+   ════════════════════════════════════════════════════════════════ */
+
+/* Primary CTAs → vivid sky→indigo gradient with a coloured glow.
+   (.bg-sky-500 only — translucent /10 /15 /20 tints are untouched.) */
+html.theme-light .bg-sky-500 {
+  background-image: linear-gradient(135deg, #0ea5e9 0%, #4f46e5 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18),
+              0 8px 20px -6px rgba(37, 99, 235, 0.45) !important;
+}
+html.theme-light .hover\:bg-sky-400:hover {
+  background-image: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%) !important;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.22),
+              0 12px 26px -6px rgba(37, 99, 235, 0.55) !important;
+}
+
+/* Same recipe (diagonal gradient + matching coloured glow) applied to every
+   solid action-button colour, each kept in its own semantic hue. Translucent
+   tints (.bg-*-500/10 etc.) and neutral secondary buttons stay untouched, so
+   the primary/secondary hierarchy stays clear. */
+
+/* sky-600 (deeper primary) */
+html.theme-light .bg-sky-600 {
+  background-image: linear-gradient(135deg, #0284c7 0%, #4338ca 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18), 0 8px 20px -6px rgba(37, 99, 235, 0.45) !important;
+}
+html.theme-light .hover\:bg-sky-500:hover {
+  background-image: linear-gradient(135deg, #0ea5e9 0%, #4f46e5 100%) !important;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.22), 0 12px 26px -6px rgba(37, 99, 235, 0.55) !important;
+}
+
+/* emerald — save / promote / confirm */
+html.theme-light .bg-emerald-500,
+html.theme-light .bg-emerald-600 {
+  background-image: linear-gradient(135deg, #10b981 0%, #0d9488 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2), 0 8px 20px -6px rgba(13, 148, 136, 0.45) !important;
+}
+html.theme-light .hover\:bg-emerald-500:hover,
+html.theme-light .hover\:bg-emerald-400:hover {
+  background-image: linear-gradient(135deg, #34d399 0%, #14b8a6 100%) !important;
+  box-shadow: 0 2px 4px rgba(13, 148, 136, 0.24), 0 12px 26px -6px rgba(13, 148, 136, 0.55) !important;
+}
+
+/* rose / red — delete / de-scope / danger */
+html.theme-light .bg-rose-500,
+html.theme-light .bg-rose-600,
+html.theme-light .bg-red-500 {
+  background-image: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(225, 29, 72, 0.2), 0 8px 20px -6px rgba(225, 29, 72, 0.45) !important;
+}
+html.theme-light .hover\:bg-rose-500:hover {
+  background-image: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%) !important;
+  box-shadow: 0 2px 4px rgba(225, 29, 72, 0.24), 0 12px 26px -6px rgba(225, 29, 72, 0.55) !important;
+}
+
+/* amber / orange — warning / secondary action */
+html.theme-light .bg-amber-500,
+html.theme-light .bg-orange-500 {
+  background-image: linear-gradient(135deg, #f59e0b 0%, #f97316 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(217, 119, 6, 0.2), 0 8px 20px -6px rgba(217, 119, 6, 0.42) !important;
+}
+html.theme-light .hover\:bg-amber-500:hover,
+html.theme-light .hover\:bg-amber-400:hover {
+  background-image: linear-gradient(135deg, #fbbf24 0%, #fb923c 100%) !important;
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.24), 0 12px 26px -6px rgba(217, 119, 6, 0.52) !important;
+}
+
+/* violet — special / test-plan accents */
+html.theme-light .bg-violet-500 {
+  background-image: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(124, 58, 237, 0.2), 0 8px 20px -6px rgba(124, 58, 237, 0.45) !important;
+}
+html.theme-light .hover\:bg-violet-500:hover {
+  background-image: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%) !important;
+  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.24), 0 12px 26px -6px rgba(124, 58, 237, 0.55) !important;
+}
+
+/* Active nav pill / selected chips (bg-sky-500/15) → soft duo-tone wash */
+html.theme-light .bg-sky-500\/15 {
+  background-image: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(99, 102, 241, 0.16)) !important;
+}
+html.theme-light .bg-sky-500\/10 {
+  background-image: linear-gradient(135deg, rgba(14, 165, 233, 0.11), rgba(99, 102, 241, 0.11)) !important;
+}
+
+/* Sky accent ring on active items → indigo-leaning for richer colour */
+html.theme-light .ring-sky-500\/30   { --tw-ring-color: rgba(79, 70, 229, 0.34) !important; }
+html.theme-light .ring-sky-500\/20   { --tw-ring-color: rgba(79, 70, 229, 0.24) !important; }
+
+/* Uppercase eyebrow page-titles (always <p>) → gradient brand text.
+   Scoped to <p> so SVG icons sharing text-sky-400 keep a solid fill. */
+html.theme-light p.text-sky-400\/90,
+html.theme-light p.text-sky-400\/80 {
+  background-image: linear-gradient(90deg, #0284c7 0%, #6366f1 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent !important;
+}

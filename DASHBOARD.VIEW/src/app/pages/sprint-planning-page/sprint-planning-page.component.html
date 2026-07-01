@@ -1,0 +1,450 @@
+<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-4 py-6">
+  <div class="space-y-6">
+    <header class="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400/90">Sprint Planning</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <select
+          class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-sky-400"
+          [ngModel]="planning.selectedSprintId()"
+          (ngModelChange)="planning.selectSprint($event)"
+        >
+          @for (sprint of planning.sprints(); track sprint.id) {
+            <option [ngValue]="sprint.id">{{ sprint.name }}{{ sprint.isActive ? ' ✦' : '' }}</option>
+          }
+        </select>
+        <button
+          type="button"
+          class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400"
+          (click)="openNewSprint()"
+        >
+          New sprint
+        </button>
+        @if (planning.error()) {
+          <p class="rounded-lg border border-rose-800 bg-rose-950/50 px-3 py-2 text-xs text-rose-300">{{ planning.error() }}</p>
+        }
+      </div>
+    </header>
+
+    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+
+        <!-- Header row -->
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-sm font-semibold text-slate-100">Sprint backlog setup</h2>
+
+          @if (editMode()) {
+            <!-- Save / Cancel -->
+            <div class="flex items-center gap-1">
+              <button
+                type="button"
+                class="rounded-lg p-1.5 text-emerald-400 transition hover:bg-slate-800 hover:text-emerald-300 disabled:opacity-40"
+                title="Save"
+                [disabled]="!editName().trim() || !editStart() || !editEnd() || editStart() >= editEnd()"
+                (click)="saveEdit()"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+                title="Cancel"
+                (click)="cancelEdit()"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          } @else if (canEditSelectedSprint()) {
+            <!-- Kebab menu -->
+            <div class="relative" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+                title="More actions"
+                (click)="setupMenuOpen.set(!setupMenuOpen())"
+              >
+                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z"/>
+                </svg>
+              </button>
+              @if (setupMenuOpen()) {
+                <div class="absolute right-0 top-8 z-20 min-w-[9rem] overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl">
+                  <button
+                    type="button"
+                    class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                    (click)="startEdit()"
+                  >
+                    <svg class="h-3.5 w-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Edit
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Edit mode: name + dates -->
+        @if (editMode()) {
+          <div class="mt-3 space-y-3">
+            <input
+              type="text"
+              placeholder="Sprint name"
+              class="w-full rounded-lg border border-sky-500 bg-slate-950 px-3 py-2 text-sm font-semibold text-slate-100 outline-none"
+              [ngModel]="editName()"
+              (ngModelChange)="editName.set($event)"
+            />
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label class="space-y-1">
+                <span class="text-xs font-medium text-slate-400">Start date</span>
+                <input
+                  type="date"
+                  class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400"
+                  [ngModel]="editStart()"
+                  (ngModelChange)="editStart.set($event)"
+                />
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs font-medium text-slate-400">End date</span>
+                <input
+                  type="date"
+                  class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400"
+                  [ngModel]="editEnd()"
+                  (ngModelChange)="editEnd.set($event)"
+                />
+              </label>
+            </div>
+            @if (editStart() && editEnd() && editStart() >= editEnd()) {
+              <p class="text-xs text-rose-400">End date must be after start date.</p>
+            }
+          </div>
+        } @else {
+          <!-- View mode: read-only dates -->
+          <div class="mt-3 grid gap-3 sm:grid-cols-2">
+            <div class="space-y-1">
+              <span class="text-xs font-medium text-slate-400">Start date</span>
+              <p class="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100">
+                {{ planning.selectedSprint()?.startDate ?? '—' }}
+              </p>
+            </div>
+            <div class="space-y-1">
+              <span class="text-xs font-medium text-slate-400">End date</span>
+              <p class="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100">
+                {{ planning.selectedSprint()?.endDate ?? '—' }}
+              </p>
+            </div>
+          </div>
+        }
+
+        <!-- Stats -->
+        <div class="mt-4 grid gap-3 sm:grid-cols-3">
+          <div class="rounded-lg bg-slate-950/50 p-3 ring-1 ring-slate-800">
+            <p class="text-xs uppercase text-slate-500">Working days</p>
+            <p class="mt-1 text-xl font-bold text-white">{{ planning.workingDays() }}</p>
+          </div>
+          <div class="rounded-lg bg-slate-950/50 p-3 ring-1 ring-slate-800">
+            <p class="text-xs uppercase text-slate-500">Team days off</p>
+            <p class="mt-1 text-xl font-bold text-white">{{ planning.teamDaysOff().length }}</p>
+          </div>
+          <div class="rounded-lg bg-slate-950/50 p-3 ring-1 ring-slate-800">
+            <p class="text-xs uppercase text-slate-500">Effective days</p>
+            <p class="mt-1 text-xl font-bold text-white">{{ planning.effectiveWorkingDays() }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-sm font-semibold text-slate-100">Team load</h2>
+          <span
+            class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase ring-1"
+            [class]="
+              planning.teamLoadState() === 'safe'
+                ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
+                : planning.teamLoadState() === 'warning'
+                  ? 'bg-amber-500/15 text-amber-200 ring-amber-500/40'
+                  : 'bg-rose-500/15 text-rose-200 ring-rose-500/40'
+            "
+          >
+            {{ planning.teamLoadState() }}
+          </span>
+        </div>
+
+        <div class="mt-4">
+          <div class="flex items-end justify-between text-sm">
+            <span class="text-slate-400">Remaining work / capacity</span>
+            <span class="font-semibold text-white">
+              {{ planning.totalWorkload() }}h / {{ planning.totalCapacity() }}h
+            </span>
+          </div>
+          <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-800">
+            <div
+              class="h-full rounded-full transition-all"
+              [class]="planning.progressBarClass(planning.teamLoadState())"
+              [style.width.%]="planning.cappedPercent(planning.teamLoadPercent())"
+            ></div>
+          </div>
+          <p class="mt-2 text-xs text-slate-500">{{ planning.teamLoadPercent() }}% load based on active task Remaining Work.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-sm font-semibold text-slate-100">Capacity planning</h2>
+        <button
+          type="button"
+          class="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+          (click)="openAddCapacityMember()"
+        >+ Add member</button>
+      </div>
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full min-w-[760px] text-left text-sm">
+          <thead>
+            <tr class="text-xs uppercase text-slate-500">
+              <th class="pb-2 pr-4 font-medium">Member</th>
+              <th class="pb-2 pr-4 font-medium">Role</th>
+              <th class="pb-2 pr-4 font-medium">Hours/day</th>
+              <th class="pb-2 pr-4 font-medium">OT/day</th>
+              <th class="pb-2 pr-4 font-medium">Days off</th>
+              <th class="pb-2 pr-4 font-medium">Capacity</th>
+              <th class="pb-2 pr-4 font-medium">Workload</th>
+              <th class="pb-2 font-medium">Load</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800">
+            @for (member of planning.memberLoads(); track member.userId) {
+              <tr>
+                <td class="py-3 pr-4 font-medium text-slate-100">{{ member.name }}</td>
+                <td class="py-3 pr-4 text-slate-400">{{ member.role }}</td>
+                <td class="py-3 pr-4">
+                  <input
+                    type="number"
+                    min="0"
+                    max="12"
+                    step="0.5"
+                    class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 [appearance:textfield]"
+                    [ngModel]="member.hoursPerDay"
+                    (change)="planning.updateHours(member.userId, +$any($event.target).value)"
+                  />
+                </td>
+                <td class="py-3 pr-4">
+                  <input
+                    type="number"
+                    min="0"
+                    max="6"
+                    step="0.5"
+                    class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 [appearance:textfield]"
+                    [ngModel]="member.overtimeHoursPerDay"
+                    (change)="planning.updateOvertime(member.userId, +$any($event.target).value)"
+                  />
+                </td>
+                <td class="py-3 pr-4 text-slate-400">{{ member.personalDaysOff }}h</td>
+                <td class="py-3 pr-4 text-slate-100">{{ member.capacity }}h</td>
+                <td class="py-3 pr-4 text-slate-100">{{ member.workload }}h</td>
+                <td class="py-3">
+                  <div class="flex min-w-48 items-center gap-3">
+                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
+                      <div
+                        class="h-full rounded-full transition-all"
+                        [class]="planning.progressBarClass(member.state)"
+                        [style.width.%]="planning.cappedPercent(member.loadPercent)"
+                      ></div>
+                    </div>
+                    <span class="w-12 text-right text-xs text-slate-300">{{ member.loadPercent }}%</span>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+        <h2 class="text-sm font-semibold text-slate-100">Product backlog</h2>
+        <ul class="mt-3 space-y-2">
+          @for (story of planning.backlogStories(); track story.id) {
+            <li class="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-medium text-slate-100">{{ story.title }}</p>
+                  <p class="text-xs text-slate-500">{{ story.storyPoints }} story points</p>
+                </div>
+                <button
+                  type="button"
+                  class="rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-400"
+                  (click)="planning.moveStoryToSprint(story.id)"
+                >
+                  Move to sprint
+                </button>
+              </div>
+            </li>
+          } @empty {
+            <li class="rounded-lg border border-dashed border-slate-700 p-4 text-sm text-slate-500">No backlog stories.</li>
+          }
+        </ul>
+      </div>
+
+      <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+        <h2 class="text-sm font-semibold text-slate-100">Sprint stories</h2>
+        <ul class="mt-3 space-y-2">
+          @for (story of planning.sprintStories(); track story.id) {
+            <li class="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="font-medium text-slate-100">{{ story.title }}</p>
+                  <p class="text-xs text-slate-500">{{ story.storyPoints }} sp · {{ story.state }}</p>
+                </div>
+                <div class="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    class="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+                    (click)="openAddTask(story)"
+                  >
+                    + Task
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-lg bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-200 ring-1 ring-rose-500/40 transition hover:bg-rose-500/20"
+                    (click)="planning.descopeStory(story.id)"
+                  >
+                    De-scope
+                  </button>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    </section>
+
+    <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+      <h2 class="text-sm font-semibold text-slate-100">Task workload</h2>
+      <div class="mt-4 overflow-x-auto">
+        <table class="w-full min-w-[900px] text-left text-sm">
+          <thead>
+            <tr class="text-xs uppercase text-slate-500">
+              <th class="pb-2 pr-4 font-medium">Task</th>
+              <th class="pb-2 pr-4 font-medium">State</th>
+              <th class="pb-2 pr-4 font-medium">Original</th>
+              <th class="pb-2 pr-4 font-medium">Remaining</th>
+              <th class="pb-2 font-medium">Assignee</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800">
+            @for (task of planning.sprintTaskRows(); track task.id) {
+              <tr>
+                <td class="w-64 py-3 pr-4">
+                  <p class="truncate font-medium text-slate-100" [title]="task.title">{{ task.title }}</p>
+                  <p class="truncate text-xs text-slate-500">{{ parentStoryTitle(task.parentId) }}</p>
+                </td>
+                <td class="py-3 pr-4">
+                  <select
+                    class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    [ngModel]="task.state"
+                    (ngModelChange)="planning.changeTaskState(task.id, $event)"
+                    [disabled]="!planning.canEditWorkItem()"
+                  >
+                    @for (opt of taskStateOptions; track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                </td>
+                <td class="py-3 pr-4 text-slate-100">{{ task.originalEstimate }}h</td>
+                <td class="py-3 pr-4">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 [appearance:textfield]"
+                    [ngModel]="task.remainingWork"
+                    (change)="planning.updateRemainingWork(task.id, +$any($event.target).value)"
+                  />
+                </td>
+
+                <!-- Compact reassign picker -->
+                <td class="py-3">
+                  <button
+                    type="button"
+                    class="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-300 transition hover:border-slate-600 hover:text-white"
+                    (click)="openReassign(task.id, $any($event.currentTarget), $event)"
+                  >
+                    @if (members.getMember(task.assignedToId); as m) {
+                      <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                        [ngClass]="m.avatarClass">{{ members.initials(m.userName) }}</div>
+                      <span class="max-w-[6rem] truncate">{{ m.userName }}</span>
+                    } @else {
+                      <span class="text-slate-500">Unassigned</span>
+                    }
+                    <svg class="h-3 w-3 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Reassign dropdown — rendered outside table to avoid stacking-context clipping -->
+@if (reassignOpenTaskId() && reassignRect()) {
+  @for (task of planning.sprintTaskRows(); track task.id) {
+    @if (reassignOpenTaskId() === task.id) {
+      <div
+        #reassignPanel
+        class="fixed z-[9990] overflow-hidden rounded-xl border border-slate-700 bg-slate-800/95 shadow-2xl backdrop-blur-sm"
+        [style.top.px]="reassignRect()!.top"
+        [style.left.px]="reassignRect()!.left"
+        [style.width.px]="reassignRect()!.width"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="px-2 py-1.5">
+          <input
+            type="text"
+            placeholder="Search…"
+            class="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 outline-none focus:border-sky-400"
+            [ngModel]="reassignSearch()"
+            (ngModelChange)="reassignSearch.set($event)"
+          />
+        </div>
+        <div class="custom-scroll max-h-40 overflow-y-auto py-1">
+          <button type="button"
+            class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition hover:bg-slate-700/60"
+            [class]="!task.assignedToId ? 'text-sky-300' : 'text-slate-400'"
+            (click)="doReassign(task.id, '', $event)"
+          >
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[9px] text-slate-400">—</span>
+            Unassigned
+          </button>
+          @for (m of filteredReassignMembers(); track m.userId) {
+            <button type="button"
+              class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition hover:bg-slate-700/60"
+              [class]="task.assignedToId === m.userId ? 'text-sky-300' : 'text-slate-200'"
+              (click)="doReassign(task.id, m.userId, $event)"
+            >
+              @if (members.getMember(m.userId); as mem) {
+                <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                  [ngClass]="mem.avatarClass">{{ members.initials(mem.userName) }}</div>
+              }
+              <span class="truncate">{{ m.name }}</span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+  }
+}

@@ -1,0 +1,623 @@
+<div class="custom-scroll min-h-0 flex-1 overflow-auto bg-slate-950 px-4 py-6">
+  <div class="space-y-6">
+
+    <!-- ── Error banner ───────────────────────────────────────────────────── -->
+    @if (backlog.error()) {
+      <div class="flex items-center gap-3 rounded-lg border border-rose-800 bg-rose-950/50 px-4 py-3 text-sm text-rose-300">
+        <span class="shrink-0 text-rose-400">⚠</span>
+        {{ backlog.error() }}
+      </div>
+    }
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <header class="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400/90">Backlog Management</p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="backlog.loading()"
+          (click)="openAddDialog()"
+        >
+          Add item
+        </button>
+      </div>
+    </header>
+
+    <!-- ── Summary cards ──────────────────────────────────────────────────── -->
+    @if (backlog.loading()) {
+      <section class="grid gap-3 md:grid-cols-4">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <div class="animate-pulse rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+            <div class="h-3 w-16 rounded bg-slate-700"></div>
+            <div class="mt-2 h-7 w-10 rounded bg-slate-700"></div>
+          </div>
+        }
+      </section>
+    } @else {
+      <section class="grid gap-3 md:grid-cols-4">
+        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+          <p class="text-xs uppercase text-slate-500">Epics</p>
+          <p class="mt-1 text-xl font-bold text-white">{{ backlog.epics().length }}</p>
+        </div>
+        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+          <p class="text-xs uppercase text-slate-500">Features</p>
+          <p class="mt-1 text-xl font-bold text-white">{{ backlog.features().length }}</p>
+        </div>
+        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+          <p class="text-xs uppercase text-slate-500">User stories</p>
+          <p class="mt-1 text-xl font-bold text-white">{{ backlog.stories().length }}</p>
+        </div>
+        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+          <p class="text-xs uppercase text-slate-500">Ready</p>
+          <p class="mt-1 text-xl font-bold text-white">{{ backlog.readyStories() }}</p>
+        </div>
+      </section>
+    }
+
+    <!-- ── Priority rank + portfolio ──────────────────────────────────────── -->
+    <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-wrap items-center gap-2">
+          @for (level of backlog.levels; track level) {
+            <button
+              type="button"
+              class="rounded-lg px-3 py-2 text-sm font-semibold ring-1 transition"
+              [class]="
+                backlog.activeLevel() === level
+                  ? 'bg-sky-500/15 text-sky-200 ring-sky-500/40'
+                  : 'bg-slate-950/60 text-slate-300 ring-slate-700 hover:bg-slate-800'
+              "
+              (click)="backlog.setLevel(level)"
+            >
+              {{ backlog.levelLabel(level) }}
+            </button>
+          }
+
+          @if (backlog.epics().length > 0) {
+            <div class="relative" (click)="$event.stopPropagation()">
+              <div
+                class="flex min-w-[10rem] items-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs transition cursor-pointer"
+                [class]="backlog.selectedEpicId()
+                  ? 'border-sky-500/50 bg-sky-500/10 text-sky-200'
+                  : 'border-slate-700 bg-slate-950 text-slate-400'"
+                (click)="epicPickerOpen.set(!epicPickerOpen())"
+              >
+                <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
+                </svg>
+                <span class="flex-1 truncate max-w-[8rem]">
+                  {{ selectedEpicTitle() }}
+                </span>
+                @if (backlog.selectedEpicId()) {
+                  <button
+                    type="button"
+                    class="ml-1 text-sky-400 hover:text-white"
+                    (click)="$event.stopPropagation(); selectEpicFilter(null)"
+                  >✕</button>
+                }
+              </div>
+
+              @if (epicPickerOpen()) {
+                <div class="absolute left-0 top-full z-30 mt-1 w-64 overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl">
+                  <div class="p-2">
+                    <input
+                      type="text"
+                      placeholder="Search epics..."
+                      class="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-sky-400"
+                      [ngModel]="epicSearch()"
+                      (ngModelChange)="epicSearch.set($event)"
+                      (click)="$event.stopPropagation()"
+                    />
+                  </div>
+                  <div class="max-h-48 overflow-y-auto">
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:bg-slate-800 hover:text-white transition"
+                      (click)="selectEpicFilter(null)"
+                    >
+                      <span class="h-1.5 w-1.5 rounded-full bg-slate-600"></span>
+                      All Epics
+                    </button>
+                    @for (epic of filteredEpics(); track epic.id) {
+                      <button
+                        type="button"
+                        class="flex w-full items-center gap-2 px-3 py-2 text-xs transition"
+                        [class]="backlog.selectedEpicId() === epic.id
+                          ? 'bg-sky-500/15 text-sky-200'
+                          : 'text-slate-300 hover:bg-slate-800 hover:text-white'"
+                        (click)="selectEpicFilter(epic.id)"
+                      >
+                        <span class="h-1.5 w-1.5 rounded-full bg-sky-400/60"></span>
+                        <span class="truncate">{{ epic.title }}</span>
+                      </button>
+                    }
+                    @if (filteredEpics().length === 0) {
+                      <p class="px-3 py-2 text-xs text-slate-600">No epics match</p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-semibold uppercase text-slate-500">Estimate mode</span>
+          <button
+            type="button"
+            class="rounded-lg px-3 py-2 text-xs font-semibold ring-1 transition"
+            [class]="
+              backlog.estimateMode() === 'fibonacci'
+                ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
+                : 'bg-slate-950/60 text-slate-300 ring-slate-700 hover:bg-slate-800'
+            "
+            (click)="backlog.setEstimateMode('fibonacci')"
+          >
+            Fibonacci
+          </button>
+          <button
+            type="button"
+            class="rounded-lg px-3 py-2 text-xs font-semibold ring-1 transition"
+            [class]="
+              backlog.estimateMode() === 'tshirt'
+                ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
+                : 'bg-slate-950/60 text-slate-300 ring-slate-700 hover:bg-slate-800'
+            "
+            (click)="backlog.setEstimateMode('tshirt')"
+          >
+            T-shirt
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-6 xl:grid-cols-[1fr_0.8fr]">
+
+        <!-- Ranked list -->
+        <div>
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-slate-100">{{ backlog.levelLabel(backlog.activeLevel()) }}</h2>
+            <p class="text-xs text-slate-500">Drag rows to recalculate decimal stack rank.</p>
+          </div>
+
+          @if (backlog.loading()) {
+            <div class="space-y-2">
+              @for (_ of [1, 2, 3]; track $index) {
+                <div class="animate-pulse rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+                  <div class="flex items-center gap-2">
+                    <div class="h-5 w-8 rounded bg-slate-700"></div>
+                    <div class="h-5 w-16 rounded bg-slate-700"></div>
+                    <div class="h-5 w-14 rounded bg-slate-700"></div>
+                  </div>
+                  <div class="mt-2 h-4 w-48 rounded bg-slate-700"></div>
+                  <div class="mt-1 h-3 w-32 rounded bg-slate-700"></div>
+                </div>
+              }
+            </div>
+          } @else if (backlog.visibleItems().length === 0) {
+            <div class="flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 py-10 text-center">
+              <p class="text-sm font-medium text-slate-400">No {{ backlog.levelLabel(backlog.activeLevel()).toLowerCase() }} yet</p>
+              <p class="mt-1 text-xs text-slate-600">Create items using the "Add story" button above, or switch levels.</p>
+            </div>
+          } @else {
+            <div
+              cdkDropList
+              [cdkDropListData]="backlog.visibleItems()"
+              class="space-y-2"
+              (cdkDropListDropped)="backlog.drop($event)"
+            >
+              @for (item of backlog.visibleItems(); track item.id; let idx = $index) {
+                <article
+                  cdkDrag
+                  class="rounded-lg border border-slate-800 bg-slate-950/50 p-3 ring-1 ring-transparent transition-colors hover:border-slate-700"
+                >
+                  <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <div
+                          cdkDragHandle
+                          class="flex w-5 shrink-0 cursor-grab flex-col items-center justify-center gap-0.5 rounded-md bg-slate-800/40 py-2 text-slate-500 hover:bg-slate-800 hover:text-slate-300 active:cursor-grabbing"
+                          title="Drag to reorder"
+                        >
+                          <span class="h-1 w-1 rounded-full bg-current"></span>
+                          <span class="h-1 w-1 rounded-full bg-current"></span>
+                          <span class="h-1 w-1 rounded-full bg-current"></span>
+                          <span class="h-1 w-1 rounded-full bg-current"></span>
+                          <span class="h-1 w-1 rounded-full bg-current"></span>
+                          <span class="h-1 w-1 rounded-full bg-current"></span>
+                        </div>
+                        <span class="rounded bg-slate-800 px-2 py-1 text-xs font-mono text-sky-300">
+                          {{ item.rank | number: '1.0-4' }}
+                        </span>
+                        <span
+                          class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase ring-1"
+                          [class]="
+                            item.state === 'ready'
+                              ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
+                              : item.state === 'committed'
+                                ? 'bg-sky-500/15 text-sky-200 ring-sky-500/40'
+                                : 'bg-slate-700/50 text-slate-300 ring-slate-600'
+                          "
+                        >
+                          {{ item.state }}
+                        </span>
+                      </div>
+                      <!-- Inline title edit / display -->
+                      @if (editingId() === item.id) {
+                        <textarea
+                          rows="2"
+                          class="mt-2 w-full resize-none rounded-lg border border-sky-500 bg-slate-950 px-3 py-1.5 text-base font-semibold text-slate-100 outline-none"
+                          [ngModel]="editTitle()"
+                          (ngModelChange)="editTitle.set($event)"
+                          (keydown.enter)="$event.preventDefault(); confirmEdit(item.id)"
+                          (keydown.escape)="cancelEdit()"
+                          (blur)="confirmEdit(item.id)"
+                        ></textarea>
+                      } @else {
+                        <h3 class="mt-2 font-semibold text-slate-100">{{ item.title }}</h3>
+                      }
+                      <p class="mt-1 text-xs text-slate-500">
+                        Parent: {{ backlog.parentTitle(item) }} - Children: {{ backlog.childCount(item.id) }}
+                      </p>
+                    </div>
+
+                    <div class="flex items-start gap-2">
+                      <div class="grid gap-2 sm:grid-cols-2 lg:w-[21rem]">
+                        <!-- Row 1: Move top | Promote to sprint -->
+                        <button
+                          type="button"
+                          class="rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+                          (click)="backlog.moveToTop(item.id)"
+                        >
+                          Move top
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded-lg px-3 py-2 text-xs font-semibold ring-1 transition"
+                          [class]="item.type === 'user-story' && item.state === 'ready'
+                            ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40 hover:bg-emerald-500/25'
+                            : 'cursor-not-allowed bg-slate-800/40 text-slate-500 ring-slate-700/50'"
+                          [disabled]="item.type !== 'user-story' || item.state !== 'ready'"
+                          [title]="item.type !== 'user-story' ? 'Only user stories can be promoted' : item.state !== 'ready' ? 'Item must be in Ready state' : 'Promote to sprint'"
+                          (click)="openPromote(item.id)"
+                        >
+                          Promote
+                        </button>
+
+                        <!-- Row 2: Sprint assignment | Move to position -->
+                        <select
+                          class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+                          [ngModel]="item.sprintId ?? ''"
+                          [disabled]="item.state === 'committed'"
+                          [title]="item.state === 'committed' ? 'Sprint is locked after promotion' : 'Assign to sprint'"
+                          (ngModelChange)="backlog.moveToIteration(item.id, $event)"
+                        >
+                          <option value="">Unassigned</option>
+                          @for (sprint of backlog.sprints(); track sprint.id) {
+                            <option [ngValue]="sprint.id">{{ sprint.name }}</option>
+                          }
+                        </select>
+
+                        <div>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Move to position"
+                            class="peer w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-sky-400 invalid:border-rose-600 [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden"
+                            (invalid)="$event.preventDefault()"
+                            (change)="backlog.moveToPosition(item.id, $any($event.target).value)"
+                          />
+                          <p class="mt-0.5 hidden text-xs text-rose-400 peer-invalid:block">Enter a position starting from 1</p>
+                        </div>
+
+                        <!-- Promote panel -->
+                        @if (promotingItemId() === item.id) {
+                          <div class="col-span-2 rounded-lg border border-emerald-700/50 bg-emerald-950/30 p-2">
+                            <p class="mb-1.5 text-xs font-semibold text-emerald-300">Select sprint</p>
+                            <select
+                              class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-emerald-500"
+                              [ngModel]="selectedSprintId()"
+                              (ngModelChange)="selectedSprintId.set($event)"
+                            >
+                              @for (sprint of backlog.sprints(); track sprint.id) {
+                                <option [ngValue]="sprint.id">
+                                  {{ sprint.name }}{{ sprint.isActive ? ' (active)' : '' }}
+                                </option>
+                              }
+                            </select>
+                            <div class="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                class="flex-1 rounded-lg bg-emerald-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                                [disabled]="!selectedSprintId()"
+                                (click)="confirmPromote()"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                type="button"
+                                class="rounded-lg px-2 py-1.5 text-xs text-slate-400 transition hover:text-slate-200"
+                                (click)="cancelPromote()"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- ── Kebab menu ─────────────────────────────── -->
+                      <div class="relative shrink-0">
+                        <button
+                          type="button"
+                          class="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
+                          title="More actions"
+                          (click)="$event.stopPropagation(); toggleMenu(item.id)"
+                        >
+                          <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z"/>
+                          </svg>
+                        </button>
+
+                        @if (openMenuId() === item.id) {
+                          <div
+                            class="absolute right-0 top-8 z-20 min-w-[11rem] overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl"
+                            (click)="$event.stopPropagation()"
+                          >
+                            <!-- Edit title -->
+                            <button
+                              type="button"
+                              class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                              (click)="startEdit(item)"
+                            >
+                              <svg class="h-3.5 w-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                              </svg>
+                              Edit title
+                            </button>
+
+                            <!-- State transitions -->
+                            @if (stateOptions(item).length > 0) {
+                              <div class="border-t border-slate-800 px-3 py-1">
+                                <p class="text-xs font-semibold uppercase text-slate-600">Set state</p>
+                              </div>
+                              @for (state of stateOptions(item); track state) {
+                                <button
+                                  type="button"
+                                  class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                                  (click)="setItemState(item.id, state)"
+                                >
+                                  <span class="h-1.5 w-1.5 rounded-full"
+                                    [class]="state === 'ready' ? 'bg-emerald-400' : state === 'refining' ? 'bg-amber-400' : 'bg-slate-500'">
+                                  </span>
+                                  {{ stateLabel(state) }}
+                                </button>
+                              }
+                            }
+
+                            <!-- Delete -->
+                            <div class="border-t border-slate-800">
+                              <button
+                                type="button"
+                                class="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 transition"
+                                (click)="requestDelete(item)"
+                              >
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Delete confirmation strip -->
+                  @if (pendingDeleteId() === item.id) {
+                    <div class="mt-3 flex items-center justify-between rounded-lg border border-rose-800 bg-rose-950/40 px-3 py-2">
+                      <p class="text-xs text-rose-300">
+                        Delete <strong>{{ item.title }}</strong>?
+                        @if (backlog.childCount(item.id) > 0) {
+                          <span class="ml-1 text-rose-400">({{ backlog.childCount(item.id) }} children will also be removed)</span>
+                        }
+                      </p>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          class="rounded px-2 py-1 text-xs text-slate-400 hover:text-slate-200 transition"
+                          (click)="cancelDelete()"
+                        >Cancel</button>
+                        <button
+                          type="button"
+                          class="rounded bg-rose-600 px-2 py-1 text-xs font-semibold text-white hover:bg-rose-500 transition"
+                          (click)="confirmDelete()"
+                        >Delete</button>
+                      </div>
+                    </div>
+                  }
+                </article>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Portfolio hierarchy -->
+        <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-4">
+          <h2 class="text-sm font-semibold text-slate-100">Portfolio hierarchy</h2>
+          @if (backlog.loading()) {
+            <div class="mt-4 space-y-4">
+              @for (_ of [1, 2]; track $index) {
+                <div class="animate-pulse rounded-lg border border-slate-800 bg-slate-900/70 p-3">
+                  <div class="h-4 w-36 rounded bg-slate-700"></div>
+                  <div class="mt-1 h-3 w-20 rounded bg-slate-700"></div>
+                  <div class="mt-3 space-y-2">
+                    <div class="h-8 rounded bg-slate-950/70"></div>
+                    <div class="h-8 rounded bg-slate-950/70"></div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else if (backlog.epics().length === 0) {
+            <p class="mt-4 text-xs text-slate-600">No epics yet. Switch to "Epics" and add the first one.</p>
+          } @else {
+            <div class="mt-4 space-y-4">
+              @for (epic of backlog.epics(); track epic.id) {
+                <div class="rounded-lg border border-slate-800 bg-slate-900/70 p-3">
+                  <p class="font-semibold text-slate-100">{{ epic.title }}</p>
+                  <p class="text-xs text-slate-500">Epic - {{ backlog.childCount(epic.id) }} features</p>
+                  <div class="mt-3 space-y-2">
+                    @for (feature of backlog.features(); track feature.id) {
+                      @if (feature.parentId === epic.id) {
+                        <div class="rounded-lg bg-slate-950/70 p-2 ring-1 ring-slate-800">
+                          <p class="text-sm font-medium text-slate-200">{{ feature.title }}</p>
+                          <p class="text-xs text-slate-500">{{ backlog.childCount(feature.id) }} stories</p>
+                        </div>
+                      }
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Refinement table ───────────────────────────────────────────────── -->
+    <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-100">Backlog refinement</h2>
+          <p class="text-xs text-slate-500">Acceptance criteria, document attachments and constrained estimation.</p>
+        </div>
+        <span class="rounded-full bg-slate-950 px-3 py-1 text-xs text-slate-400 ring-1 ring-slate-700">
+          @if (backlog.estimateMode() === 'fibonacci') {
+            Allowed points: {{ backlog.fibonacciPoints.join(', ') }}
+          } @else {
+            Allowed sizes: {{ backlog.tshirtSizes.join(', ') }}
+          }
+        </span>
+      </div>
+
+      @if (backlog.loading()) {
+        <div class="mt-4 space-y-2">
+          @for (_ of [1, 2, 3]; track $index) {
+            <div class="animate-pulse flex gap-4 border-b border-slate-800 py-3">
+              <div class="flex-1 space-y-1">
+                <div class="h-4 w-48 rounded bg-slate-700"></div>
+                <div class="h-3 w-24 rounded bg-slate-700"></div>
+              </div>
+              <div class="h-8 w-20 rounded bg-slate-700"></div>
+              <div class="h-4 w-16 rounded bg-slate-700"></div>
+              <div class="h-4 w-24 rounded bg-slate-700"></div>
+              <div class="h-16 flex-1 rounded bg-slate-700"></div>
+            </div>
+          }
+        </div>
+      } @else if (backlog.stories().length === 0) {
+        <div class="mt-4 flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-700 py-10 text-center">
+          <p class="text-sm font-medium text-slate-400">No user stories yet</p>
+          <p class="mt-1 text-xs text-slate-600">Use "Add story" to create the first backlog item.</p>
+        </div>
+      } @else {
+        <div class="custom-scroll mt-4 overflow-x-auto">
+          <table class="w-full min-w-[980px] table-fixed text-left text-sm">
+            <thead>
+              <tr class="text-xs uppercase text-slate-500">
+                <th class="w-[34%] pb-2 pr-4 font-medium">User story</th>
+                <th class="w-[8%] pb-2 pr-4 font-medium">Estimate</th>
+                <th class="w-[12%] pb-2 pr-4 font-medium">Iteration</th>
+                <th class="w-[12%] pb-2 pr-4 font-medium">Documents</th>
+                <th class="w-[34%] pb-2 font-medium">Acceptance criteria</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+              @for (story of backlog.stories(); track story.id) {
+                <tr>
+                  <td class="py-3 pr-4">
+                    <p class="line-clamp-2 font-medium text-slate-100" [title]="story.title">{{ story.title }}</p>
+                    <p class="text-xs text-slate-500">{{ backlog.parentTitle(story) }}</p>
+                  </td>
+                  <td class="py-3 pr-4">
+                    @if (backlog.estimateMode() === 'fibonacci') {
+                      <select
+                        class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100 outline-none focus:border-sky-400"
+                        [ngModel]="story.storyPoints"
+                        (ngModelChange)="backlog.updateStoryPoints(story.id, $event)"
+                      >
+                        @for (point of backlog.fibonacciPoints; track point) {
+                          <option [ngValue]="point">{{ point }}</option>
+                        }
+                      </select>
+                    } @else {
+                      <select
+                        class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100 outline-none focus:border-sky-400"
+                        [ngModel]="story.tshirtSize"
+                        (ngModelChange)="backlog.updateTshirtSize(story.id, asTshirtSize($event))"
+                      >
+                        @for (size of backlog.tshirtSizes; track size) {
+                          <option [ngValue]="size">{{ size }}</option>
+                        }
+                      </select>
+                    }
+                  </td>
+                  <td class="py-3 pr-4 text-slate-400">{{ story.sprintName ?? 'Unassigned' }}</td>
+                  <td class="py-3 pr-4">
+                    <div class="flex flex-wrap gap-1">
+                      @for (doc of story.documents; track doc) {
+                        <span class="rounded bg-slate-800 px-2 py-1 text-xs text-slate-300">{{ doc }}</span>
+                      }
+                    </div>
+                    <button
+                      type="button"
+                      class="mt-2 rounded-lg bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+                      (click)="openDocumentsDialog(story)"
+                    >
+                      Documents @if (story.documents.length > 0) { ({{ story.documents.length }}) }
+                    </button>
+                  </td>
+                  <td class="py-3 pr-3">
+                    <div class="flex items-start gap-3">
+                      <div class="min-w-0 flex-1 space-y-1">
+                        @if (story.acceptanceCriteria.length === 0) {
+                          <p class="text-xs italic text-slate-600">No criteria yet</p>
+                        } @else {
+                          @for (ac of story.acceptanceCriteria.slice(0, 2); track $index) {
+                            <p class="flex items-baseline gap-1 text-xs text-slate-400 leading-relaxed">
+                              <span class="shrink-0 font-mono font-semibold text-sky-500/70">AC{{ $index + 1 }}</span>
+                              <span class="min-w-0 flex-1 truncate" [title]="ac">{{ ac }}</span>
+                            </p>
+                          }
+                          @if (story.acceptanceCriteria.length > 2) {
+                            <p class="text-xs text-slate-600">+{{ story.acceptanceCriteria.length - 2 }} more</p>
+                          }
+                        }
+                      </div>
+                      <button
+                        type="button"
+                        class="shrink-0 rounded p-1.5 text-slate-500 transition-colors hover:text-sky-400"
+                        title="Edit acceptance criteria"
+                        (click)="openAcDialog(story)"
+                      >
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+  </div>
+</div>
