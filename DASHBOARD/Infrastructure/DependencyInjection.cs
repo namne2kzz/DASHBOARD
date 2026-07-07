@@ -54,16 +54,21 @@ public static class DependencyInjection
         services.AddScoped<IGitHubIntegrationService, OctokitGitHubIntegrationService>();
 
         // ── Distributed cache (read-through cache for GetGitRepositoryOverviewQueryHandler) ──
-        // DEVIATION FROM PLAN: the plan (github-repo-integration.md §4.4) assumes StackExchange.Redis is
-        // already wired into this project ("project already has StackExchange.Redis"). It is not — no
-        // Redis package, connection string, or registration exists anywhere in this codebase yet. Rather
-        // than guess at Redis connection settings, this registers the in-memory IDistributedCache
-        // implementation as a same-process stand-in. GetGitRepositoryOverviewQueryHandler is written
-        // against IDistributedCache only, so swapping in real Redis later is a one-line change here
-        // (replace AddDistributedMemoryCache with AddStackExchangeRedisCache + a "Redis" connection
-        // string) with no handler code changes. Known limitation until then: the cache is per-instance,
-        // not shared across horizontally scaled app instances.
-        services.AddDistributedMemoryCache();
+        // Backed by real Redis (docker-compose "redis" service) so the cache is shared across app
+        // instances, not per-process. GetGitRepositoryOverviewQueryHandler depends only on
+        // IDistributedCache, so this is the only place that knows the actual cache backend.
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetConnectionString("Redis");
+        });
+
+        // In-process fallback (no external dependency) — kept here, commented out, in case Redis
+        // is ever unavailable/removed and a same-process stand-in is needed again. Swap back by
+        // commenting out the AddStackExchangeRedisCache block above and uncommenting this line;
+        // GetGitRepositoryOverviewQueryHandler needs no changes either way since it only depends
+        // on the IDistributedCache abstraction. Known limitation of this fallback: the cache is
+        // per-instance, not shared across horizontally scaled app instances.
+        // services.AddDistributedMemoryCache();
 
         // ── Auth ──────────────────────────────────────────────────────────────
         services.Configure<JwtSettings>(configuration.GetSection(nameof(JwtSettings)));
@@ -86,6 +91,7 @@ public static class DependencyInjection
         services.AddMassTransit(bus =>
         {
             bus.AddConsumer<InvitationCreatedConsumer>();
+            bus.AddConsumer<GitSyncConsumer>();
 
             bus.UsingRabbitMq((ctx, cfg) =>
             {

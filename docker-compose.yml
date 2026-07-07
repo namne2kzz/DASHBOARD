@@ -72,11 +72,21 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_started
+      redis:
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       ConnectionStrings__Default: "Server=sqlserver,1433;Database=DASHBOARD;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True;"
       RabbitMq__Username: "${RABBITMQ_USER:-guest}"
       RabbitMq__Password: "${RABBITMQ_PASS:-guest}"
+      ConnectionStrings__Redis: "redis:6379"
+      # GitHub connection for project "DASH" — real values come only from .env (gitignored),
+      # never from appsettings.json/appsettings.Production.json. Add more repos under the same
+      # project by appending __1__, __2__... (matching GitConnectionEntry array indices), or add
+      # another block for a different project code (e.g. GitConnections__OTHERCODE__0__...).
+      GitConnections__DASH__0__RepoUrl: "${GITHUB_REPO_URL_DASH}"
+      GitConnections__DASH__0__Token: "${GITHUB_TOKEN_DASH}"
+      GitConnections__DASH__0__IsPrimary: "true"
     ports:
       - "55432:8080"
     restart: unless-stopped
@@ -91,15 +101,19 @@ services:
       - "4201:80"
     restart: unless-stopped
 
-  # Optional — uncomment when you start using Redis (StackExchange.Redis).
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: dashboard-redis
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis-data:/data
-  #   restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    container_name: dashboard-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   # Optional — uncomment when you start using PostgreSQL (EF Core / Npgsql).
   # postgres:
@@ -118,5 +132,5 @@ services:
 volumes:
   sqlserver-data:
   rabbitmq-data:
-  # redis-data:
+  redis-data:
   # postgres-data:

@@ -70,6 +70,9 @@ public sealed class GitConnectionEntry
     public string Token { get; set; } = default!;
     public string? DefaultBranchOverride { get; set; }
     public bool IsPrimary { get; set; }
+
+    /// <summary>Optional — set only if a GitHub webhook is registered for this repo (Phase 3). Used to verify the <c>X-Hub-Signature-256</c> header on incoming webhook deliveries.</summary>
+    public string? WebhookSecret { get; set; }
 }
 ```
 
@@ -189,7 +192,8 @@ Task<GitRateLimitDto> GetRateLimitAsync(string token, CancellationToken ct);
 
 ### 4.4 Sync strategy (unchanged: on-demand + short cache)
 
-- `GetGitRepositoryOverviewQuery` live-calls GitHub through `IGitHubIntegrationService` on every request, wrapped in a **Redis read-through cache** (project already has `StackExchange.Redis`; follow the `redis-cache` skill) keyed `git:overview:{repositoryId}:{repoUrl-hash}` with TTL ~60s, to stay well under GitHub's 5000 req/hr limit when multiple users open the tab.
+- `GetGitRepositoryOverviewQuery` live-calls GitHub through `IGitHubIntegrationService` on every request, wrapped in a read-through cache keyed `git:overview:{repositoryId}:{repoUrl}` with TTL ~60s, to stay well under GitHub's 5000 req/hr limit when multiple users open the tab.
+  > **Implementation note:** the handler depends only on the `IDistributedCache` abstraction, never on Redis directly. It is now backed by **real Redis** — `Microsoft.Extensions.Caching.StackExchangeRedis` + `services.AddStackExchangeRedisCache(...)` reading `ConnectionStrings:Redis` (`Infrastructure/DependencyInjection.cs`). Local dev runs Redis via the `redis` service in `docker-compose.yml` (`redis:7-alpine`, port `6379`, healthcheck `redis-cli ping`) — start it with `docker compose up -d redis`. `appsettings.json` sets `ConnectionStrings:Redis` to `localhost:6379` for native `dotnet run`; the containerized `api` service in `docker-compose.yml` overrides it to `redis:6379` (Docker service-name DNS) via environment variable. An `AddDistributedMemoryCache()` in-process fallback is kept **commented out** right above the Redis registration for easy revert if Redis is ever unavailable/removed — no handler code changes needed either way since everything depends on `IDistributedCache` only.
 - No background job, no webhook in Phase 1–2. Webhooks remain an optional future Phase 3 (§6) — if ever built, the webhook secret would also live in `GitConnectionEntry` (a new `WebhookSecret` field), never in the database.
 
 ---
@@ -232,8 +236,17 @@ No new route, no new guard, no new nav item, no new Settings page. `app.routes.t
 | Phase | Scope | Ships | Explicit non-goals |
 |---|---|---|---|
 | **Phase 1 — Config + read surface** | `GitConnectionsOptions`/`GitConnectionEntry` + startup validator, `Application/GitRepositories/*` queries (masked connection list + overview with `HasConnection` flag but **no live GitHub call yet** — return `Status = "PendingValidation"` and empty collections when connected-but-not-yet-fetched), `Controllers/GitRepositories/*`, example `appsettings.Development.json` entries (local only, gitignored). | Backend can tell, per project, whether/which GitHub repo(s) are configured — no Octokit calls yet. | No commits/branches/PRs data yet; Repos tab still not cut over. |
-| **Phase 2 — Live Repos tab** | `IGitHubIntegrationService` + `OctokitGitHubIntegrationService` (§4), Redis read-through cache, `git-repository.service.ts`, `repos-page.component.ts` cutover, **deletion of `repos-mock.service.ts`** (confirmed, no flag). | Repos tab shows real, live GitHub data scoped per project, sourced entirely from server config. | No webhooks — data freshness bounded by ~60s cache. |
-| **Phase 3 — Real-time (optional)** | GitHub webhook receiver + HMAC validation (webhook secret also in config) + MassTransit consumer + proactive cache invalidation. Only if Phase 1–2 prove on-demand too stale. | Near-real-time updates without manual refresh. | — |
+| **Phase 2 — Live Repos tab** | `IGitHubIntegrationService` + `OctokitGitHubIntegrationService` (§4), `IDistributedCache` read-through cache backed by real Redis (see §4.4 implementation note), `git-repository.service.ts`, `repos-page.component.ts` cutover, **deletion of `repos-mock.service.ts`** (confirmed, no flag). | Repos tab shows real, live GitHub data scoped per project, sourced entirely from server config. | No webhooks — data freshness bounded by ~60s cache. |
+| **Phase 3 — Real-time** | GitHub webhook receiver + HMAC validation (`GitConnectionEntry.WebhookSecret`, added to the config model) + MassTransit consumer + proactive cache invalidation. | Near-real-time updates without manual refresh, on top of the existing 60s-cache fallback. | No mirror tables — invalidation only, next request re-pulls live from GitHub. Admin must still register the webhook URL on the GitHub repo side manually (Settings → Webhooks → Add webhook) — this plan doesn't automate that GitHub-side step. |
+
+### 6.1 Phase 3 detail
+
+- **Route**: `POST api/webhooks/github/{repositoryId:guid}` — the exact URL an admin pastes into GitHub's "Add webhook" form for a given project's repo, so the receiver already knows which project the event is for without needing to parse it out of the payload.
+- **Signature verification**: GitHub signs the raw request body with HMAC-SHA256 using the webhook secret, sent as `X-Hub-Signature-256: sha256=<hex>`. The controller must read the **raw body bytes** (before any JSON model binding) to recompute and compare the HMAC — reject with 401 on mismatch or on a repo with no `WebhookSecret` configured.
+- **Which connection's secret to use**: resolve `Repository.Code` from `{repositoryId}` (same DB lookup as the existing queries), then match the webhook payload's `repository.full_name` (`owner/repo`) against the configured entries for that code to find the right `WebhookSecret` — a project with 2 linked repos will register 2 separate webhooks (one per GitHub repo), each posting to the same `{repositoryId}` route, disambiguated by `full_name` in the payload.
+- **Flow after verification**: publish a `GitSyncRequestedEvent(RepositoryId, RepoUrl)` on the existing MassTransit/RabbitMQ bus (already wired in `Infrastructure/DependencyInjection.cs`) rather than invalidating the cache inline in the controller — keeps the webhook endpoint fast (ack GitHub's delivery quickly; GitHub retries/disables webhooks that are slow or error) and reuses the project's existing messaging infra. A new `GitSyncConsumer` handles the event by removing the matching `git:overview:{repositoryId}:{repoUrl}` key from `IDistributedCache`, so the next Repos-tab load/poll gets a cache miss and re-pulls fresh data from GitHub instead of waiting out the 60s TTL.
+- **Events worth acting on**: `push` (commits/branches changed) and `pull_request` (opened/closed/merged/synchronize) — the controller can inspect the `X-GitHub-Event` header and ignore/204 anything else without even publishing an event.
+- **Always 200/204 to GitHub** on a verified-but-uninteresting event, and 401 only on signature failure — GitHub disables a webhook after repeated non-2xx responses, so the controller must not 500 on, e.g., an event type it doesn't recognize.
 | **Phase 4 — Production hardening (before Azure deploy)** | Azure Key Vault configuration provider wired in so `GitConnections:*:Token` values can be sourced from Key Vault secrets instead of plain App Service environment variables; add to `deploy-to-azure` pre-deployment checklist. | Production-grade secret sourcing. | — |
 
 ---
@@ -243,7 +256,7 @@ No new route, no new guard, no new nav item, no new Settings page. `app.routes.t
 1. **Cardinality** — confirmed: one project code → many connections (e.g. FE + BE repo), stored as a JSON array per code.
 2. **Auth mode** — confirmed: GitHub Personal Access Token only.
 3. **Credential storage** — **changed from v1**: no database, no app-level encryption code. Token lives in server-side configuration only (gitignored dev file locally; environment variables/Key Vault in Azure). Reasoning: eliminates the actual risk the user flagged — a secret should never be typed into a web form or transmitted over the API, so remove that surface entirely rather than encrypt it after the fact.
-4. **Sync strategy** — confirmed: on-demand live pull via Octokit + 60s Redis cache, unchanged from v1.
+4. **Sync strategy** — confirmed: on-demand live pull via Octokit + 60s cache, backed by real Redis (see §4.4). `docker-compose.yml`'s `redis` service was already scaffolded (commented out) before this feature; it's now active. An in-memory `IDistributedCache` fallback is kept commented out in `Infrastructure/DependencyInjection.cs` in case Redis is ever unavailable.
 5. **Permission scope** — **changed from v1**: there is no admin CRUD surface to gate anymore. Viewing the Repos tab (already-configured data, never includes tokens) is open to any project member, same as boards/backlog. *Editing* the connection list is now an ops/deployment action (whoever has access to the server's configuration or deployment pipeline), outside the application's own permission system entirely.
 6. **Route/label naming** — moot in v2 (no new route/page). API route is `api/repositories/{repoId}/git-repositories` (+ `/overview`).
 7. **Rollout safety** — confirmed: `repos-mock.service.ts` deleted entirely in Phase 2, no feature flag. Not-yet-configured projects show the same "not connected" empty state as today.
