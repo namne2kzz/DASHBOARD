@@ -6,6 +6,7 @@ using DASHBOARD.Infrastructure.Identity;
 using DASHBOARD.Infrastructure.Messaging.Consumers;
 using DASHBOARD.Infrastructure.Persistence;
 using DASHBOARD.Infrastructure.Services;
+using DASHBOARD.Infrastructure.Services.GitHub;
 using DASHBOARD.Infrastructure.Settings;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,19 @@ public static class DependencyInjection
         services.Configure<GitConnectionsOptions>(configuration.GetSection(GitConnectionsOptions.SectionName));
         services.AddSingleton<IValidateOptions<GitConnectionsOptions>, GitConnectionsOptionsValidator>();
         services.AddOptions<GitConnectionsOptions>().ValidateOnStart();
+        services.AddScoped<IGitHubIntegrationService, OctokitGitHubIntegrationService>();
+
+        // ── Distributed cache (read-through cache for GetGitRepositoryOverviewQueryHandler) ──
+        // DEVIATION FROM PLAN: the plan (github-repo-integration.md §4.4) assumes StackExchange.Redis is
+        // already wired into this project ("project already has StackExchange.Redis"). It is not — no
+        // Redis package, connection string, or registration exists anywhere in this codebase yet. Rather
+        // than guess at Redis connection settings, this registers the in-memory IDistributedCache
+        // implementation as a same-process stand-in. GetGitRepositoryOverviewQueryHandler is written
+        // against IDistributedCache only, so swapping in real Redis later is a one-line change here
+        // (replace AddDistributedMemoryCache with AddStackExchangeRedisCache + a "Redis" connection
+        // string) with no handler code changes. Known limitation until then: the cache is per-instance,
+        // not shared across horizontally scaled app instances.
+        services.AddDistributedMemoryCache();
 
         // ── Auth ──────────────────────────────────────────────────────────────
         services.Configure<JwtSettings>(configuration.GetSection(nameof(JwtSettings)));
