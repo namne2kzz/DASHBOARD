@@ -5,7 +5,7 @@ using MediatR;
 
 namespace DASHBOARD.Application.Backlog.Commands.CreateBacklogItem;
 
-/// <summary>Creates a new backlog item (Epic, Feature, or UserStory). Requires <see cref="SystemFunction.CreateWorkItem"/>.</summary>
+/// <summary>Creates a new backlog item (Epic, Feature, or UserStory). Requires <see cref="SystemFunction.ManageBacklog"/>.</summary>
 /// <param name="RepositoryId">The owning repository.</param>
 /// <param name="Type">The hierarchy level.</param>
 /// <param name="Title">Item title.</param>

@@ -1,4 +1,5 @@
 using DASHBOARD.Application.Capacity.DTOs;
+using DASHBOARD.Application.Common.Models;
 using MediatR;
 
 namespace DASHBOARD.Application.Capacity.Commands.AddDayOff;
@@ -16,4 +17,4 @@ public sealed record AddDayOffCommand(
     Guid?    UserId,
     DateOnly Date,
     decimal  Hours,
-    string   Reason) : IRequest<DayOffDto>;
+    string   Reason) : IRequest<Result<DayOffDto>>;

@@ -26,7 +26,7 @@ public sealed class AddMetadataCommandHandler(
             if (!await user.IsGlobalAdminAsync(ct))
                 throw new UnauthorizedAccessException("Only global admins may manage global metadata.");
         }
-        else if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSettings, ct))
+        else if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageMetadata, ct))
         {
             throw new UnauthorizedAccessException("You do not have permission to manage settings in this repository.");
         }

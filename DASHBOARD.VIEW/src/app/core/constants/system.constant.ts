@@ -5,16 +5,33 @@ import type { BacklogLevel, TshirtSize } from '../../models/backlog.model';
 // ── Permissions ──────────────────────────────────────────────────────────────
 
 export const PERMISSION_LABELS: Record<Permission, string> = {
-  [Permission.ViewRepository]: 'View Repository',
-  [Permission.EditRepository]: 'Edit Repository',
-  [Permission.ManageSettings]: 'Manage Settings',
-  [Permission.CreateWorkItem]: 'Create Work Item',
-  [Permission.EditWorkItem]:   'Edit Work Item',
-  [Permission.DeleteWorkItem]: 'Delete Work Item',
-  [Permission.ManageSprint]:   'Manage Sprint',
-  [Permission.ManageCapacity]: 'Manage Capacity',
-  [Permission.ManageWiki]:     'Manage Wiki',
-  [Permission.ManageBoard]:    'Manage Board',
+  // Repository
+  [Permission.ViewRepository]:  'View Repository',
+  [Permission.EditRepository]:  'Edit Repository',
+  // Members & Access
+  [Permission.ManageMembers]:   'Manage Members',
+  [Permission.ManageRoles]:     'Manage Roles',
+  [Permission.InviteMembers]:   'Invite Members',
+  [Permission.ManageMetadata]:  'Manage Metadata',
+  // Work Items
+  [Permission.CreateWorkItem]:  'Create Work Item',
+  [Permission.EditWorkItem]:    'Edit Work Item',
+  [Permission.DeleteWorkItem]:  'Delete Work Item',
+  [Permission.AssignWorkItem]:  'Assign Work Item',
+  // Backlog
+  [Permission.ManageBacklog]:   'Manage Backlog',
+  [Permission.PromoteToSprint]: 'Promote to Sprint',
+  // Sprint
+  [Permission.ManageSprint]:    'Manage Sprint',
+  [Permission.ActivateSprint]:  'Activate Sprint',
+  // Capacity / Wiki / Board
+  [Permission.ManageCapacity]:  'Manage Capacity',
+  [Permission.ManageWiki]:      'Manage Wiki',
+  [Permission.ManageBoard]:     'Manage Board',
+  // Analytics & Integrations
+  [Permission.ViewAnalytics]:   'View Analytics',
+  [Permission.ManagePipeline]:  'Manage Pipeline',
+  [Permission.ManageRepo]:      'Manage Repo',
 };
 
 // ── Work item status / priority ───────────────────────────────────────────────

@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.SprintTasks.DTOs;
 using DASHBOARD.Domain.Enums;
 using MediatR;
@@ -43,4 +44,4 @@ public sealed record CreateSprintTaskCommand(
     string?          UnitTest         = null,
     string?          DesignReview     = null,
     List<string>?    TestSteps        = null,
-    bool?            Automated        = null) : IRequest<SprintTaskDto>;
+    bool?            Automated        = null) : IRequest<Result<SprintTaskDto>>;

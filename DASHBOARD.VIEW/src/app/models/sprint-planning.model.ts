@@ -1,4 +1,4 @@
-import type { SprintTaskApiType } from '../core/enums/system.enum';
+import type { SprintTaskApiType, WorkItemApiPriority } from '../core/enums/system.enum';
 
 export type LoadState = 'safe' | 'warning' | 'overloaded';
 
@@ -13,8 +13,11 @@ export interface Sprint {
 export interface SprintTask {
   id:               string;
   parentId:         string | null;
-  type:             'user-story' | 'task';
+  type:             'user-story' | 'task' | 'bug' | 'test-plan';
+  workItemNumber:   string;
   title:            string;
+  description:      string;
+  priority:         WorkItemApiPriority;
   assignedToId:     string | null;
   assignedToName:   string | null;
   state:            'new' | 'backlog' | 'todo' | 'active' | 'in-review' | 'done';
@@ -37,15 +40,14 @@ export interface MemberLoad {
   state:                LoadState;
 }
 
-export interface BacklogStory {
-  id:          string;
-  title:       string;
-  storyPoints: number | null;
-}
-
 export interface AddSprintTaskDialogData {
   storyId:    string;
   storyTitle: string;
+}
+
+export interface SprintStoryDetailDialogData {
+  story:    SprintTask;
+  subTasks: SprintTask[];
 }
 
 export interface CreateWorkItemDialogData {

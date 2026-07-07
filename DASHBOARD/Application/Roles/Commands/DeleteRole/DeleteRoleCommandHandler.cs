@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DASHBOARD.Application.Roles.Commands.DeleteRole;
 
-/// <summary>Handles <see cref="DeleteRoleCommand"/>: checks ManageSettings permission, blocks default roles, blocks deletion when members are still assigned, then removes the role.</summary>
+/// <summary>Handles <see cref="DeleteRoleCommand"/>: checks ManageRoles permission, blocks default roles, blocks deletion when members are still assigned, then removes the role.</summary>
 public sealed class DeleteRoleCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
@@ -21,7 +21,7 @@ public sealed class DeleteRoleCommandHandler(
     /// <returns><see cref="Result.Ok"/> on success; <see cref="Result.Failure"/> when the role is default or members are still assigned.</returns>
     public async Task<Result> Handle(DeleteRoleCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSettings, ct))
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageRoles, ct))
             return Result.Failure("You do not have permission to manage roles in this repository.");
 
         var role = await db.Set<Role>()

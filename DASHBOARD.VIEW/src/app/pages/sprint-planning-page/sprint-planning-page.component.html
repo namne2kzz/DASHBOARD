@@ -60,7 +60,7 @@
                 </svg>
               </button>
             </div>
-          } @else if (canEditSelectedSprint()) {
+          } @else if (canEditSelectedSprint() || canDeleteSelectedSprint()) {
             <!-- Kebab menu -->
             <div class="relative" (click)="$event.stopPropagation()">
               <button
@@ -75,16 +75,30 @@
               </button>
               @if (setupMenuOpen()) {
                 <div class="absolute right-0 top-8 z-20 min-w-[9rem] overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl">
-                  <button
-                    type="button"
-                    class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
-                    (click)="startEdit()"
-                  >
-                    <svg class="h-3.5 w-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                    </svg>
-                    Edit
-                  </button>
+                  @if (canEditSelectedSprint()) {
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                      (click)="startEdit()"
+                    >
+                      <svg class="h-3.5 w-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                      </svg>
+                      Edit
+                    </button>
+                  }
+                  @if (canDeleteSelectedSprint()) {
+                    <button
+                      type="button"
+                      class="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-300 transition hover:bg-slate-800 hover:text-rose-200"
+                      (click)="deleteSprint()"
+                    >
+                      <svg class="h-3.5 w-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                      Delete
+                    </button>
+                  }
                 </div>
               }
             </div>
@@ -216,7 +230,8 @@
               <th class="pb-2 pr-4 font-medium">Days off</th>
               <th class="pb-2 pr-4 font-medium">Capacity</th>
               <th class="pb-2 pr-4 font-medium">Workload</th>
-              <th class="pb-2 font-medium">Load</th>
+              <th class="pb-2 pr-4 font-medium">Load</th>
+              <th class="pb-2 font-medium"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800">
@@ -249,7 +264,7 @@
                 <td class="py-3 pr-4 text-slate-400">{{ member.personalDaysOff }}h</td>
                 <td class="py-3 pr-4 text-slate-100">{{ member.capacity }}h</td>
                 <td class="py-3 pr-4 text-slate-100">{{ member.workload }}h</td>
-                <td class="py-3">
+                <td class="py-3 pr-4">
                   <div class="flex min-w-48 items-center gap-3">
                     <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
                       <div
@@ -261,6 +276,18 @@
                     <span class="w-12 text-right text-xs text-slate-300">{{ member.loadPercent }}%</span>
                   </div>
                 </td>
+                <td class="py-3">
+                  <button
+                    type="button"
+                    title="Remove member"
+                    class="rounded-lg p-1.5 text-slate-600 transition hover:bg-slate-800 hover:text-rose-400"
+                    (click)="removeCapacityMember(member.userId)"
+                  >
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </td>
               </tr>
             }
           </tbody>
@@ -268,63 +295,177 @@
       </div>
     </section>
 
-    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-      <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <h2 class="text-sm font-semibold text-slate-100">Product backlog</h2>
-        <ul class="mt-3 space-y-2">
-          @for (story of planning.backlogStories(); track story.id) {
-            <li class="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <p class="font-medium text-slate-100">{{ story.title }}</p>
-                  <p class="text-xs text-slate-500">{{ story.storyPoints }} story points</p>
-                </div>
-                <button
-                  type="button"
-                  class="rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-400"
-                  (click)="planning.moveStoryToSprint(story.id)"
-                >
-                  Move to sprint
-                </button>
-              </div>
-            </li>
-          } @empty {
-            <li class="rounded-lg border border-dashed border-slate-700 p-4 text-sm text-slate-500">No backlog stories.</li>
-          }
-        </ul>
+    <!-- Days off section -->
+    <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-sm font-semibold text-slate-100">Days off</h2>
+        @if (!showDayOffForm()) {
+          <button
+            type="button"
+            class="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+            (click)="openDayOffForm()"
+          >+ Add day off</button>
+        }
       </div>
 
-      <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <h2 class="text-sm font-semibold text-slate-100">Sprint stories</h2>
-        <ul class="mt-3 space-y-2">
-          @for (story of planning.sprintStories(); track story.id) {
-            <li class="rounded-lg border border-slate-800 bg-slate-950/40 p-3">
-              <div class="flex items-start justify-between gap-3">
-                <div>
-                  <p class="font-medium text-slate-100">{{ story.title }}</p>
-                  <p class="text-xs text-slate-500">{{ story.storyPoints }} sp · {{ story.state }}</p>
-                </div>
-                <div class="flex shrink-0 gap-2">
-                  <button
-                    type="button"
-                    class="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
-                    (click)="openAddTask(story)"
-                  >
-                    + Task
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-lg bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-200 ring-1 ring-rose-500/40 transition hover:bg-rose-500/20"
-                    (click)="planning.descopeStory(story.id)"
-                  >
-                    De-scope
-                  </button>
-                </div>
+      @if (showDayOffForm()) {
+        <div class="mt-4 rounded-lg border border-slate-700 bg-slate-950/60 p-4">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">New day off</p>
+          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label class="mb-1 block text-xs text-slate-500">Date <span class="text-rose-400">*</span></label>
+              <input
+                type="date"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+                [attr.min]="planning.selectedSprint()?.startDate"
+                [attr.max]="planning.selectedSprint()?.endDate"
+                [ngModel]="dayOffDate()"
+                (ngModelChange)="dayOffDate.set($event)"
+              />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs text-slate-500">Hours <span class="text-rose-400">*</span></label>
+              <input
+                type="number"
+                min="1"
+                max="24"
+                step="0.5"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400 [appearance:textfield]"
+                [ngModel]="dayOffHours()"
+                (ngModelChange)="dayOffHours.set(+$event)"
+              />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs text-slate-500">Member</label>
+              <select
+                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+                [ngModel]="dayOffUserId()"
+                (ngModelChange)="dayOffUserId.set($event || null)"
+              >
+                <option value="">Team-wide</option>
+                @for (m of planning.memberLoads(); track m.userId) {
+                  <option [value]="m.userId">{{ m.name }}</option>
+                }
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-xs text-slate-500">Reason</label>
+              <input
+                type="text"
+                placeholder="e.g. Public holiday"
+                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-400"
+                [ngModel]="dayOffReason()"
+                (ngModelChange)="dayOffReason.set($event)"
+              />
+            </div>
+          </div>
+          <div class="mt-3 flex justify-end gap-2">
+            <button
+              type="button"
+              class="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 ring-1 ring-slate-700 transition hover:text-slate-200"
+              (click)="cancelDayOff()"
+            >Cancel</button>
+            <button
+              type="button"
+              class="rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+              [disabled]="!canAddDayOff()"
+              (click)="submitDayOff()"
+            >Add</button>
+          </div>
+        </div>
+      }
+
+      @if (planning.daysOff().length > 0) {
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[520px] text-left text-sm">
+            <thead>
+              <tr class="text-xs uppercase text-slate-500">
+                <th class="pb-2 pr-4 font-medium">Date</th>
+                <th class="pb-2 pr-4 font-medium">Member</th>
+                <th class="pb-2 pr-4 font-medium">Hours</th>
+                <th class="pb-2 pr-4 font-medium">Reason</th>
+                <th class="pb-2 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800">
+              @for (d of planning.daysOff(); track d.id) {
+                <tr>
+                  <td class="py-2.5 pr-4 text-slate-100">{{ d.date }}</td>
+                  <td class="py-2.5 pr-4 text-slate-400">{{ d.userName ?? 'Team' }}</td>
+                  <td class="py-2.5 pr-4 text-slate-100">{{ d.hours }}h</td>
+                  <td class="py-2.5 pr-4 text-slate-400">{{ d.reason || '—' }}</td>
+                  <td class="py-2.5">
+                    <button
+                      type="button"
+                      title="Remove day off"
+                      class="rounded-lg p-1 text-slate-600 transition hover:bg-slate-800 hover:text-rose-400"
+                      (click)="planning.removeDayOff(d.id)"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (!showDayOffForm()) {
+        <p class="mt-3 text-xs text-slate-600">No days off recorded for this sprint.</p>
+      }
+    </section>
+
+    <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+      <h2 class="text-sm font-semibold text-slate-100">Sprint stories</h2>
+      <ul class="mt-3 space-y-2">
+        @for (story of planning.sprintStories(); track story.id) {
+          <li
+            class="group cursor-pointer rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3 transition hover:border-slate-700 hover:bg-slate-900/70"
+            (click)="openStoryDetail(story)"
+          >
+            <div class="flex items-center gap-3">
+              <!-- User Story icon -->
+              <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-blue-400 ring-blue-500/35 bg-blue-500/10">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  <path d="M8 7h8M8 11h8"/>
+                </svg>
               </div>
-            </li>
-          }
-        </ul>
-      </div>
+
+              <!-- work item number -->
+              <span class="shrink-0 font-mono text-xs text-slate-600">{{ story.workItemNumber }}</span>
+
+              <!-- title -->
+              <p class="min-w-0 flex-1 truncate font-medium text-slate-100" [title]="story.title">{{ story.title }}</p>
+
+              <!-- sub-task count -->
+              @if (storySubTaskCount(story.id); as count) {
+                <span class="flex shrink-0 items-center gap-1 rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+                  <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                  {{ count }} task{{ count !== 1 ? 's' : '' }}
+                </span>
+              }
+
+              <!-- story points -->
+              <span class="shrink-0 rounded-full bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-300">{{ story.storyPoints }} sp</span>
+
+              <!-- state badge — same as board -->
+              <span class="shrink-0 rounded px-2 py-0.5 text-xs font-semibold ring-1"
+                [ngClass]="stateBadge[stateApi(story.state)]"
+              >{{ stateLabel[stateApi(story.state)] }}</span>
+
+              <!-- chevron hint -->
+              <svg class="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/>
+              </svg>
+            </div>
+          </li>
+        }
+      </ul>
     </section>
 
     <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
@@ -333,6 +474,7 @@
         <table class="w-full min-w-[900px] text-left text-sm">
           <thead>
             <tr class="text-xs uppercase text-slate-500">
+              <th class="pb-2 pr-2 font-medium w-6"></th>
               <th class="pb-2 pr-4 font-medium">Task</th>
               <th class="pb-2 pr-4 font-medium">State</th>
               <th class="pb-2 pr-4 font-medium">Original</th>
@@ -343,6 +485,39 @@
           <tbody class="divide-y divide-slate-800">
             @for (task of planning.sprintTaskRows(); track task.id) {
               <tr>
+                <!-- Work item type icon -->
+                <td class="py-3 pr-2 align-middle">
+                  @switch (task.type) {
+                    @case ('user-story') {
+                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-blue-400 ring-blue-500/35 bg-blue-500/10" title="User Story">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h8"/>
+                        </svg>
+                      </div>
+                    }
+                    @case ('bug') {
+                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-rose-400 ring-rose-500/35 bg-rose-500/10" title="Bug">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                          <path d="M8 2h8l1 6H7L8 2z"/><path d="M7 8h10v2a5 5 0 0 1-10 0V8z"/><path d="M12 15v3M9 22h6"/>
+                        </svg>
+                      </div>
+                    }
+                    @case ('task') {
+                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-amber-300 ring-amber-400/35 bg-amber-400/10" title="Task">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                      </div>
+                    }
+                    @case ('test-plan') {
+                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-violet-400 ring-violet-500/35 bg-violet-500/10" title="Test Plan">
+                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><path stroke-linecap="round" d="M9 12h6M9 16h4"/>
+                        </svg>
+                      </div>
+                    }
+                  }
+                </td>
                 <td class="w-64 py-3 pr-4">
                   <p class="truncate font-medium text-slate-100" [title]="task.title">{{ task.title }}</p>
                   <p class="truncate text-xs text-slate-500">{{ parentStoryTitle(task.parentId) }}</p>

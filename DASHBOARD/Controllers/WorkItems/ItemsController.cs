@@ -67,7 +67,8 @@ public sealed class ItemsController(ISender mediator) : ControllerBase
             request.Type, request.Title, request.Description ?? string.Empty,
             request.Priority, request.AssignedToId,
             0, request.OriginalEstimate), ct);
-        return StatusCode(StatusCodes.Status201Created, result);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return StatusCode(StatusCodes.Status201Created, result.Value);
     }
 
     /// <summary>Updates a work item's fields.</summary>

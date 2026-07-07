@@ -21,8 +21,8 @@ public sealed class UpdateBacklogStateCommandHandler(
     /// <returns><see cref="Result.Ok"/> on success; failure result on permission or business rule violation.</returns>
     public async Task<Result> Handle(UpdateBacklogStateCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.EditWorkItem, ct))
-            return Result.Failure("You do not have permission to edit backlog items in this repository.");
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBacklog, ct))
+            return Result.Failure("You do not have permission to manage backlog items in this repository.");
 
         if (command.State == BacklogItemState.Committed)
             return Result.Failure("Use 'Move to Iteration' or 'Promote to Sprint' to commit a backlog item.");

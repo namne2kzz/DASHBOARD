@@ -21,7 +21,7 @@ public sealed class CloneRoleCommandHandler(
     /// <returns><see cref="Result{T}.Success"/> with the cloned <see cref="RoleDto"/>; <see cref="Result{T}.Failure"/> on a business-rule violation.</returns>
     public async Task<Result<RoleDto>> Handle(CloneRoleCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSettings, ct))
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageRoles, ct))
             return Result<RoleDto>.Failure("You do not have permission to manage roles in this repository.");
 
         // Source may be a global default role or a custom role within this repository.

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, HostListener, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, HostListener, inject, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DIALOG_REF_TOKEN } from '../../models/dialog.model';
 import { BacklogManagementService } from '../../services/backlog-management.service';
@@ -15,6 +15,8 @@ import type { BacklogItem, BacklogLevel } from '../../models/backlog.model';
 export class AddBacklogItemDialogComponent {
   private readonly dialogRef = inject(DIALOG_REF_TOKEN);
   private readonly backlog   = inject(BacklogManagementService);
+
+  @ViewChild('searchInput') private searchInputRef?: ElementRef<HTMLInputElement>;
 
   readonly types: BacklogLevel[] = ['epic', 'feature', 'user-story'];
 
@@ -41,26 +43,38 @@ export class AddBacklogItemDialogComponent {
 
   readonly selectedParentTitle = computed(() => {
     const id = this.parentId();
-    if (!id) return 'Select…';
-    return this.parentOptions().find(o => o.id === id)?.title ?? 'Select…';
+    if (!id) return 'Unassigned (optional)';
+    return this.parentOptions().find(o => o.id === id)?.title ?? 'Unassigned (optional)';
   });
 
   readonly parentLabel = computed(() =>
     this.type() === 'feature' ? 'Parent Epic' : 'Parent Feature',
   );
 
-  readonly canSubmit = computed(() => this.title().trim().length > 0);
+  readonly parentRequired = computed(() => this.type() !== 'epic');
+
+  readonly canSubmit = computed(() =>
+    this.title().trim().length > 0 &&
+    (!this.parentRequired() || this.parentId() !== null),
+  );
 
   @HostListener('document:click')
   onDocumentClick(): void { this.parentDropdownOpen.set(false); }
 
   constructor() {
+    // Reset parent selection when type changes — default to null (unassigned)
     effect(() => {
-      const opts = this.parentOptions();
-      this.parentId.set(opts[0]?.id ?? null);
+      this.parentOptions(); // track dependency
+      this.parentId.set(null);
       this.parentSearch.set('');
       this.parentDropdownOpen.set(false);
     });
+  }
+
+  /** Opens the parent dropdown and auto-focuses the search input. */
+  openDropdown(): void {
+    this.parentDropdownOpen.set(true);
+    setTimeout(() => this.searchInputRef?.nativeElement.focus(), 0);
   }
 
   /** Selects a parent item and closes the dropdown. @param id The selected item ID or null to clear. */

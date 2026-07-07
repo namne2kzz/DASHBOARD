@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Kết quả | Bug mới | Ghi chú |
 |------|-----|---------|---------|---------|
+| 2026-07-01 | 16:13 | ✅ Pass (32/32) | - | Lần chạy thứ 2 sau khi fix BUG-009 (PromoteToSprint + CreateBacklogItem dùng Result thay vì throw) và BUG-010 (UpdateBacklogItem guard chặn State=Committed). Re-ran 4 case đã fail: backlog-12 (400 permission error đúng format), backlog-21 (400 Cannot set Committed directly), backlog-24 (400 Only UserStory), backlog-25 (400 must be Ready). Spot-check backlog-01/05/08/20 không có regression. UI visual verify: backlog page load 82 items, "Add item" button hoạt động bình thường. Tất cả 32/32 Pass. |
 | 2026-07-01 | 00:50 | Partial | BUG-009, BUG-010 | Lần chạy đầu tiên — soạn 32 case chi tiết rồi chạy qua API trực tiếp (xen kẽ với việc tạo seed data thật cho toàn bộ module trong app, xem `.claude/self-test/seed-backlog-2026-07-01.md` nếu cần đối chiếu). 28/32 case Pass. backlog-04 xác nhận hierarchy Type không được enforce server-side (ghi `improvements.md` IMP-002, chưa rõ là bug hay thiết kế cố ý nên không ghi `bugs.md`). backlog-24/backlog-25: promote 1 Feature hoặc 1 UserStory chưa Ready đều trả **500** thay vì 400 (cùng class lỗi throw-vs-Result đã fix ở BUG-002/005/007, nhưng `PromoteToSprintCommandHandler` chưa được rà — ghi **BUG-009**, Medium, Open). backlog-21: phát hiện nghiêm trọng hơn dự kiến — không chỉ PATCH `/state` cho lùi state từ Committed về Ready vô điều kiện, mà **PUT `/{itemId}` (full Update) hoàn toàn không có guard chặn `State=Committed`**, cho phép set Committed trực tiếp qua đường này (kể cả cho Epic/Feature) mà không tạo SprintTask nào — vi phạm thẳng invariant DoD "Promote luôn tạo đúng 1 SprintTask". Ghi **BUG-010**, High, Open. Toàn bộ seed data (7 Epic, ~23 Feature, ~52 UserStory bao phủ đủ module Done/In Progress/Planned + 6 feature đề xuất mới) **giữ nguyên trong repo DASH** để dùng cho việc test các feature khác sau này (sprint/board/overview...) — không xoá. 2 UserStory mẫu đã Promote thật vào "Sprint 1 July 2026" để minh hoạ workflow đầy đủ. Dữ liệu test tạm (no-perm role, vài item TEMP validation) đã dọn sạch sau khi test xong. |
 
 ---
@@ -223,7 +224,7 @@
 | backlog-09 | Pass | 2026-07-01 | - |
 | backlog-10 | Pass | 2026-07-01 | - |
 | backlog-11 | Pass (verify qua code review — cùng code path với backlog-10) | 2026-07-01 | - |
-| backlog-12 | Pass (action đúng là bị chặn, nhưng qua `throw` thay vì `Result` — xem BUG-009) | 2026-07-01 | BUG-009 |
+| backlog-12 | Pass | 2026-07-01 | BUG-009 (fixed) |
 | backlog-13 | Pass | 2026-07-01 | - |
 | backlog-14 | Pass | 2026-07-01 | - |
 | backlog-15 | Pass | 2026-07-01 | - |
@@ -232,11 +233,11 @@
 | backlog-18 | Pass | 2026-07-01 | - |
 | backlog-19 | Pass | 2026-07-01 | - |
 | backlog-20 | Pass | 2026-07-01 | - |
-| backlog-21 | Fail | 2026-07-01 | BUG-010 |
+| backlog-21 | Pass | 2026-07-01 | BUG-010 (fixed) |
 | backlog-22 | Pass | 2026-07-01 | - |
 | backlog-23 | Pass | 2026-07-01 | - |
-| backlog-24 | Fail | 2026-07-01 | BUG-009 |
-| backlog-25 | Fail | 2026-07-01 | BUG-009 |
+| backlog-24 | Pass | 2026-07-01 | BUG-009 (fixed) |
+| backlog-25 | Pass | 2026-07-01 | BUG-009 (fixed) |
 | backlog-26 | Pass | 2026-07-01 | - |
 | backlog-27 | Pass | 2026-07-01 | - |
 | backlog-28 | Pass (verify qua code review — không có field ParentId trong UpdateBacklogItemCommand) | 2026-07-01 | - |

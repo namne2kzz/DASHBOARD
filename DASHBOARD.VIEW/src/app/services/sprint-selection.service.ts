@@ -65,6 +65,15 @@ export class SprintSelectionService {
     this._sprints.update(list => list.map(s => (s.id === sprintId ? { ...s, ...patch } : s)));
   }
 
+  /** Removes a deleted sprint from the list and picks the next best sprint. @param sprintId Deleted sprint ID. */
+  removeSprint(sprintId: string): void {
+    this._sprints.update(list => list.filter(s => s.id !== sprintId));
+    if (this._selectedSprintId() === sprintId) {
+      const next = this.pickDefaultSprint(this._sprints());
+      this._selectedSprintId.set(next?.id ?? null);
+    }
+  }
+
   private loadSprints(repoId: string): void {
     this._loading.set(true);
     this.http.get<SprintApiDto[]>(`${environment.apiBaseUrl}/repositories/${repoId}/sprints`)

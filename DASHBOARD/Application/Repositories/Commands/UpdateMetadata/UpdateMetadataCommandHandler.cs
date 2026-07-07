@@ -31,7 +31,7 @@ public sealed class UpdateMetadataCommandHandler(
             if (!await user.IsGlobalAdminAsync(ct))
                 return Result.Failure("Only global admins may manage global metadata.");
         }
-        else if (!await user.CanAsync(entry.RepositoryId!.Value, SystemFunction.ManageSettings, ct))
+        else if (!await user.CanAsync(entry.RepositoryId!.Value, SystemFunction.ManageMetadata, ct))
         {
             return Result.Failure("You do not have permission to manage settings in this repository.");
         }

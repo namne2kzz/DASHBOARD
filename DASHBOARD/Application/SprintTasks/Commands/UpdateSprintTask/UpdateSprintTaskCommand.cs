@@ -22,6 +22,7 @@ namespace DASHBOARD.Application.SprintTasks.Commands.UpdateSprintTask;
 /// <param name="DesignReview">Design review notes (Task/Bug only).</param>
 /// <param name="TestSteps">Test steps (TestPlan only).</param>
 /// <param name="Automated">Whether automated (TestPlan only).</param>
+/// <param name="ParentId">New parent User Story id; null to remove. Defaults to null for update paths where re-parenting isn't applicable.</param>
 public sealed record UpdateSprintTaskCommand(
     Guid             RepositoryId,
     Guid             TaskId,
@@ -39,4 +40,5 @@ public sealed record UpdateSprintTaskCommand(
     string?          UnitTest,
     string?          DesignReview,
     List<string>?    TestSteps,
-    bool?            Automated) : IRequest<Result>;
+    bool?            Automated,
+    Guid?            ParentId = null) : IRequest<Result>;

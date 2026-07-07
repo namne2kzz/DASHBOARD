@@ -2,6 +2,14 @@
 
 Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/update các file trong `.claude/self-test/`. **Phải đọc file này trước khi tạo hoặc sửa bất kỳ file trong folder.**
 
+## 0. Quy tắc bắt buộc khi chạy test
+
+> **QUAN TRỌNG — không được bỏ qua:**
+>
+> - **Chạy qua UI, không chạy ngầm.** Mọi test case phải thao tác trực tiếp trên browser (navigate, click, type, drag...) để user có thể quan sát. **Tuyệt đối không dùng `browser_evaluate` / `fetch` API call ngầm để thay thế thao tác UI** — chỉ được dùng `browser_evaluate` để *đọc/xác nhận* kết quả (response body, state...) sau khi đã thao tác qua UI xong.
+> - **Test data KHÔNG được xoá trừ khi user yêu cầu rõ ràng.** Sau khi test xong, giữ lại toàn bộ data đã tạo ở mọi module (sprint, capacity member, task, day-off, backlog item, member, role...). Mục đích: hệ thống có data đầy đủ, thực tế, dễ hình dung luồng nghiệp vụ. Chỉ xoá khi test case *bắt buộc phải xoá* để kiểm tra nghiệp vụ xoá (vd: test delete sprint), hoặc khi user nói thẳng "xoá đi".
+> - **Tạo nhiều data, data thật.** Khi tạo sprint, member, task, day-off — dùng tên thật, số giờ hợp lý, mô tả có nghĩa, không dùng placeholder như "test123" hay "aaa". Data phải trông như dự án thật đang chạy.
+
 ## 1. Mục đích thư mục
 
 `.claude/self-test/` lưu **test plan + kết quả + bug + improvement** phát sinh từ việc tự test UI bằng Playwright MCP (xem `/self-test`). Khác với `.claude/histories/` (business doc — mô tả nghiệp vụ "phải đúng như thế nào"), folder này lưu **bằng chứng đã/chưa kiểm chứng đúng nghiệp vụ đó trên app thật**.

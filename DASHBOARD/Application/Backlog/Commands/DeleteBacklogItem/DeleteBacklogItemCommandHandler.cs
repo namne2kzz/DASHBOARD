@@ -21,8 +21,8 @@ public sealed class DeleteBacklogItemCommandHandler(
     /// <returns><see cref="Result.Ok"/> on success; <see cref="Result.Failure"/> when children block deletion.</returns>
     public async Task<Result> Handle(DeleteBacklogItemCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.DeleteWorkItem, ct))
-            return Result.Failure("You do not have permission to delete backlog items in this repository.");
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBacklog, ct))
+            return Result.Failure("You do not have permission to manage backlog items in this repository.");
 
         var item = await db.Set<BacklogItem>()
             .FirstOrDefaultAsync(b => b.Id == command.ItemId && b.RepositoryId == command.RepositoryId, ct)

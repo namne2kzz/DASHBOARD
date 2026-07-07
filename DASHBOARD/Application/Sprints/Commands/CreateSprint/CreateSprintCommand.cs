@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Sprints.DTOs;
 using MediatR;
 
@@ -12,4 +13,4 @@ public sealed record CreateSprintCommand(
     Guid     RepositoryId,
     string   Name,
     DateOnly StartDate,
-    DateOnly EndDate) : IRequest<SprintDto>;
+    DateOnly EndDate) : IRequest<Result<SprintDto>>;

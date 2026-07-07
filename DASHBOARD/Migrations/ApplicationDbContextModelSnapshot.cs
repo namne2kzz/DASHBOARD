@@ -616,7 +616,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000010"),
-                            AllowedFunctions = "[0,1,2,3,4,5,6,7,8,9]",
+                            AllowedFunctions = "[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Full access to all repository functions.",
                             IsDefault = true,
@@ -626,9 +626,9 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000011"),
-                            AllowedFunctions = "[0,3,4,6,7,2]",
+                            AllowedFunctions = "[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Manages sprints, capacity, and settings in addition to work items.",
+                            Description = "Manages sprints, capacity, and team settings in addition to all work-item and backlog operations.",
                             IsDefault = true,
                             Name = "Project Manager",
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001")
@@ -636,9 +636,9 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000012"),
-                            AllowedFunctions = "[0,3,4]",
+                            AllowedFunctions = "[0,6,7,9,10,11,17]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Create and edit work items.",
+                            Description = "Creates and edits sprint tasks, manages the backlog, and can promote items to sprints.",
                             IsDefault = true,
                             Name = "Developer",
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001")
@@ -646,9 +646,9 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000013"),
-                            AllowedFunctions = "[0,3,4]",
+                            AllowedFunctions = "[0,6,7,10,17]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Create and edit work items.",
+                            Description = "Creates and edits sprint tasks and backlog items; focused on quality and test coverage.",
                             IsDefault = true,
                             Name = "Tester",
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001")
@@ -656,9 +656,9 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000014"),
-                            AllowedFunctions = "[0,3,4]",
+                            AllowedFunctions = "[0,10,17]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Create and edit work items.",
+                            Description = "Manages the product backlog and requirements; read-only on sprint execution.",
                             IsDefault = true,
                             Name = "Business Analyst",
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001")
@@ -666,9 +666,9 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000001"),
-                            AllowedFunctions = "[0,3,4,9,6]",
+                            AllowedFunctions = "[0,6,7,9,10,11,12,16,17]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Full access to work items and board; read-only on settings.",
+                            Description = "Full work-item and backlog access plus board and sprint management; no member/settings admin.",
                             IsDefault = false,
                             Name = "Senior Developer",
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001")

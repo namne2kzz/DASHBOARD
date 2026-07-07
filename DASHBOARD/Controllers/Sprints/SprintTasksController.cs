@@ -77,7 +77,7 @@ public sealed class SprintTasksController(ISender mediator) : ControllerBase
     public async Task<IActionResult> Create(
         Guid repoId, Guid sprintId,
         [FromQuery] SprintTaskType   type,
-        [FromQuery] string           title,
+        [FromQuery] string?          title,
         [FromQuery] string?          description      = null,
         [FromQuery] WorkItemPriority priority         = WorkItemPriority.Medium,
         [FromQuery] Guid?            parentId         = null,
@@ -96,11 +96,12 @@ public sealed class SprintTasksController(ISender mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await mediator.Send(new CreateSprintTaskCommand(
-            repoId, sprintId, parentId, type, title, description ?? string.Empty,
+            repoId, sprintId, parentId, type, title ?? string.Empty, description ?? string.Empty,
             priority, assignedToId, storyPoints, originalEstimate,
             stepsToReproduce, environment, rootCause, solution, impaction,
             unitTest, designReview, testSteps, automated), ct);
-        return StatusCode(StatusCodes.Status201Created, result);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return StatusCode(StatusCodes.Status201Created, result.Value);
     }
 
     /// <summary>Transitions a sprint task to a new state.</summary>

@@ -99,7 +99,8 @@ public sealed class CapacityController(ISender mediator) : ControllerBase
         CancellationToken ct = default)
     {
         var result = await mediator.Send(new AddDayOffCommand(repoId, sprintId, userId, date, hours, reason), ct);
-        return StatusCode(StatusCodes.Status201Created, result);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return StatusCode(StatusCodes.Status201Created, result.Value);
     }
 
     /// <summary>Removes a day-off entry from the sprint.</summary>

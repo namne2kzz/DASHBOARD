@@ -8,8 +8,10 @@ import { DialogService } from '../../core/components/dialog/dialog.service';
 import { CreateSprintDialogComponent } from '../../components/create-sprint-dialog/create-sprint-dialog.component';
 import { AddSprintTaskDialogComponent } from '../../components/add-sprint-task-dialog/add-sprint-task-dialog.component';
 import { AddCapacityMemberDialogComponent } from '../../components/add-capacity-member-dialog/add-capacity-member-dialog.component';
+import { SprintStoryDetailDialogComponent } from '../../components/sprint-story-detail-dialog/sprint-story-detail-dialog.component';
 import type { SprintTask } from '../../models/sprint-planning.model';
-import { SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant';
+import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant';
+import { SprintTaskApiState } from '../../core/enums/system.enum';
 
 @Component({
   selector: 'app-sprint-planning-page',
@@ -20,6 +22,20 @@ import { SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant'
 export class SprintPlanningPageComponent implements OnInit {
   readonly planning          = inject(SprintPlanningService);
   readonly taskStateOptions  = SPRINT_TASK_STATE_OPTIONS;
+  readonly stateBadge        = SPRINT_TASK_STATE_BADGE;
+  readonly stateLabel        = SPRINT_TASK_STATE_LABEL;
+
+  private readonly _stateToApi: Record<SprintTask['state'], SprintTaskApiState> = {
+    'new':       SprintTaskApiState.New,
+    'backlog':   SprintTaskApiState.Backlog,
+    'todo':      SprintTaskApiState.Todo,
+    'active':    SprintTaskApiState.Active,
+    'in-review': SprintTaskApiState.InReview,
+    'done':      SprintTaskApiState.Done,
+  };
+
+  /** Maps a string state to its numeric SprintTaskApiState for use with SPRINT_TASK_STATE_BADGE. @param state String state. */
+  stateApi(state: SprintTask['state']): SprintTaskApiState { return this._stateToApi[state]; }
 
   /** Reloads sprint detail on every navigation to this page to pick up state changes made on the Board. */
   ngOnInit(): void { this.planning.refresh(); }
@@ -32,6 +48,17 @@ export class SprintPlanningPageComponent implements OnInit {
   readonly editName      = signal('');
   readonly editStart     = signal('');
   readonly editEnd       = signal('');
+
+  // ── Day-off add form ─────────────────────────────────────────
+  readonly showDayOffForm = signal(false);
+  readonly dayOffDate     = signal('');
+  readonly dayOffHours    = signal(8);
+  readonly dayOffReason   = signal('');
+  readonly dayOffUserId   = signal<string | null>(null);
+
+  readonly canAddDayOff = computed(() =>
+    this.dayOffDate().length > 0 && this.dayOffHours() > 0,
+  );
 
   // ── Reassign picker ──────────────────────────────────────────
   @ViewChildren('reassignPanel') private reassignPanelRefs!: QueryList<ElementRef<HTMLElement>>;
@@ -131,6 +158,21 @@ export class SprintPlanningPageComponent implements OnInit {
     this.dialog.open(CreateSprintDialogComponent, { title: 'New sprint', width: '28rem' });
   }
 
+  /** Opens the story detail dialog. @param story The sprint story. */
+  openStoryDetail(story: SprintTask): void {
+    const subTasks = this.planning.sprintTaskRows().filter(t => t.parentId === story.id);
+    this.dialog.open(SprintStoryDetailDialogComponent, {
+      title: story.workItemNumber,
+      width: '52rem',
+      data:  { story, subTasks },
+    });
+  }
+
+  /** Returns the number of sub-tasks belonging to a story. @param storyId Story ID. */
+  storySubTaskCount(storyId: string): number {
+    return this.planning.sprintTaskRows().filter(t => t.parentId === storyId).length;
+  }
+
   /** Opens the add-task dialog for a sprint story. @param story The parent story. */
   openAddTask(story: SprintTask): void {
     this.dialog.open(AddSprintTaskDialogComponent, {
@@ -165,9 +207,54 @@ export class SprintPlanningPageComponent implements OnInit {
   /** Cancels edit without saving. */
   cancelEdit(): void { this.editMode.set(false); }
 
-  /** Whether the selected sprint can be edited (future sprints only). */
+  /** Whether the selected sprint can be edited (future and active sprints). */
   canEditSelectedSprint(): boolean {
     const s = this.planning.selectedSprint();
-    return !!s && this.planning.sprintStatus(s) === 'future';
+    return !!s && this.planning.sprintStatus(s) !== 'past';
   }
+
+  /** Whether the selected sprint can be deleted (future and past, not active). */
+  canDeleteSelectedSprint(): boolean {
+    const s = this.planning.selectedSprint();
+    return !!s && this.planning.sprintStatus(s) !== 'active';
+  }
+
+  /** Deletes the selected sprint after confirmation. */
+  deleteSprint(): void {
+    const s = this.planning.selectedSprint();
+    if (!s || !confirm(`Delete sprint "${s.name}"? This cannot be undone.`)) return;
+    this.setupMenuOpen.set(false);
+    this.planning.deleteSprint(s.id);
+  }
+
+  /** Removes a capacity member from the sprint after confirmation. @param userId Member's user ID. */
+  removeCapacityMember(userId: string): void {
+    const capacityMemberId = this.planning.getCapacityMemberId(userId);
+    if (!capacityMemberId || !confirm('Remove this member from sprint capacity?')) return;
+    this.planning.removeCapacityMember(capacityMemberId);
+  }
+
+  /** Opens the day-off add form. */
+  openDayOffForm(): void {
+    this.dayOffDate.set('');
+    this.dayOffHours.set(8);
+    this.dayOffReason.set('');
+    this.dayOffUserId.set(null);
+    this.showDayOffForm.set(true);
+  }
+
+  /** Submits the new day-off entry. */
+  submitDayOff(): void {
+    if (!this.canAddDayOff()) return;
+    this.planning.addDayOff(
+      this.dayOffDate(),
+      this.dayOffHours(),
+      this.dayOffReason(),
+      this.dayOffUserId() ?? undefined,
+    );
+    this.showDayOffForm.set(false);
+  }
+
+  /** Cancels the day-off add form. */
+  cancelDayOff(): void { this.showDayOffForm.set(false); }
 }

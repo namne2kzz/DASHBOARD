@@ -2,6 +2,7 @@ using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
+using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -21,8 +22,8 @@ public sealed class AssignSprintTaskCommandHandler(
     /// <returns><see cref="Result.Ok"/> on success.</returns>
     public async Task<Result> Handle(AssignSprintTaskCommand command, CancellationToken ct)
     {
-        if (!await user.IsMemberOfAsync(command.RepositoryId, ct))
-            return Result.Failure("You are not a member of this repository.");
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.AssignWorkItem, ct))
+            return Result.Failure("You do not have permission to assign work items in this repository.");
 
         var task = await db.Set<SprintTask>()
             .AsTracking()

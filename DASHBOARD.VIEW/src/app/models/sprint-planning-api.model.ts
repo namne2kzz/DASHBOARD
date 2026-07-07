@@ -20,6 +20,10 @@ export interface SprintTaskApiDto {
   repositoryId:     string;
   backlogItemId:    string | null;
   parentId:         string | null;
+  /** Formatted work item number of the parent User Story (e.g. "DASH-3"), or null if no parent. */
+  parentWorkItemNumber: string | null;
+  /** Title of the parent User Story, or null if no parent. */
+  parentTitle:      string | null;
   /** Formatted work item number (e.g. "DASH-3") — repo code prefix added at read time. */
   workItemNumber:   string;
   type:             SprintTaskApiType;

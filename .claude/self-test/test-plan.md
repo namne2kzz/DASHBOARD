@@ -31,7 +31,8 @@ Thay thế việc test tay từng chức năng trên UI — dùng Playwright MCP
 | Wiki | [wiki.test.md](modules/wiki.test.md) | [wiki.dod.md](../histories/wiki.dod.md) | Trung bình |
 | Sprints | [sprints.test.md](modules/sprints.test.md) | [sprints.dod.md](../histories/sprints.dod.md) | Trung bình |
 | Sprint Tasks | [sprint-tasks.test.md](modules/sprint-tasks.test.md) | [sprint-tasks.dod.md](../histories/sprint-tasks.dod.md) | Trung bình |
-| Smart Board (Workflow page) | [smart-board.test.md](modules/smart-board.test.md) | [smart-board.dod.md](../histories/smart-board.dod.md) | Trung bình |
+| Board Item Detail (dialog) | [board-detail.test.md](modules/board-detail.test.md) | [sprint-tasks.dod.md](../histories/sprint-tasks.dod.md), [discussions.dod.md](../histories/discussions.dod.md), [history.dod.md](../histories/history.dod.md) | Trung bình |
+| Workflow (Smart Board) | [workflow.test.md](modules/workflow.test.md) | [workflow.dod.md](../histories/workflow.dod.md) | Trung bình |
 | Capacity (Sprint Planning) | [capacity.test.md](modules/capacity.test.md) | [capacity.dod.md](../histories/capacity.dod.md) | Trung bình |
 | Members | [members.test.md](modules/members.test.md) | [members.dod.md](../histories/members.dod.md) | **Cao** — BUG-004/BUG-005 đang Open |
 | Roles | [roles.test.md](modules/roles.test.md) | [roles.dod.md](../histories/roles.dod.md) | **Cao** — BUG-004/BUG-005 đang Open |
