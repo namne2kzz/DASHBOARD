@@ -26,4 +26,12 @@ public sealed class GitConnectionEntry
 
     /// <summary>Gets or sets whether this is the primary connection shown by default when a project has multiple. If no entry is marked primary, the first entry in the list is treated as primary.</summary>
     public bool IsPrimary { get; set; }
+
+    /// <summary>
+    /// Gets or sets the shared secret used to verify the <c>X-Hub-Signature-256</c> header on incoming
+    /// GitHub webhook deliveries (see <c>GitHubWebhookController</c>). Optional — only set for repos
+    /// where a webhook has actually been registered on the GitHub side (Settings → Webhooks). Never
+    /// returned in any DTO or logged.
+    /// </summary>
+    public string? WebhookSecret { get; set; }
 }
