@@ -25,6 +25,7 @@ Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/u
 ├── smart-board.dod.md
 ├── capacity.dod.md
 ├── repositories.dod.md
+├── git-repositories.dod.md
 ├── wiki.dod.md
 ├── discussions.dod.md
 ├── history.dod.md

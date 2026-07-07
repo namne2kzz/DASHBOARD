@@ -6,11 +6,13 @@ using DASHBOARD.Infrastructure.Identity;
 using DASHBOARD.Infrastructure.Messaging.Consumers;
 using DASHBOARD.Infrastructure.Persistence;
 using DASHBOARD.Infrastructure.Services;
+using DASHBOARD.Infrastructure.Services.GitHub;
 using DASHBOARD.Infrastructure.Settings;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace DASHBOARD.Infrastructure;
 
@@ -19,7 +21,7 @@ public static class DependencyInjection
 {
     /// <summary>
     /// Registers EF Core, Unit of Work, JWT, password hashing, invitation, email,
-    /// Google auth, MassTransit/RabbitMQ, and settings services.
+    /// Google auth, MassTransit/RabbitMQ, Git connections config, and settings services.
     /// </summary>
     /// <param name="services">The service collection to configure.</param>
     /// <param name="configuration">The application configuration root.</param>
@@ -45,6 +47,29 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // ── Git repository integration (config-based, no DB entity — see GitConnectionsOptions) ─
+        services.Configure<GitConnectionsOptions>(configuration.GetSection(GitConnectionsOptions.SectionName));
+        services.AddSingleton<IValidateOptions<GitConnectionsOptions>, GitConnectionsOptionsValidator>();
+        services.AddOptions<GitConnectionsOptions>().ValidateOnStart();
+        services.AddScoped<IGitHubIntegrationService, OctokitGitHubIntegrationService>();
+
+        // ── Distributed cache (read-through cache for GetGitRepositoryOverviewQueryHandler) ──
+        // Backed by real Redis (docker-compose "redis" service) so the cache is shared across app
+        // instances, not per-process. GetGitRepositoryOverviewQueryHandler depends only on
+        // IDistributedCache, so this is the only place that knows the actual cache backend.
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetConnectionString("Redis");
+        });
+
+        // In-process fallback (no external dependency) — kept here, commented out, in case Redis
+        // is ever unavailable/removed and a same-process stand-in is needed again. Swap back by
+        // commenting out the AddStackExchangeRedisCache block above and uncommenting this line;
+        // GetGitRepositoryOverviewQueryHandler needs no changes either way since it only depends
+        // on the IDistributedCache abstraction. Known limitation of this fallback: the cache is
+        // per-instance, not shared across horizontally scaled app instances.
+        // services.AddDistributedMemoryCache();
+
         // ── Auth ──────────────────────────────────────────────────────────────
         services.Configure<JwtSettings>(configuration.GetSection(nameof(JwtSettings)));
         services.AddScoped<ITokenService, JwtTokenService>();
@@ -66,6 +91,7 @@ public static class DependencyInjection
         services.AddMassTransit(bus =>
         {
             bus.AddConsumer<InvitationCreatedConsumer>();
+            bus.AddConsumer<GitSyncConsumer>();
 
             bus.UsingRabbitMq((ctx, cfg) =>
             {
