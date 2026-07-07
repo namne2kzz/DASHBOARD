@@ -47,6 +47,25 @@ public sealed class ExceptionHandlingMiddleware(
                 "Unauthorized.",
                 (object)new Dictionary<string, string[]>()),
 
+            // External Git provider (GitHub) failures — see Application/Common/Interfaces/IGitHubIntegrationService.
+            // GetGitRepositoryOverviewQueryHandler already catches these itself and returns 200 with a
+            // Status/LastSyncError payload instead, so these arms only fire for other future callers
+            // (e.g. a direct connection-validation endpoint) that let them propagate.
+            GitRateLimitExceededException grle => (
+                HttpStatusCode.TooManyRequests,
+                grle.Message,
+                (object)new Dictionary<string, string[]>()),
+
+            GitCredentialInvalidException gcie => (
+                HttpStatusCode.Forbidden,
+                gcie.Message,
+                (object)new Dictionary<string, string[]>()),
+
+            GitProviderUnavailableException gpue => (
+                HttpStatusCode.BadGateway,
+                gpue.Message,
+                (object)new Dictionary<string, string[]>()),
+
             _ => (
                 HttpStatusCode.InternalServerError,
                 "An unexpected error occurred.",

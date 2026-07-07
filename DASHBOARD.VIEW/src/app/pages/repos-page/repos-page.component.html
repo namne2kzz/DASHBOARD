@@ -7,49 +7,41 @@
         <p class="mt-1 max-w-3xl text-sm text-slate-400">{{ t('repos.header.subtitle') }}</p>
       </div>
 
-      <div class="flex flex-wrap gap-2">
-        @if (!repos.isConnected()) {
-          <button
-            type="button"
-            class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400"
-            (click)="connect()"
+      <div class="flex flex-wrap items-center gap-2">
+        @if (showSelector()) {
+          <select
+            class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            [value]="repos.selectedRepoUrl() ?? repos.overview()?.repoUrl"
+            (change)="selectConnection($any($event.target).value)"
           >
-            Connect GitHub App
-          </button>
-        } @else {
-          <button
-            type="button"
-            class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
-            (click)="runDeltaSync()"
-          >
-            Run delta sync
-          </button>
-          <button
-            type="button"
-            class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
-            (click)="processWebhookQueue()"
-          >
-            Process review event
-          </button>
-          <button
-            type="button"
-            class="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400"
-            (click)="simulateMergeAutomation()"
-          >
-            Simulate PR merge
-          </button>
-          <button
-            type="button"
-            class="rounded-lg bg-rose-500/10 px-4 py-2 text-sm font-medium text-rose-200 ring-1 ring-rose-500/40 transition hover:bg-rose-500/20"
-            (click)="disconnect()"
-          >
-            Revoke access
-          </button>
+            @for (conn of repos.connections(); track conn.repoUrl) {
+              <option [value]="conn.repoUrl">
+                {{ conn.ownerLogin }}/{{ conn.repoName }}{{ conn.isPrimary ? ' (primary)' : '' }}
+              </option>
+            }
+          </select>
         }
+        <button
+          type="button"
+          class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+          (click)="refresh()"
+        >
+          Refresh
+        </button>
       </div>
     </header>
 
-    @if (!repos.isConnected()) {
+    @if (repos.loading()) {
+      <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="h-24 animate-pulse rounded-lg border border-slate-800 bg-slate-900/60"></div>
+        }
+      </section>
+    } @else if (repos.error()) {
+      <section class="rounded-lg border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-200">
+        {{ repos.error() }}
+      </section>
+    } @else if (!repos.hasConnection()) {
       <section class="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center">
         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-sky-300 ring-1 ring-slate-700">
           <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -58,224 +50,159 @@
         </div>
         <h2 class="mt-4 text-lg font-semibold text-white">No GitHub connection</h2>
         <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
-          Repository, branch, commit and pull request data stays empty until a GitHub App installation is connected.
-          Tokens remain server-side in the real integration; this screen models the data contract and sync workflow.
+          {{ t('repos.empty') }} Ask whoever manages this project's deployment to add a GitHub connection to the
+          server configuration.
         </p>
-        <button
-          type="button"
-          class="mt-5 rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400"
-          (click)="connect()"
-        >
-          Connect GitHub App
-        </button>
       </section>
     } @else {
-      <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <p class="text-xs uppercase text-slate-500">Installation</p>
-          <p class="mt-2 text-lg font-semibold text-white">{{ repos.integration().accountLogin }}</p>
-          <p class="text-xs text-slate-400">
-            {{ repos.integration().accountType }} #{{ repos.integration().installationId }}
-          </p>
-        </div>
-        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <p class="text-xs uppercase text-slate-500">Synced repositories</p>
-          <p class="mt-2 text-lg font-semibold text-white">{{ repos.syncSummary().repos }}</p>
-          <p class="text-xs text-slate-400">Initial sync + webhook deltas</p>
-        </div>
-        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <p class="text-xs uppercase text-slate-500">Webhook queue</p>
-          <p class="mt-2 text-lg font-semibold text-white">{{ repos.queueDepth() }}</p>
-          <p class="text-xs text-slate-400">{{ repos.webhookEvents().length }} delivery ids recorded</p>
-        </div>
-        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <p class="text-xs uppercase text-slate-500">API rate limit</p>
-          <p class="mt-2 text-lg font-semibold text-white">
-            {{ repos.rateLimit().remaining }} / {{ repos.rateLimit().limit }}
-          </p>
-          <p class="text-xs text-slate-400">Resets {{ repos.rateLimit().resetAt | date: 'shortTime' }}</p>
-        </div>
-      </section>
+      @let overview = repos.overview();
+      @if (overview && (overview.status === 'Invalid' || overview.status === 'RateLimited')) {
+        <section class="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
+          <p class="font-semibold uppercase tracking-wide">{{ overview.status }}</p>
+          @if (overview.lastSyncError) {
+            <p class="mt-1 text-amber-100/90">{{ overview.lastSyncError }}</p>
+          }
+        </section>
+      }
 
-      <section class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <h2 class="text-sm font-semibold text-slate-100">Imported repositories</h2>
-              <p class="text-xs text-slate-500">Selected repos are linked to the dashboard and updated by delta sync.</p>
-            </div>
-            <span class="rounded-full bg-sky-500/10 px-2 py-1 text-xs font-semibold text-sky-200 ring-1 ring-sky-500/30">
-              {{ repos.lastSyncMode() }} sync
-            </span>
+      @if (overview) {
+        <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-xs uppercase text-slate-500">Repository</p>
+            <p class="mt-2 text-lg font-semibold text-white">{{ overview.fullName }}</p>
+            <p class="truncate text-xs text-slate-400">{{ overview.repoUrl }}</p>
+          </div>
+          <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-xs uppercase text-slate-500">Default branch</p>
+            <p class="mt-2 font-mono text-lg font-semibold text-white">{{ overview.defaultBranch }}</p>
+            <p class="text-xs text-slate-400">{{ overview.branches.length }} branches tracked</p>
+          </div>
+          <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-xs uppercase text-slate-500">Pull requests</p>
+            <p class="mt-2 text-lg font-semibold text-white">{{ overview.pullRequests.length }}</p>
+            <p class="text-xs text-slate-400">Open, closed and merged</p>
+          </div>
+          <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+            <p class="text-xs uppercase text-slate-500">API rate limit</p>
+            @if (overview.rateLimit) {
+              <p class="mt-2 text-lg font-semibold text-white">
+                {{ overview.rateLimit.remaining }} / {{ overview.rateLimit.limit }}
+              </p>
+              <p class="text-xs text-slate-400">Resets {{ overview.rateLimit.resetAt | date: 'shortTime' }}</p>
+            } @else {
+              <p class="mt-2 text-lg font-semibold text-white">-</p>
+            }
+          </div>
+        </section>
+
+        <section class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+            <h2 class="text-sm font-semibold text-slate-100">Commit tracking</h2>
+            <ul class="mt-3 divide-y divide-slate-800">
+              @for (commit of overview.commits; track commit.sha) {
+                <li class="py-3">
+                  <div class="flex flex-wrap items-baseline gap-2">
+                    <code class="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-sky-300">{{ commit.shortSha }}</code>
+                    <span class="text-sm text-slate-100">{{ commit.message }}</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">
+                    {{ commit.authorName }} on {{ commit.branch }} - {{ commit.date | date: 'short' }}
+                    @if (commit.linkedWorkItemId) {
+                      <span class="ml-2 text-emerald-300">Linked WI #{{ commit.linkedWorkItemId }}</span>
+                    }
+                  </p>
+                </li>
+              } @empty {
+                <li class="py-3 text-sm text-slate-500">No commits found.</li>
+              }
+            </ul>
           </div>
 
-          <div class="mt-4 overflow-x-auto">
-            <table class="w-full min-w-[620px] text-left text-sm">
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+            <h2 class="text-sm font-semibold text-slate-100">Branches</h2>
+            <ul class="mt-3 space-y-2">
+              @for (branch of overview.branches; track branch.name) {
+                <li class="rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2">
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="truncate font-mono text-sm text-slate-100">{{ branch.name }}</span>
+                    <div class="flex shrink-0 gap-2">
+                      @if (branch.isDefault) {
+                        <span class="text-[10px] font-semibold uppercase text-sky-300">default</span>
+                      }
+                      @if (branch.isStale) {
+                        <span class="text-[10px] font-semibold uppercase text-amber-300">stale</span>
+                      }
+                    </div>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">
+                    {{ branch.lastCommitSha }} at {{ branch.lastCommitAt | date: 'short' }}
+                  </p>
+                </li>
+              } @empty {
+                <li class="text-sm text-slate-500">No branches found.</li>
+              }
+            </ul>
+          </div>
+        </section>
+
+        <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+          <h2 class="text-sm font-semibold text-slate-100">Pull request monitoring</h2>
+          <div class="mt-3 overflow-x-auto">
+            <table class="w-full min-w-[760px] text-left text-sm">
               <thead>
                 <tr class="text-xs uppercase text-slate-500">
-                  <th class="pb-2 pr-4 font-medium">Repository</th>
-                  <th class="pb-2 pr-4 font-medium">Visibility</th>
-                  <th class="pb-2 pr-4 font-medium">Default branch</th>
-                  <th class="pb-2 pr-4 font-medium">Sync status</th>
-                  <th class="pb-2 font-medium">Last sync</th>
+                  <th class="pb-2 pr-4 font-medium">PR</th>
+                  <th class="pb-2 pr-4 font-medium">Source to target</th>
+                  <th class="pb-2 pr-4 font-medium">Approval</th>
+                  <th class="pb-2 pr-4 font-medium">Status</th>
+                  <th class="pb-2 pr-4 font-medium">Linked work item</th>
+                  <th class="pb-2 font-medium">Reviewers</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800">
-                @for (repo of repos.repositories(); track repo.id) {
+                @for (pr of overview.pullRequests; track pr.number) {
                   <tr>
                     <td class="py-3 pr-4">
-                      <p class="font-medium text-slate-100">{{ repo.fullName }}</p>
-                      @if (!repo.selected) {
-                        <p class="text-xs text-slate-500">Available from GitHub, not imported</p>
-                      }
+                      <p class="font-medium text-slate-100">#{{ pr.number }} {{ pr.title }}</p>
+                      <p class="text-xs text-slate-500">{{ pr.authorLogin }}</p>
                     </td>
-                    <td class="py-3 pr-4 text-slate-400">{{ repo.visibility }}</td>
-                    <td class="py-3 pr-4 font-mono text-sky-300">{{ repo.defaultBranch }}</td>
+                    <td class="py-3 pr-4 font-mono text-xs text-slate-400">
+                      {{ pr.sourceBranch }} to {{ pr.targetBranch }}
+                    </td>
+                    <td class="py-3 pr-4 text-slate-300">{{ pr.reviewDecision }}</td>
                     <td class="py-3 pr-4">
                       <span
                         class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase ring-1"
                         [class]="
-                          repo.syncStatus === 'synced'
-                            ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
-                            : 'bg-slate-700/50 text-slate-300 ring-slate-600'
+                          pr.status === 'open'
+                            ? 'bg-sky-500/15 text-sky-200 ring-sky-500/40'
+                            : pr.status === 'merged'
+                              ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
+                              : 'bg-slate-700/50 text-slate-300 ring-slate-600'
                         "
                       >
-                        {{ repo.syncStatus }}
+                        {{ pr.status }}
                       </span>
                     </td>
-                    <td class="py-3 text-slate-400">
-                      @if (repo.lastSyncedAt) {
-                        {{ repo.lastSyncedAt | date: 'short' }}
+                    <td class="py-3 pr-4 text-emerald-300">
+                      @if (pr.linkedWorkItemId) {
+                        WI #{{ pr.linkedWorkItemId }}
                       } @else {
                         -
                       }
                     </td>
+                    <td class="py-3 text-slate-400">{{ pr.reviewers.join(', ') }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6" class="py-3 text-sm text-slate-500">No pull requests found.</td>
                   </tr>
                 }
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <h2 class="text-sm font-semibold text-slate-100">Branches</h2>
-          <ul class="mt-3 space-y-2">
-            @for (branch of repos.branches(); track branch.repoId + branch.name) {
-              <li class="rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2">
-                <div class="flex items-center justify-between gap-3">
-                  <span class="truncate font-mono text-sm text-slate-100">{{ branch.name }}</span>
-                  <div class="flex shrink-0 gap-2">
-                    @if (branch.isDefault) {
-                      <span class="text-[10px] font-semibold uppercase text-sky-300">default</span>
-                    }
-                    @if (branch.isStale) {
-                      <span class="text-[10px] font-semibold uppercase text-amber-300">stale</span>
-                    }
-                  </div>
-                </div>
-                <p class="mt-1 text-xs text-slate-500">
-                  {{ branch.lastCommit }} at {{ branch.lastCommitAt | date: 'short' }}
-                </p>
-              </li>
-            }
-          </ul>
-        </div>
-      </section>
-
-      <section class="grid gap-6 xl:grid-cols-2">
-        <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <h2 class="text-sm font-semibold text-slate-100">Commit tracking</h2>
-          <ul class="mt-3 divide-y divide-slate-800">
-            @for (commit of repos.commits(); track commit.sha) {
-              <li class="py-3">
-                <div class="flex flex-wrap items-baseline gap-2">
-                  <code class="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-sky-300">{{ commit.shortSha }}</code>
-                  <span class="text-sm text-slate-100">{{ commit.message }}</span>
-                </div>
-                <p class="mt-1 text-xs text-slate-500">
-                  {{ commit.author }} on {{ commit.branch }} - {{ commit.date | date: 'short' }}
-                  @if (commit.linkedWorkItemId) {
-                    <span class="ml-2 text-emerald-300">Linked WI #{{ commit.linkedWorkItemId }}</span>
-                  }
-                </p>
-              </li>
-            }
-          </ul>
-        </div>
-
-        <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-          <h2 class="text-sm font-semibold text-slate-100">Webhook listener</h2>
-          <ul class="mt-3 divide-y divide-slate-800">
-            @for (event of repos.webhookEvents(); track event.deliveryId) {
-              <li class="flex items-center justify-between gap-3 py-3">
-                <div>
-                  <p class="font-mono text-xs text-slate-300">{{ event.deliveryId }}</p>
-                  <p class="text-xs text-slate-500">
-                    {{ event.type }} / {{ event.action }} - {{ event.receivedAt | date: 'short' }}
-                  </p>
-                </div>
-                <span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold uppercase text-emerald-200 ring-1 ring-emerald-500/40">
-                  {{ event.status }}
-                </span>
-              </li>
-            }
-          </ul>
-        </div>
-      </section>
-
-      <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-        <h2 class="text-sm font-semibold text-slate-100">Pull request monitoring</h2>
-        <div class="mt-3 overflow-x-auto">
-          <table class="w-full min-w-[760px] text-left text-sm">
-            <thead>
-              <tr class="text-xs uppercase text-slate-500">
-                <th class="pb-2 pr-4 font-medium">PR</th>
-                <th class="pb-2 pr-4 font-medium">Source to target</th>
-                <th class="pb-2 pr-4 font-medium">Approval</th>
-                <th class="pb-2 pr-4 font-medium">Status</th>
-                <th class="pb-2 pr-4 font-medium">Linked work item</th>
-                <th class="pb-2 font-medium">Reviewers</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800">
-              @for (pr of repos.pullRequests(); track pr.id) {
-                <tr>
-                  <td class="py-3 pr-4">
-                    <p class="font-medium text-slate-100">#{{ pr.number }} {{ pr.title }}</p>
-                    <p class="text-xs text-slate-500">{{ pr.author }}</p>
-                  </td>
-                  <td class="py-3 pr-4 font-mono text-xs text-slate-400">
-                    {{ pr.source }} to {{ pr.target }}
-                  </td>
-                  <td class="py-3 pr-4 text-slate-300">{{ pr.reviewDecision }}</td>
-                  <td class="py-3 pr-4">
-                    <span
-                      class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase ring-1"
-                      [class]="
-                        pr.status === 'open'
-                          ? 'bg-sky-500/15 text-sky-200 ring-sky-500/40'
-                          : pr.status === 'merged'
-                            ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
-                            : 'bg-slate-700/50 text-slate-300 ring-slate-600'
-                      "
-                    >
-                      {{ pr.status }}
-                    </span>
-                  </td>
-                  <td class="py-3 pr-4 text-emerald-300">
-                    @if (pr.linkedWorkItemId) {
-                      WI #{{ pr.linkedWorkItemId }}
-                    } @else {
-                      -
-                    }
-                  </td>
-                  <td class="py-3 text-slate-400">{{ pr.reviewers.join(', ') }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </section>
+        </section>
+      }
     }
   </div>
 </div>
