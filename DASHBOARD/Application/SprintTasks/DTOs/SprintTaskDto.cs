@@ -9,6 +9,8 @@ public sealed record SprintTaskDto(
     Guid              RepositoryId,
     Guid?             BacklogItemId,
     Guid?             ParentId,
+    string?           ParentWorkItemNumber,
+    string?           ParentTitle,
     string            WorkItemNumber,
     SprintTaskType    Type,
     string            Title,

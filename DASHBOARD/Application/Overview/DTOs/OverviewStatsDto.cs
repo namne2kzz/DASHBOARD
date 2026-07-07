@@ -8,6 +8,11 @@ namespace DASHBOARD.Application.Overview.DTOs;
 /// <param name="BurndownData">Ideal and actual story-point burndown arrays aligned to sprint working days.</param>
 /// <param name="StoryPoints">Committed vs completed story points for the selected sprint.</param>
 /// <param name="VelocityTrend">Per-sprint velocity across the five most recent sprints for the trend chart.</param>
+/// <param name="TypeTrend">Per-sprint work item counts by type across the selected sprint and up to six preceding sprints.</param>
+/// <param name="SprintHealth">On-track/at-risk/behind indicator for the selected sprint.</param>
+/// <param name="CycleTime">Approximate average cycle time for completed items in the selected sprint.</param>
+/// <param name="AssigneeWorkload">Task/story-point workload per assignee for the selected sprint.</param>
+/// <param name="RecentActivity">Most recent audit-trail entries across the repository.</param>
 public sealed record OverviewStatsDto(
     WorkItemCountsDto WorkItemCounts,
     StatusDistributionDto StatusDistribution,
@@ -15,7 +20,12 @@ public sealed record OverviewStatsDto(
     IReadOnlyList<SprintRefDto> AvailableSprints,
     BurndownDataDto BurndownData,
     StoryPointsDto StoryPoints,
-    IReadOnlyList<VelocityTrendItemDto> VelocityTrend);
+    IReadOnlyList<VelocityTrendItemDto> VelocityTrend,
+    IReadOnlyList<SprintTypeTrendItemDto> TypeTrend,
+    SprintHealthDto SprintHealth,
+    CycleTimeDto CycleTime,
+    IReadOnlyList<AssigneeWorkloadItemDto> AssigneeWorkload,
+    IReadOnlyList<RecentActivityItemDto> RecentActivity);
 
 /// <summary>Counts of work items by type for the selected sprint.</summary>
 /// <param name="Total">Total item count.</param>
@@ -75,3 +85,60 @@ public sealed record VelocityTrendItemDto(
     string SprintName,
     int CommittedPoints,
     int CompletedPoints);
+
+/// <summary>Work item counts by type for one sprint in the type-trend chart.</summary>
+/// <param name="SprintName">Sprint display name.</param>
+/// <param name="UserStory">User story count.</param>
+/// <param name="Task">Task count.</param>
+/// <param name="Bug">Bug count.</param>
+/// <param name="TestPlan">Test plan count.</param>
+public sealed record SprintTypeTrendItemDto(
+    string SprintName,
+    int UserStory,
+    int Task,
+    int Bug,
+    int TestPlan);
+
+/// <summary>On-track/at-risk/behind indicator for the selected sprint, derived from the burndown data.</summary>
+/// <param name="Status">One of <c>"OnTrack"</c>, <c>"AtRisk"</c>, or <c>"Behind"</c>.</param>
+/// <param name="DaysRemaining">Working days remaining in the sprint, from today (inclusive) to the sprint end date.</param>
+/// <param name="IdealRemaining">Ideal story points remaining as of today.</param>
+/// <param name="ActualRemaining">Actual story points remaining as of today.</param>
+public sealed record SprintHealthDto(
+    string Status,
+    int DaysRemaining,
+    double IdealRemaining,
+    double ActualRemaining);
+
+/// <summary>Approximate average cycle time for completed items in the selected sprint.</summary>
+/// <param name="AverageDays">Average of (ClosedAt - CreatedAt) in days across completed items. Zero when there is no sample.</param>
+/// <param name="SampleCount">Number of completed items the average is based on.</param>
+public sealed record CycleTimeDto(double AverageDays, int SampleCount);
+
+/// <summary>Task/story-point workload for one assignee in the selected sprint.</summary>
+/// <param name="AssigneeId">Assignee user ID, or null for the "Unassigned" bucket.</param>
+/// <param name="AssigneeName">Assignee display name, or "Unassigned".</param>
+/// <param name="AvatarClass">Assignee avatar CSS class, if any.</param>
+/// <param name="TaskCount">Number of items assigned.</param>
+/// <param name="StoryPoints">Total story points across assigned items.</param>
+public sealed record AssigneeWorkloadItemDto(
+    Guid? AssigneeId,
+    string AssigneeName,
+    string? AvatarClass,
+    int TaskCount,
+    int StoryPoints);
+
+/// <summary>One audit-trail entry for the repository-wide recent activity feed.</summary>
+/// <param name="SprintTaskId">The sprint task the entry belongs to.</param>
+/// <param name="TaskTitle">Title of the sprint task at read time.</param>
+/// <param name="Message">Human-readable description of the change.</param>
+/// <param name="AuthorName">Display name of the user who made the change.</param>
+/// <param name="AvatarClass">Author avatar CSS class, if any.</param>
+/// <param name="CreatedAt">UTC timestamp the entry was recorded.</param>
+public sealed record RecentActivityItemDto(
+    Guid SprintTaskId,
+    string TaskTitle,
+    string Message,
+    string AuthorName,
+    string? AvatarClass,
+    DateTime CreatedAt);

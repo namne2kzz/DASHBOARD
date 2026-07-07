@@ -40,8 +40,10 @@ public sealed class ListSprintTasksQueryHandler(
             .Select(t => MapToDto(t, repoCode, BuildTree(all, t.Id, repoCode)))
             .ToList();
 
-    internal static SprintTaskDto MapToDto(SprintTask t, string repoCode, IReadOnlyList<SprintTaskDto> subTasks)
-        => new(t.Id, t.SprintId, t.RepositoryId, t.BacklogItemId, t.ParentId, SprintTask.BuildWorkItemNumber(repoCode, t.WorkItemNumber),
+    internal static SprintTaskDto MapToDto(SprintTask t, string repoCode, IReadOnlyList<SprintTaskDto> subTasks,
+        string? parentWorkItemNumber = null, string? parentTitle = null)
+        => new(t.Id, t.SprintId, t.RepositoryId, t.BacklogItemId, t.ParentId, parentWorkItemNumber, parentTitle,
+               SprintTask.BuildWorkItemNumber(repoCode, t.WorkItemNumber),
                t.Type, t.Title, t.Description, t.Priority,
                t.AssignedToId, t.AssignedTo?.Name, t.AssignedTo?.AvatarClass,
                t.State, t.StoryPoints, t.OriginalEstimate, t.RemainingWork, t.CompletedWork, t.ClosedAt,

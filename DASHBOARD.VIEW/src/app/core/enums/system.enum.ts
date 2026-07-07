@@ -71,14 +71,31 @@ export enum WorkItemApiPriority { Low = 0, Medium = 1, High = 2, Critical = 3 }
  * Matches C# SystemFunction enum — numeric payload from the API.
  */
 export enum Permission {
-  ViewRepository = 0,
-  EditRepository = 1,
-  ManageSettings = 2,
-  CreateWorkItem = 3,
-  EditWorkItem   = 4,
-  DeleteWorkItem = 5,
-  ManageSprint   = 6,
-  ManageCapacity = 7,
-  ManageWiki     = 8,
-  ManageBoard    = 9,
+  // Repository
+  ViewRepository  = 0,
+  EditRepository  = 1,
+  // Members & Access
+  ManageMembers   = 2,
+  ManageRoles     = 3,
+  InviteMembers   = 4,
+  ManageMetadata  = 5,
+  // Work Items (Sprint Tasks)
+  CreateWorkItem  = 6,
+  EditWorkItem    = 7,
+  DeleteWorkItem  = 8,
+  AssignWorkItem  = 9,
+  // Backlog
+  ManageBacklog   = 10,
+  PromoteToSprint = 11,
+  // Sprint
+  ManageSprint    = 12,
+  ActivateSprint  = 13,
+  // Capacity / Wiki / Board
+  ManageCapacity  = 14,
+  ManageWiki      = 15,
+  ManageBoard     = 16,
+  // Analytics & Integrations
+  ViewAnalytics   = 17,
+  ManagePipeline  = 18,
+  ManageRepo      = 19,
 }

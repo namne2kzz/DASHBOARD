@@ -54,7 +54,7 @@ public sealed class SprintTaskDetailController(ISender mediator) : ControllerBas
             request.AssignedToId, request.StoryPoints, request.OriginalEstimate,
             request.StepsToReproduce, request.Environment, request.RootCause,
             request.Solution, request.Impaction, request.UnitTest, request.DesignReview,
-            request.TestSteps, request.Automated), ct);
+            request.TestSteps, request.Automated, request.ParentId), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });
         return NoContent();
     }
@@ -120,4 +120,5 @@ public sealed record UpdateSprintTaskDetailRequest(
     string?          UnitTest,
     string?          DesignReview,
     List<string>?    TestSteps,
-    bool?            Automated);
+    bool?            Automated,
+    Guid?            ParentId);

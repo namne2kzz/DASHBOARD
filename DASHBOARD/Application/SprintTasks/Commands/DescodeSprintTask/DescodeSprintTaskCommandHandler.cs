@@ -21,8 +21,8 @@ public sealed class DescodeSprintTaskCommandHandler(
     /// <returns><see cref="Result.Ok"/> on success.</returns>
     public async Task<Result> Handle(DescodeSprintTaskCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSprint, ct))
-            return Result.Failure("You do not have permission to manage sprints.");
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.PromoteToSprint, ct))
+            return Result.Failure("You do not have permission to descope sprint tasks.");
 
         var task = await db.Set<SprintTask>()
             .AsTracking()

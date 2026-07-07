@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, InjectionToken, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, InjectionToken, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DIALOG_REF_TOKEN } from '../../models/dialog.model';
 import { SprintPlanningService } from '../../services/sprint-planning.service';
@@ -13,9 +13,11 @@ import { AddSprintTaskDialogData } from '../../models/sprint-planning.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddSprintTaskDialogComponent {
-  private readonly dialogRef = inject(DIALOG_REF_TOKEN);
-  readonly planning          = inject(SprintPlanningService);
-  readonly data              = inject('DIALOG_DATA' as unknown as InjectionToken<AddSprintTaskDialogData>);
+  private readonly dialogRef  = inject(DIALOG_REF_TOKEN);
+  readonly planning           = inject(SprintPlanningService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  readonly data = inject('DIALOG_DATA' as unknown as InjectionToken<AddSprintTaskDialogData>);
 
   readonly title            = signal('');
   readonly description      = signal('');

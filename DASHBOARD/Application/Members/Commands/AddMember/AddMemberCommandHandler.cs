@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DASHBOARD.Application.Members.Commands.AddMember;
 
-/// <summary>Handles <see cref="AddMemberCommand"/>: checks ManageSettings permission, ensures user and repo exist, prevents duplicate membership, then creates the member row.</summary>
+/// <summary>Handles <see cref="AddMemberCommand"/>: checks ManageMembers permission, ensures user and repo exist, prevents duplicate membership, then creates the member row.</summary>
 public sealed class AddMemberCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
@@ -21,7 +21,7 @@ public sealed class AddMemberCommandHandler(
     /// <returns><see cref="Result{T}.Success"/> with the newly created <see cref="MemberDto"/>; <see cref="Result{T}.Failure"/> on a business-rule violation.</returns>
     public async Task<Result<MemberDto>> Handle(AddMemberCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSettings, ct))
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageMembers, ct))
             return Result<MemberDto>.Failure("You do not have permission to manage members in this repository.");
 
         var targetUser = await db.Set<User>().AsNoTracking()

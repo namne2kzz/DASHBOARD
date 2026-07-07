@@ -21,7 +21,7 @@
   @if (type() !== 'epic') {
     <div>
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
-        {{ parentLabel() }}
+        {{ parentLabel() }} <span class="text-rose-400">*</span>
       </label>
 
       @if (parentOptions().length > 0) {
@@ -32,9 +32,9 @@
             type="button"
             class="flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-sm transition"
             [class]="parentId()
-              ? 'border-sky-500/50 bg-sky-500/10 text-sky-100'
+              ? 'border-sky-500/50 bg-sky-500/10 text-sky-200'
               : 'border-slate-700 bg-slate-950 text-slate-400'"
-            (click)="parentDropdownOpen.set(!parentDropdownOpen())"
+            (click)="openDropdown()"
           >
             <span class="truncate">{{ selectedParentTitle() }}</span>
             <svg class="h-4 w-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -48,7 +48,9 @@
               <!-- Search input -->
               <div class="p-2">
                 <input
+                  #searchInput
                   type="text"
+                  name="parentSearch"
                   placeholder="Search…"
                   class="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
                   [ngModel]="parentSearch()"
@@ -58,6 +60,18 @@
               </div>
               <!-- Options list -->
               <div class="custom-scroll h-36 overflow-y-auto">
+                <!-- None option -->
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-2 px-3 py-2 text-sm italic transition"
+                  [class]="parentId() === null
+                    ? 'bg-sky-500/15 text-sky-200'
+                    : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'"
+                  (click)="selectParent(null)"
+                >
+                  <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-600"></span>
+                  <span>Unassigned</span>
+                </button>
                 @for (opt of filteredParentOptions(); track opt.id) {
                   <button
                     type="button"
@@ -80,8 +94,11 @@
         </div>
       } @else {
         <p class="rounded-lg border border-dashed border-slate-700 px-3 py-2.5 text-xs text-slate-500">
-          No {{ type() === 'feature' ? 'epics' : 'features' }} yet — create one first or leave unassigned.
+          No {{ type() === 'feature' ? 'epics' : 'features' }} yet — create one first.
         </p>
+      }
+      @if (parentRequired() && parentId() === null) {
+        <p class="mt-1.5 text-xs text-rose-400">Required — select a parent before creating.</p>
       }
     </div>
   }

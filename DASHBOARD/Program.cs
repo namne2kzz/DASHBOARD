@@ -63,9 +63,11 @@ builder.Services.AddRateLimiter(opt =>
 });
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
+var frontendBaseUrl = builder.Configuration["Invitation:FrontendBaseUrl"] ?? "http://localhost:4200";
+
 builder.Services.AddCors(opt =>
     opt.AddPolicy(AppConstants.AngularCorsPolicy, policy =>
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins(frontendBaseUrl)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials()));

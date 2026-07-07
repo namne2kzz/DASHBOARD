@@ -8,6 +8,13 @@
         "--browser",
         "msedge"
       ]
+    },
+    "mssql": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mssql-mcp-node"
+      ]
     }
   }
 }

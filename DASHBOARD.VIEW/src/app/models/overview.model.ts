@@ -7,6 +7,11 @@ export interface OverviewStatsDto {
   burndownData: BurndownDataDto;
   storyPoints: StoryPointsDto;
   velocityTrend: VelocityTrendItemDto[];
+  typeTrend: SprintTypeTrendItemDto[];
+  sprintHealth: SprintHealthDto;
+  cycleTime: CycleTimeDto;
+  assigneeWorkload: AssigneeWorkloadItemDto[];
+  recentActivity: RecentActivityItemDto[];
 }
 
 /** Work item counts by type for the selected sprint. */
@@ -57,4 +62,46 @@ export interface VelocityTrendItemDto {
   sprintName: string;
   committedPoints: number;
   completedPoints: number;
+}
+
+/** Work item counts by type for one sprint in the type-trend chart. */
+export interface SprintTypeTrendItemDto {
+  sprintName: string;
+  userStory: number;
+  task: number;
+  bug: number;
+  testPlan: number;
+}
+
+/** On-track/at-risk/behind indicator for the selected sprint. */
+export interface SprintHealthDto {
+  status: 'OnTrack' | 'AtRisk' | 'Behind';
+  daysRemaining: number;
+  idealRemaining: number;
+  actualRemaining: number;
+}
+
+/** Approximate average cycle time for completed items in the selected sprint. */
+export interface CycleTimeDto {
+  averageDays: number;
+  sampleCount: number;
+}
+
+/** Task/story-point workload for one assignee in the selected sprint. */
+export interface AssigneeWorkloadItemDto {
+  assigneeId: string | null;
+  assigneeName: string;
+  avatarClass: string | null;
+  taskCount: number;
+  storyPoints: number;
+}
+
+/** One audit-trail entry for the repository-wide recent activity feed. */
+export interface RecentActivityItemDto {
+  sprintTaskId: string;
+  taskTitle: string;
+  message: string;
+  authorName: string;
+  avatarClass: string | null;
+  createdAt: string;
 }

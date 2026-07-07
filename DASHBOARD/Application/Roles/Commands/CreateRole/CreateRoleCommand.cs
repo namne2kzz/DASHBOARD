@@ -5,7 +5,7 @@ using MediatR;
 
 namespace DASHBOARD.Application.Roles.Commands.CreateRole;
 
-/// <summary>Creates a new custom role within a repository. Requires <see cref="SystemFunction.ManageSettings"/>.</summary>
+/// <summary>Creates a new custom role within a repository. Requires <see cref="SystemFunction.ManageRoles"/>.</summary>
 /// <param name="RepositoryId">The repository to add the role to.</param>
 /// <param name="Name">Display name of the role.</param>
 /// <param name="Description">Purpose description.</param>

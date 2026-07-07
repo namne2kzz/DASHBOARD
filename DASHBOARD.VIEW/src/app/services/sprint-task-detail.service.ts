@@ -71,17 +71,23 @@ export class SprintTaskDetailService {
    * Caller subscribes to know when the save completes, so it can reset its dirty-tracking snapshot.
    * @param taskId The sprint task to update.
    * @param payload The new field values.
+   * @param parentDisplay Title/number of the newly selected parent, for local display; null when there is no parent.
    * @returns Observable that updates the local `detail` signal on success.
    */
-  updateTask(taskId: string, payload: UpdateSprintTaskPayload): Observable<void> {
+  updateTask(taskId: string, payload: UpdateSprintTaskPayload, parentDisplay: { workItemNumber: string; title: string } | null): Observable<void> {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) throw new Error('No repository selected.');
 
     return this.http.put<void>(`${API}/${repoId}/sprint-tasks/${taskId}`, payload).pipe(
       tap(() => {
-        this.detail.update(d => d ? { ...d, ...payload } : d);
+        this.detail.update(d => d ? {
+          ...d, ...payload,
+          parentWorkItemNumber: parentDisplay?.workItemNumber ?? null,
+          parentTitle:          parentDisplay?.title ?? null,
+        } : d);
         // Only title/priority show on the board card — keep it in sync to avoid a stale mismatch.
         this.board.patchItem(taskId, { title: payload.title, priority: PRIORITY_MAP[payload.priority] });
+        this.reloadHistory(taskId);
       }),
     );
   }

@@ -23,7 +23,7 @@ public sealed class RankBacklogItemCommandHandler(
     /// <returns><see cref="Result.Ok"/> on success.</returns>
     public async Task<Result> Handle(RankBacklogItemCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.EditWorkItem, ct))
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBacklog, ct))
             return Result.Failure("You do not have permission to reorder backlog items.");
 
         var item = await db.Set<BacklogItem>().AsTracking()

@@ -1,0 +1,36 @@
+:host ::ng-deep .ngx-charts .tick text {
+  fill: #94a3b8;
+  font-size: 11px;
+}
+
+:host ::ng-deep .ngx-charts .gridline-path {
+  stroke: #1e293b;
+}
+
+:host ::ng-deep .ngx-charts .refline-path {
+  stroke: #334155;
+}
+
+:host ::ng-deep .ngx-charts .legend-labels {
+  background: transparent !important;
+}
+
+:host ::ng-deep .ngx-charts .legend-label-text {
+  color: #cbd5e1 !important;
+}
+
+:host ::ng-deep .ngx-charts .advanced-pie-legend .legend-item .value {
+  color: #f8fafc !important;
+}
+
+:host ::ng-deep .ngx-charts .advanced-pie-legend .legend-item .label {
+  color: #94a3b8 !important;
+}
+
+:host ::ng-deep .ngx-charts .advanced-pie-legend .total-value {
+  color: #f8fafc !important;
+}
+
+:host ::ng-deep .ngx-charts .advanced-pie-legend .total-label {
+  color: #64748b !important;
+}

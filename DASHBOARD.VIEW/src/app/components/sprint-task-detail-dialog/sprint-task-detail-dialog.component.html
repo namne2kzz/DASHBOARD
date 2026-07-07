@@ -304,10 +304,70 @@
           </div>
         }
 
-        @if (t.parentId) {
-          <div>
-            <label class="field-label mb-1.5 block">Parent</label>
-            <p class="text-sm text-slate-300">Linked to a User Story</p>
+        @if (!isUserStory()) {
+          <div class="relative">
+            <label class="field-label mb-1.5 block">
+              Parent <span class="normal-case text-slate-600">(optional — must be a User Story)</span>
+            </label>
+
+            <input
+              type="text"
+              placeholder="Search Story by ID or title…"
+              autocomplete="off"
+              class="field-input"
+              [value]="parentSearchTerm()"
+              (input)="onParentSearch($any($event.target).value, $any($event.target))"
+            />
+
+            @if (parentDropdownRect(); as rect) {
+              <div
+                class="fixed z-[9990] rounded-xl border border-slate-700 bg-slate-800/95 py-1.5 shadow-2xl shadow-black/60 backdrop-blur-sm"
+                [style.top.px]="rect.top" [style.left.px]="rect.left" [style.width.px]="rect.width"
+              >
+                @if (parentSearching()) {
+                  @for (i of [1, 2, 3]; track i) {
+                    <div class="flex items-center gap-2.5 px-3 py-2">
+                      <div class="h-3 w-12 shrink-0 animate-pulse rounded bg-slate-700/80"></div>
+                      <div class="h-2.5 flex-1 animate-pulse rounded bg-slate-700/60"></div>
+                    </div>
+                  }
+                } @else if (parentResults().length > 0) {
+                  <div class="custom-scroll overflow-y-auto" style="max-height: 11rem">
+                    @for (s of parentResults(); track s.id) {
+                      <button
+                        type="button"
+                        class="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-slate-700/60"
+                        (click)="selectParent(s)"
+                      >
+                        <span class="shrink-0 whitespace-nowrap font-mono text-xs text-sky-400">{{ s.workItemNumber }}</span>
+                        <span class="min-w-0 truncate text-xs text-slate-200">{{ s.title }}</span>
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  <p class="px-3 py-2 text-[11px] text-slate-500">No matching User Story found.</p>
+                }
+              </div>
+            }
+
+            @if (selectedParent(); as parent) {
+              <div class="mt-2 flex items-center gap-2 rounded-lg border border-sky-700/50 bg-sky-900/20 px-3 py-2.5">
+                <button type="button" class="flex min-w-0 flex-1 items-center gap-1.5 text-left" (click)="openParent()" title="Open parent">
+                  <span class="shrink-0 whitespace-nowrap font-mono text-xs text-sky-300">{{ parent.workItemNumber }}</span>
+                  <span class="min-w-0 truncate text-sm text-slate-200 hover:underline">{{ parent.title }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-rose-500/15 hover:text-rose-400"
+                  (click)="clearParent()"
+                  title="Remove parent"
+                >
+                  <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            }
           </div>
         }
       </div>
@@ -361,91 +421,133 @@
 
   <!-- ── History tab ──────────────────────────────────────────────────────── -->
   @if (activeTab() === 'history') {
-    <div class="mt-4">
-      <!-- State progression strip -->
-      @if (stateTimeline().length > 0) {
-        <div class="mb-4">
-          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">State</p>
-          <div class="flex flex-wrap items-start gap-1.5">
-            @for (entry of stateTimeline(); track $index; let first = $first; let last = $last) {
-              @if (!first) {
-                <svg class="mt-1.5 h-3 w-3 shrink-0 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              }
-              <div class="flex flex-col items-center gap-1">
-                <span
-                  class="rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1"
-                  [class]="stateBadgeClass[entry.state]"
-                  [class.ring-2]="last"
-                >{{ stateLabel[entry.state] }}</span>
-                @if (entry.authorName) {
-                  <span class="text-[10px] text-slate-500">{{ entry.authorName }}</span>
-                }
-                @if (entry.createdAt) {
-                  <span class="text-[10px] text-slate-600">{{ entry.createdAt | localDate }}</span>
-                }
-              </div>
-            }
-          </div>
+    <div class="mt-4 space-y-5">
+      <!-- At-a-glance progress strips -->
+      <div class="space-y-4 border-b border-slate-800 pb-4">
+        <div>
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-400">Assignee</p>
+          <ng-container [ngTemplateOutlet]="progressStrip" [ngTemplateOutletContext]="{ nodes: assigneeProgress(), round: true }" />
         </div>
-      }
-
-      <!-- Assignee progression strip -->
-      @if (assigneeTimeline().length > 0) {
-        <div class="mb-4">
-          <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Assignee</p>
-          <div class="flex flex-wrap items-start gap-1.5">
-            @for (entry of assigneeTimeline(); track $index; let first = $first; let last = $last) {
-              @if (!first) {
-                <svg class="mt-1.5 h-3 w-3 shrink-0 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              }
-              <div class="flex flex-col items-center gap-1">
-                @if (entry.assigneeName) {
-                  <span
-                    class="rounded-full px-2 py-0.5 text-[11px] font-medium ring-1"
-                    [class]="last ? 'bg-sky-500/15 text-sky-300 ring-2 ring-sky-500/50' : 'bg-slate-800/80 text-slate-300 ring-slate-700'"
-                  >{{ entry.assigneeName }}</span>
-                } @else {
-                  <span class="rounded-full border border-dashed border-slate-700 px-2 py-0.5 text-[11px] text-slate-500">Unassigned</span>
-                }
-                @if (entry.authorName) {
-                  <span class="text-[10px] text-slate-500">{{ entry.authorName }}</span>
-                }
-                @if (entry.createdAt) {
-                  <span class="text-[10px] text-slate-600">{{ entry.createdAt | localDate }}</span>
-                }
-              </div>
-            }
-          </div>
+        <div>
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-sky-400">State</p>
+          <ng-container [ngTemplateOutlet]="progressStrip" [ngTemplateOutletContext]="{ nodes: stateProgress(), round: false }" />
         </div>
-      }
+      </div>
 
-      @if (detailSvc.history().length === 0) {
+      @if (historyGroups().length === 0) {
         <p class="text-sm text-slate-500">No changes recorded yet.</p>
       } @else {
-        <div class="space-y-3 border-t border-slate-800 pt-4 ">
-          <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Timeline</p>
-        <div class="space-y-3 border-l border-slate-800 pl-4">
-          @for (h of detailSvc.history(); track h.id) {
-            <div class="relative">
-              <span class="absolute -left-[1.0625rem] top-1 h-2 w-2 rounded-full bg-sky-400"></span>
-              <div class="flex items-center gap-2">
-                <div
-                  class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold text-white"
-                  [class]="h.authorAvatar || 'bg-slate-700'"
-                >{{ members.initials(h.authorName) }}</div>
-                <span class="text-xs font-semibold text-slate-300">{{ h.authorName }}</span>
-                <span class="text-[11px] text-slate-500">{{ h.createdAt | localDate }}</span>
+        <div class="space-y-5">
+          @for (group of historyGroups(); track group.dayLabel) {
+            <div>
+              <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">{{ group.dayLabel }}</p>
+              <div class="divide-y divide-slate-800/70 rounded-lg border border-slate-800/70">
+                @for (entry of group.entries; track entry.id) {
+                  <div class="flex items-center gap-2.5 px-3 py-2.5">
+                    <div
+                      class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                      [class]="entry.authorAvatar || 'bg-slate-700'"
+                    >{{ members.initials(entry.authorName) }}</div>
+
+                    <!-- One sentence: who, what happened -->
+                    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm">
+                      <span class="font-semibold text-slate-200">{{ entry.authorName }}</span>
+
+                      @switch (entry.kind) {
+                        @case ('state') {
+                          <span class="text-slate-400">changed status to</span>
+                          <span class="rounded-full px-2 py-0.5 text-xs font-semibold ring-1" [class]="stateBadgeClass[entry.toState!]">
+                            {{ stateLabel[entry.toState!] }}
+                          </span>
+                        }
+                        @case ('created') {
+                          <span class="text-slate-400">created this{{ entry.typeLabel ? ' ' + entry.typeLabel : '' }} work item</span>
+                          @if (entry.assigneeName) {
+                            <span class="text-slate-400">and assigned it to</span>
+                            <span class="rounded-full bg-slate-800 py-0.5 pl-0.5 pr-2 text-xs font-medium text-slate-200 ring-1 ring-slate-700">
+                              <span class="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-bold text-white align-middle" [class]="entry.assigneeAvatar || 'bg-sky-600'">{{ members.initials(entry.assigneeName) }}</span>
+                              {{ entry.assigneeName }}
+                            </span>
+                          }
+                        }
+                        @case ('assign') {
+                          <span class="text-slate-400">assigned this to</span>
+                          <span class="rounded-full bg-slate-800 py-0.5 pl-0.5 pr-2 text-xs font-medium text-slate-200 ring-1 ring-slate-700">
+                            <span class="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full text-[8px] font-bold text-white align-middle" [class]="entry.assigneeAvatar || 'bg-sky-600'">{{ members.initials(entry.assigneeName!) }}</span>
+                            {{ entry.assigneeName }}
+                          </span>
+                        }
+                        @case ('unassign') {
+                          <span class="text-slate-400">removed the assignee</span>
+                        }
+                        @case ('field-change') {
+                          <span class="text-slate-400">changed</span>
+                          <span class="font-medium text-slate-200">{{ entry.fieldLabel }}</span>
+                          <span class="text-slate-400">:</span>
+                          <span class="whitespace-pre-wrap rounded bg-slate-800/80 px-1.5 py-0.5 text-xs text-rose-300/90 line-through decoration-rose-400/40">{{ entry.oldValue || '(empty)' }}</span>
+                          <span class="text-slate-600">→</span>
+                          <span class="whitespace-pre-wrap rounded bg-slate-800/80 px-1.5 py-0.5 text-xs font-medium text-emerald-300">{{ entry.newValue || '(empty)' }}</span>
+                        }
+                        @case ('field-update') {
+                          <span class="text-slate-400">updated</span>
+                          <span class="font-medium text-slate-200">{{ entry.fieldLabel }}</span>
+                        }
+                        @case ('field-set') {
+                          <span class="text-slate-400">set</span>
+                          <span class="font-medium text-slate-200">{{ entry.fieldLabel }}</span>
+                          <span class="text-slate-400">to</span>
+                          <span class="whitespace-pre-wrap rounded bg-slate-800/80 px-1.5 py-0.5 text-xs font-medium text-emerald-300">{{ entry.newValue }}</span>
+                        }
+                        @case ('field-added') {
+                          <span class="text-slate-400">added</span>
+                          <span class="font-medium text-slate-200">{{ entry.fieldLabel }}</span>
+                        }
+                        @default {
+                          <span class="text-slate-400">{{ entry.message }}</span>
+                        }
+                      }
+                    </div>
+
+                    <span class="shrink-0 pl-2 text-xs text-slate-500">{{ entry.createdAt | localDate:'h:mm a' }}</span>
+                  </div>
+                }
               </div>
-              <p class="mt-1 text-sm text-slate-400">{{ h.message }}</p>
             </div>
           }
-        </div>
         </div>
       }
     </div>
   }
 }
+
+<!-- Reusable horizontal progress strip — a chain of circular nodes joined by a line, last node highlighted as current. -->
+<ng-template #progressStrip let-nodes="nodes" let-round="round">
+  <div class="flex items-start overflow-x-auto pb-1">
+    @for (node of nodes; track $index; let first = $first; let last = $last) {
+      <div class="flex min-w-[6.5rem] flex-1 flex-col items-center">
+        <div class="flex w-full items-center">
+          <div class="h-0.5 flex-1" [class]="first ? 'bg-transparent' : 'bg-slate-700'"></div>
+          <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ring-offset-2 ring-offset-slate-900"
+            [class]="node.badgeClass"
+            [class.ring-2]="last"
+            [class.ring-sky-400]="last"
+          >
+            @if (round) {
+              {{ node.label === 'Unassigned' ? '—' : members.initials(node.label) }}
+            } @else if (last) {
+              <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            } @else {
+              {{ $index + 1 }}
+            }
+          </div>
+          <div class="h-0.5 flex-1" [class]="last ? 'bg-transparent' : 'bg-slate-700'"></div>
+        </div>
+        <p class="mt-1.5 max-w-[6.5rem] truncate px-1 text-xs font-semibold text-slate-200">{{ node.label }}</p>
+        <p class="text-[10px] text-slate-500">{{ node.date | localDate:'MMM d' }}@if (last) {<span> · current</span>}</p>
+      </div>
+    }
+  </div>
+</ng-template>

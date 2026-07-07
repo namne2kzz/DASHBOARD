@@ -26,12 +26,15 @@ public sealed class GetSprintTaskDetailQueryHandler(
         var task = await db.Set<SprintTask>()
             .AsNoTracking()
             .Include(t => t.AssignedTo)
+            .Include(t => t.Parent)
             .FirstOrDefaultAsync(t => t.Id == query.TaskId && t.RepositoryId == query.RepositoryId, ct)
             ?? throw new NotFoundException(nameof(SprintTask), query.TaskId);
 
         var repoCode = await db.Set<Repository>()
             .Where(r => r.Id == query.RepositoryId).Select(r => r.Code).FirstAsync(ct);
 
-        return ListSprintTasksQueryHandler.MapToDto(task, repoCode, []);
+        var parentWorkItemNumber = task.Parent is null ? null : SprintTask.BuildWorkItemNumber(repoCode, task.Parent.WorkItemNumber);
+
+        return ListSprintTasksQueryHandler.MapToDto(task, repoCode, [], parentWorkItemNumber, task.Parent?.Title);
     }
 }

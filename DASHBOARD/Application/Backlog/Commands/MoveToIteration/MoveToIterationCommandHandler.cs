@@ -21,8 +21,8 @@ public sealed class MoveToIterationCommandHandler(
     /// <returns><see cref="Result.Ok"/> on success; failure result when the caller lacks permission or sprint is not found.</returns>
     public async Task<Result> Handle(MoveToIterationCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.EditWorkItem, ct))
-            return Result.Failure("You do not have permission to edit backlog items in this repository.");
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBacklog, ct))
+            return Result.Failure("You do not have permission to manage backlog items in this repository.");
 
         if (command.SprintId.HasValue &&
             !await db.Set<Sprint>().AnyAsync(s => s.Id == command.SprintId && s.RepositoryId == command.RepositoryId, ct))

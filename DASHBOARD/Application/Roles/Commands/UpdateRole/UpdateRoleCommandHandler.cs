@@ -9,19 +9,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DASHBOARD.Application.Roles.Commands.UpdateRole;
 
-/// <summary>Handles <see cref="UpdateRoleCommand"/>: checks ManageSettings permission, blocks default roles, validates name uniqueness, then persists changes.</summary>
+/// <summary>Handles <see cref="UpdateRoleCommand"/>: checks ManageRoles permission, blocks default roles, validates name uniqueness, then persists changes.</summary>
 public sealed class UpdateRoleCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
     IUnitOfWork           uow) : IRequestHandler<UpdateRoleCommand, Result>
 {
-    /// <summary>Validates permission, blocks default roles, checks name uniqueness, guards against orphaning ManageSettings, applies changes, and commits.</summary>
+    /// <summary>Validates permission, blocks default roles, checks name uniqueness, guards against orphaning ManageMembers, applies changes, and commits.</summary>
     /// <param name="command">The update request.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><see cref="Result.Ok"/> on success.</returns>
     public async Task<Result> Handle(UpdateRoleCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSettings, ct))
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageRoles, ct))
             return Result.Failure("You do not have permission to manage roles in this repository.");
 
         var role = await db.Set<Role>()
@@ -38,9 +38,9 @@ public sealed class UpdateRoleCommandHandler(
         if (nameConflict)
             return Result.Failure($"A role named '{command.Name}' already exists in this repository.");
 
-        // Guard: if this role is currently the only source of ManageSettings for some members,
-        // stripping it from AllowedFunctions must not leave the repository with nobody able to manage settings.
-        if (role.AllowedFunctions.Contains(SystemFunction.ManageSettings) && !command.AllowedFunctions.Contains(SystemFunction.ManageSettings))
+        // Guard: if this role is currently the only source of ManageMembers for some members,
+        // stripping it from AllowedFunctions must not leave the repository with nobody able to manage members.
+        if (role.AllowedFunctions.Contains(SystemFunction.ManageMembers) && !command.AllowedFunctions.Contains(SystemFunction.ManageMembers))
         {
             var membersOnThisRole = await db.Set<RepositoryMember>()
                 .AsNoTracking()
@@ -48,15 +48,15 @@ public sealed class UpdateRoleCommandHandler(
                 .Select(m => m.Id)
                 .ToListAsync(ct);
 
-            var stillHasManageSettingsElsewhere = await db.Set<RepositoryMember>()
+            var stillHasManageMembersElsewhere = await db.Set<RepositoryMember>()
                 .AsNoTracking()
                 .Include(m => m.Role)
                 .Where(m => m.RepositoryId == command.RepositoryId && m.RoleId != role.Id)
                 .ToListAsync(ct);
 
             if (membersOnThisRole.Count > 0 &&
-                !stillHasManageSettingsElsewhere.Any(m => m.Role!.AllowedFunctions.Contains(SystemFunction.ManageSettings)))
-                return Result.Failure("Cannot remove ManageSettings from this role: it is the only source of that permission in the repository.");
+                !stillHasManageMembersElsewhere.Any(m => m.Role!.AllowedFunctions.Contains(SystemFunction.ManageMembers)))
+                return Result.Failure("Cannot remove ManageMembers from this role: it is the only source of that permission in the repository.");
         }
 
         role.Name             = command.Name;

@@ -29,6 +29,7 @@ public sealed class ReorderColumnsCommandHandler(
             .ToListAsync(ct);
 
         if (columns.Count != command.OrderedColumnIds.Count ||
+            command.OrderedColumnIds.Distinct().Count() != command.OrderedColumnIds.Count ||
             command.OrderedColumnIds.Except(columns.Select(c => c.Id)).Any())
             return Result.Failure("The column ID list must include every column exactly once.");
 

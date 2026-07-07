@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DASHBOARD.Application.Roles.Commands.CreateRole;
 
-/// <summary>Handles <see cref="CreateRoleCommand"/>: checks ManageSettings permission, validates name uniqueness within the repo, then persists the custom role.</summary>
+/// <summary>Handles <see cref="CreateRoleCommand"/>: checks ManageRoles permission, validates name uniqueness within the repo, then persists the custom role.</summary>
 public sealed class CreateRoleCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
@@ -21,7 +21,7 @@ public sealed class CreateRoleCommandHandler(
     /// <returns><see cref="Result{T}.Success"/> with the newly created <see cref="RoleDto"/>; <see cref="Result{T}.Failure"/> on a business-rule violation.</returns>
     public async Task<Result<RoleDto>> Handle(CreateRoleCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSettings, ct))
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageRoles, ct))
             return Result<RoleDto>.Failure("You do not have permission to manage roles in this repository.");
 
         var nameExists = await db.Set<Role>()

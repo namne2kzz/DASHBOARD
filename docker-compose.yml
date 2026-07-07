@@ -1,9 +1,12 @@
-# Backing services for local DASHBOARD development.
+# Backing services + app images for local DASHBOARD development.
 # Run:   docker compose up -d        (start in background)
 # Stop:  docker compose down          (keep data)
 # Reset: docker compose down -v       (wipe all data volumes)
 #
-# App (.NET API + Angular) still runs natively via `dotnet run` / `ng serve`.
+# api/web are optional — only built when you run `docker compose build`
+# or `up --build`. Day-to-day, the app still runs natively via
+# `dotnet run` / `ng serve`; use api/web only when you want to test the
+# containerized production build.
 
 services:
   sqlserver:
@@ -11,12 +14,13 @@ services:
     container_name: dashboard-sqlserver
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:-Your_strong_Pass123}"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
       MSSQL_PID: "Developer"
     ports:
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+      - ./backups:/var/opt/mssql/backup
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
       interval: 10s
@@ -49,6 +53,42 @@ services:
     ports:
       - "1025:1025"     # SMTP (matches EmailSettings.SmtpPort)
       - "8025:8025"     # Web UI -> http://localhost:8025
+    restart: unless-stopped
+
+  # Optional — containerized app images, opt-in via the "app" profile.
+  # Ignored by plain `docker compose up -d` / `down` / `ps`.
+  # Build/run:  docker compose --profile app up -d --build
+  # Stop:       docker compose --profile app down
+  api:
+    build:
+      context: .
+      dockerfile: DASHBOARD/Dockerfile
+    container_name: dashboard-api
+    profiles: ["app"]
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__Default: "Server=sqlserver,1433;Database=DASHBOARD;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True;"
+      RabbitMq__Username: "${RABBITMQ_USER:-guest}"
+      RabbitMq__Password: "${RABBITMQ_PASS:-guest}"
+    ports:
+      - "55432:8080"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: DASHBOARD.VIEW/Dockerfile
+    container_name: dashboard-web
+    profiles: ["app"]
+    ports:
+      - "4201:80"
     restart: unless-stopped
 
   # Optional — uncomment when you start using Redis (StackExchange.Redis).

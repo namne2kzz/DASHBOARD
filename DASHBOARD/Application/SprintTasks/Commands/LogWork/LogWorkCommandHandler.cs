@@ -38,7 +38,10 @@ public sealed class LogWorkCommandHandler(
         task.RemainingWork   = command.RemainingWork;
 
         if (task.RemainingWork == 0 && task.State != Domain.Enums.SprintTaskState.Done)
-            task.State = Domain.Enums.SprintTaskState.Done;
+        {
+            task.State    = Domain.Enums.SprintTaskState.Done;
+            task.ClosedAt = DateTime.UtcNow;
+        }
 
         task.Touch();
 

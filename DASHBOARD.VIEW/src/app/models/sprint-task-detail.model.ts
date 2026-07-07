@@ -38,4 +38,6 @@ export interface UpdateSprintTaskPayload {
   designReview:     string | null;
   testSteps:        string[] | null;
   automated:        boolean | null;
+  /** New parent User Story id; null to remove. */
+  parentId:         string | null;
 }

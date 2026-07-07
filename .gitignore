@@ -3,6 +3,10 @@
 .claude/settings.local.json
 .claude/self-test.local.json
 
+# ── DB backups (local only, never commit) ──────────────────────────────────
+backups/*
+!backups/.gitkeep
+
 # ── IDE / tooling ───────────────────────────────────────────────────────────
 .vs/
 .idea/

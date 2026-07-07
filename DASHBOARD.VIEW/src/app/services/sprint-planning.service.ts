@@ -1,6 +1,8 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { RepositoryContextService } from './repository-context.service';
 import { SprintSelectionService } from './sprint-selection.service';
 import { PrivilegeService } from '../core/services/privilege.service';
@@ -12,9 +14,8 @@ import {
   SprintTaskApiDto,
   SprintTaskApiType,
 } from '../models/sprint-planning-api.model';
-import { BacklogItemApiDto, BacklogItemApiState, BacklogItemApiType } from '../models/backlog-api.model';
 import { SPRINT_TASK_STATE_OPTIONS } from '../core/constants/system.constant';
-import { BacklogStory, LoadState, MemberLoad, Sprint, SprintTask } from '../models/sprint-planning.model';
+import { LoadState, MemberLoad, Sprint, SprintTask } from '../models/sprint-planning.model';
 
 @Injectable({ providedIn: 'root' })
 export class SprintPlanningService {
@@ -24,9 +25,8 @@ export class SprintPlanningService {
   private readonly privilege       = inject(PrivilegeService);
   private readonly destroyRef      = inject(DestroyRef);
 
-  private readonly _detail       = signal<SprintDetailApiDto | null>(null);
-  private readonly _backlogItems = signal<BacklogItemApiDto[]>([]);
-  private readonly _loading      = signal(false);
+  private readonly _detail   = signal<SprintDetailApiDto | null>(null);
+  private readonly _loading  = signal(false);
   private readonly _error        = signal<string | null>(null);
 
   readonly canManageSprints  = computed(() => this.privilege.canManageSprints());
@@ -96,23 +96,14 @@ export class SprintPlanningService {
   );
 
   readonly sprintTaskRows = computed<SprintTask[]>(() =>
-    this.flatTasks().filter(t => t.type === 'task'),
-  );
-
-  readonly backlogStories = computed<BacklogStory[]>(() =>
-    this._backlogItems().map(i => ({ id: i.id, title: i.title, storyPoints: i.storyPoints })),
+    this.flatTasks().filter(t => t.type !== 'user-story'),
   );
 
   constructor() {
     effect(() => {
       const repoId = this.repoCtx.selectedRepoId();
       this._error.set(null);
-      if (!repoId) {
-        this._detail.set(null);
-        this._backlogItems.set([]);
-        return;
-      }
-      this.loadBacklogStories(repoId);
+      if (!repoId) { this._detail.set(null); return; }
     });
 
     // Load sprint detail whenever the shared sprint selection changes.
@@ -125,17 +116,25 @@ export class SprintPlanningService {
     });
   }
 
-  /** Creates a new sprint (inactive) then reloads the sprint list. @param name Sprint name. @param startDate ISO date. @param endDate ISO date. */
-  createSprint(name: string, startDate: string, endDate: string): void {
+  /** Creates a new sprint (inactive). Caller must subscribe and handle error. @param name Sprint name. @param startDate ISO date. @param endDate ISO date. @returns Observable that emits the created sprint and adds it to the selection list. */
+  createSprint(name: string, startDate: string, endDate: string): Observable<SprintApiDto> {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId) return EMPTY;
+    return this.http
+      .post<SprintApiDto>(this.sprintsUrl(repoId), { name, startDate, endDate })
+      .pipe(tap(sprint => this.sprintSelection.addSprint(sprint)));
+  }
+
+  /** Deletes a sprint and removes it from the selection list. @param sprintId Sprint to delete. */
+  deleteSprint(sprintId: string): void {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return;
-
     this.http
-      .post<SprintApiDto>(this.sprintsUrl(repoId), { name, startDate, endDate })
+      .delete<void>(`${this.sprintsUrl(repoId)}/${sprintId}`)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: sprint => this.sprintSelection.addSprint(sprint),
-        error: () => this._error.set('Failed to create sprint. Check dates do not overlap existing sprints.'),
+        next:  () => this.sprintSelection.removeSprint(sprintId),
+        error: (err) => this._error.set(err?.error?.error ?? 'Failed to delete sprint.'),
       });
   }
 
@@ -152,7 +151,7 @@ export class SprintPlanningService {
     return 'future';
   }
 
-  /** Updates sprint name and dates. Only allowed for future sprints (startDate > today). @param name Sprint name. @param startDate ISO date. @param endDate ISO date. */
+  /** Updates sprint name and dates. Allowed for future and active sprints; blocked for past. @param name Sprint name. @param startDate ISO date. @param endDate ISO date. */
   updateSprint(name: string, startDate: string, endDate: string): void {
     const repoId   = this.repoCtx.selectedRepoId();
     const sprintId = this.selectedSprintId();
@@ -242,21 +241,6 @@ export class SprintPlanningService {
       });
   }
 
-  /** Promotes a ready backlog story into the selected sprint. @param backlogItemId Backlog item ID. */
-  moveStoryToSprint(backlogItemId: string): void {
-    const repoId   = this.repoCtx.selectedRepoId();
-    const sprintId = this.selectedSprintId();
-    if (!repoId || !sprintId) return;
-
-    this.http
-      .post(`${environment.apiBaseUrl}/repositories/${repoId}/backlog/${backlogItemId}/promote/${sprintId}`, {})
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => { this.loadBacklogStories(repoId); this.reloadDetail(); },
-        error: () => this._error.set('Failed to promote story. Ensure it is in Ready state.'),
-      });
-  }
-
   /** Removes a sprint story and restores its backlog item to Ready. @param taskId Sprint task ID. */
   descopeStory(taskId: string): void {
     const repoId   = this.repoCtx.selectedRepoId();
@@ -267,7 +251,7 @@ export class SprintPlanningService {
       .post(`${this.tasksUrl(repoId, sprintId)}/${taskId}/descope`, {})
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => { this.loadBacklogStories(repoId); this.reloadDetail(); },
+        next: () => this.reloadDetail(),
         error: () => this._error.set('Failed to de-scope story.'),
       });
   }
@@ -323,6 +307,55 @@ export class SprintPlanningService {
       });
   }
 
+  /** Removes a capacity member row from the sprint. @param capacityMemberId The capacity row ID (CapacityMember.Id, not userId). */
+  removeCapacityMember(capacityMemberId: string): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+    this.http
+      .delete(`${this.sprintsUrl(repoId)}/${sprintId}/capacity/members/${capacityMemberId}`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reloadDetail(),
+        error: (err) => this._error.set(err?.error?.error ?? 'Failed to remove capacity member.'),
+      });
+  }
+
+  /** Adds a day-off entry to the sprint. @param date ISO date string. @param hours Hours to deduct. @param reason Short description. @param userId Optional member; omit for team-wide day off. */
+  addDayOff(date: string, hours: number, reason: string, userId?: string): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+    const params: Record<string, string> = { date, hours: hours.toString(), reason };
+    if (userId) params['userId'] = userId;
+    this.http
+      .post(`${this.sprintsUrl(repoId)}/${sprintId}/capacity/daysoff`, null, { params })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reloadDetail(),
+        error: () => this._error.set('Failed to add day off.'),
+      });
+  }
+
+  /** Removes a day-off entry from the sprint. @param dayOffId The DayOff row ID. */
+  removeDayOff(dayOffId: string): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (!repoId || !sprintId) return;
+    this.http
+      .delete(`${this.sprintsUrl(repoId)}/${sprintId}/capacity/daysoff/${dayOffId}`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reloadDetail(),
+        error: (err) => this._error.set(err?.error?.error ?? 'Failed to remove day off.'),
+      });
+  }
+
+  /** Returns the capacity row ID for a member (needed for remove). @param userId Member user ID. @returns CapacityMember.Id or null if not in sprint. */
+  getCapacityMemberId(userId: string): string | null {
+    return this.capacityMembers().find(m => m.userId === userId)?.id ?? null;
+  }
+
   /** Returns the display name of a user by ID. @param userId User ID or null. @returns Name or 'Unassigned'. */
   userName(userId: string | null): string {
     if (!userId) return 'Unassigned';
@@ -362,18 +395,6 @@ export class SprintPlanningService {
       });
   }
 
-  private loadBacklogStories(repoId: string): void {
-    this.http
-      .get<BacklogItemApiDto[]>(`${environment.apiBaseUrl}/repositories/${repoId}/backlog`, {
-        params: {
-          type:  BacklogItemApiType.UserStory.toString(),
-          state: BacklogItemApiState.Ready.toString(),
-        },
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({ next: items => this._backlogItems.set(items), error: () => {} });
-  }
-
   /** Reloads the current sprint detail — call when navigating to this page to pick up external state changes. */
   refresh(): void {
     const repoId   = this.repoCtx.selectedRepoId();
@@ -411,8 +432,14 @@ export class SprintPlanningService {
     return {
       id:               t.id,
       parentId:         t.parentId,
-      type:             t.type === SprintTaskApiType.UserStory ? 'user-story' : 'task',
+      type:             t.type === SprintTaskApiType.UserStory ? 'user-story'
+                      : t.type === SprintTaskApiType.Bug      ? 'bug'
+                      : t.type === SprintTaskApiType.TestPlan ? 'test-plan'
+                      : 'task',
+      workItemNumber:   t.workItemNumber,
       title:            t.title,
+      description:      t.description,
+      priority:         t.priority,
       assignedToId:     t.assignedToId,
       assignedToName:   t.assignedToName,
       state:            (['new', 'backlog', 'todo', 'active', 'in-review', 'done'] as const)[t.state],

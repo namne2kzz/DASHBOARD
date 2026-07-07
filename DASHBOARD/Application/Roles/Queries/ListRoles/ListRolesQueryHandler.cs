@@ -23,7 +23,7 @@ public sealed class ListRolesQueryHandler(
 
         var roles = await db.Set<Role>()
             .AsNoTracking()
-            .Where(r => r.IsDefault || r.RepositoryId == query.RepositoryId)
+            .Where(r => r.RepositoryId == query.RepositoryId)
             .OrderByDescending(r => r.IsDefault)
             .ThenBy(r => r.Name)
             .ToListAsync(ct);

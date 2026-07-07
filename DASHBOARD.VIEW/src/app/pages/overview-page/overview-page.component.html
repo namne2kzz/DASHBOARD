@@ -17,42 +17,66 @@
       </div>
     }
 
-    <section class="grid gap-4 lg:grid-cols-[1fr_auto]">
-      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
-        <div class="flex items-center justify-between gap-4">
-          <div>
-            <p class="text-xs uppercase tracking-[0.2em] text-sky-400/90">Current sprint</p>
-            <h2 class="mt-2 text-xl font-semibold text-white">{{ selectedSprintName() }}</h2>
-            <p class="mt-1 text-sm text-slate-400">Sprint metrics update the charts and cards below.</p>
+    <!-- Sprint header + health -->
+    <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p class="text-xs uppercase tracking-[0.2em] text-sky-400/90">Current sprint</p>
+          <div class="mt-2 flex items-center gap-3">
+            <h2 class="text-xl font-semibold text-white">{{ selectedSprintName() }}</h2>
+            @if (sprintHealth(); as health) {
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1"
+                [class]="healthBadge().classes"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                {{ healthBadge().label }}
+                @if (health.daysRemaining > 0) {
+                  · {{ health.daysRemaining }}d left
+                }
+              </span>
+            }
           </div>
-          <div class="w-56">
-            <label class="block text-xs font-medium uppercase tracking-[0.2em] text-slate-400" for="selectedSprint">Sprint</label>
-            <select
-              id="selectedSprint"
-              class="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/30"
-              (change)="selectSprint($any($event.target).value)"
-            >
-              @for (sprint of availableSprints(); track sprint.id) {
-                <option [value]="sprint.id" [selected]="sprint.id === selectedSprintId()">{{ sprint.name }}</option>
-              }
-            </select>
-          </div>
+          <p class="mt-1 text-sm text-slate-400">Sprint metrics update the charts and cards below.</p>
+        </div>
+        <div class="w-56">
+          <label class="block text-xs font-medium uppercase tracking-[0.2em] text-slate-400" for="selectedSprint">Sprint</label>
+          <select
+            id="selectedSprint"
+            class="mt-2 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/30"
+            (change)="selectSprint($any($event.target).value)"
+          >
+            @for (sprint of availableSprints(); track sprint.id) {
+              <option [value]="sprint.id" [selected]="sprint.id === selectedSprintId()">{{ sprint.name }}</option>
+            }
+          </select>
         </div>
       </div>
+    </section>
 
-      <div class="grid gap-4 sm:grid-cols-3">
-        <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
-          <p class="text-xs text-slate-400">Total items</p>
-          <div class="mt-2 text-3xl font-semibold text-white">{{ sprintTotal() }}</div>
-        </div>
-        <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
-          <p class="text-xs text-slate-400">In progress</p>
-          <div class="mt-2 text-3xl font-semibold text-white">{{ sprintInProgress() }}</div>
-        </div>
-        <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
-          <p class="text-xs text-slate-400">Done</p>
-          <div class="mt-2 text-3xl font-semibold text-white">{{ sprintDone() }}</div>
-        </div>
+    <!-- Stat cards -->
+    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
+        <p class="text-xs text-slate-400">Total items</p>
+        <div class="mt-2 text-3xl font-semibold text-white">{{ sprintTotal() }}</div>
+      </div>
+      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
+        <p class="text-xs text-slate-400">In progress</p>
+        <div class="mt-2 text-3xl font-semibold text-white">{{ sprintInProgress() }}</div>
+      </div>
+      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
+        <p class="text-xs text-slate-400">Done</p>
+        <div class="mt-2 text-3xl font-semibold text-white">{{ sprintDone() }}</div>
+      </div>
+      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
+        <p class="text-xs text-slate-400">Avg. cycle time</p>
+        @if (cycleTime().sampleCount > 0) {
+          <div class="mt-2 text-3xl font-semibold text-white">{{ cycleTime().averageDays }}<span class="text-base font-normal text-slate-400"> days</span></div>
+          <p class="mt-1 text-[11px] text-slate-500">Based on {{ cycleTime().sampleCount }} completed item(s)</p>
+        } @else {
+          <div class="mt-2 text-3xl font-semibold text-slate-600">—</div>
+          <p class="mt-1 text-[11px] text-slate-500">No completed items yet</p>
+        }
       </div>
     </section>
 
@@ -78,164 +102,164 @@
       </section>
     }
 
+    <!-- Work items by type + type distribution -->
     <div class="grid gap-6 lg:grid-cols-2">
       <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
-        <h2 class="text-sm font-semibold text-slate-200">Bug vs User Story</h2>
-        <p class="mt-1 text-xs text-slate-500">Work item count by type for the selected sprint.</p>
-        <div class="mt-4">
-          <svg class="h-40 w-full" viewBox="0 0 320 120" preserveAspectRatio="xMidYMid meet">
-            @let max = bugVsStoryMax();
-            @let usW = (userStoryCount() / max) * 260;
-            @let bugW = (bugCount() / max) * 260;
-            <text x="0" y="14" fill="#94a3b8" font-size="11">User Story</text>
-            <rect x="0" y="22" [attr.width]="usW" height="22" rx="6" fill="#38bdf8" opacity="0.85" />
-            <text x="8" y="37" fill="#0f172a" font-size="11" font-weight="600">{{ userStoryCount() }}</text>
-
-            <text x="0" y="72" fill="#94a3b8" font-size="11">Bug</text>
-            <rect x="0" y="80" [attr.width]="bugW" height="22" rx="6" fill="#fb7185" opacity="0.9" />
-            <text x="8" y="95" fill="#0f172a" font-size="11" font-weight="600">{{ bugCount() }}</text>
-          </svg>
+        <h2 class="text-sm font-semibold text-slate-200">Work items by type</h2>
+        <p class="mt-1 text-xs text-slate-500">Item count per type for the selected sprint.</p>
+        <div class="mt-4 h-64 w-full">
+          <ngx-charts-bar-vertical
+            [results]="typeChartData()"
+            [scheme]="typeScheme"
+            [xAxis]="true"
+            [yAxis]="true"
+            [roundEdges]="true"
+            [gradient]="false"
+            [animations]="true"
+          />
         </div>
       </section>
 
       <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
-        <h2 class="text-sm font-semibold text-slate-200">Task vs Test Plan</h2>
-        <p class="mt-1 text-xs text-slate-500">Remaining work allocation for the selected sprint.</p>
-        <div class="mt-4">
-          <svg class="h-40 w-full" viewBox="0 0 320 120" preserveAspectRatio="xMidYMid meet">
-            @let max2 = taskVsTestMax();
-            @let taskW = (taskCount() / max2) * 260;
-            @let testW = (testPlanCount() / max2) * 260;
-            <text x="0" y="14" fill="#94a3b8" font-size="11">Task</text>
-            <rect x="0" y="22" [attr.width]="taskW" height="22" rx="6" fill="#fbbf24" opacity="0.85" />
-            <text x="8" y="37" fill="#0f172a" font-size="11" font-weight="600">{{ taskCount() }}</text>
-
-            <text x="0" y="72" fill="#94a3b8" font-size="11">Test Plan</text>
-            <rect x="0" y="80" [attr.width]="testW" height="22" rx="6" fill="#a855f7" opacity="0.9" />
-            <text x="8" y="95" fill="#0f172a" font-size="11" font-weight="600">{{ testPlanCount() }}</text>
-          </svg>
+        <h2 class="text-sm font-semibold text-slate-200">Type distribution</h2>
+        <p class="mt-1 text-xs text-slate-500">Share of work item types in the selected sprint.</p>
+        <div class="mt-4 h-64 w-full">
+          <ngx-charts-advanced-pie-chart
+            [results]="typeChartData()"
+            [scheme]="typeScheme"
+            [gradient]="false"
+            [animations]="true"
+          />
         </div>
       </section>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-3">
-      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
-        <h2 class="text-sm font-semibold text-slate-200">Type distribution</h2>
-        <p class="mt-1 text-xs text-slate-500">Pie chart of work item types in the selected sprint.</p>
-        <div class="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-          <svg class="h-40 w-40 flex-shrink-0" viewBox="0 0 160 160">
-            <g transform="translate(80 80) rotate(-90)">
-              @for (segment of typePieSegments(); track segment.type) {
-                <circle
-                  r="36"
-                  cx="0"
-                  cy="0"
-                  fill="none"
-                  [attr.stroke]="segment.color"
-                  stroke-width="24"
-                  [attr.stroke-dasharray]="segment.dashArray"
-                  [attr.stroke-dashoffset]="-segment.offset"
-                  stroke-linecap="butt"
-                />
-              }
-            </g>
-          </svg>
-          <div class="grid gap-2">
-            @for (segment of typeDistribution(); track segment.type) {
-              <div class="flex items-center gap-3 text-sm text-slate-200">
-                <span class="h-3 w-3 shrink-0 rounded-full" [style.background]="segment.color"></span>
-                <span class="flex-1 text-slate-300">{{ segment.label }}</span>
-                <span class="font-semibold text-white">{{ segment.count }}</span>
-              </div>
-            }
-          </div>
-        </div>
-      </section>
-
+    <!-- Status distribution + velocity trend -->
+    <div class="grid gap-6 lg:grid-cols-2">
       <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
         <h2 class="text-sm font-semibold text-slate-200">Status distribution</h2>
-        <p class="mt-1 text-xs text-slate-500">Bar chart of items by state in the selected sprint.</p>
-        <div class="mt-4 space-y-4">
-          @for (item of statusItems(); track item.label) {
-            <div class="space-y-2">
-              <div class="flex items-center justify-between text-sm text-slate-300">
-                <span>{{ item.label }}</span>
-                <span class="font-semibold text-white">{{ item.count }}</span>
-              </div>
-              <div class="h-3 overflow-hidden rounded-full bg-slate-800">
-                <div
-                  class="h-full rounded-full"
-                  [style.width]="(item.count / statusMax()) * 100 + '%'"
-                  [style.background]="item.color"
-                ></div>
-              </div>
-            </div>
-          }
+        <p class="mt-1 text-xs text-slate-500">Item count by workflow state in the selected sprint.</p>
+        <div class="mt-4 h-64 w-full">
+          <ngx-charts-bar-horizontal
+            [results]="statusItems()"
+            [scheme]="statusScheme"
+            [xAxis]="true"
+            [yAxis]="true"
+            [roundEdges]="true"
+            [gradient]="false"
+            [animations]="true"
+          />
         </div>
       </section>
 
       <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
         <h2 class="text-sm font-semibold text-slate-200">Velocity trend</h2>
-        <p class="mt-1 text-xs text-slate-500">Committed story points across the last 5 sprints.</p>
-        <div class="mt-4 overflow-x-auto">
-          <svg class="h-40 w-full min-w-[240px]" viewBox="0 0 320 140">
-            <rect x="24" y="18" width="272" height="100" rx="8" fill="#020617" stroke="#1e293b" />
-            @if (sprintTrend().length > 0) {
-              <polyline
-                fill="none"
-                stroke="#38bdf8"
-                stroke-width="2.5"
-                stroke-linejoin="round"
-                [attr.points]="burndownPolyline(sprintTrend(), 320, 140, 32)"
-              />
-            }
-            @for (item of sprintTrendItems(); track item.sprintName) {
-              <text [attr.x]="item.x" y="132" fill="#94a3b8" font-size="9">{{ item.sprintName | slice: 0 : 8 }}</text>
-            }
-          </svg>
-        </div>
-        <div class="mt-4 grid gap-2 text-sm text-slate-400">
-          @for (item of sprintTrendItems(); track item.sprintName) {
-            <div class="flex items-center justify-between text-slate-200">
-              <span class="truncate">{{ item.sprintName }}</span>
-              <span class="ml-2 shrink-0 font-semibold text-white">{{ item.committedPoints }} pts</span>
-            </div>
-          }
+        <p class="mt-1 text-xs text-slate-500">Committed vs completed story points across the last 5 sprints.</p>
+        <div class="mt-4 h-64 w-full">
+          <ngx-charts-line-chart
+            [results]="velocityChartSeries()"
+            [scheme]="velocityScheme"
+            [xAxis]="true"
+            [yAxis]="true"
+            [legend]="true"
+            [autoScale]="true"
+            [animations]="true"
+          />
         </div>
       </section>
     </div>
 
+    <!-- Work item trend by type (7 sprints) -->
+    <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <h2 class="text-sm font-semibold text-slate-200">Work item trend by type</h2>
+      <p class="mt-1 text-xs text-slate-500">Item count per type — current sprint vs the up to 6 preceding sprints.</p>
+      <div class="mt-4 h-80 w-full">
+        <ngx-charts-line-chart
+          [results]="typeTrendChartSeries()"
+          [scheme]="typeScheme"
+          [xAxis]="true"
+          [yAxis]="true"
+          [legend]="true"
+          [autoScale]="true"
+          [animations]="true"
+        />
+      </div>
+    </section>
+
+    <!-- Burndown -->
     <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
       <h2 class="text-sm font-semibold text-slate-200">{{ t('overview.burndown.title') }}</h2>
       <p class="mt-1 text-xs text-slate-500">{{ t('overview.burndown.note') }}</p>
-      <div class="mt-4 overflow-x-auto">
-        <svg class="h-56 w-full min-w-[360px]" viewBox="0 0 400 200" preserveAspectRatio="xMidYMid meet">
-          <rect x="36" y="16" width="348" height="152" rx="8" fill="#020617" stroke="#1e293b" />
-          <text x="44" y="34" fill="#64748b" font-size="10">Story points remaining</text>
-          <text x="300" y="34" fill="#94a3b8" font-size="9">Ideal ···</text>
-          <text x="300" y="46" fill="#38bdf8" font-size="9">Actual —</text>
-          @if (burndownIdeal().length > 0) {
-            <polyline
-              fill="none"
-              stroke="#64748b"
-              stroke-width="1.5"
-              stroke-dasharray="6 5"
-              [attr.points]="burndownPolyline(burndownIdeal(), 400, 200, 44)"
-            />
-          }
-          @if (burndownActual().length > 0) {
-            <polyline
-              fill="none"
-              stroke="#38bdf8"
-              stroke-width="2.2"
-              stroke-linejoin="round"
-              [attr.points]="burndownPolyline(burndownActual(), 400, 200, 44)"
-            />
-          }
-          <text x="44" y="184" fill="#475569" font-size="9">{{ t('overview.axis.day1') }}</text>
-          <text x="320" y="184" fill="#475569" font-size="9">{{ t('overview.axis.day11') }}</text>
-        </svg>
+      <div class="mt-4 h-64 w-full">
+        <ngx-charts-line-chart
+          [results]="burndownChartSeries()"
+          [scheme]="burndownScheme"
+          [xAxis]="true"
+          [yAxis]="true"
+          [legend]="true"
+          [autoScale]="true"
+          [animations]="true"
+        />
       </div>
     </section>
+
+    <!-- Workload by assignee + recent activity -->
+    <div class="grid gap-6 lg:grid-cols-2">
+      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+        <h2 class="text-sm font-semibold text-slate-200">Workload by assignee</h2>
+        <p class="mt-1 text-xs text-slate-500">Item count assigned to each member in the selected sprint.</p>
+        @if (assigneeWorkload().length > 0) {
+          <div class="mt-4 h-56 w-full">
+            <ngx-charts-bar-horizontal
+              [results]="assigneeWorkloadChartData()"
+              [scheme]="workloadScheme"
+              [xAxis]="true"
+              [yAxis]="true"
+              [roundEdges]="true"
+              [gradient]="false"
+              [animations]="true"
+            />
+          </div>
+          <div class="mt-4 grid gap-2 text-sm">
+            @for (item of assigneeWorkload(); track item.assigneeName) {
+              <div class="flex items-center justify-between text-slate-300">
+                <span class="truncate">{{ item.assigneeName }}</span>
+                <span class="ml-2 shrink-0 font-semibold text-white">{{ item.storyPoints }} pts</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="mt-6 text-sm text-slate-500">No items assigned in this sprint yet.</p>
+        }
+      </section>
+
+      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+        <h2 class="text-sm font-semibold text-slate-200">Recent activity</h2>
+        <p class="mt-1 text-xs text-slate-500">Latest changes across the repository.</p>
+        @if (recentActivity().length > 0) {
+          <ul class="mt-4 space-y-3">
+            @for (item of recentActivity(); track item.sprintTaskId + item.createdAt) {
+              <li class="flex items-start gap-3 text-sm">
+                <span
+                  class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
+                  [class]="item.avatarClass ?? 'bg-slate-600'"
+                >
+                  {{ item.authorName | slice: 0 : 1 }}
+                </span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-slate-200">
+                    <span class="font-medium text-white">{{ item.authorName }}</span>
+                    · {{ item.message }}
+                  </p>
+                  <p class="mt-0.5 truncate text-xs text-slate-500">{{ item.taskTitle }} · {{ timeAgo(item.createdAt) }}</p>
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="mt-6 text-sm text-slate-500">No recent activity in this repository yet.</p>
+        }
+      </section>
+    </div>
   </div>
 </div>

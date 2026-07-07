@@ -78,7 +78,8 @@ public sealed class SprintsController(ISender mediator) : ControllerBase
     public async Task<IActionResult> Create(Guid repoId, [FromBody] CreateSprintRequest request, CancellationToken ct)
     {
         var result = await mediator.Send(new CreateSprintCommand(repoId, request.Name, request.StartDate, request.EndDate), ct);
-        return StatusCode(StatusCodes.Status201Created, result);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return StatusCode(StatusCodes.Status201Created, result.Value);
     }
 
     /// <summary>Updates a sprint's name and dates.</summary>

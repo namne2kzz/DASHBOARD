@@ -22,8 +22,8 @@ public sealed class PromoteToSprintCommandHandler(
     /// <returns>The ID of the newly created SprintTask.</returns>
     public async Task<Result<Guid>> Handle(PromoteToSprintCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSprint, ct))
-            return Result<Guid>.Failure("You do not have permission to manage sprints in this repository.");
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.PromoteToSprint, ct))
+            return Result<Guid>.Failure("You do not have permission to promote backlog items to a sprint.");
 
         var item = await db.Set<BacklogItem>().AsTracking()
             .AsTracking()
@@ -56,7 +56,10 @@ public sealed class PromoteToSprintCommandHandler(
             StateChangedAt  = DateTime.UtcNow,
         };
         db.Set<SprintTask>().Add(sprintTask);
-        historyService.Record(sprintTask.Id, command.RepositoryId, user.UserId, "Work item created.");
+        historyService.Record(sprintTask.Id, command.RepositoryId, user.UserId, "Created this User Story work item.");
+        historyService.Record(sprintTask.Id, command.RepositoryId, user.UserId, $"Title: '{sprintTask.Title}'.");
+        if (sprintTask.StoryPoints > 0)
+            historyService.Record(sprintTask.Id, command.RepositoryId, user.UserId, $"Story points: {sprintTask.StoryPoints}.");
 
         item.State    = BacklogItemState.Committed;
         item.SprintId = command.SprintId;
