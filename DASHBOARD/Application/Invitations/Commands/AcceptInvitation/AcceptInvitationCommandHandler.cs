@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Auth.Commands.Login;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Domain.Interfaces;
 using DASHBOARD.Application.Common.Models;
@@ -6,6 +7,7 @@ using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace DASHBOARD.Application.Invitations.Commands.AcceptInvitation;
 
@@ -14,16 +16,21 @@ internal sealed class AcceptInvitationCommandHandler(
     IApplicationDbContext db,
     IInvitationTokenService tokenService,
     IGoogleAuthService googleAuth,
-    IAppSettings settings) : IRequestHandler<AcceptInvitationCommand, Result<Guid>>
+    ITokenService jwtService,
+    IOptions<Infrastructure.Identity.JwtSettings> jwtOptions,
+    IAppSettings settings) : IRequestHandler<AcceptInvitationCommand, Result<LoginResult>>
 {
+    private readonly Infrastructure.Identity.JwtSettings _jwt = jwtOptions.Value;
+
     /// <summary>
-    /// Verifies the invite token and Google identity, then creates the user account and repository membership.
+    /// Verifies the invite token and Google identity, creates the user account and repository membership,
+    /// and issues an access + refresh token pair (invited users are Google-only and have no password to log in with).
     /// If the Google account was previously invited to another repo, only a new membership is created.
     /// </summary>
     /// <param name="request">The command.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The user's ID on success, or a descriptive failure message.</returns>
-    public async Task<Result<Guid>> Handle(AcceptInvitationCommand request, CancellationToken ct)
+    /// <returns>A signed-in <see cref="LoginResult"/> on success, or a descriptive failure message.</returns>
+    public async Task<Result<LoginResult>> Handle(AcceptInvitationCommand request, CancellationToken ct)
     {
         var tokenHash = tokenService.Hash(request.RawToken);
 
@@ -32,13 +39,13 @@ internal sealed class AcceptInvitationCommandHandler(
             .FirstOrDefaultAsync(i => i.TokenHash == tokenHash && i.Status == InvitationStatus.Pending, ct);
 
         if (invitation is null)
-            return Result<Guid>.Failure("Invitation not found or already used.");
+            return Result<LoginResult>.Failure("Invitation not found or already used.");
 
         if (invitation.ExpiresAt < DateTime.UtcNow)
         {
             invitation.Status = InvitationStatus.Expired;
             await db.SaveChangesAsync(ct);
-            return Result<Guid>.Failure("Invitation has expired. Please ask an admin to send a new invite.");
+            return Result<LoginResult>.Failure("Invitation has expired. Please ask an admin to send a new invite.");
         }
 
         GoogleUserInfo googleUser;
@@ -48,12 +55,12 @@ internal sealed class AcceptInvitationCommandHandler(
         }
         catch
         {
-            return Result<Guid>.Failure("Google token verification failed. Please sign in with Google again.");
+            return Result<LoginResult>.Failure("Google token verification failed. Please sign in with Google again.");
         }
 
         // Enforce email match — the Google account must belong to the invited address.
         if (!string.Equals(googleUser.Email, invitation.Email, StringComparison.OrdinalIgnoreCase))
-            return Result<Guid>.Failure(
+            return Result<LoginResult>.Failure(
                 "The Google account email does not match the invited email address.");
 
         // Resolve or create the User record.
@@ -61,10 +68,16 @@ internal sealed class AcceptInvitationCommandHandler(
             .AsTracking()
             .FirstOrDefaultAsync(u => u.GoogleSubjectId == googleUser.Subject, ct);
 
-        Guid userId;
+        Guid   userId;
+        string userName;
+        string userEmail;
+        bool   isGlobalAdmin;
         if (existingUser is not null)
         {
-            userId = existingUser.Id;
+            userId        = existingUser.Id;
+            userName      = existingUser.Name;
+            userEmail     = existingUser.Email;
+            isGlobalAdmin = existingUser.IsGlobalAdmin;
         }
         else
         {
@@ -80,7 +93,10 @@ internal sealed class AcceptInvitationCommandHandler(
                 AvatarClass     = settings.DefaultGoogleUserAvatarClass,
             };
             db.Set<User>().Add(newUser);
-            userId = newUser.Id;
+            userId        = newUser.Id;
+            userName      = newUser.Name;
+            userEmail     = newUser.Email;
+            isGlobalAdmin = newUser.IsGlobalAdmin;
         }
 
         // Add to repository if not already a member.
@@ -109,7 +125,34 @@ internal sealed class AcceptInvitationCommandHandler(
         invitation.Status     = InvitationStatus.Accepted;
         invitation.AcceptedAt = DateTime.UtcNow;
 
+        // Invited users are Google-only (no password), so they can't use the regular login
+        // endpoint afterwards — issue a session here exactly like LoginCommandHandler does.
+        var accessToken   = jwtService.GenerateToken(userId, userEmail, userName);
+        var refreshToken  = jwtService.GenerateRefreshToken();
+        var refreshExpiry = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiresInDays);
+
+        db.Set<UserToken>().Add(new UserToken
+        {
+            UserId                = userId,
+            JwtId                 = accessToken.JwtId,
+            AccessTokenExpiresAt  = accessToken.ExpiresAt,
+            IsRevoked             = false,
+            RefreshTokenHash      = LoginCommandHandler.HashToken(refreshToken),
+            RefreshTokenExpiresAt = refreshExpiry,
+            RefreshTokenIsRevoked = false,
+        });
+
         await db.SaveChangesAsync(ct);
-        return Result<Guid>.Success(userId);
+
+        return Result<LoginResult>.Success(new LoginResult(
+            AccessToken:           accessToken.Token,
+            JwtId:                 accessToken.JwtId,
+            AccessTokenExpiresAt:  accessToken.ExpiresAt,
+            RefreshToken:          refreshToken,
+            RefreshTokenExpiresAt: refreshExpiry,
+            UserId:                userId,
+            Name:                  userName,
+            Email:                 userEmail,
+            IsGlobalAdmin:         isGlobalAdmin));
     }
 }
