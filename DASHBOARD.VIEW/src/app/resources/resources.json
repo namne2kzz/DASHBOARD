@@ -191,5 +191,6 @@
   "smartBoard.header.subtitle": "WIP-limited kanban with aging indicators.",
 
   "pipelines.header.title": "Pipelines",
-  "pipelines.header.subtitle": "CI/CD pipeline runs and build status."
+  "pipelines.header.subtitle": "CI/CD pipeline runs and build status.",
+  "pipelines.empty": "No CI/CD pipeline connected yet."
 }

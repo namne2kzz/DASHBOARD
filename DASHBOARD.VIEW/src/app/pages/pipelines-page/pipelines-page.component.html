@@ -1,56 +1,21 @@
-<div class="min-h-0 flex-1 overflow-auto bg-gradient-to-b from-slate-950 to-slate-900 px-4 py-6">
+<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-4 py-6">
   <div class="space-y-6">
-    <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400/90">Pipelines</p>
-        <h1 class="mt-1 text-2xl font-bold text-white">CI/CD builds (mock)</h1>
-        <p class="mt-1 text-sm text-slate-400">Build status and progress — sample data persisted in localStorage.</p>
-      </div>
-      <button
-        type="button"
-        class="rounded-xl bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 ring-1 ring-slate-600 transition hover:bg-slate-700"
-        (click)="reset()"
-      >
-        Reset demo data
-      </button>
+    <header class="border-b border-slate-800 pb-5">
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400/90">CI/CD</p>
+      <h1 class="mt-1 text-2xl font-bold text-white">{{ t('pipelines.header.title') }}</h1>
+      <p class="mt-1 max-w-3xl text-sm text-slate-400">{{ t('pipelines.header.subtitle') }}</p>
     </header>
 
-    <ul class="space-y-4">
-      @for (run of pipelines.runs(); track run.id) {
-        <li
-          class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5"
-        >
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p class="text-sm font-semibold text-white">{{ run.pipelineName }}</p>
-              <p class="mt-0.5 text-xs text-slate-500">
-                {{ run.buildNumber }} · {{ run.branch }} · {{ run.startedAt | date: 'medium' }}
-              </p>
-            </div>
-            <span
-              class="shrink-0 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ring-1"
-              [class]="statusClass(run.status)"
-            >
-              {{ statusLabel(run.status) }}
-            </span>
-          </div>
-          <div class="mt-4">
-            <div class="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
-              <div
-                class="h-full rounded-full transition-all duration-500"
-                [class.bg-emerald-500]="run.status === 'passed'"
-                [class.bg-rose-500]="run.status === 'failed'"
-                [class.bg-sky-500]="run.status === 'running'"
-                [class.animate-pulse]="run.status === 'running'"
-                [style.width.%]="run.status === 'running' ? run.progress : 100"
-              ></div>
-            </div>
-            @if (run.status === 'running') {
-              <p class="mt-1 text-right text-[11px] text-slate-500">{{ run.progress }}% complete</p>
-            }
-          </div>
-        </li>
-      }
-    </ul>
+    <section class="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-sky-300 ring-1 ring-slate-700">
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" stroke-linejoin="round" stroke-linecap="round" />
+        </svg>
+      </div>
+      <h2 class="mt-4 text-lg font-semibold text-white">{{ t('pipelines.empty') }}</h2>
+      <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
+        Set up CI/CD (e.g. GitHub Actions) on a connected repository to see build and deploy runs here.
+      </p>
+    </section>
   </div>
 </div>
