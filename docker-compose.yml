@@ -87,6 +87,9 @@ services:
       GitConnections__DASH__0__RepoUrl: "${GITHUB_REPO_URL_DASH}"
       GitConnections__DASH__0__Token: "${GITHUB_TOKEN_DASH}"
       GitConnections__DASH__0__IsPrimary: "true"
+      GitConnections__DASH__1__RepoUrl: "${GITHUB_REPO_URL_DASH_1}"
+      GitConnections__DASH__1__Token: "${GITHUB_TOKEN_DASH_1}"
+      GitConnections__DASH__1__IsPrimary: "true"
     ports:
       - "55432:8080"
     restart: unless-stopped
