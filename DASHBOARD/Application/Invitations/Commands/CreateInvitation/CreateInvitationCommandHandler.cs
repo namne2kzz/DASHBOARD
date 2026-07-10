@@ -29,6 +29,12 @@ internal sealed class CreateInvitationCommandHandler(
     /// <returns>The created invitation DTO, or a failure when the email is already registered in the system.</returns>
     public async Task<Result<InvitationDto>> Handle(CreateInvitationCommand request, CancellationToken ct)
     {
+        if (!await user.CanAsync(request.RepositoryId, SystemFunction.InviteMembers, ct))
+            return Result<InvitationDto>.Failure("You do not have permission to invite members to this repository.");
+
+        if (!await db.Set<Repository>().AnyAsync(r => r.Id == request.RepositoryId && !r.IsArchived, ct))
+            return Result<InvitationDto>.Failure("Repository not found or is archived.");
+
         var userExists = await db.Set<User>()
             .AsNoTracking()
             .AnyAsync(u => u.Email == request.Email, ct);
