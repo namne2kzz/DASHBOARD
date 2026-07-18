@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Auth.Commands.GoogleLogin;
 using DASHBOARD.Application.Auth.Commands.Login;
 using DASHBOARD.Application.Auth.Commands.Logout;
 using DASHBOARD.Application.Auth.Commands.RefreshToken;
@@ -28,6 +29,25 @@ public sealed class AuthController(ISender mediator, ICurrentUserService current
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
         var result = await mediator.Send(new LoginCommand(request.Email, request.Password), ct);
+        if (result.IsFailure) return Unauthorized(new { error = result.Error });
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Authenticates an existing user via Google Sign-In. Never creates an account or repository
+    /// membership — only signs in an account already linked to that Google identity (typically via a
+    /// prior invite accept). Use the invite flow to onboard a brand-new user.
+    /// </summary>
+    /// <param name="request">The Google id_token from the frontend sign-in.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with <see cref="LoginResult"/>, or 401 when no account is linked to that Google identity.</returns>
+    [HttpPost("google-login")]
+    [AllowAnonymous]
+    [ProducesResponseType<LoginResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GoogleLoginCommand(request.GoogleIdToken), ct);
         if (result.IsFailure) return Unauthorized(new { error = result.Error });
         return Ok(result.Value);
     }
