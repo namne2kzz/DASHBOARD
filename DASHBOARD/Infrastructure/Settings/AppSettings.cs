@@ -50,9 +50,6 @@ public sealed class AppSettings : IAppSettings
     public string SmtpPassword => Require("EmailSettings:Password");
 
     /// <inheritdoc/>
-    public string EmailFromName => Require("EmailSettings:FromName");
-
-    /// <inheritdoc/>
     public string EmailFromAddress => Require("EmailSettings:FromEmail");
 
     // ── Google OAuth ─────────────────────────────────────────────────────────

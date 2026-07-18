@@ -16,6 +16,7 @@ public sealed class InvitationCreatedConsumer(IEmailService emailService) : ICon
             msg.ToEmail,
             msg.InviteLink,
             msg.InvitedByName,
+            msg.RepositoryName,
             msg.ExpiryMinutes,
             context.CancellationToken);
     }

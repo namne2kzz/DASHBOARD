@@ -32,8 +32,18 @@ internal sealed class CreateInvitationCommandHandler(
         if (!await user.CanAsync(request.RepositoryId, SystemFunction.InviteMembers, ct))
             return Result<InvitationDto>.Failure("You do not have permission to invite members to this repository.");
 
-        if (!await db.Set<Repository>().AnyAsync(r => r.Id == request.RepositoryId && !r.IsArchived, ct))
+        var repositoryName = await db.Set<Repository>().AsNoTracking()
+            .Where(r => r.Id == request.RepositoryId && !r.IsArchived)
+            .Select(r => r.Name)
+            .FirstOrDefaultAsync(ct);
+        if (repositoryName is null)
             return Result<InvitationDto>.Failure("Repository not found or is archived.");
+
+        // Validate Role is either a global default role or a custom role within this repo.
+        var roleExists = await db.Set<Role>().AsNoTracking()
+            .AnyAsync(r => r.Id == request.RoleId && (r.IsDefault || r.RepositoryId == request.RepositoryId), ct);
+        if (!roleExists)
+            return Result<InvitationDto>.Failure("Role not found in this repository.");
 
         var userExists = await db.Set<User>()
             .AsNoTracking()
@@ -61,6 +71,8 @@ internal sealed class CreateInvitationCommandHandler(
             Email           = request.Email,
             RepositoryId    = request.RepositoryId,
             InvitedByUserId = user.UserId,
+            DefaultRole     = request.DefaultRole,
+            RoleId          = request.RoleId,
             TokenHash       = tokenHash,
             ExpiresAt       = DateTime.UtcNow.Add(settings.InvitationTokenTtl),
             Status          = InvitationStatus.Pending,
@@ -83,6 +95,7 @@ internal sealed class CreateInvitationCommandHandler(
             request.Email,
             acceptLink,
             inviterName,
+            repositoryName,
             (int)settings.InvitationTokenTtl.TotalMinutes), ct);
 
         return Result<InvitationDto>.Success(new InvitationDto(

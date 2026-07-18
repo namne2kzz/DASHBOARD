@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>You've been invited to Dashboard</title>
+  <title>You've been invited to {{RepositoryName}}</title>
   <style>
     body  { margin:0; padding:0; background:#f3f4f6; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
     .wrap { max-width:560px; margin:40px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.08); }
@@ -26,14 +26,14 @@
   <div class="wrap">
 
     <div class="top">
-      <h1>Dashboard</h1>
+      <h1>{{RepositoryName}}</h1>
     </div>
 
     <div class="body">
       <p>Hi there,</p>
       <p>
-        <strong>{{InvitedByName}}</strong> has invited you to collaborate on a
-        <strong>Dashboard</strong> repository. To accept, click the button below and
+        <strong>{{InvitedByName}}</strong> has invited you to collaborate on the
+        <strong>{{RepositoryName}}</strong> repository. To accept, click the button below and
         sign in with the Google account associated with this email address.
       </p>
 
@@ -55,7 +55,7 @@
     </div>
 
     <div class="foot">
-      <p>© Dashboard &nbsp;·&nbsp; This is an automated message, please do not reply.</p>
+      <p>© {{RepositoryName}} &nbsp;·&nbsp; This is an automated message, please do not reply.</p>
     </div>
 
   </div>

@@ -2,7 +2,6 @@ using DASHBOARD.Application.Auth.Commands.Login;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Domain.Interfaces;
 using DASHBOARD.Application.Common.Models;
-using DASHBOARD.Domain.Constants;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using MediatR;
@@ -106,19 +105,20 @@ internal sealed class AcceptInvitationCommandHandler(
 
         if (!alreadyMember)
         {
-            // Assign the repository's own Developer default role (resolved by name, not a shared id).
-            var developerRole = await db.Set<Role>().AsNoTracking()
-                .FirstOrDefaultAsync(r => r.IsDefault
-                                       && r.RepositoryId == invitation.RepositoryId
-                                       && r.Name == DefaultRoleDefinitions.Developer, ct)
-                ?? throw new InvalidOperationException("The repository has no Developer role configured.");
+            // Use the discipline + role chosen by the inviter at invite time (validated to still
+            // exist for this repo — a role could have been deleted since the invite was sent).
+            var roleStillExists = await db.Set<Role>().AsNoTracking()
+                .AnyAsync(r => r.Id == invitation.RoleId && (r.IsDefault || r.RepositoryId == invitation.RepositoryId), ct);
+            if (!roleStillExists)
+                return Result<LoginResult>.Failure(
+                    "The role assigned to this invitation no longer exists. Please ask an admin to send a new invite.");
 
             db.Set<RepositoryMember>().Add(new RepositoryMember
             {
                 UserId       = userId,
                 RepositoryId = invitation.RepositoryId,
-                DefaultRole  = DefaultRoleDefinitions.Developer,
-                RoleId       = developerRole.Id,
+                DefaultRole  = invitation.DefaultRole,
+                RoleId       = invitation.RoleId,
             });
         }
 
