@@ -74,6 +74,37 @@ export class SprintPlanningPageComponent implements OnInit {
     );
   });
 
+  // ── Sprint stories filter ─────────────────────────────────────
+  readonly storySearch      = signal('');
+  readonly storyStateFilter = signal<SprintTask['state'] | ''>('');
+
+  readonly filteredSprintStories = computed(() => {
+    const q     = this.storySearch().trim().toLowerCase();
+    const state = this.storyStateFilter();
+    return this.planning.sprintStories().filter(s =>
+      (!q || s.title.toLowerCase().includes(q) || s.workItemNumber.toLowerCase().includes(q)) &&
+      (!state || s.state === state),
+    );
+  });
+
+  // ── Task workload filter ──────────────────────────────────────
+  readonly taskSearch         = signal('');
+  readonly taskStateFilter    = signal<SprintTask['state'] | ''>('');
+  readonly taskAssigneeFilter = signal('');
+
+  readonly filteredSprintTaskRows = computed(() => {
+    const q        = this.taskSearch().trim().toLowerCase();
+    const state    = this.taskStateFilter();
+    const assignee = this.taskAssigneeFilter();
+    return this.planning.sprintTaskRows().filter(t => {
+      if (q && !t.title.toLowerCase().includes(q) && !t.workItemNumber.toLowerCase().includes(q)) return false;
+      if (state && t.state !== state) return false;
+      if (assignee === 'unassigned' && t.assignedToId !== null) return false;
+      if (assignee && assignee !== 'unassigned' && t.assignedToId !== assignee) return false;
+      return true;
+    });
+  });
+
   @HostListener('document:click')
   onDocumentClick(): void {
     this.setupMenuOpen.set(false);
