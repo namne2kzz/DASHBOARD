@@ -4,7 +4,7 @@ import { NgClass } from '@angular/common';
 import { SystemUsersService } from '../../services/system-users.service';
 import { AuthService } from '../../services/auth.service';
 import { DateTimeService } from '../../core/services/date-time.service';
-import { SystemUserDto, CreateUserPayload } from '../../models/system-user.model';
+import { SystemUserDto, CreateUserPayload, AuthProvider } from '../../models/system-user.model';
 import { PrivilegeService } from '../../core/services/privilege.service';
 import { ToastService } from '../../core/components/toast/toast.service';
 
@@ -30,6 +30,7 @@ export class SettingsUsersPageComponent implements OnInit {
   protected readonly dt        = inject(DateTimeService);
   protected readonly privilege = inject(PrivilegeService);
   private  readonly toast      = inject(ToastService);
+  protected readonly AuthProvider = AuthProvider;
 
   // ── Filter / search ───────────────────────────────────────────
   readonly searchQuery   = signal('');
@@ -82,9 +83,19 @@ export class SettingsUsersPageComponent implements OnInit {
     this.svc.users().filter(u => u.isGlobalAdmin && u.isActive).length,
   );
 
+  /**
+   * Returns false when the target is the currently logged-in user — prevents an admin from
+   * demoting or deactivating their own account through this screen (self-lockout).
+   * @param user Target user row.
+   * @returns True when the current user may promote/demote/activate/deactivate this row.
+   */
+  canActOnUser(user: SystemUserDto): boolean {
+    return user.userId !== this.auth.currentUser()?.userId;
+  }
+
   /** Promotes or demotes the admin flag on a user. @param user Target user. */
   toggleAdmin(user: SystemUserDto): void {
-    if (!this.privilege.canManageMembers()) return;
+    if (!this.privilege.canManageMembers() || !this.canActOnUser(user)) return;
     if (user.isGlobalAdmin) {
       if (this.activeAdminCount() <= 1) {
         this.toast.warning('Cannot demote the last active global admin account.');
@@ -102,7 +113,7 @@ export class SettingsUsersPageComponent implements OnInit {
 
   /** Activates or deactivates a user account. @param user Target user. */
   toggleActive(user: SystemUserDto): void {
-    if (!this.privilege.canManageMembers()) return;
+    if (!this.privilege.canManageMembers() || !this.canActOnUser(user)) return;
     if (user.isActive && user.isGlobalAdmin && this.activeAdminCount() <= 1) {
       this.toast.warning('Cannot deactivate the last active global admin account.');
       return;

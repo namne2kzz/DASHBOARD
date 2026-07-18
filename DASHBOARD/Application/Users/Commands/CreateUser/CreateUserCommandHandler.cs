@@ -56,6 +56,7 @@ public sealed class CreateUserCommandHandler(
             AvatarClass:     newUser.AvatarClass,
             IsGlobalAdmin:   newUser.IsGlobalAdmin,
             IsActive:        true,
+            AuthProvider:    newUser.AuthProvider,
             CreatedAt:       newUser.CreatedAt,
             LastLoginAt:     null,
             RepoMemberships: []);

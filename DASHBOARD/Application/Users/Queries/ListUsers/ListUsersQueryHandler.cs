@@ -45,6 +45,7 @@ public sealed class ListUsersQueryHandler(
                 u.AvatarClass,
                 u.IsGlobalAdmin,
                 u.IsDeleted,
+                u.AuthProvider,
                 u.CreatedAt,
             })
             .ToListAsync(ct);
@@ -80,6 +81,7 @@ public sealed class ListUsersQueryHandler(
             AvatarClass:     u.AvatarClass,
             IsGlobalAdmin:   u.IsGlobalAdmin,
             IsActive:        !u.IsDeleted,
+            AuthProvider:    u.AuthProvider,
             CreatedAt:       u.CreatedAt,
             LastLoginAt:     null,
             RepoMemberships: membershipLookup.TryGetValue(u.Id, out var mems)

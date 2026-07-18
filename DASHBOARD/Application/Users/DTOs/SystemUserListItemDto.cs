@@ -1,3 +1,5 @@
+using DASHBOARD.Domain.Enums;
+
 namespace DASHBOARD.Application.Users.DTOs;
 
 /// <summary>Full admin view of a user, including activity state and repository memberships.</summary>
@@ -8,6 +10,7 @@ public sealed record SystemUserListItemDto(
     string                             AvatarClass,
     bool                               IsGlobalAdmin,
     bool                               IsActive,
+    AuthProvider                       AuthProvider,
     DateTime                           CreatedAt,
     DateTime?                          LastLoginAt,
     IReadOnlyList<UserRepoMembershipDto> RepoMemberships);

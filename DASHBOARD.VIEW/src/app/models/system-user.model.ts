@@ -1,3 +1,9 @@
+/** Mirrors the backend AuthProvider enum. */
+export enum AuthProvider {
+  System = 0,
+  Google = 1,
+}
+
 /** Full user record returned by the system-admin endpoint. */
 export interface SystemUserDto {
   userId:           string;
@@ -6,6 +12,7 @@ export interface SystemUserDto {
   avatarClass:      string;
   isGlobalAdmin:    boolean;
   isActive:         boolean;
+  authProvider:     AuthProvider;
   createdAt:        string;
   lastLoginAt:      string | null;
   repoMemberships:  UserRepoMembership[];

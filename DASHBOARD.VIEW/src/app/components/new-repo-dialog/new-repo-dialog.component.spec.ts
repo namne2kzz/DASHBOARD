@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 import { NewRepoDialogComponent } from './new-repo-dialog.component';
 import { RepositoryContextService } from '../../services/repository-context.service';
 import { SystemUsersService } from '../../services/system-users.service';
-import { SystemUserDto } from '../../models/system-user.model';
+import { SystemUserDto, AuthProvider } from '../../models/system-user.model';
 import { RepositoryApiDto } from '../../models/repository.model';
 
 const mockUser: SystemUserDto = {
@@ -14,6 +14,7 @@ const mockUser: SystemUserDto = {
   avatarClass: 'bg-sky-600',
   isGlobalAdmin: false,
   isActive: true,
+  authProvider: AuthProvider.System,
   createdAt: '2024-01-01T00:00:00Z',
   lastLoginAt: null,
   repoMemberships: [],
