@@ -78,11 +78,6 @@ export const routes: Routes = [
               import('./pages/overview-page/overview-page.component').then(m => m.OverviewPageComponent),
           },
           {
-            path: 'analytics',
-            loadComponent: () =>
-              import('./pages/analytics-page/analytics-page.component').then(m => m.AnalyticsPageComponent),
-          },
-          {
             path: 'workflow',
             loadComponent: () =>
               import('./pages/workflow-page/workflow-page.component').then(m => m.WorkflowPageComponent),
