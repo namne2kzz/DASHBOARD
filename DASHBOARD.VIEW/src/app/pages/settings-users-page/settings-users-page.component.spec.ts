@@ -7,7 +7,7 @@ import { signal } from '@angular/core';
 import { SettingsUsersPageComponent } from './settings-users-page.component';
 import { SystemUsersService } from '../../services/system-users.service';
 import { AuthService } from '../../services/auth.service';
-import { SystemUserDto } from '../../models/system-user.model';
+import { SystemUserDto, AuthProvider } from '../../models/system-user.model';
 
 const mockUser = (overrides: Partial<SystemUserDto> = {}): SystemUserDto => ({
   userId:          'u1',
@@ -16,6 +16,7 @@ const mockUser = (overrides: Partial<SystemUserDto> = {}): SystemUserDto => ({
   avatarClass:     'bg-sky-600',
   isGlobalAdmin:   false,
   isActive:        true,
+  authProvider:    AuthProvider.System,
   createdAt:       '2024-01-01T00:00:00Z',
   lastLoginAt:     null,
   repoMemberships: [],
