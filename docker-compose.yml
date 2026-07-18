@@ -89,7 +89,7 @@ services:
       GitConnections__DASH__0__IsPrimary: "true"
       GitConnections__DASH__1__RepoUrl: "${GITHUB_REPO_URL_DASH_1}"
       GitConnections__DASH__1__Token: "${GITHUB_TOKEN_DASH_1}"
-      GitConnections__DASH__1__IsPrimary: "true"
+      GitConnections__DASH__1__IsPrimary: "false"
     ports:
       - "55432:8080"
     restart: unless-stopped
@@ -100,6 +100,9 @@ services:
       dockerfile: DASHBOARD.VIEW/Dockerfile
     container_name: dashboard-web
     profiles: ["app"]
+    depends_on:
+      api:
+        condition: service_started
     ports:
       - "4201:80"
     restart: unless-stopped
