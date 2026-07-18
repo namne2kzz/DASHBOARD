@@ -15,12 +15,14 @@ internal sealed class EmailService(IAppSettings settings) : IEmailService
     /// <param name="toEmail">Recipient email address; also shown in the email body as the required Google account.</param>
     /// <param name="inviteLink">Accept URL with the token in the URL fragment.</param>
     /// <param name="invitedByName">Display name of the user who issued the invite.</param>
+    /// <param name="repositoryName">Display name of the repository the invitee is being invited to.</param>
     /// <param name="expiryMinutes">Token validity window displayed in the email body.</param>
     /// <param name="ct">Cancellation token.</param>
     public async Task SendInvitationAsync(
         string toEmail,
         string inviteLink,
         string invitedByName,
+        string repositoryName,
         int expiryMinutes,
         CancellationToken ct)
     {
@@ -30,17 +32,28 @@ internal sealed class EmailService(IAppSettings settings) : IEmailService
             .Replace("{{InvitedByName}}", invitedByName)
             .Replace("{{InvitedEmail}}", toEmail)
             .Replace("{{InviteLink}}", inviteLink)
+            .Replace("{{RepositoryName}}", repositoryName)
             .Replace("{{ExpiryMinutes}}", expiryMinutes.ToString());
 
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(settings.EmailFromName, settings.EmailFromAddress));
+        message.From.Add(new MailboxAddress(repositoryName, settings.EmailFromAddress));
         message.To.Add(MailboxAddress.Parse(toEmail));
-        message.Subject = "You've been invited to join a Dashboard repository";
+        message.Subject = $"You've been invited to join {repositoryName}";
         message.Body    = new TextPart("html") { Text = body };
 
         using var client = new SmtpClient();
-        await client.ConnectAsync(settings.SmtpHost, settings.SmtpPort, SecureSocketOptions.StartTls, ct);
-        await client.AuthenticateAsync(settings.SmtpUsername, settings.SmtpPassword, ct);
+        // StartTlsWhenAvailable upgrades to TLS when the server offers it (e.g. Gmail on 587) and
+        // falls back to plaintext when it doesn't (local dev relays like Mailpit don't terminate TLS)
+        // — StartTls alone would hard-fail against a relay that never advertises STARTTLS.
+        await client.ConnectAsync(settings.SmtpHost, settings.SmtpPort, SecureSocketOptions.StartTlsWhenAvailable, ct);
+
+        // Local dev relays like Mailpit advertise no SASL mechanism at all, so an unconditional
+        // AuthenticateAsync throws NotSupportedException — only authenticate when the server
+        // actually offers a mechanism (real providers like Gmail always do).
+        if (client.AuthenticationMechanisms.Count > 0)
+        {
+            await client.AuthenticateAsync(settings.SmtpUsername, settings.SmtpPassword, ct);
+        }
         await client.SendAsync(message, ct);
         await client.DisconnectAsync(quit: true, ct);
     }

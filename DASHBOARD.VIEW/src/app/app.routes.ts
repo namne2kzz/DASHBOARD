@@ -10,6 +10,11 @@ export const routes: Routes = [
       import('./pages/login-page/login-page.component').then(m => m.LoginPageComponent),
   },
   {
+    path: 'invite/accept',
+    loadComponent: () =>
+      import('./pages/invite-accept-page/invite-accept-page.component').then(m => m.InviteAcceptPageComponent),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./layout/shell-layout.component').then(m => m.ShellLayoutComponent),

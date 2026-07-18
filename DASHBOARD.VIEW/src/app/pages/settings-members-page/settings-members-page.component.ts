@@ -8,6 +8,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MembersService } from '../../services/members.service';
 import { RoleService } from '../../services/role.service';
 import { MetadataService } from '../../services/metadata.service';
+import { InvitationsService } from '../../services/invitations.service';
 import { ConfirmService } from '../../core/components/confirm/confirm.service';
 import { ToastService } from '../../core/components/toast/toast.service';
 import { PrivilegeService } from '../../core/services/privilege.service';
@@ -16,6 +17,7 @@ import { DateTimeService } from '../../core/services/date-time.service';
 import { MemberApiDto } from '../../models/member.model';
 import { UserPickerItem } from '../../models/user.model';
 import { RoleDto, CreateRolePayload, UpdateRolePayload } from '../../models/role.model';
+import { InvitationListItemDto, InvitationStatus } from '../../models/invitation.model';
 import { Permission } from '../../core/enums/system.enum';
 import { PERMISSION_LABELS } from '../../core/constants/system.constant';
 
@@ -29,16 +31,18 @@ type ActivePanel = 'add-member' | 'invite-email' | 'create-role' | 'edit-role' |
   styleUrls: ['./settings-members-page.component.css'],
 })
 export class SettingsMembersPageComponent {
-  protected readonly membersService  = inject(MembersService);
-  protected readonly roleService     = inject(RoleService);
-  protected readonly metadataService = inject(MetadataService);
-  private  readonly confirm          = inject(ConfirmService);
-  private  readonly toast            = inject(ToastService);
-  protected readonly privilege       = inject(PrivilegeService);
-  protected readonly repoCtx         = inject(RepositoryContextService);
-  protected readonly dt              = inject(DateTimeService);
+  protected readonly membersService     = inject(MembersService);
+  protected readonly roleService        = inject(RoleService);
+  protected readonly metadataService    = inject(MetadataService);
+  protected readonly invitationsService = inject(InvitationsService);
+  private  readonly confirm             = inject(ConfirmService);
+  private  readonly toast               = inject(ToastService);
+  protected readonly privilege          = inject(PrivilegeService);
+  protected readonly repoCtx            = inject(RepositoryContextService);
+  protected readonly dt                 = inject(DateTimeService);
 
   protected readonly PERMISSION_LABELS = PERMISSION_LABELS;
+  protected readonly InvitationStatus  = InvitationStatus;
   // Numeric enum: Object.values yields both names and numbers — keep only the numeric values.
   protected readonly ALL_PERMISSIONS   = Object.values(Permission).filter((v): v is Permission => typeof v === 'number');
 
@@ -96,6 +100,12 @@ export class SettingsMembersPageComponent {
     this.addRoleId.set(this.defaultRoleIdFor(value));
   }
 
+  /** Updates the invite-by-email discipline and auto-selects its matching default role. @param value Discipline value. */
+  onInviteDefaultRoleChange(value: string): void {
+    this.inviteDefaultRole.set(value);
+    this.inviteRoleId.set(this.defaultRoleIdFor(value));
+  }
+
   // ── Add member — search state ─────────────────────────────────
   readonly addSearchTerm    = signal('');
   readonly addSearchResults = signal<UserPickerItem[]>([]);
@@ -112,6 +122,9 @@ export class SettingsMembersPageComponent {
   // ── Invite form ───────────────────────────────────────────────
   readonly inviteEmail       = signal('');
   readonly inviteDefaultRole = signal<string>('');
+  readonly inviteRoleId      = signal<string>('');
+  readonly inviteSubmitting  = signal(false);
+  readonly inviteError       = signal<string | null>(null);
 
   // ── Role form ─────────────────────────────────────────────────
   readonly roleFormName        = signal('');
@@ -152,6 +165,14 @@ export class SettingsMembersPageComponent {
       this.addRoleId.set(this.defaultRoleIdFor(firstDiscipline));
       this.addError.set(null);
       this.addDropdownRect.set(null);
+    }
+    if (panel === 'invite-email') {
+      this.inviteEmail.set('');
+      const firstDiscipline = this.disciplines()[0] ?? '';
+      this.inviteDefaultRole.set(firstDiscipline);
+      this.inviteRoleId.set(this.defaultRoleIdFor(firstDiscipline));
+      this.inviteSubmitting.set(false);
+      this.inviteError.set(null);
     }
     this.activePanel.set(panel);
     if (panel === 'edit-role' && role) {
@@ -357,12 +378,62 @@ export class SettingsMembersPageComponent {
     });
   }
 
-  /** Submits the invite-by-email form (UI only — API call wired). */
+  /** Submits the invite-by-email form: calls POST /repositories/{repoId}/invitations and closes on success. */
   submitInvite(): void {
     if (!this.privilege.canInviteMembers()) return;
     const repoId = this.repoCtx.selectedRepoId();
-    if (!repoId || !this.inviteEmail().trim()) return;
-    // TODO: call POST /repositories/{repoId}/invitations when backend endpoint is ready
-    this.closePanel();
+    const email  = this.inviteEmail().trim();
+    const roleId = this.inviteRoleId();
+    if (!repoId || !email || !roleId) return;
+
+    this.inviteSubmitting.set(true);
+    this.inviteError.set(null);
+    this.invitationsService.sendInvite(repoId, email, this.inviteDefaultRole(), roleId).subscribe({
+      next:  () => { this.inviteSubmitting.set(false); this.closePanel(); },
+      error: (err: HttpErrorResponse) => {
+        this.inviteSubmitting.set(false);
+        this.inviteError.set(err.error?.error ?? 'Failed to send invite. Please try again.');
+      },
+    });
+  }
+
+  /** Human-readable label for an invitation status. @param status Numeric InvitationStatus. @returns Display label. */
+  invitationStatusLabel(status: InvitationStatus): string {
+    switch (status) {
+      case InvitationStatus.Pending:  return 'Pending';
+      case InvitationStatus.Accepted: return 'Accepted';
+      case InvitationStatus.Expired:  return 'Expired';
+      case InvitationStatus.Revoked:  return 'Revoked';
+    }
+  }
+
+  /** Badge color classes for an invitation status. @param status Numeric InvitationStatus. @returns Tailwind class string. */
+  invitationStatusClass(status: InvitationStatus): string {
+    switch (status) {
+      case InvitationStatus.Pending:  return 'bg-amber-400/10 text-amber-400 ring-amber-400/30';
+      case InvitationStatus.Accepted: return 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30';
+      case InvitationStatus.Expired:  return 'bg-slate-700/50 text-slate-400 ring-slate-600/50';
+      case InvitationStatus.Revoked:  return 'bg-rose-500/10 text-rose-400 ring-rose-500/30';
+    }
+  }
+
+  /** Revokes a still-pending invitation after confirmation via the shared dialog. @param invitation Invitation to revoke. */
+  async revokeInvitation(invitation: InvitationListItemDto): Promise<void> {
+    if (!this.privilege.canInviteMembers()) return;
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId) return;
+
+    const ok = await this.confirm.ask({
+      titleKey:   'invitation.revokeTitle',
+      subject:    invitation.email,
+      messageKey: 'invitation.revokeMessage',
+      confirmKey: 'invitation.revokeConfirm',
+      type:       'danger',
+    });
+    if (!ok) return;
+
+    this.invitationsService.revoke(repoId, invitation.id).subscribe({
+      error: (err: HttpErrorResponse) => this.toast.error(err.error?.error ?? 'Failed to revoke invitation. Please try again.'),
+    });
   }
 }

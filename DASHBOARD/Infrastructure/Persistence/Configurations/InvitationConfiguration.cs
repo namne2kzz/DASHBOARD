@@ -16,6 +16,7 @@ internal sealed class InvitationConfiguration : IEntityTypeConfiguration<Invitat
         builder.HasKey(i => i.Id);
 
         builder.Property(i => i.Email).IsRequired().HasMaxLength(320);
+        builder.Property(i => i.DefaultRole).IsRequired().HasMaxLength(100);
         builder.Property(i => i.TokenHash).IsRequired().HasMaxLength(64);
         builder.Property(i => i.Status).IsRequired().HasDefaultValue(InvitationStatus.Pending);
         builder.Property(i => i.ExpiresAt).IsRequired();
@@ -37,5 +38,11 @@ internal sealed class InvitationConfiguration : IEntityTypeConfiguration<Invitat
             .WithMany()
             .HasForeignKey(i => i.InvitedByUserId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(i => i.Role)
+            .WithMany()
+            .HasForeignKey(i => i.RoleId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired();
     }
 }

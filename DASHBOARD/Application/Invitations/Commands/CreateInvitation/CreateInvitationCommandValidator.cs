@@ -10,5 +10,7 @@ internal sealed class CreateInvitationCommandValidator : AbstractValidator<Creat
     {
         RuleFor(x => x.RepositoryId).NotEmpty();
         RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(320);
+        RuleFor(x => x.DefaultRole).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.RoleId).NotEmpty();
     }
 }

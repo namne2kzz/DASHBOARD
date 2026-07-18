@@ -313,6 +313,11 @@ namespace DASHBOARD.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DefaultRole")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(320)
@@ -325,6 +330,9 @@ namespace DASHBOARD.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("RepositoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RoleId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Status")
@@ -345,6 +353,8 @@ namespace DASHBOARD.Migrations
                     b.HasIndex("InvitedByUserId");
 
                     b.HasIndex("RepositoryId");
+
+                    b.HasIndex("RoleId");
 
                     b.HasIndex("TokenHash")
                         .IsUnique()
@@ -626,7 +636,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000011"),
-                            AllowedFunctions = "[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17]",
+                            AllowedFunctions = "[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Manages sprints, capacity, and team settings in addition to all work-item and backlog operations.",
                             IsDefault = true,
@@ -636,7 +646,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000012"),
-                            AllowedFunctions = "[0,6,7,9,10,11,17]",
+                            AllowedFunctions = "[0,6,7,9,15,17,18,19]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Creates and edits sprint tasks, manages the backlog, and can promote items to sprints.",
                             IsDefault = true,
@@ -646,7 +656,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000013"),
-                            AllowedFunctions = "[0,6,7,10,17]",
+                            AllowedFunctions = "[0,6,7,9,10,15,17]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Creates and edits sprint tasks and backlog items; focused on quality and test coverage.",
                             IsDefault = true,
@@ -656,7 +666,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000014"),
-                            AllowedFunctions = "[0,10,17]",
+                            AllowedFunctions = "[0,6,7,8,9,10,11,12,13,15,17]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Manages the product backlog and requirements; read-only on sprint execution.",
                             IsDefault = true,
@@ -1360,9 +1370,17 @@ namespace DASHBOARD.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("DASHBOARD.Domain.Entities.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("InvitedBy");
 
                     b.Navigation("Repository");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.RepositoryMember", b =>

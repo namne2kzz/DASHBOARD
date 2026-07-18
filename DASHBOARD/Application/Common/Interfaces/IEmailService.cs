@@ -7,7 +7,8 @@ public interface IEmailService
     /// <param name="toEmail">Recipient email address (also shown in the email body as the required Google account).</param>
     /// <param name="inviteLink">Accept URL with the token in the fragment.</param>
     /// <param name="invitedByName">Display name of the user who issued the invite.</param>
+    /// <param name="repositoryName">Display name of the repository the invitee is being invited to.</param>
     /// <param name="expiryMinutes">Token validity window displayed in the email.</param>
     /// <param name="ct">Cancellation token.</param>
-    Task SendInvitationAsync(string toEmail, string inviteLink, string invitedByName, int expiryMinutes, CancellationToken ct);
+    Task SendInvitationAsync(string toEmail, string inviteLink, string invitedByName, string repositoryName, int expiryMinutes, CancellationToken ct);
 }

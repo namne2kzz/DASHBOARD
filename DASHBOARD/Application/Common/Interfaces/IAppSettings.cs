@@ -39,9 +39,6 @@ public interface IAppSettings
     /// <summary>Gets the SMTP login password or app-specific password.</summary>
     string SmtpPassword { get; }
 
-    /// <summary>Gets the display name shown in the email From field.</summary>
-    string EmailFromName { get; }
-
     /// <summary>Gets the From email address.</summary>
     string EmailFromAddress { get; }
 

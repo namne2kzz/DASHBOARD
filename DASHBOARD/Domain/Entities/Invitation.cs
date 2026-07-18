@@ -14,6 +14,12 @@ public sealed class Invitation : Common.BaseEntity
     /// <summary>Gets or sets the user who issued this invite.</summary>
     public Guid InvitedByUserId { get; set; }
 
+    /// <summary>Gets or sets the role (default or custom) that will be granted to the invitee on acceptance. Required.</summary>
+    public Guid RoleId { get; set; }
+
+    /// <summary>Gets or sets the team role (discipline) the invitee will be assigned on acceptance. Stores a RepoRole metadata value. Does not grant permissions.</summary>
+    public string DefaultRole { get; set; } = string.Empty;
+
     /// <summary>
     /// Gets or sets the SHA-256 hash of the raw token embedded in the invite link.
     /// The raw token is never persisted — only this hash is stored and used for lookup.
@@ -35,4 +41,7 @@ public sealed class Invitation : Common.BaseEntity
 
     /// <summary>User who created this invite.</summary>
     public User? InvitedBy { get; set; }
+
+    /// <summary>The role the invitee will be granted on acceptance.</summary>
+    public Role? Role { get; set; }
 }
