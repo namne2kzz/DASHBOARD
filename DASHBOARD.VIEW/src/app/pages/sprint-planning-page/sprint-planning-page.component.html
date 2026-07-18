@@ -418,8 +418,29 @@
 
     <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
       <h2 class="text-sm font-semibold text-slate-100">Sprint stories</h2>
+
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          placeholder="Search stories..."
+          class="min-w-[10rem] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          [ngModel]="storySearch()"
+          (ngModelChange)="storySearch.set($event)"
+        />
+        <select
+          class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          [ngModel]="storyStateFilter()"
+          (ngModelChange)="storyStateFilter.set($event)"
+        >
+          <option value="">All states</option>
+          @for (opt of taskStateOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+
       <ul class="mt-3 space-y-2">
-        @for (story of planning.sprintStories(); track story.id) {
+        @for (story of filteredSprintStories(); track story.id) {
           <li
             class="group cursor-pointer rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3 transition hover:border-slate-700 hover:bg-slate-900/70"
             (click)="openStoryDetail(story)"
@@ -464,12 +485,48 @@
               </svg>
             </div>
           </li>
+        } @empty {
+          <li class="rounded-lg border border-dashed border-slate-700 py-6 text-center text-xs text-slate-600">
+            No stories match the current filters.
+          </li>
         }
       </ul>
     </section>
 
     <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
       <h2 class="text-sm font-semibold text-slate-100">Task workload</h2>
+
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          placeholder="Search tasks..."
+          class="min-w-[10rem] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          [ngModel]="taskSearch()"
+          (ngModelChange)="taskSearch.set($event)"
+        />
+        <select
+          class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          [ngModel]="taskStateFilter()"
+          (ngModelChange)="taskStateFilter.set($event)"
+        >
+          <option value="">All states</option>
+          @for (opt of taskStateOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        <select
+          class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          [ngModel]="taskAssigneeFilter()"
+          (ngModelChange)="taskAssigneeFilter.set($event)"
+        >
+          <option value="">All assignees</option>
+          <option value="unassigned">Unassigned</option>
+          @for (m of planning.memberLoads(); track m.userId) {
+            <option [value]="m.userId">{{ m.name }}</option>
+          }
+        </select>
+      </div>
+
       <div class="mt-4 overflow-x-auto">
         <table class="w-full min-w-[900px] text-left text-sm">
           <thead>
@@ -483,7 +540,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800">
-            @for (task of planning.sprintTaskRows(); track task.id) {
+            @for (task of filteredSprintTaskRows(); track task.id) {
               <tr>
                 <!-- Work item type icon -->
                 <td class="py-3 pr-2 align-middle">
@@ -565,6 +622,12 @@
                     </svg>
                   </button>
 
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="py-6 text-center text-xs text-slate-600">
+                  No tasks match the current filters.
                 </td>
               </tr>
             }
