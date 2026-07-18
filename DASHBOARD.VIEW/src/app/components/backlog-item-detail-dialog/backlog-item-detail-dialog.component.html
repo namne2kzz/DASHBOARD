@@ -1,0 +1,190 @@
+<div class="space-y-5">
+
+  <!-- Context -->
+  <p class="text-xs text-slate-500">
+    Parent: {{ parentTitle() }} - Children: {{ childCount() }}
+  </p>
+
+  <!-- Title -->
+  <div>
+    <label class="field-label mb-1.5 block">
+      Title <span class="text-rose-400">*</span>
+    </label>
+    <textarea
+      name="title"
+      rows="2"
+      placeholder="Short, descriptive title"
+      class="field-textarea"
+      [ngModel]="title()"
+      (ngModelChange)="title.set($event)"
+    ></textarea>
+  </div>
+
+  <!-- State + Iteration -->
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="field-label mb-1.5 block">State</label>
+      @if (isCommitted()) {
+        <p class="field-input flex items-center text-sky-300">Committed</p>
+      } @else {
+        <select
+          class="field-select"
+          [ngModel]="state()"
+          (ngModelChange)="state.set($event)"
+        >
+          @for (s of stateOptions; track s) {
+            <option [ngValue]="s">{{ stateLabel(s) }}</option>
+          }
+        </select>
+      }
+    </div>
+
+    <div>
+      <label class="field-label mb-1.5 block">Iteration</label>
+      <select
+        class="field-select disabled:cursor-not-allowed disabled:opacity-50"
+        [ngModel]="sprintId()"
+        [disabled]="isCommitted()"
+        [title]="isCommitted() ? 'Sprint is locked after promotion' : 'Assign to sprint'"
+        (ngModelChange)="sprintId.set($event)"
+      >
+        <option value="">Unassigned</option>
+        @for (sprint of backlog.sprints(); track sprint.id) {
+          <option [ngValue]="sprint.id">{{ sprint.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Estimate -->
+  <div>
+    <label class="field-label mb-1.5 block">
+      Estimate <span class="normal-case text-slate-600">({{ backlog.estimateMode() === 'fibonacci' ? 'Fibonacci' : 'T-shirt' }})</span>
+    </label>
+    @if (backlog.estimateMode() === 'fibonacci') {
+      <select
+        class="field-select disabled:cursor-not-allowed disabled:opacity-50"
+        [ngModel]="storyPoints()"
+        [disabled]="isCommitted()"
+        [title]="isCommitted() ? 'Estimate is locked after promotion' : ''"
+        (ngModelChange)="storyPoints.set($event)"
+      >
+        <option [ngValue]="null">Not estimated</option>
+        @for (point of backlog.fibonacciPoints; track point) {
+          <option [ngValue]="point">{{ point }}</option>
+        }
+      </select>
+    } @else {
+      <select
+        class="field-select disabled:cursor-not-allowed disabled:opacity-50"
+        [ngModel]="tshirtSize()"
+        [disabled]="isCommitted()"
+        [title]="isCommitted() ? 'Estimate is locked after promotion' : ''"
+        (ngModelChange)="tshirtSize.set(asTshirtSize($event))"
+      >
+        <option [ngValue]="null">Not estimated</option>
+        @for (size of backlog.tshirtSizes; track size) {
+          <option [ngValue]="size">{{ size }}</option>
+        }
+      </select>
+    }
+  </div>
+
+  <!-- Documents -->
+  <div class="type-section">
+    <p class="field-label">Documents</p>
+    <div class="space-y-2">
+      @for (doc of documents(); track $index; let idx = $index) {
+        <div class="flex items-center gap-2">
+          <span class="w-5 shrink-0 text-center text-xs text-slate-500">{{ idx + 1 }}</span>
+          <input
+            type="text"
+            [name]="'doc-' + idx"
+            placeholder="Document title or link"
+            class="field-input"
+            [ngModel]="doc"
+            (ngModelChange)="updateDoc(idx, $event)"
+          />
+          <button
+            type="button"
+            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-rose-500/15 hover:text-rose-400"
+            title="Remove"
+            (click)="removeDoc(idx)"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      }
+    </div>
+
+    <button
+      type="button"
+      class="flex items-center gap-1 self-start rounded-lg border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-700"
+      (click)="addDoc()"
+    >
+      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add document
+    </button>
+  </div>
+
+  <!-- Acceptance Criteria -->
+  <div class="type-section">
+    <p class="field-label">Acceptance Criteria</p>
+    <div class="space-y-2">
+      @for (row of acRows(); track $index; let idx = $index) {
+        <div class="flex items-start gap-2">
+          <span class="mt-2.5 w-5 shrink-0 text-center font-mono text-xs font-semibold text-sky-400">{{ idx + 1 }}</span>
+          <textarea
+            [name]="'ac-' + idx"
+            rows="2"
+            placeholder="Given … When … Then …"
+            class="field-textarea resize-y"
+            [ngModel]="row"
+            (ngModelChange)="updateAcRow(idx, $event)"
+          ></textarea>
+          <button
+            type="button"
+            class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-rose-500/15 hover:text-rose-400"
+            title="Remove"
+            (click)="removeAcRow(idx)"
+          >
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+      }
+    </div>
+
+    <button
+      type="button"
+      class="flex items-center gap-1 self-start rounded-lg border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-700"
+      (click)="addAcRow()"
+    >
+      <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      Add criteria
+    </button>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex justify-end gap-3 border-t border-slate-800 pt-4">
+    <button
+      type="button"
+      class="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 ring-1 ring-slate-700 transition hover:ring-slate-600 hover:text-slate-200"
+      (click)="cancel()"
+    >Cancel</button>
+    <button
+      type="button"
+      class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+      [disabled]="!canSave()"
+      (click)="save()"
+    >Save</button>
+  </div>
+
+</div>

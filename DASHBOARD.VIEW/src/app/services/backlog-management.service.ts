@@ -16,6 +16,7 @@ import { BacklogItem, BacklogLevel, BacklogState, EstimateMode, TshirtSize } fro
 import { BACKLOG_LEVELS, FIBONACCI_POINTS, TSHIRT_SIZES } from '../core/constants/system.constant';
 import { RepositoryContextService } from './repository-context.service';
 import { PrivilegeService } from '../core/services/privilege.service';
+import { ToastService } from '../core/components/toast/toast.service';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -23,6 +24,7 @@ export class BacklogManagementService {
   private readonly http       = inject(HttpClient);
   private readonly repoCtx    = inject(RepositoryContextService);
   private readonly privilege  = inject(PrivilegeService);
+  private readonly toast      = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly _loadTrigger$   = new Subject<string | null>();
@@ -31,8 +33,10 @@ export class BacklogManagementService {
   private readonly _items          = signal<BacklogItem[]>([]);
   private readonly _sprints        = signal<SprintApiDto[]>([]);
   private readonly _selectedEpicId = signal<string | null>(null);
+  private readonly _filterKeyword  = signal('');
+  private readonly _filterState    = signal<BacklogState | ''>('');
+  private readonly _filterSprintId = signal('');
   private readonly _loading        = signal(false);
-  private readonly _error          = signal<string | null>(null);
 
   /** True when the current user can manage the backlog. */
   readonly canManageBacklog  = computed(() => this.privilege.canManageBacklog());
@@ -42,9 +46,11 @@ export class BacklogManagementService {
   readonly canEditWorkItem   = computed(() => this.privilege.canEditWorkItem());
 
   readonly loading        = this._loading.asReadonly();
-  readonly error          = this._error.asReadonly();
   readonly sprints        = this._sprints.asReadonly();
   readonly selectedEpicId = this._selectedEpicId.asReadonly();
+  readonly filterKeyword  = this._filterKeyword.asReadonly();
+  readonly filterState    = this._filterState.asReadonly();
+  readonly filterSprintId = this._filterSprintId.asReadonly();
   readonly levels = BACKLOG_LEVELS;
   readonly fibonacciPoints         = FIBONACCI_POINTS;
   readonly tshirtSizes             = TSHIRT_SIZES;
@@ -72,6 +78,25 @@ export class BacklogManagementService {
       }
     }
 
+    if (level === 'user-story') {
+      const keyword = this._filterKeyword().trim().toLowerCase();
+      if (keyword) {
+        filtered = filtered.filter(i => i.title.toLowerCase().includes(keyword));
+      }
+
+      const state = this._filterState();
+      if (state) {
+        filtered = filtered.filter(i => i.state === state);
+      }
+
+      const sprintFilter = this._filterSprintId();
+      if (sprintFilter === 'unassigned') {
+        filtered = filtered.filter(i => i.sprintId === null);
+      } else if (sprintFilter) {
+        filtered = filtered.filter(i => i.sprintId === sprintFilter);
+      }
+    }
+
     return filtered.slice().sort((a, b) => a.rank - b.rank);
   });
   readonly epics = computed(() =>
@@ -86,6 +111,14 @@ export class BacklogManagementService {
   readonly readyStories = computed(() =>
     this.stories().filter(i => i.state === 'ready').length,
   );
+  /** Number of active Product Backlog filters (keyword, state, sprint). */
+  readonly activeFilterCount = computed(() => {
+    let count = 0;
+    if (this._filterKeyword().trim()) count++;
+    if (this._filterState()) count++;
+    if (this._filterSprintId()) count++;
+    return count;
+  });
 
   constructor() {
     this._loadTrigger$
@@ -100,7 +133,7 @@ export class BacklogManagementService {
             .get<BacklogItemApiDto[]>(this.baseUrl(repoId))
             .pipe(
               catchError(() => {
-                this._error.set('Failed to load backlog items.');
+                this.toast.error('Failed to load backlog items.');
                 this._loading.set(false);
                 return of([]);
               }),
@@ -116,7 +149,6 @@ export class BacklogManagementService {
     effect(() => {
       const repoId = this.repoCtx.selectedRepoId();
       this._loading.set(true);
-      this._error.set(null);
       this._loadTrigger$.next(repoId);
       if (repoId) {
         this.http
@@ -142,6 +174,28 @@ export class BacklogManagementService {
   /** @param epicId Epic to drill into, or null to show all. */
   setSelectedEpic(epicId: string | null): void {
     this._selectedEpicId.set(epicId);
+  }
+
+  /** @param value Free-text search applied to the Product Backlog title. */
+  setFilterKeyword(value: string): void {
+    this._filterKeyword.set(value);
+  }
+
+  /** @param state Refinement state to filter by, or '' for all states. */
+  setFilterState(state: BacklogState | ''): void {
+    this._filterState.set(state);
+  }
+
+  /** @param sprintId Sprint ID to filter by, 'unassigned', or '' for all sprints. */
+  setFilterSprintId(sprintId: string): void {
+    this._filterSprintId.set(sprintId);
+  }
+
+  /** Resets all Product Backlog filters (keyword, state, sprint) to their defaults. */
+  clearFilters(): void {
+    this._filterKeyword.set('');
+    this._filterState.set('');
+    this._filterSprintId.set('');
   }
 
   /** Handles CDK drag-drop reorder, calling the rank API with prev/next sibling IDs. @param event The drop event from CdkDropList. */
@@ -204,7 +258,7 @@ export class BacklogManagementService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reload(repoId),
-        error: () => this._error.set('Failed to update iteration.'),
+        error: () => this.toast.error('Failed to update iteration.'),
       });
   }
 
@@ -219,8 +273,33 @@ export class BacklogManagementService {
     this.putItem(repoId, { ...item, parentId: parentId || null });
   }
 
-  /** Updates the acceptance criteria for an item. @param itemId The target item. @param value New acceptance criteria text. */
-  /** Updates the acceptance criteria via the dedicated endpoint. @param itemId The target item. @param criteria New acceptance criteria list. */
+  /**
+   * Replaces the document list via the dedicated documents endpoint. Unlike {@link saveItemDetails},
+   * this works regardless of refinement state — used for Committed items, where the general PUT
+   * is rejected server-side.
+   * @param itemId The target item.
+   * @param documents Updated list of document titles or links.
+   */
+  updateDocuments(itemId: string, documents: string[]): void {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId) return;
+
+    this.http
+      .patch(`${this.baseUrl(repoId)}/${itemId}/documents`, { documents })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next:  () => this.reload(repoId),
+        error: () => this.toast.error('Failed to update documents.'),
+      });
+  }
+
+  /**
+   * Replaces the acceptance criteria via the dedicated endpoint. Unlike {@link saveItemDetails},
+   * this works regardless of refinement state — used for Committed items, where the general PUT
+   * is rejected server-side.
+   * @param itemId The target item.
+   * @param criteria New acceptance criteria list.
+   */
   updateAcceptanceCriteria(itemId: string, criteria: string[]): void {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return;
@@ -230,55 +309,34 @@ export class BacklogManagementService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reload(repoId),
-        error: () => this._error.set('Failed to update acceptance criteria.'),
+        error: () => this.toast.error('Failed to update acceptance criteria.'),
       });
   }
 
-  /** Updates the story-point estimate and transitions state to Ready. @param itemId The target item. @param value String-encoded Fibonacci number. */
-  updateStoryPoints(itemId: string, value: string): void {
-    const repoId  = this.repoCtx.selectedRepoId();
-    if (!repoId) return;
-
-    const points = Number(value);
-    if (!FIBONACCI_POINTS.includes(points)) return;
-
-    const item = this._items().find(i => i.id === itemId);
-    if (!item) return;
-
-    this.putItem(repoId, { ...item, storyPoints: points, state: 'ready' });
-  }
-
-  /** Updates the T-shirt size estimate and transitions state to Ready. @param itemId The target item. @param value The selected TshirtSize. */
-  updateTshirtSize(itemId: string, value: TshirtSize): void {
-    const repoId = this.repoCtx.selectedRepoId();
-    if (!repoId) return;
-
-    if (!TSHIRT_SIZES.includes(value)) return;
-
-    const item = this._items().find(i => i.id === itemId);
-    if (!item) return;
-
-    this.putItem(repoId, { ...item, tshirtSize: value, state: 'ready' });
-  }
-
-  /** Appends a placeholder document to the item's document list. @param itemId The target item. */
   /**
-   * Replaces the document list for a backlog item via the dedicated documents endpoint.
-   * @param itemId The target backlog item.
-   * @param documents Updated list of document titles or links.
+   * Saves every editable field of a backlog item (title, state, sprint, estimate, documents,
+   * acceptance criteria) via a single PUT. The backend rejects this when state is Committed —
+   * use {@link updateTitle}, {@link updateDocuments} and {@link updateAcceptanceCriteria} instead
+   * for a promoted item. Used by the item-detail dialog for non-Committed items.
+   * @param itemId The target item.
+   * @param changes Full set of edited field values to merge into the current item.
    */
-  updateDocuments(itemId: string, documents: string[]): void {
+  saveItemDetails(itemId: string, changes: {
+    title: string;
+    state: BacklogState;
+    sprintId: string | null;
+    storyPoints: number | null;
+    tshirtSize: TshirtSize | null;
+    documents: string[];
+    acceptanceCriteria: string[];
+  }): void {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return;
 
-    const body = { documents };
-    this.http
-      .patch(`${this.baseUrl(repoId)}/${itemId}/documents`, body)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next:  () => this.reload(repoId),
-        error: () => this._error.set('Failed to update documents.'),
-      });
+    const item = this._items().find(i => i.id === itemId);
+    if (!item) return;
+
+    this.putItem(repoId, { ...item, ...changes });
   }
 
   /** Renames a backlog item. @param itemId The target item. @param title New title. */
@@ -290,7 +348,7 @@ export class BacklogManagementService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reload(repoId),
-        error: () => this._error.set('Failed to update title.'),
+        error: () => this.toast.error('Failed to update title.'),
       });
   }
 
@@ -303,7 +361,7 @@ export class BacklogManagementService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reload(repoId),
-        error: () => this._error.set('Failed to update state.'),
+        error: () => this.toast.error('Failed to update state.'),
       });
   }
 
@@ -316,7 +374,7 @@ export class BacklogManagementService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reload(repoId),
-        error: () => this._error.set('Failed to delete item. It may still have children.'),
+        error: () => this.toast.error('Failed to delete item. It may still have children.'),
       });
   }
 
@@ -325,7 +383,6 @@ export class BacklogManagementService {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return;
     this._loading.set(true);
-    this._error.set(null);
     this.reload(repoId);
   }
 
@@ -354,7 +411,7 @@ export class BacklogManagementService {
           this._activeLevel.set(type);
           this.reload(repoId);
         },
-        error: (err) => this._error.set(err?.error?.error ?? `Failed to create ${this.levelLabel(type)}.`),
+        error: (err) => this.toast.error(err?.error?.error ?? `Failed to create ${this.levelLabel(type)}.`),
       });
   }
 
@@ -396,7 +453,7 @@ export class BacklogManagementService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reload(repoId),
-        error: (err) => this._error.set(err?.error?.error ?? 'Failed to promote item. Make sure it is a Ready user story.'),
+        error: (err) => this.toast.error(err?.error?.error ?? 'Failed to promote item. Make sure it is a Ready user story.'),
       });
   }
 
@@ -426,7 +483,7 @@ export class BacklogManagementService {
         next:  () => this.reload(repoId),
         error: () => {
           if (rollback) this._items.set(rollback);
-          this._error.set('Failed to reorder item.');
+          this.toast.error('Failed to reorder item.');
         },
       });
   }
@@ -448,7 +505,7 @@ export class BacklogManagementService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reload(repoId),
-        error: () => this._error.set('Failed to update item.'),
+        error: () => this.toast.error('Failed to update item.'),
       });
   }
 

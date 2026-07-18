@@ -10,16 +10,9 @@ export type TshirtSize = 'XS' | 'S' | 'M' | 'L' | 'XL';
 /** Refinement state label (view layer, maps to BacklogItemApiState). */
 export type BacklogState = 'new' | 'refining' | 'ready' | 'committed';
 
-/** Data injected into BacklogAcDialogComponent via DIALOG_DATA. */
-export interface BacklogAcDialogData {
-  itemId: string;
-  acceptanceCriteria: string[];
-}
-
-/** Data injected into BacklogDocumentsDialogComponent via DIALOG_DATA. */
-export interface BacklogDocumentsDialogData {
-  itemId: string;
-  documents: string[];
+/** Data injected into BacklogItemDetailDialogComponent via DIALOG_DATA. */
+export interface BacklogItemDetailDialogData {
+  item: BacklogItem;
 }
 
 /** Flat view-model used by BacklogManagementService signals and the template. */

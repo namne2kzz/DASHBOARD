@@ -5,9 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { BacklogManagementService } from '../../services/backlog-management.service';
 import { DialogService } from '../../core/components/dialog/dialog.service';
 import { AddBacklogItemDialogComponent } from '../../components/add-backlog-item-dialog/add-backlog-item-dialog.component';
-import { BacklogDocumentsDialogComponent } from '../../components/backlog-documents-dialog/backlog-documents-dialog.component';
-import { BacklogAcDialogComponent } from '../../components/backlog-ac-dialog/backlog-ac-dialog.component';
-import type { BacklogItem, BacklogState, TshirtSize } from '../../models/backlog.model';
+import { BacklogItemDetailDialogComponent } from '../../components/backlog-item-detail-dialog/backlog-item-detail-dialog.component';
+import type { BacklogItem, BacklogState } from '../../models/backlog.model';
 
 @Component({
   selector: 'app-backlog-management-page',
@@ -32,6 +31,9 @@ export class BacklogManagementPageComponent implements OnInit {
   // ── Promote to sprint ────────────────────────────────────────
   readonly promotingItemId    = signal<string | null>(null);
   readonly selectedSprintId   = signal<string>('');
+
+  // ── Portfolio hierarchy (collapsible) ─────────────────────────
+  readonly expandedEpicIds = signal<ReadonlySet<string>>(new Set());
 
   // ── Epic picker (searchable) ─────────────────────────────────
   readonly epicPickerOpen   = signal(false);
@@ -62,6 +64,23 @@ export class BacklogManagementPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.backlog.reset();
+  }
+
+  // ── Portfolio hierarchy ────────────────────────────────────────
+
+  /** @param epicId The epic whose expanded state to check. @returns True when its features are shown. */
+  isEpicExpanded(epicId: string): boolean {
+    return this.expandedEpicIds().has(epicId);
+  }
+
+  /** Expands or collapses the feature list under an epic. @param epicId The epic to toggle. */
+  toggleEpicExpand(epicId: string): void {
+    this.expandedEpicIds.update(current => {
+      const next = new Set(current);
+      if (next.has(epicId)) next.delete(epicId);
+      else next.add(epicId);
+      return next;
+    });
   }
 
   // ── Kebab menu ───────────────────────────────────────────────
@@ -170,30 +189,17 @@ export class BacklogManagementPageComponent implements OnInit {
   }
 
   /**
-   * Opens the documents dialog and persists changes when the user saves.
-   * @param story The backlog item whose documents to manage.
+   * Opens the full detail dialog for a user story (title, state, estimate, iteration,
+   * documents, acceptance criteria). No-op for Epics/Features or while the row is
+   * mid inline-edit.
+   * @param item The backlog item to view/edit.
    */
-  openDocumentsDialog(story: BacklogItem): void {
-    const ref = this.dialog.open<BacklogDocumentsDialogComponent, unknown, string[]>(
-      BacklogDocumentsDialogComponent,
-      { title: 'Documents', width: '32rem', data: { itemId: story.id, documents: [...story.documents] } },
-    );
-    ref.closed.then(docs => {
-      if (docs !== undefined) this.backlog.updateDocuments(story.id, docs);
-    });
-  }
-
-  /**
-   * Opens the acceptance-criteria dialog and persists changes when the user saves.
-   * @param story The backlog item whose acceptance criteria to edit.
-   */
-  openAcDialog(story: BacklogItem): void {
-    const ref = this.dialog.open<BacklogAcDialogComponent, unknown, string[]>(
-      BacklogAcDialogComponent,
-      { title: 'Acceptance Criteria', width: '40rem', data: { itemId: story.id, acceptanceCriteria: [...story.acceptanceCriteria] } },
-    );
-    ref.closed.then(ac => {
-      if (ac !== undefined) this.backlog.updateAcceptanceCriteria(story.id, ac);
+  openDetail(item: BacklogItem): void {
+    if (item.type !== 'user-story' || this.editingId() === item.id) return;
+    this.dialog.open(BacklogItemDetailDialogComponent, {
+      title: 'User story details',
+      width: '40rem',
+      data: { item },
     });
   }
 
@@ -217,9 +223,5 @@ export class BacklogManagementPageComponent implements OnInit {
   cancelPromote(): void {
     this.promotingItemId.set(null);
     this.selectedSprintId.set('');
-  }
-
-  asTshirtSize(value: string): TshirtSize {
-    return value as TshirtSize;
   }
 }
