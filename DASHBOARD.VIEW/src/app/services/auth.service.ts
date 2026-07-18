@@ -19,7 +19,19 @@ export class AuthService {
   /** Authenticates with the backend and stores tokens. @returns Observable of LoginResponse. */
   login(request: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, request).pipe(
-      tap(res => this.persistSession(res))
+      tap(res => this.applySession(res))
+    );
+  }
+
+  /**
+   * Authenticates an existing user via Google Sign-In and stores tokens. Never creates an account —
+   * fails if no user is linked to that Google identity yet (they need an invite first).
+   * @param googleIdToken The Google id_token obtained after the user signed in with Google.
+   * @returns Observable of LoginResponse.
+   */
+  googleLogin(googleIdToken: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/google-login`, { googleIdToken }).pipe(
+      tap(res => this.applySession(res))
     );
   }
 
@@ -27,7 +39,7 @@ export class AuthService {
   refresh(): Observable<LoginResponse> {
     const refreshToken = this.storage.getString(StorageKeys.refreshToken) ?? '';
     return this.http.post<LoginResponse>(`${this.apiUrl}/refresh`, { refreshToken } as RefreshTokenRequest).pipe(
-      tap(res => this.persistSession(res))
+      tap(res => this.applySession(res))
     );
   }
 
@@ -45,7 +57,13 @@ export class AuthService {
     return this.storage.getString(StorageKeys.accessToken);
   }
 
-  private persistSession(res: LoginResponse): void {
+  /**
+   * Stores a signed-in session and updates the auth signals. Public so flows that obtain a
+   * session outside the regular login form (e.g. accepting an email invite) can reuse the same
+   * storage logic instead of duplicating it.
+   * @param res The session payload returned by the backend (login, refresh, or invite-accept).
+   */
+  applySession(res: LoginResponse): void {
     const profile: UserProfile = {
       userId: res.userId,
       email: res.email,
