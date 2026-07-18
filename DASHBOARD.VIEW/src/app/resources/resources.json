@@ -38,7 +38,6 @@
   "nav.smartBoard": "Smart Board",
   "nav.backlog": "Backlog",
   "nav.sprintPlanning": "Sprint Planning",
-  "nav.analytics": "Analytics",
   "nav.wiki": "Wiki",
   "nav.repos": "Repositories",
   "nav.pipelines": "Pipelines",
@@ -88,6 +87,10 @@
   "role.deleteTitle": "Delete role",
   "role.deleteMessage": "will be permanently deleted. This cannot be undone.",
   "role.deleteConfirm": "Yes, delete",
+
+  "invitation.revokeTitle": "Revoke invitation",
+  "invitation.revokeMessage": "will no longer be able to use this invite link, even if they already received the email. Continue?",
+  "invitation.revokeConfirm": "Yes, revoke",
 
   "table.empty": "No records found.",
   "table.loading": "Loading data…",
@@ -180,9 +183,6 @@
   "repos.header.subtitle": "Connect repositories and track branches, commits and pull requests.",
   "repos.empty": "No repositories connected yet.",
   "repos.button.connect": "Connect repository",
-
-  "analytics.header.title": "Analytics",
-  "analytics.header.subtitle": "Sprint velocity, burn-down and team metrics.",
 
   "boards.header.title": "Boards",
   "boards.header.subtitle": "Kanban board for active sprint work items.",
