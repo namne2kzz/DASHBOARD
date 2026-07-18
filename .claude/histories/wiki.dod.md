@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-07-16 | 00:00 | Ẩn Wiki khỏi navigation | Bỏ link "Wiki" khỏi sidebar (`shell-layout.component.html`) và route `analytics` (feature khác) theo yêu cầu sản phẩm; backend + data giữ nguyên, route `/:repoCode/wiki` vẫn hoạt động nếu truy cập trực tiếp URL |
 | 2026-06-23 | 20:58 | Khởi tạo document | Tạo document business ban đầu cho feature Wiki |
 
 ---

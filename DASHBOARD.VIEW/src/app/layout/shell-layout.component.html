@@ -141,44 +141,6 @@
       </a>
 
       <a
-        [routerLink]="repoLink('analytics')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
-        [class.justify-center]="collapsed()"
-        [class.px-2]="collapsed()"
-        title="Analytics"
-      >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-          </svg>
-        </span>
-        @if (!collapsed()) {
-          <span>Analytics</span>
-        }
-      </a>
-
-
-      <a
-        [routerLink]="repoLink('wiki')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
-        [class.justify-center]="collapsed()"
-        [class.px-2]="collapsed()"
-        title="Wiki"
-      >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M12 6.5V3M6.5 12H3M12 17.5V21M17.5 12H21M7.05 7.05l-2.1-2.1M16.95 7.05l2.1-2.1M16.95 16.95l2.1 2.1M7.05 16.95l-2.1 2.1" />
-            <circle cx="12" cy="12" r="4" />
-          </svg>
-        </span>
-        @if (!collapsed()) {
-          <span>Wiki</span>
-        }
-      </a>
-
-      <a
         [routerLink]="repoLink('boards')"
         routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
         class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
