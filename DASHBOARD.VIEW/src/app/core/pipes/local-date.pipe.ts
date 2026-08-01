@@ -1,7 +1,8 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { DateTimeService } from '../services/date-time.service';
 
-@Pipe({ name: 'localDate', standalone: true, pure: true })
+// Impure so dates re-render live when the user changes their date-format / timezone preference.
+@Pipe({ name: 'localDate', standalone: true, pure: false })
 export class LocalDatePipe implements PipeTransform {
   constructor(private readonly dt: DateTimeService) {}
 

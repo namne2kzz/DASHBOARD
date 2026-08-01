@@ -17,7 +17,9 @@ export const StorageKeys = {
 
   // ── UI preferences ───────────────────────────────────────────
   // User-selected UI settings persisted across sessions.
-  theme: 'nxs.ui.theme',
+  theme:      'nxs.ui.theme',
+  dateFormat: 'nxs.ui.date-format',
+  timezone:   'nxs.ui.timezone',
 
   // ── Mock / dev data ───────────────────────────────────────────
   // Keys used by mock services to seed and persist fake data.

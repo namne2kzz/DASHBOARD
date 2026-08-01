@@ -1,12 +1,19 @@
 import { inject, Injectable, LOCALE_ID } from '@angular/core';
 import { formatDate } from '@angular/common';
+import { PreferencesService } from './preferences.service';
 
 @Injectable({ providedIn: 'root' })
 export class DateTimeService {
   private readonly locale = inject(LOCALE_ID);
+  private readonly prefs  = inject(PreferencesService);
 
-  /** Default display format used across the app. */
-  static readonly DEFAULT_FORMAT = 'MMM d, y · h:mm a';
+  /** Time portion appended to the preferred date pattern for the default display format. */
+  private static readonly TIME_SUFFIX = ' · h:mm a';
+
+  /** The full default display format, derived from the user's date-format preference. */
+  private defaultFormat(): string {
+    return this.prefs.datePattern() + DateTimeService.TIME_SUFFIX;
+  }
 
   /**
    * Normalises a UTC ISO string so it is always parsed as UTC.
@@ -27,14 +34,16 @@ export class DateTimeService {
   }
 
   /**
-   * Formats a UTC ISO string as a localised display string.
+   * Formats a UTC ISO string as a display string honouring the user's date-format and timezone
+   * preferences. When no explicit format is given, the preferred numeric date pattern is used.
+   * The preferred timezone is always applied (falls back to the browser's local zone).
    * @param utc UTC ISO string from the backend.
-   * @param format Angular date format string. Defaults to 'MMM d, y · h:mm a'.
-   * @returns Formatted local-time string, or empty string if input is falsy.
+   * @param format Optional explicit Angular date format string; omit to use the preferred default.
+   * @returns Formatted string, or empty string if input is falsy.
    */
-  format(utc: string | null | undefined, format = DateTimeService.DEFAULT_FORMAT): string {
+  format(utc: string | null | undefined, format?: string): string {
     if (!utc) return '';
-    return formatDate(this.normalise(utc), format, this.locale);
+    return formatDate(this.normalise(utc), format ?? this.defaultFormat(), this.locale, this.prefs.timezoneOffset());
   }
 
   /**
@@ -51,6 +60,6 @@ export class DateTimeService {
     );
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
-    return this.format(utc, 'MMM d, y');
+    return this.format(utc, this.prefs.datePattern());
   }
 }

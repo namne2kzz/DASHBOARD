@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ThemeService } from '../../core/services/theme.service';
+import { PreferencesService } from '../../core/services/preferences.service';
 
 @Component({
   selector: 'app-settings-general-page',
@@ -11,6 +12,7 @@ import { ThemeService } from '../../core/services/theme.service';
 })
 export class SettingsGeneralPageComponent {
   readonly themeService = inject(ThemeService);
+  readonly prefs        = inject(PreferencesService);
 
   readonly workspaceName      = signal('My Workspace');
   readonly description        = signal('');

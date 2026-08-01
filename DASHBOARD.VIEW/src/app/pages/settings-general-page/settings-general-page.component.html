@@ -204,7 +204,12 @@
                 <p class="text-[11px] text-slate-500">Used for dates and deadlines</p>
               </div>
             </div>
-            <select class="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-300 outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20">
+            <select
+              class="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-300 outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
+              [ngModel]="prefs.timezone()"
+              (ngModelChange)="prefs.setTimezone($event)"
+            >
+              <option value="">Local (device)</option>
               <option value="utc7">(UTC+7) Ho Chi Minh</option>
               <option value="utc0">(UTC+0) London</option>
               <option value="utc-5">(UTC-5) New York</option>
@@ -227,7 +232,11 @@
                 <p class="text-[11px] text-slate-500">How dates are displayed across the app</p>
               </div>
             </div>
-            <select class="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-300 outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20">
+            <select
+              class="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-300 outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
+              [ngModel]="prefs.dateFormat()"
+              (ngModelChange)="prefs.setDateFormat($event)"
+            >
               <option value="dmy">DD/MM/YYYY</option>
               <option value="mdy">MM/DD/YYYY</option>
               <option value="ymd">YYYY-MM-DD</option>
