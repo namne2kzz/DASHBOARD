@@ -98,6 +98,8 @@ export interface BoardTaskApiDto {
   completedWork:    number;
   /** UTC ISO-8601 timestamp of last state transition; null for legacy items. */
   stateChangedAt:   string | null;
+  /** Assigned "Labels" catalog values, for card chips. */
+  labels:           string[];
 }
 
 /** Lightweight summary for list views. */

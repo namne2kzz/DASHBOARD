@@ -8,10 +8,89 @@ import { SprintSelectionService } from './sprint-selection.service';
 import { AuthService } from './auth.service';
 import { BoardTaskApiDto, CapacityMemberApiDto, CreateWorkItemPayload, WorkItemPickerApiDto } from '../models/sprint-planning-api.model';
 import { SprintTaskApiState, SprintTaskApiType } from '../core/enums/system.enum';
+import { SPRINT_TASK_STATE_LABEL } from '../core/constants/system.constant';
 import type { BoardItem, BoardItemType, BoardPriority } from '../models/boards.model';
 import type { SprintTaskStateKey } from '../models/workflow.model';
 
 const API = `${environment.apiBaseUrl}/repositories`;
+
+/** One row of the board's dynamic query filter. */
+export interface QueryRow {
+  logicalOperator: 'and' | 'or';
+  criteria: string;
+  operation: string;
+  value: string;
+}
+
+const QUERY_TYPE_LABEL: Record<BoardItemType, string> = {
+  'user-story': 'User Story',
+  'task':       'Task',
+  'bug':        'Bug',
+  'test-plan':  'Test Plan',
+};
+
+/** Resolves the comparable text of a board item field for the dynamic query. */
+function queryFieldText(item: BoardItem, criteria: string): string {
+  switch (criteria) {
+    case 'title':      return item.title;
+    case 'type':       return QUERY_TYPE_LABEL[item.type];
+    case 'priority':   return item.priority;
+    case 'state':      return SPRINT_TASK_STATE_LABEL[item.apiState];
+    case 'assignedTo': return item.assignedToName ?? '';
+    case 'remaining':  return String(item.remainingWork);
+    case 'labels':     return item.labels.join(' ');
+    default:           return '';
+  }
+}
+
+/** Evaluates a single query row against an item. Labels are matched per-value (any-of). */
+function matchQueryRow(item: BoardItem, row: QueryRow): boolean {
+  const val = row.value.trim().toLowerCase();
+
+  if (row.criteria === 'labels') {
+    const labels = item.labels.map(l => l.toLowerCase());
+    switch (row.operation) {
+      case 'equals':       return labels.includes(val);
+      case 'not-equals':   return !labels.includes(val);
+      case 'contains':     return labels.some(l => l.includes(val));
+      case 'not-contains': return !labels.some(l => l.includes(val));
+      case 'starts-with':  return labels.some(l => l.startsWith(val));
+      case 'is-empty':     return labels.length === 0;
+      case 'is-not-empty': return labels.length > 0;
+      default:             return true;
+    }
+  }
+
+  const text = queryFieldText(item, row.criteria).toLowerCase();
+  switch (row.operation) {
+    case 'equals':       return text === val;
+    case 'not-equals':   return text !== val;
+    case 'contains':     return text.includes(val);
+    case 'not-contains': return !text.includes(val);
+    case 'starts-with':  return text.startsWith(val);
+    case 'is-empty':     return text.length === 0;
+    case 'is-not-empty': return text.length > 0;
+    default:             return true;
+  }
+}
+
+/** A row participates only when it has a field and either a value or an emptiness operator. */
+function isQueryRowActive(row: QueryRow): boolean {
+  return !!row.criteria &&
+    (row.value.trim().length > 0 || row.operation === 'is-empty' || row.operation === 'is-not-empty');
+}
+
+/** Combines all active rows with their per-row AND/OR operator (left-to-right). */
+function matchQuery(item: BoardItem, rows: QueryRow[]): boolean {
+  const active = rows.filter(isQueryRowActive);
+  if (active.length === 0) return true;
+  let result = matchQueryRow(item, active[0]);
+  for (let k = 1; k < active.length; k++) {
+    const m = matchQueryRow(item, active[k]);
+    result = active[k].logicalOperator === 'or' ? result || m : result && m;
+  }
+  return result;
+}
 
 /** Maps SprintTaskStateKey string → SprintTaskApiState numeric value. */
 const STATE_KEY_TO_API: Record<SprintTaskStateKey, SprintTaskApiState> = {
@@ -61,6 +140,7 @@ function toItem(dto: BoardTaskApiDto): BoardItem {
     discussions:      [],
     history:          [],
     stateChangedAt:   dto.stateChangedAt,
+    labels:           dto.labels ?? [],
   };
 }
 
@@ -77,6 +157,9 @@ export class SprintBoardService {
   readonly searchQuery      = signal('');
   readonly assignedToMeOnly = signal(false);
 
+  /** Dynamic query filter rows applied to the board (live). */
+  readonly queryRows = signal<QueryRow[]>([{ logicalOperator: 'and', criteria: '', operation: 'equals', value: '' }]);
+
   private readonly _allItems        = signal<BoardItem[]>([]);
   private readonly _capacityMembers = signal<CapacityMemberApiDto[]>([]);
 
@@ -90,17 +173,24 @@ export class SprintBoardService {
   readonly selectedSprintId = this.sprintSelection.selectedSprintId;
   readonly selectedSprint   = this.sprintSelection.selectedSprint;
 
-  /** Flat task list filtered by search text and "assigned to me". */
+  /** Flat task list filtered by search text, "assigned to me", and the dynamic query. */
   readonly filteredItems = computed(() => {
     const items  = this._allItems();
     const q      = this.searchQuery().trim().toLowerCase();
     const meOnly = this.assignedToMeOnly();
     const meId   = this.auth.currentUser()?.userId ?? null;
+    const rows   = this.queryRows();
     return items.filter(i => {
       if (meOnly && i.assignedToId !== meId) return false;
-      return !q || i.title.toLowerCase().includes(q) || `${i.workItemNumber}`.includes(q);
+      if (q && !i.title.toLowerCase().includes(q) && !`${i.workItemNumber}`.includes(q)) return false;
+      return matchQuery(i, rows);
     });
   });
+
+  /** Resets the dynamic query to a single empty row. */
+  clearQuery(): void {
+    this.queryRows.set([{ logicalOperator: 'and', criteria: '', operation: 'equals', value: '' }]);
+  }
 
   constructor() {
     // Load board tasks whenever the selected sprint changes.

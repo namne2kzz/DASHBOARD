@@ -5,6 +5,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LocalDatePipe } from '../../core/pipes/local-date.pipe';
+import { WorkItemMetadataEditorComponent } from '../work-item-metadata-editor/work-item-metadata-editor.component';
 import { DateTimeService } from '../../core/services/date-time.service';
 import { DIALOG_REF_TOKEN } from '../../models/dialog.model';
 import { DialogService } from '../../core/components/dialog/dialog.service';
@@ -88,7 +89,7 @@ export interface ProgressNode {
 @Component({
   selector: 'app-sprint-task-detail-dialog',
   standalone: true,
-  imports: [FormsModule, NgClass, NgTemplateOutlet, LocalDatePipe],
+  imports: [FormsModule, NgClass, NgTemplateOutlet, LocalDatePipe, WorkItemMetadataEditorComponent],
   templateUrl: './sprint-task-detail-dialog.component.html',
   styleUrl: './sprint-task-detail-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

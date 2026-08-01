@@ -1,0 +1,83 @@
+@if (!isEmpty()) {
+  <div class="flex flex-col gap-3">
+    @for (group of groups(); track group.key) {
+      <div>
+        <p class="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{{ group.label }}</p>
+
+        <!-- Selected values + add button -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          @for (v of selectedValues(group); track v.id) {
+            <span class="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300 ring-1 ring-sky-500/35">
+              {{ v.value }}
+              @if (canEdit()) {
+                <button
+                  type="button"
+                  class="-mr-0.5 rounded-full p-0.5 text-sky-300/70 transition hover:text-sky-200 disabled:opacity-50"
+                  [disabled]="saving()"
+                  (click)="toggle(v.id)"
+                  [title]="'Remove ' + v.value"
+                >
+                  <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              }
+            </span>
+          } @empty {
+            <span class="text-xs text-slate-600">None</span>
+          }
+
+          @if (canEdit()) {
+            <button
+              type="button"
+              class="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 ring-1 ring-slate-700 transition hover:bg-slate-800 hover:text-slate-200"
+              [class.bg-slate-800]="addingKey() === group.key"
+              [class.text-slate-200]="addingKey() === group.key"
+              (click)="toggleAdd(group.key)"
+              [title]="'Add ' + group.label"
+            >
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/>
+              </svg>
+            </button>
+          }
+        </div>
+
+        <!-- Add-search popover for this key -->
+        @if (addingKey() === group.key) {
+          <div class="mt-2 rounded-lg border border-slate-700 bg-slate-950/60 p-2">
+            <input
+              type="text"
+              class="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 outline-none focus:border-sky-400"
+              [placeholder]="'Search ' + group.label + '…'"
+              [ngModel]="addSearch()"
+              (ngModelChange)="addSearch.set($event)"
+            />
+            <div class="mt-1.5 flex max-h-40 flex-wrap gap-1 overflow-y-auto">
+              @for (v of addMatches(group); track v.id) {
+                <button
+                  type="button"
+                  class="rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-medium text-slate-300 ring-1 ring-slate-700 transition hover:bg-slate-700 hover:text-white disabled:opacity-50"
+                  [disabled]="saving()"
+                  (click)="add(v.id)"
+                >{{ v.value }}</button>
+              } @empty {
+                <span class="px-1 py-1 text-xs text-slate-600">
+                  {{ addSearch().trim() ? 'No matches' : 'All values already added' }}
+                </span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+    @if (!canEdit()) {
+      <p class="text-[11px] text-slate-600">You don't have permission to change these.</p>
+    }
+  </div>
+} @else {
+  <p class="text-xs text-slate-600">
+    No catalog values defined. Add Labels, Components, or versions in
+    <span class="text-slate-500">Settings → Metadata</span>.
+  </p>
+}

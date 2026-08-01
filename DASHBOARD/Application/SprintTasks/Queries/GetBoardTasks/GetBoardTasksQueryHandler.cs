@@ -1,6 +1,7 @@
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.SprintTasks.DTOs;
 using DASHBOARD.Domain.Entities;
+using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +49,17 @@ public sealed class GetBoardTasksQueryHandler(
             })
             .ToListAsync(ct);
 
+        var taskIds = tasks.Select(t => t.Id).ToList();
+
+        // Assigned "Labels" catalog values per task, for card chips.
+        var labels = await db.Set<WorkItemMetadata>().AsNoTracking()
+            .Where(w => taskIds.Contains(w.SprintTaskId) && w.Metadata!.Key == MetadataKey.Labels)
+            .Select(w => new { w.SprintTaskId, w.Metadata!.Value })
+            .ToListAsync(ct);
+        var labelsByTask = labels
+            .GroupBy(l => l.SprintTaskId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Value).OrderBy(v => v).ToList());
+
         return tasks.Select(t => new BoardTaskDto(
             t.Id,
             SprintTask.BuildWorkItemNumber(repoCode, t.WorkItemNumber),
@@ -61,6 +73,7 @@ public sealed class GetBoardTasksQueryHandler(
             t.OriginalEstimate,
             t.RemainingWork,
             t.CompletedWork,
-            t.StateChangedAt)).ToList();
+            t.StateChangedAt,
+            labelsByTask.TryGetValue(t.Id, out var ls) ? ls : (IReadOnlyList<string>)[])).ToList();
     }
 }

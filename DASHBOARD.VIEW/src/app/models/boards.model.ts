@@ -58,4 +58,6 @@ export interface BoardItem {
   history:          HistoryEntry[];
   /** UTC ISO-8601 timestamp of the last state transition; null for legacy items. */
   stateChangedAt:   string | null;
+  /** Assigned "Labels" catalog values (chips on the card). */
+  labels:           string[];
 }

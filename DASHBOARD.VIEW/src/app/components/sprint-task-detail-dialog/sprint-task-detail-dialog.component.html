@@ -204,6 +204,14 @@
           </select>
         </div>
 
+        <div>
+          <label class="field-label mb-1.5 block">Labels &amp; metadata</label>
+          <app-work-item-metadata-editor
+            [taskId]="data.taskId"
+            (changed)="board.patchItem(data.taskId, { labels: $event })"
+          />
+        </div>
+
         <div class="relative">
           <label class="field-label mb-1.5 block">Assignee</label>
 

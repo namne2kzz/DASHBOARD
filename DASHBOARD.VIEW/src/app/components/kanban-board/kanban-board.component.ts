@@ -4,7 +4,7 @@ import { computed, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { BoardItem } from '../../models/boards.model';
 import type { BoardColumn, WipMode } from '../../models/workflow.model';
-import { SprintBoardService, STATE_KEY_TO_API } from '../../services/sprint-board.service';
+import { SprintBoardService, STATE_KEY_TO_API, type QueryRow } from '../../services/sprint-board.service';
 import { WorkflowService } from '../../services/workflow.service';
 import { PrivilegeService } from '../../core/services/privilege.service';
 import { DialogService } from '../../core/components/dialog/dialog.service';
@@ -12,13 +12,6 @@ import { KanbanColumnComponent } from '../kanban-column/kanban-column.component'
 import { CreateWorkItemDialogComponent } from '../create-workitem-dialog/create-workitem-dialog.component';
 import { SprintTaskDetailDialogComponent } from '../sprint-task-detail-dialog/sprint-task-detail-dialog.component';
 import { SprintTaskApiType } from '../../core/enums/system.enum';
-
-interface QueryRow {
-  logicalOperator: 'and' | 'or';
-  criteria: string;
-  operation: string;
-  value: string;
-}
 
 @Component({
   selector: 'app-kanban-board',
@@ -38,7 +31,9 @@ export class KanbanBoardComponent {
   readonly searchExpanded      = signal(false);
   readonly queryPanelOpen      = signal(false);
   readonly newWorkItemMenuOpen = signal(false);
-  readonly queryRows = signal<QueryRow[]>([{ logicalOperator: 'and', criteria: '', operation: 'equals', value: '' }]);
+
+  /** Dynamic query rows live on the board service so filtering can consume them. */
+  get queryRows() { return this.board.queryRows; }
 
   readonly newWorkItemTypes = [
     { value: SprintTaskApiType.Task,     label: 'Task' },
@@ -60,6 +55,7 @@ export class KanbanBoardComponent {
     { value: 'state',      label: 'State' },
     { value: 'assignedTo', label: 'Assigned To' },
     { value: 'remaining',  label: 'Remaining Work' },
+    { value: 'labels',     label: 'Labels' },
   ];
 
   readonly operationOptions = [
@@ -120,17 +116,20 @@ export class KanbanBoardComponent {
 
   /** @returns Count of query rows with a selected criteria. */
   get activeQueryCount(): number {
-    return this.queryRows().filter(r => r.criteria).length;
+    return this.board.queryRows().filter(r => r.criteria).length;
   }
 
   /** Appends a blank query row. */
   addQueryRow(): void {
-    this.queryRows.update(rows => [...rows, { logicalOperator: 'and', criteria: '', operation: 'equals', value: '' }]);
+    this.board.queryRows.update(rows => [...rows, { logicalOperator: 'and', criteria: '', operation: 'equals', value: '' }]);
   }
 
-  /** Removes the row at the given index. @param index Row to remove. */
+  /** Removes the row at the given index, keeping at least one blank row. @param index Row to remove. */
   removeQueryRow(index: number): void {
-    this.queryRows.update(rows => rows.filter((_, i) => i !== index));
+    this.board.queryRows.update(rows => {
+      const next = rows.filter((_, i) => i !== index);
+      return next.length ? next : [{ logicalOperator: 'and', criteria: '', operation: 'equals', value: '' }];
+    });
   }
 
   /**
@@ -140,9 +139,14 @@ export class KanbanBoardComponent {
    * @param value New value.
    */
   updateQueryRow(index: number, field: keyof QueryRow, value: string): void {
-    this.queryRows.update(rows =>
+    this.board.queryRows.update(rows =>
       rows.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
     );
+  }
+
+  /** Clears all query rows. */
+  clearQuery(): void {
+    this.board.clearQuery();
   }
 
   /**
