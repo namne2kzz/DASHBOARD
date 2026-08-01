@@ -28,6 +28,11 @@ export const routes: Routes = [
       },
       // ── Global routes — auth only, no repo context ─────────────
       {
+        path: 'my-work',
+        loadComponent: () =>
+          import('./pages/my-work-page/my-work-page.component').then(m => m.MyWorkPageComponent),
+      },
+      {
         path: 'profile',
         loadComponent: () =>
           import('./pages/profile-page/profile-page.component').then(m => m.ProfilePageComponent),

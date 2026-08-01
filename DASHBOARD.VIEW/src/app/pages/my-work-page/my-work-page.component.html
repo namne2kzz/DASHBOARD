@@ -1,0 +1,146 @@
+<div class="mx-auto max-w-5xl px-6 py-6">
+  <!-- Header -->
+  <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+    <div>
+      <h1 class="text-lg font-bold text-white">My Work</h1>
+      <p class="mt-0.5 text-sm text-slate-500">Every open item assigned to you across all your repositories.</p>
+    </div>
+    <button
+      type="button"
+      class="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 transition hover:border-slate-600 hover:text-white"
+      (click)="myWork.refresh()"
+      [disabled]="myWork.loading()"
+    >
+      <svg class="h-3.5 w-3.5" [class.animate-spin]="myWork.loading()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 0 0-14.9-2M4 16a8 8 0 0 0 14.9 2"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Summary tiles -->
+  <div class="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
+      <p class="text-[11px] font-medium uppercase tracking-wide text-slate-500">Open items</p>
+      <p class="mt-1 text-xl font-bold text-white">{{ myWork.totalCount() }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
+      <p class="text-[11px] font-medium uppercase tracking-wide text-slate-500">Active</p>
+      <p class="mt-1 text-xl font-bold text-blue-300">{{ myWork.activeCount() }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
+      <p class="text-[11px] font-medium uppercase tracking-wide text-slate-500">In review</p>
+      <p class="mt-1 text-xl font-bold text-amber-300">{{ myWork.inReviewCount() }}</p>
+    </div>
+    <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
+      <p class="text-[11px] font-medium uppercase tracking-wide text-slate-500">Repositories</p>
+      <p class="mt-1 text-xl font-bold text-white">{{ myWork.repoCount() }}</p>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    <input
+      type="text"
+      placeholder="Search title, number, or repository…"
+      class="min-w-[12rem] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    />
+    <div class="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 p-0.5">
+      <span class="px-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">Group</span>
+      @for (opt of groupingOptions; track opt.value) {
+        <button
+          type="button"
+          class="rounded-md px-2.5 py-1 text-xs font-medium transition"
+          [class]="grouping() === opt.value
+            ? 'bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30'
+            : 'text-slate-400 hover:text-white'"
+          (click)="setGrouping(opt.value)"
+        >{{ opt.label }}</button>
+      }
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (myWork.loading() && myWork.items().length === 0) {
+    <div class="space-y-2">
+      @for (_ of [1, 2, 3, 4]; track $index) {
+        <div class="h-14 animate-pulse rounded-lg border border-slate-800 bg-slate-900/60"></div>
+      }
+    </div>
+  } @else if (myWork.error()) {
+    <div class="rounded-lg border border-rose-800/60 bg-rose-950/30 px-4 py-6 text-center text-sm text-rose-300">
+      Failed to load your work items.
+      <button class="ml-1 underline hover:text-rose-200" (click)="myWork.refresh()">Try again</button>
+    </div>
+  } @else if (myWork.items().length === 0) {
+    <div class="rounded-xl border border-dashed border-slate-700 py-14 text-center">
+      <p class="text-sm font-medium text-slate-400">You're all caught up</p>
+      <p class="mt-1 text-xs text-slate-600">No open work items are currently assigned to you.</p>
+    </div>
+  } @else if (filteredItems().length === 0) {
+    <div class="rounded-xl border border-dashed border-slate-700 py-10 text-center text-xs text-slate-600">
+      No items match "{{ search() }}".
+    </div>
+  } @else {
+    <!-- Grouped list -->
+    <div class="space-y-6">
+      @for (group of groups(); track group.key) {
+        <section>
+          <div class="mb-2 flex items-center gap-2 px-0.5">
+            <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ group.label }}</h2>
+            <span class="rounded-full bg-slate-800 px-1.5 py-0.5 text-[11px] font-semibold text-slate-400">{{ group.items.length }}</span>
+          </div>
+
+          <ul class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 divide-y divide-slate-800">
+            @for (item of group.items; track item.id) {
+              <li
+                class="group flex cursor-pointer items-center gap-3 px-4 py-3 transition hover:bg-slate-800/60"
+                (click)="openItem(item)"
+              >
+                <!-- Priority accent bar -->
+                <span class="h-8 w-1 shrink-0 rounded-full" [ngClass]="priorityBar(item.priority)"></span>
+
+                <!-- Type chip -->
+                <span class="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1"
+                  [ngClass]="typeAccent(item.type)"
+                >{{ typeLabel(item.type) }}</span>
+
+                <!-- Work item number -->
+                <span class="shrink-0 font-mono text-xs text-slate-500">{{ item.workItemNumber }}</span>
+
+                <!-- Title -->
+                <p class="min-w-0 flex-1 truncate font-medium text-slate-100" [title]="item.title">{{ item.title }}</p>
+
+                <!-- Repository badge -->
+                <span class="hidden shrink-0 items-center gap-1 rounded-full bg-slate-800/80 px-2 py-0.5 text-[11px] font-medium text-slate-400 sm:flex"
+                  [title]="item.repositoryName"
+                >
+                  <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
+                  </svg>
+                  {{ item.repositoryCode }}
+                </span>
+
+                <!-- Priority chip -->
+                <span class="hidden shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 md:inline-block"
+                  [ngClass]="priorityBadge(item.priority)"
+                >{{ priorityLabel(item.priority) }}</span>
+
+                <!-- State badge -->
+                <span class="shrink-0 rounded px-2 py-0.5 text-xs font-semibold ring-1"
+                  [ngClass]="stateBadge[item.state]"
+                >{{ stateLabel[item.state] }}</span>
+
+                <svg class="h-4 w-4 shrink-0 text-slate-600 transition group-hover:translate-x-0.5 group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/>
+                </svg>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+  }
+</div>
