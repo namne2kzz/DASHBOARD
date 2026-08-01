@@ -38,6 +38,10 @@ export class BacklogManagementService {
   private readonly _filterSprintId = signal('');
   private readonly _loading        = signal(false);
 
+  /** How many Product Backlog rows to render initially and per "load more" step. */
+  private static readonly PAGE_SIZE = 25;
+  private readonly _visibleCount = signal(BacklogManagementService.PAGE_SIZE);
+
   /** True when the current user can manage the backlog. */
   readonly canManageBacklog  = computed(() => this.privilege.canManageBacklog());
   /** True when the current user can create work items. */
@@ -99,6 +103,13 @@ export class BacklogManagementService {
 
     return filtered.slice().sort((a, b) => a.rank - b.rank);
   });
+
+  /** The rendered slice of {@link visibleItems} — capped for a lighter first paint. Grows via {@link loadMore}. */
+  readonly pagedItems = computed(() => this.visibleItems().slice(0, this._visibleCount()));
+
+  /** True when more filtered rows exist beyond the currently rendered slice. */
+  readonly hasMoreItems = computed(() => this._visibleCount() < this.visibleItems().length);
+
   readonly epics = computed(() =>
     this._items().filter(i => i.type === 'epic').sort((a, b) => a.rank - b.rank),
   );
@@ -161,9 +172,20 @@ export class BacklogManagementService {
     });
   }
 
+  /** Renders the next batch of Product Backlog rows. */
+  loadMore(): void {
+    this._visibleCount.update(c => c + BacklogManagementService.PAGE_SIZE);
+  }
+
+  /** Resets the rendered slice back to the first page — called whenever the list context changes. */
+  private resetPaging(): void {
+    this._visibleCount.set(BacklogManagementService.PAGE_SIZE);
+  }
+
   /** @param level The hierarchy level to display. */
   setLevel(level: BacklogLevel): void {
     this._activeLevel.set(level);
+    this.resetPaging();
   }
 
   /** @param mode Fibonacci story-points or T-shirt sizing. */
@@ -174,21 +196,25 @@ export class BacklogManagementService {
   /** @param epicId Epic to drill into, or null to show all. */
   setSelectedEpic(epicId: string | null): void {
     this._selectedEpicId.set(epicId);
+    this.resetPaging();
   }
 
   /** @param value Free-text search applied to the Product Backlog title. */
   setFilterKeyword(value: string): void {
     this._filterKeyword.set(value);
+    this.resetPaging();
   }
 
   /** @param state Refinement state to filter by, or '' for all states. */
   setFilterState(state: BacklogState | ''): void {
     this._filterState.set(state);
+    this.resetPaging();
   }
 
   /** @param sprintId Sprint ID to filter by, 'unassigned', or '' for all sprints. */
   setFilterSprintId(sprintId: string): void {
     this._filterSprintId.set(sprintId);
+    this.resetPaging();
   }
 
   /** Resets all Product Backlog filters (keyword, state, sprint) to their defaults. */
@@ -196,6 +222,7 @@ export class BacklogManagementService {
     this._filterKeyword.set('');
     this._filterState.set('');
     this._filterSprintId.set('');
+    this.resetPaging();
   }
 
   /** Handles CDK drag-drop reorder, calling the rank API with prev/next sibling IDs. @param event The drop event from CdkDropList. */
@@ -457,7 +484,57 @@ export class BacklogManagementService {
       });
   }
 
+  /**
+   * Transitions multiple backlog items to the same refinement state in one request, then reloads.
+   * @param ids The backlog item IDs to update.
+   * @param state Target refinement state (Committed is rejected server-side).
+   */
+  bulkUpdateState(ids: string[], state: BacklogState): void {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId || ids.length === 0) return;
+
+    const body = { itemIds: ids, state: this.toApiState(state) };
+    this.http
+      .post<{ affected: number; skipped: number }>(`${this.baseUrl(repoId)}/bulk/state`, body)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: r => {
+          this.toast.success(this.bulkMessage(r.affected, r.skipped, 'updated'));
+          this.reload(repoId);
+        },
+        error: err => this.toast.error(err?.error?.error ?? 'Failed to update items.'),
+      });
+  }
+
+  /**
+   * Deletes multiple backlog items in one request, then reloads. Items whose children are not also
+   * selected are skipped server-side to avoid orphaning.
+   * @param ids The backlog item IDs to delete.
+   */
+  bulkDelete(ids: string[]): void {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId || ids.length === 0) return;
+
+    this.http
+      .post<{ affected: number; skipped: number }>(`${this.baseUrl(repoId)}/bulk/delete`, { itemIds: ids })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: r => {
+          if (r.affected > 0) this.toast.success(this.bulkMessage(r.affected, r.skipped, 'deleted'));
+          else this.toast.info('No items were deleted — selected parents still have children.');
+          this.reload(repoId);
+        },
+        error: err => this.toast.error(err?.error?.error ?? 'Failed to delete items.'),
+      });
+  }
+
   // ── Private helpers ──────────────────────────────────────────────────────────
+
+  /** Builds a toast summary line for a bulk operation. @param affected Count changed. @param skipped Count skipped. @param verb Past-tense verb (e.g. "updated"). */
+  private bulkMessage(affected: number, skipped: number, verb: string): string {
+    const base = `${affected} item${affected === 1 ? '' : 's'} ${verb}`;
+    return skipped > 0 ? `${base} · ${skipped} skipped` : base;
+  }
 
   private baseUrl(repoId: string): string {
     return `${environment.apiBaseUrl}/repositories/${repoId}/backlog`;

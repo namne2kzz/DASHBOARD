@@ -6,11 +6,12 @@ import { BacklogManagementService } from '../../services/backlog-management.serv
 import { DialogService } from '../../core/components/dialog/dialog.service';
 import { AddBacklogItemDialogComponent } from '../../components/add-backlog-item-dialog/add-backlog-item-dialog.component';
 import { BacklogItemDetailDialogComponent } from '../../components/backlog-item-detail-dialog/backlog-item-detail-dialog.component';
+import { InfiniteScrollDirective } from '../../directives/infinite-scroll.directive';
 import type { BacklogItem, BacklogState } from '../../models/backlog.model';
 
 @Component({
   selector: 'app-backlog-management-page',
-  imports: [CommonModule, FormsModule, DragDropModule],
+  imports: [CommonModule, FormsModule, DragDropModule, InfiniteScrollDirective],
   templateUrl: './backlog-management-page.component.html',
   styleUrl: './backlog-management-page.component.css',
 })
@@ -31,6 +32,12 @@ export class BacklogManagementPageComponent implements OnInit {
   // ── Promote to sprint ────────────────────────────────────────
   readonly promotingItemId    = signal<string | null>(null);
   readonly selectedSprintId   = signal<string>('');
+
+  // ── Bulk selection ───────────────────────────────────────────
+  readonly selectionMode    = signal(false);
+  readonly selectedIds      = signal<ReadonlySet<string>>(new Set());
+  readonly pendingBulkDelete = signal(false);
+  readonly bulkStates: BacklogState[] = ['new', 'refining', 'ready'];
 
   // ── Portfolio hierarchy (collapsible) ─────────────────────────
   readonly expandedEpicIds = signal<ReadonlySet<string>>(new Set());
@@ -195,6 +202,8 @@ export class BacklogManagementPageComponent implements OnInit {
    * @param item The backlog item to view/edit.
    */
   openDetail(item: BacklogItem): void {
+    // In multi-select mode a body click toggles selection instead of opening the dialog.
+    if (this.selectionMode()) { this.toggleSelect(item.id); return; }
     if (item.type !== 'user-story' || this.editingId() === item.id) return;
     this.dialog.open(BacklogItemDetailDialogComponent, {
       title: 'User story details',
@@ -223,5 +232,75 @@ export class BacklogManagementPageComponent implements OnInit {
   cancelPromote(): void {
     this.promotingItemId.set(null);
     this.selectedSprintId.set('');
+  }
+
+  // ── Bulk selection ────────────────────────────────────────────
+
+  /** Enters multi-select mode. */
+  enterSelectionMode(): void {
+    this.selectionMode.set(true);
+  }
+
+  /** Exits multi-select mode and clears the current selection and any pending delete. */
+  exitSelectionMode(): void {
+    this.selectionMode.set(false);
+    this.selectedIds.set(new Set());
+    this.pendingBulkDelete.set(false);
+  }
+
+  /** @param id The item ID to test. @returns True when the item is currently selected. */
+  isSelected(id: string): boolean {
+    return this.selectedIds().has(id);
+  }
+
+  /** Toggles selection of a single item. @param id The item ID to toggle. */
+  toggleSelect(id: string): void {
+    this.selectedIds.update(current => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  /** Selects every item currently matching the filters (the full ranked list, not just the rendered slice). */
+  selectAllVisible(): void {
+    this.selectedIds.set(new Set(this.backlog.visibleItems().map(i => i.id)));
+  }
+
+  /** Clears the current selection without leaving select mode. */
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+    this.pendingBulkDelete.set(false);
+  }
+
+  /**
+   * Applies a refinement state to every selected item, then leaves select mode.
+   * @param state The target state, or '' when the picker is reset (no-op).
+   */
+  applyBulkState(state: BacklogState | ''): void {
+    if (!state) return;
+    const ids = [...this.selectedIds()];
+    if (ids.length === 0) return;
+    this.backlog.bulkUpdateState(ids, state);
+    this.exitSelectionMode();
+  }
+
+  /** Opens the inline confirmation strip for bulk delete. */
+  requestBulkDelete(): void {
+    if (this.selectedIds().size > 0) this.pendingBulkDelete.set(true);
+  }
+
+  /** Confirms and executes the bulk delete, then leaves select mode. */
+  confirmBulkDelete(): void {
+    const ids = [...this.selectedIds()];
+    if (ids.length === 0) return;
+    this.backlog.bulkDelete(ids);
+    this.exitSelectionMode();
+  }
+
+  /** Cancels the pending bulk delete. */
+  cancelBulkDelete(): void {
+    this.pendingBulkDelete.set(false);
   }
 }
