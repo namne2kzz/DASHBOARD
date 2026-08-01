@@ -16,6 +16,7 @@ namespace DASHBOARD.Application.SprintTasks.DTOs;
 /// <param name="RemainingWork">Remaining hours estimate.</param>
 /// <param name="CompletedWork">Logged completed hours.</param>
 /// <param name="StateChangedAt">UTC timestamp of the last state transition; null for legacy items.</param>
+/// <param name="Labels">Assigned "Labels" catalog values, for card chips.</param>
 public sealed record BoardTaskDto(
     Guid             Id,
     string           WorkItemNumber,
@@ -29,4 +30,5 @@ public sealed record BoardTaskDto(
     decimal          OriginalEstimate,
     decimal          RemainingWork,
     decimal          CompletedWork,
-    DateTime?        StateChangedAt);
+    DateTime?        StateChangedAt,
+    IReadOnlyList<string> Labels);

@@ -4,9 +4,11 @@ using DASHBOARD.Application.Discussions.DTOs;
 using DASHBOARD.Application.Discussions.Queries.ListDiscussions;
 using DASHBOARD.Application.History.DTOs;
 using DASHBOARD.Application.History.Queries.ListHistory;
+using DASHBOARD.Application.SprintTasks.Commands.SetSprintTaskMetadata;
 using DASHBOARD.Application.SprintTasks.Commands.UpdateSprintTask;
 using DASHBOARD.Application.SprintTasks.DTOs;
 using DASHBOARD.Application.SprintTasks.Queries.GetSprintTaskDetail;
+using DASHBOARD.Application.SprintTasks.Queries.GetSprintTaskMetadata;
 using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -89,6 +91,38 @@ public sealed class SprintTaskDetailController(ISender mediator) : ControllerBas
         return StatusCode(StatusCodes.Status201Created, result);
     }
 
+    /// <summary>Returns the metadata catalog values (labels, components, versions) assigned to a sprint task.</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="taskId">The sprint task ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the assigned <see cref="WorkItemMetadataDto"/> list.</returns>
+    [HttpGet("metadata")]
+    [ProducesResponseType<IReadOnlyList<WorkItemMetadataDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetMetadata(Guid repoId, Guid taskId, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetSprintTaskMetadataQuery(repoId, taskId), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Replaces the full set of metadata catalog values assigned to a sprint task.</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="taskId">The sprint task ID.</param>
+    /// <param name="request">The complete desired set of metadata value IDs.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 on success, 400 on business-rule violation.</returns>
+    [HttpPut("metadata")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetMetadata(Guid repoId, Guid taskId, [FromBody] SetWorkItemMetadataRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new SetSprintTaskMetadataCommand(repoId, taskId, request.MetadataIds ?? []), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return NoContent();
+    }
+
     /// <summary>Returns the audit-trail history for a sprint task, newest first.</summary>
     /// <param name="repoId">The repository ID.</param>
     /// <param name="taskId">The sprint task ID.</param>
@@ -122,3 +156,7 @@ public sealed record UpdateSprintTaskDetailRequest(
     List<string>?    TestSteps,
     bool?            Automated,
     Guid?            ParentId);
+
+/// <summary>Request body for replacing a work item's metadata catalog assignments.</summary>
+/// <param name="MetadataIds">The complete desired set of repository metadata value IDs.</param>
+public sealed record SetWorkItemMetadataRequest(IReadOnlyList<Guid> MetadataIds);

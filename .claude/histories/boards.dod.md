@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-07-25 | 17:45 | Dynamic query filter | Nối query builder vào filtering (live); criteria Title/Type/Priority/State/AssignedTo/Remaining/**Labels**, combine AND/OR; card hiển thị chip Labels |
 | 2026-06-23 | 23:10 | Khởi tạo document | Tạo document business ban đầu cho feature Boards (Kanban board operational view) |
 
 ---
@@ -28,6 +29,7 @@ Trang Kanban Board (route `/boards`) là **view vận hành** — hiển thị t
 - **WIP enforcement khi drop**: cột ở mode Hard và đã đạt `WipLimit` → chặn drop ngay tại UI (CDK `enterPredicate`), không gọi API. Mode Soft luôn cho drop.
 - **Optimistic update + rollback**: kéo card sang cột khác cập nhật UI ngay (state + `stateChangedAt`), sau đó gửi PATCH lên server; nếu API lỗi → card tự rollback về state cũ.
 - **Search/filter**: filter chỉ áp dụng trên list đã load (không query lại server) — match theo title (substring, không phân biệt hoa/thường) hoặc work item number; filter "Assigned to me" kết hợp AND với search text.
+- **Dynamic query filter** (panel "Dynamic Query"): nhiều dòng điều kiện, mỗi dòng = field + operation + value; field gồm Title/Type/Priority/State/Assigned To/Remaining Work/**Labels**; operation gồm equals, not-equals, contains, not-contains, starts-with, is-empty, is-not-empty. Các dòng kết hợp theo AND/OR (toán tử chọn ở đầu mỗi dòng, tính trái→phải). Dòng chưa đủ (thiếu field hoặc value) bị bỏ qua. Filter chạy **live** trên list đã load, kết hợp AND với search text + "Assigned to me". Labels match theo any-of trên danh sách label của card.
 - Quick-create work item (Task/Bug/TestPlan) từ board: title bắt buộc, các field còn lại optional; tạo xong board tự reload để hiển thị item mới.
 - Assignee picker khi tạo task chỉ liệt kê member đã có `CapacityMember` trong sprint đang chọn — không phải toàn bộ Repository member.
 - Search Parent Story (gắn task con vào UserStory): trả tối đa 20 kết quả, match substring theo title/work item number, sort theo CreatedAt mới nhất.

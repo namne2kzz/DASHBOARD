@@ -38,6 +38,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     /// <summary>Audit history entries for sprint tasks.</summary>
     public DbSet<HistoryEntry> HistoryEntries => Set<HistoryEntry>();
 
+    /// <summary>Work item ↔ metadata catalog assignments (labels, components, versions).</summary>
+    public DbSet<WorkItemMetadata> WorkItemMetadata => Set<WorkItemMetadata>();
+
     // ── Backlog ──────────────────────────────────────────────────────────────
     /// <summary>Product backlog items (Epic / Feature / UserStory hierarchy).</summary>
     public DbSet<BacklogItem> BacklogItems => Set<BacklogItem>();

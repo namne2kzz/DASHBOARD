@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-07-25 | 17:35 | Gắn metadata catalog | Work item gắn được value catalog (Labels/Components/Version…) qua bảng join `WorkItemMetadata`; Labels hiện chip trên board card |
 | 2026-06-23 | 20:58 | Khởi tạo document | Tạo document business ban đầu cho feature SprintTasks |
 
 ---
@@ -30,6 +31,7 @@ Entity thực thi công việc thống nhất, gồm 4 type: UserStory (từ pro
 - LogWork: số giờ log phải > 0, `RemainingWork` ≥ 0; nếu RemainingWork về 0 → tự động chuyển state Done.
 - Assign: assignee phải là member của Repository; unassign (null) được phép.
 - Item standalone (`SprintId = null`) hợp lệ — dùng cho Bug/TestPlan không gắn sprint cụ thể.
+- **Metadata catalog**: work item gắn N value từ catalog `RepositoryMetadata` (Labels, Components, versions…) qua bảng join `WorkItemMetadata` (1 cơ chế chung cho mọi key, không đẻ entity riêng). Chỉ nhận value thuộc repo hoặc `IsGlobal`; cần quyền `EditWorkItem` để đổi. Xem [metadata.dod.md](metadata.dod.md).
 
 ## 4. Main Workflows / Use Cases
 

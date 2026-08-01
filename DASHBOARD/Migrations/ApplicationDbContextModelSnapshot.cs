@@ -1264,6 +1264,34 @@ namespace DASHBOARD.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemMetadata", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MetadataId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SprintTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MetadataId");
+
+                    b.HasIndex("SprintTaskId", "MetadataId")
+                        .IsUnique();
+
+                    b.ToTable("WorkItemMetadata", (string)null);
+                });
+
             modelBuilder.Entity("DASHBOARD.Domain.Entities.BacklogItem", b =>
                 {
                     b.HasOne("DASHBOARD.Domain.Entities.BacklogItem", "Parent")
@@ -1490,6 +1518,25 @@ namespace DASHBOARD.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemMetadata", b =>
+                {
+                    b.HasOne("DASHBOARD.Domain.Entities.RepositoryMetadata", "Metadata")
+                        .WithMany()
+                        .HasForeignKey("MetadataId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DASHBOARD.Domain.Entities.SprintTask", "SprintTask")
+                        .WithMany()
+                        .HasForeignKey("SprintTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Metadata");
+
+                    b.Navigation("SprintTask");
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.BacklogItem", b =>
