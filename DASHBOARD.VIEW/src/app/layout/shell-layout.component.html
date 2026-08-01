@@ -1,5 +1,6 @@
 <app-loading-overlay />
 <app-dialog />
+<app-global-search />
 
 <div class="flex min-h-screen bg-slate-950 text-slate-100">
   <aside
@@ -119,6 +120,26 @@
       @if (!collapsed()) {
         <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Repo</p>
       }
+      <!-- Global search trigger -->
+      <button
+        type="button"
+        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        [class.justify-center]="collapsed()"
+        [class.px-2]="collapsed()"
+        title="Search (Ctrl/Cmd+K)"
+        (click)="search.openPalette()"
+      >
+        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/>
+          </svg>
+        </span>
+        @if (!collapsed()) {
+          <span class="flex-1 text-left">Search</span>
+          <kbd class="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">⌘K</kbd>
+        }
+      </button>
+
       <a
         [routerLink]="repoLink('overview')"
         routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
