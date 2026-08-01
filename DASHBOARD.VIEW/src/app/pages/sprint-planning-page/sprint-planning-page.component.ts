@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, ElementRef, HostListener, inject, OnInit, QueryList, signal, ViewChildren } from '@angular/core';
+import { Component, computed, effect, ElementRef, HostListener, inject, OnInit, QueryList, signal, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { InfiniteScrollDirective } from '../../directives/infinite-scroll.directive';
 import { SprintPlanningService } from '../../services/sprint-planning.service';
 import { MembersService } from '../../services/members.service';
 import { DialogService } from '../../core/components/dialog/dialog.service';
@@ -15,7 +16,7 @@ import { SprintTaskApiState } from '../../core/enums/system.enum';
 
 @Component({
   selector: 'app-sprint-planning-page',
-  imports: [CommonModule, FormsModule, NgClass],
+  imports: [CommonModule, FormsModule, NgClass, InfiniteScrollDirective],
   templateUrl: './sprint-planning-page.component.html',
   styleUrl: './sprint-planning-page.component.css',
 })
@@ -74,9 +75,13 @@ export class SprintPlanningPageComponent implements OnInit {
     );
   });
 
+  /** How many rows each list renders initially and per "load more" step. */
+  private static readonly PAGE_SIZE = 25;
+
   // ── Sprint stories filter ─────────────────────────────────────
   readonly storySearch      = signal('');
   readonly storyStateFilter = signal<SprintTask['state'] | ''>('');
+  private readonly _storyVisible = signal(SprintPlanningPageComponent.PAGE_SIZE);
 
   readonly filteredSprintStories = computed(() => {
     const q     = this.storySearch().trim().toLowerCase();
@@ -87,10 +92,22 @@ export class SprintPlanningPageComponent implements OnInit {
     );
   });
 
+  /** The rendered slice of {@link filteredSprintStories}, capped for a lighter first paint. */
+  readonly pagedSprintStories = computed(() => this.filteredSprintStories().slice(0, this._storyVisible()));
+
+  /** True when more stories exist beyond the currently rendered slice. */
+  readonly hasMoreStories = computed(() => this._storyVisible() < this.filteredSprintStories().length);
+
+  /** Renders the next batch of sprint stories. */
+  loadMoreStories(): void {
+    this._storyVisible.update(c => c + SprintPlanningPageComponent.PAGE_SIZE);
+  }
+
   // ── Task workload filter ──────────────────────────────────────
   readonly taskSearch         = signal('');
   readonly taskStateFilter    = signal<SprintTask['state'] | ''>('');
   readonly taskAssigneeFilter = signal('');
+  private readonly _taskVisible = signal(SprintPlanningPageComponent.PAGE_SIZE);
 
   readonly filteredSprintTaskRows = computed(() => {
     const q        = this.taskSearch().trim().toLowerCase();
@@ -104,6 +121,30 @@ export class SprintPlanningPageComponent implements OnInit {
       return true;
     });
   });
+
+  /** The rendered slice of {@link filteredSprintTaskRows}, capped for a lighter first paint. */
+  readonly pagedSprintTaskRows = computed(() => this.filteredSprintTaskRows().slice(0, this._taskVisible()));
+
+  /** True when more task rows exist beyond the currently rendered slice. */
+  readonly hasMoreTasks = computed(() => this._taskVisible() < this.filteredSprintTaskRows().length);
+
+  /** Renders the next batch of task-workload rows. */
+  loadMoreTasks(): void {
+    this._taskVisible.update(c => c + SprintPlanningPageComponent.PAGE_SIZE);
+  }
+
+  constructor() {
+    // Reset each list back to its first page whenever its filters or the selected sprint change,
+    // so a narrowed then re-widened result starts from the top instead of a stale large slice.
+    effect(() => {
+      this.storySearch(); this.storyStateFilter(); this.planning.selectedSprint()?.id;
+      this._storyVisible.set(SprintPlanningPageComponent.PAGE_SIZE);
+    });
+    effect(() => {
+      this.taskSearch(); this.taskStateFilter(); this.taskAssigneeFilter(); this.planning.selectedSprint()?.id;
+      this._taskVisible.set(SprintPlanningPageComponent.PAGE_SIZE);
+    });
+  }
 
   @HostListener('document:click')
   onDocumentClick(): void {
