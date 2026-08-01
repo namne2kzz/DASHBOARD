@@ -38,7 +38,7 @@ export class ShellLayoutComponent {
   /** True when the current route is a global page (profile/settings) that doesn't require repo access. */
   readonly isGlobalRoute = computed(() => {
     const url = this.currentUrl() ?? '';
-    return url.startsWith('/profile') || url.startsWith('/settings');
+    return url.startsWith('/profile') || url.startsWith('/settings') || url.startsWith('/my-work');
   });
 
   constructor() {
