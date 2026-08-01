@@ -90,6 +90,8 @@ internal sealed class AcceptInvitationCommandHandler(
                 PasswordHash    = string.Empty,
                 PasswordSalt    = string.Empty,
                 AvatarClass     = settings.DefaultGoogleUserAvatarClass,
+                // Apply the manager chosen by the inviter (org hierarchy), if any.
+                ManagerId       = invitation.ManagerId,
             };
             db.Set<User>().Add(newUser);
             userId        = newUser.Id;

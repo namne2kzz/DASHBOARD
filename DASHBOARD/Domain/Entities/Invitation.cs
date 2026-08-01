@@ -20,6 +20,9 @@ public sealed class Invitation : Common.BaseEntity
     /// <summary>Gets or sets the team role (discipline) the invitee will be assigned on acceptance. Stores a RepoRole metadata value. Does not grant permissions.</summary>
     public string DefaultRole { get; set; } = string.Empty;
 
+    /// <summary>Gets or sets the manager the invitee's new user account will report to, in the organisation hierarchy. Null means no manager. Applied only when a new user is created on acceptance.</summary>
+    public Guid? ManagerId { get; set; }
+
     /// <summary>
     /// Gets or sets the SHA-256 hash of the raw token embedded in the invite link.
     /// The raw token is never persisted — only this hash is stored and used for lookup.

@@ -1,1 +1,85 @@
 :host { display: block; height: 100%; }
+
+/* ── Org-chart tree ─────────────────────────────────────────────
+   Classic nested-list tree: each level is a centred row of nodes,
+   connected to its parent by a vertical drop + horizontal bus drawn
+   with the li ::before/::after top borders. The line colour reads on
+   both the dark (slate-900) and light (white) modal surfaces. */
+.org-scroll {
+  --org-line: rgba(100, 116, 139, 0.45); /* slate-500 @ 45% */
+  overflow-x: auto;
+  padding: 4px 2px;
+}
+
+.org-root {
+  width: max-content;
+  min-width: 100%;
+}
+
+.org-tree {
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Nested level: vertical drop from the parent box down to this row's bus. */
+.org-tree ul {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding-top: 22px;
+  list-style: none;
+}
+.org-tree ul::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 22px;
+  background: var(--org-line);
+  transform: translateX(-50%);
+}
+
+.org-tree li {
+  position: relative;
+  padding: 22px 8px 0;
+  text-align: center;
+}
+
+/* Horizontal bus + vertical drop to each node. */
+.org-tree li::before,
+.org-tree li::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 22px;
+  border-top: 2px solid var(--org-line);
+}
+.org-tree li::after {
+  right: auto;
+  left: 50%;
+  border-left: 2px solid var(--org-line);
+}
+/* Single child: straight vertical line only (no bus). */
+.org-tree li:only-child::before,
+.org-tree li:only-child::after { display: none; }
+/* Trim the bus overhang at the ends of a row. */
+.org-tree li:first-child::before,
+.org-tree li:last-child::after { border: 0; }
+.org-tree li:last-child::before { border-right: 2px solid var(--org-line); }
+
+/* Top-level roots have no parent above — suppress their connectors. */
+.org-root > .org-tree > li::before,
+.org-root > .org-tree > li::after { display: none; }
+
+.org-box {
+  cursor: pointer;
+  white-space: nowrap;
+}
+.org-box:disabled { cursor: default; }
