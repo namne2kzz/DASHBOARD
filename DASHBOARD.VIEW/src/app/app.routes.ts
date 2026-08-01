@@ -112,6 +112,12 @@ export const routes: Routes = [
             loadComponent: () =>
               import('./pages/pipelines-page/pipelines-page.component').then(m => m.PipelinesPageComponent),
           },
+          {
+            path: 'audit-log',
+            canActivate: [membersPrivilegeGuard],
+            loadComponent: () =>
+              import('./pages/audit-log-page/audit-log-page.component').then(m => m.AuditLogPageComponent),
+          },
         ],
       },
     ],

@@ -279,6 +279,28 @@
           <span>Pipelines</span>
         }
       </a>
+
+      @if (privilege.canManageMembers()) {
+        <a
+          [routerLink]="repoLink('audit-log')"
+          routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
+          class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+          [class.justify-center]="collapsed()"
+          [class.px-2]="collapsed()"
+          title="Audit log"
+        >
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+              <rect x="9" y="3" width="6" height="4" rx="1"/>
+              <path stroke-linecap="round" d="M9 12h6M9 16h4"/>
+            </svg>
+          </span>
+          @if (!collapsed()) {
+            <span>Audit log</span>
+          }
+        </a>
+      }
       } <!-- end @if repositories -->
     </nav>
 
