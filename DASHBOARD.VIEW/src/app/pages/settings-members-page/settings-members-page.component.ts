@@ -20,13 +20,14 @@ import { RoleDto, CreateRolePayload, UpdateRolePayload } from '../../models/role
 import { InvitationListItemDto, InvitationStatus } from '../../models/invitation.model';
 import { Permission } from '../../core/enums/system.enum';
 import { PERMISSION_LABELS } from '../../core/constants/system.constant';
+import { UserSelectComponent, UserOption } from '../../components/user-select/user-select.component';
 
 type ActivePanel = 'add-member' | 'invite-email' | 'create-role' | 'edit-role' | null;
 
 @Component({
   selector: 'app-settings-members-page',
   standalone: true,
-  imports: [FormsModule, NgClass],
+  imports: [FormsModule, NgClass, UserSelectComponent],
   templateUrl: './settings-members-page.component.html',
   styleUrls: ['./settings-members-page.component.css'],
 })
@@ -87,6 +88,10 @@ export class SettingsMembersPageComponent {
   /** Roles assignable to members (default + custom). */
   readonly assignableRoles = computed(() => this.roleService.roles());
 
+  /** Repo members as manager picker options (for the invite form). */
+  readonly memberOptions = computed<UserOption[]>(() =>
+    this.membersService.members().map(m => ({ id: m.userId, name: m.userName, email: m.userEmail, avatarClass: m.avatarClass })));
+
   /** Finds the default permission-role id whose name matches the discipline, falling back to the first available role. @param discipline Discipline value. @returns Role id or ''. */
   private defaultRoleIdFor(discipline: string): string {
     const roles = this.roleService.roles();
@@ -123,6 +128,7 @@ export class SettingsMembersPageComponent {
   readonly inviteEmail       = signal('');
   readonly inviteDefaultRole = signal<string>('');
   readonly inviteRoleId      = signal<string>('');
+  readonly inviteManagerId   = signal<string>('');
   readonly inviteSubmitting  = signal(false);
   readonly inviteError       = signal<string | null>(null);
 
@@ -171,6 +177,7 @@ export class SettingsMembersPageComponent {
       const firstDiscipline = this.disciplines()[0] ?? '';
       this.inviteDefaultRole.set(firstDiscipline);
       this.inviteRoleId.set(this.defaultRoleIdFor(firstDiscipline));
+      this.inviteManagerId.set('');
       this.inviteSubmitting.set(false);
       this.inviteError.set(null);
     }
@@ -388,7 +395,7 @@ export class SettingsMembersPageComponent {
 
     this.inviteSubmitting.set(true);
     this.inviteError.set(null);
-    this.invitationsService.sendInvite(repoId, email, this.inviteDefaultRole(), roleId).subscribe({
+    this.invitationsService.sendInvite(repoId, email, this.inviteDefaultRole(), roleId, this.inviteManagerId() || null).subscribe({
       next:  () => { this.inviteSubmitting.set(false); this.closePanel(); },
       error: (err: HttpErrorResponse) => {
         this.inviteSubmitting.set(false);

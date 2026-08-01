@@ -42,8 +42,8 @@ export class InvitationsService {
    * @param roleId Role (default or custom) granting permissions, applied on acceptance.
    * @returns Observable of the created InvitationApiDto.
    */
-  sendInvite(repoId: string, email: string, defaultRole: string, roleId: string): Observable<InvitationApiDto> {
-    return this.http.post<InvitationApiDto>(this.url(repoId), { email, defaultRole, roleId }).pipe(
+  sendInvite(repoId: string, email: string, defaultRole: string, roleId: string, managerId: string | null = null): Observable<InvitationApiDto> {
+    return this.http.post<InvitationApiDto>(this.url(repoId), { email, defaultRole, roleId, managerId }).pipe(
       tap(() => this.load(repoId)),
     );
   }

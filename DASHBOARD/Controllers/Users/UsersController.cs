@@ -2,11 +2,13 @@
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Users.Commands.ChangePassword;
 using DASHBOARD.Application.Users.Commands.CreateUser;
+using DASHBOARD.Application.Users.Commands.SetUserManager;
 using DASHBOARD.Application.Users.Commands.ToggleActive;
 using DASHBOARD.Application.Users.Commands.ToggleAdmin;
 using DASHBOARD.Application.Users.Commands.UpdateProfile;
 using DASHBOARD.Application.Users.DTOs;
 using DASHBOARD.Application.Users.Queries.GetUser;
+using DASHBOARD.Application.Users.Queries.GetUserHierarchy;
 using DASHBOARD.Application.Users.Queries.ListUsers;
 using DASHBOARD.Application.Users.Queries.SearchUsers;
 using DASHBOARD.Controllers.Users.Requests;
@@ -77,7 +79,7 @@ public sealed class UsersController(ISender mediator, ICurrentUserService curren
         try
         {
             var result = await mediator.Send(
-                new CreateUserCommand(request.Name, request.Email, request.Password, request.IsGlobalAdmin, request.AvatarClass), ct);
+                new CreateUserCommand(request.Name, request.Email, request.Password, request.IsGlobalAdmin, request.AvatarClass, request.ManagerId), ct);
             return CreatedAtAction(nameof(Get), new { userId = result.UserId }, result);
         }
         catch (InvalidOperationException ex)
@@ -162,6 +164,46 @@ public sealed class UsersController(ISender mediator, ICurrentUserService curren
         var result = await mediator.Send(new ToggleActiveCommand(userId), ct);
         if (result.IsFailure) return Forbid();
         return NoContent();
+    }
+
+    /// <summary>Sets or clears a user's manager in the organisation hierarchy. Global admins only.</summary>
+    /// <param name="userId">The user whose manager is being set.</param>
+    /// <param name="request">The new manager's ID, or null to clear.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 on success, 400 on validation failure (self/cycle/missing), 403 if not a global admin.</returns>
+    [HttpPatch("{userId:guid}/manager")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetManager(Guid userId, [FromBody] SetUserManagerRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new SetUserManagerCommand(userId, request.ManagerId), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return NoContent();
+    }
+
+    /// <summary>Returns the organisation-chart slice centred on a user (managers, peers, and reports). Global admins only.</summary>
+    /// <param name="userId">The focus user.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the <see cref="UserHierarchyDto"/>, 403 if not a global admin.</returns>
+    [HttpGet("{userId:guid}/hierarchy")]
+    [ProducesResponseType<UserHierarchyDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetHierarchy(Guid userId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await mediator.Send(new GetUserHierarchyQuery(userId), ct);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 
     /// <summary>Promote or demote the target user for global admin role. Only a global admin may call this.</summary>

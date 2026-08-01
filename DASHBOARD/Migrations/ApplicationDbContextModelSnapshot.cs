@@ -329,6 +329,9 @@ namespace DASHBOARD.Migrations
                     b.Property<Guid>("InvitedByUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ManagerId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("RepositoryId")
                         .HasColumnType("uniqueidentifier");
 

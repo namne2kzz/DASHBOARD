@@ -33,6 +33,18 @@ public sealed class CreateUserCommandHandler(
         if (emailTaken)
             throw new InvalidOperationException($"Email '{command.Email}' is already in use.");
 
+        // Resolve the optional manager (must be a real user) so we can echo the name back.
+        string? managerName = null;
+        if (command.ManagerId is { } managerId)
+        {
+            managerName = await db.Set<User>().IgnoreQueryFilters().AsNoTracking()
+                .Where(u => u.Id == managerId)
+                .Select(u => u.Name)
+                .FirstOrDefaultAsync(ct);
+            if (managerName is null)
+                throw new InvalidOperationException("The selected manager does not exist.");
+        }
+
         var (hash, salt) = passwordService.HashPassword(command.Password);
 
         var newUser = new User
@@ -44,6 +56,7 @@ public sealed class CreateUserCommandHandler(
             AvatarClass   = command.AvatarClass,
             IsGlobalAdmin = command.IsGlobalAdmin,
             AuthProvider  = AuthProvider.System,
+            ManagerId     = command.ManagerId,
         };
 
         db.Set<User>().Add(newUser);
@@ -59,6 +72,8 @@ public sealed class CreateUserCommandHandler(
             AuthProvider:    newUser.AuthProvider,
             CreatedAt:       newUser.CreatedAt,
             LastLoginAt:     null,
+            ManagerId:       command.ManagerId,
+            ManagerName:     managerName,
             RepoMemberships: []);
     }
 }

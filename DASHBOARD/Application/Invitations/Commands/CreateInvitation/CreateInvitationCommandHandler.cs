@@ -53,6 +53,15 @@ internal sealed class CreateInvitationCommandHandler(
             return Result<InvitationDto>.Failure(
                 "This email address is not eligible for an invitation.");
 
+        // Validate the optional manager exists (applied to the invitee's account on acceptance).
+        if (request.ManagerId is { } managerId)
+        {
+            var managerExists = await db.Set<User>().IgnoreQueryFilters().AsNoTracking()
+                .AnyAsync(u => u.Id == managerId, ct);
+            if (!managerExists)
+                return Result<InvitationDto>.Failure("The selected manager does not exist.");
+        }
+
         // Revoke any prior pending invites for the same email + repo before issuing a fresh one.
         var priorInvites = await db.Set<Invitation>()
             .AsTracking()
@@ -73,6 +82,7 @@ internal sealed class CreateInvitationCommandHandler(
             InvitedByUserId = user.UserId,
             DefaultRole     = request.DefaultRole,
             RoleId          = request.RoleId,
+            ManagerId       = request.ManagerId,
             TokenHash       = tokenHash,
             ExpiresAt       = DateTime.UtcNow.Add(settings.InvitationTokenTtl),
             Status          = InvitationStatus.Pending,

@@ -96,7 +96,7 @@ export class ProfilePageComponent {
     if (!uid) return;
     this.savingPassword.set(true);
     this.http
-      .put(`${environment.apiBaseUrl}/users/${uid}/password`, { currentPassword, newPassword })
+      .put(`${environment.apiBaseUrl}/users/${uid}/password`, { oldPassword: currentPassword, newPassword })
       .subscribe({
         next: () => {
           this.passwordForm.reset();

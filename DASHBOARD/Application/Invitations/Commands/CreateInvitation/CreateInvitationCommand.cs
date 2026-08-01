@@ -9,8 +9,10 @@ namespace DASHBOARD.Application.Invitations.Commands.CreateInvitation;
 /// <param name="Email">Email address to invite. Must not already exist in the system.</param>
 /// <param name="DefaultRole">The team role (discipline) the invitee will be assigned on acceptance.</param>
 /// <param name="RoleId">The role (default or custom) granting permissions, applied on acceptance. Required.</param>
+/// <param name="ManagerId">Optional manager the invitee's new account will report to, applied when a new user is created on acceptance.</param>
 public sealed record CreateInvitationCommand(
     Guid RepositoryId,
     string Email,
     string DefaultRole,
-    Guid RoleId) : IRequest<Result<InvitationDto>>;
+    Guid RoleId,
+    Guid? ManagerId = null) : IRequest<Result<InvitationDto>>;

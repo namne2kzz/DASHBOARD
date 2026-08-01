@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-07-25 | 18:50 | Chọn manager khi mời | Người mời chọn được "Managed by" (optional) lúc invite; lưu `Invitation.ManagerId`, và **chỉ khi accept tạo user mới** thì set `User.ManagerId` (org hierarchy). Options manager = member hiện tại của repo |
 | 2026-07-11 | 12:58 | Thêm list + revoke invitation | Thêm màn hình xem danh sách toàn bộ invitation của Repository (email, status, discipline/role, người mời, ngày gửi/hết hạn/accept) trong Settings → Members, chỉ user có quyền `InviteMembers` xem được. Thêm action Revoke thủ công cho invitation đang Pending (vd gửi nhầm, không cần nữa) — set status Revoked, không xoá record. Nếu invitee đã nhận email và bấm link sau khi bị revoke, accept vẫn trả message chung "Invitation not found or already used." (không lộ lý do cụ thể, giữ đúng rule chống token-enumeration đã có) |
 | 2026-07-10 | 22:12 | Nối API, chọn role khi mời | Nối end-to-end (Controller + UI): thêm permission check `InviteMembers` khi tạo invite, người mời chọn Discipline + Role lúc invite (lưu vào `Invitation`, không còn hard-code role Dev lúc accept), accept trả về session đăng nhập (access + refresh token) luôn vì user Google-only không có password để login lại |
 | 2026-06-23 | 20:58 | Khởi tạo document | Tạo document business ban đầu cho feature Invitations |

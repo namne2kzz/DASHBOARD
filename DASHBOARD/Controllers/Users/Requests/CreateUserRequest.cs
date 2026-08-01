@@ -6,9 +6,11 @@ namespace DASHBOARD.Controllers.Users.Requests;
 /// <param name="Password">Plaintext password (min 8 chars) — hashed before storage.</param>
 /// <param name="IsGlobalAdmin">Whether the new account should have global-admin privileges.</param>
 /// <param name="AvatarClass">Tailwind CSS background color class for the avatar (e.g. "bg-sky-600"), chosen by the client.</param>
+/// <param name="ManagerId">Optional manager for the new user in the organisation hierarchy.</param>
 public sealed record CreateUserRequest(
     string Name,
     string Email,
     string Password,
     bool   IsGlobalAdmin,
-    string AvatarClass);
+    string AvatarClass,
+    Guid?  ManagerId = null);

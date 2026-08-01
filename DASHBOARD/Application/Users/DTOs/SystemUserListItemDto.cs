@@ -13,6 +13,8 @@ public sealed record SystemUserListItemDto(
     AuthProvider                       AuthProvider,
     DateTime                           CreatedAt,
     DateTime?                          LastLoginAt,
+    Guid?                              ManagerId,
+    string?                            ManagerName,
     IReadOnlyList<UserRepoMembershipDto> RepoMemberships);
 
 /// <summary>A single repository membership entry nested inside <see cref="SystemUserListItemDto"/>.</summary>

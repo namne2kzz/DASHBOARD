@@ -2,7 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { SystemUserDto, CreateUserPayload } from '../models/system-user.model';
+import { SystemUserDto, CreateUserPayload, UserHierarchy } from '../models/system-user.model';
 import { UserPickerItem } from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
@@ -88,6 +88,32 @@ export class SystemUsersService {
     return this.http.patch<void>(`${this.baseUrl}/${userId}/demote-admin`, {}).pipe(
       tap(() => this.patchUser(userId, { isGlobalAdmin: false })),
     );
+  }
+
+  /**
+   * Sets or clears a user's manager, then patches the local list.
+   * @param userId Target user ID.
+   * @param managerId New manager ID, or null to clear.
+   * @returns Observable completing on success.
+   */
+  setManager(userId: string, managerId: string | null): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${userId}/manager`, { managerId }).pipe(
+      tap(() => {
+        const managerName = managerId
+          ? this.users().find(u => u.userId === managerId)?.name ?? null
+          : null;
+        this.patchUser(userId, { managerId, managerName });
+      }),
+    );
+  }
+
+  /**
+   * Loads the organisation-chart slice centred on a user.
+   * @param userId Focus user ID.
+   * @returns Observable of the hierarchy.
+   */
+  getHierarchy(userId: string): Observable<UserHierarchy> {
+    return this.http.get<UserHierarchy>(`${this.baseUrl}/${userId}/hierarchy`);
   }
 
   /**

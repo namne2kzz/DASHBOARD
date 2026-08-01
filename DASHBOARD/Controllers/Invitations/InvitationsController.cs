@@ -28,7 +28,7 @@ public sealed class InvitationsController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Create(Guid repoId, [FromBody] CreateInvitationRequest request, CancellationToken ct)
     {
-        var result = await mediator.Send(new CreateInvitationCommand(repoId, request.Email, request.DefaultRole, request.RoleId), ct);
+        var result = await mediator.Send(new CreateInvitationCommand(repoId, request.Email, request.DefaultRole, request.RoleId, request.ManagerId), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });
         return StatusCode(StatusCodes.Status201Created, result.Value);
     }

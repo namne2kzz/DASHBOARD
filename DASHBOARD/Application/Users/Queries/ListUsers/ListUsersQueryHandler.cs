@@ -47,6 +47,7 @@ public sealed class ListUsersQueryHandler(
                 u.IsDeleted,
                 u.AuthProvider,
                 u.CreatedAt,
+                u.ManagerId,
             })
             .ToListAsync(ct);
 
@@ -54,6 +55,15 @@ public sealed class ListUsersQueryHandler(
             return new PagedResult<SystemUserListItemDto>([], total, query.Page, query.PageSize);
 
         var userIds = users.Select(u => u.Id).ToList();
+
+        // Resolve manager display names (a manager may not be on the current page).
+        var managerIds = users.Where(u => u.ManagerId.HasValue).Select(u => u.ManagerId!.Value).Distinct().ToList();
+        var managerNames = managerIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await db.Set<User>().IgnoreQueryFilters().AsNoTracking()
+                .Where(u => managerIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.Name })
+                .ToDictionaryAsync(u => u.Id, u => u.Name, ct);
 
         var memberships = await db.Set<RepositoryMember>()
             .AsNoTracking()
@@ -84,6 +94,8 @@ public sealed class ListUsersQueryHandler(
             AuthProvider:    u.AuthProvider,
             CreatedAt:       u.CreatedAt,
             LastLoginAt:     null,
+            ManagerId:       u.ManagerId,
+            ManagerName:     u.ManagerId.HasValue && managerNames.TryGetValue(u.ManagerId.Value, out var mn) ? mn : null,
             RepoMemberships: membershipLookup.TryGetValue(u.Id, out var mems)
                 ? mems.Select(m => new UserRepoMembershipDto(
                     m.RepositoryId, m.RepoName, m.RepoCode, m.DefaultRole, m.RoleName, m.JoinedAt)).ToList()
