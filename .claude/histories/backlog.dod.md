@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-07-25 | 17:06 | Thêm bulk operations | Cho phép multi-select nhiều BacklogItem để bulk-change state và bulk-delete (có skip rule chống orphan) |
 | 2026-06-23 | 20:58 | Khởi tạo document | Tạo document business ban đầu cho feature Backlog |
 
 ---
@@ -28,6 +29,10 @@ Quản lý product backlog dạng cây Epic → Feature → UserStory, có refin
 - Gán SprintId (planning) **không** đổi refinement state — item có thể ở `Refining` nhưng vẫn được gán tạm vào sprint.
 - Acceptance criteria và tài liệu refinement được track theo từng item.
 - Không cho tạo quan hệ parent vòng (circular); chỉ UserStory được promote.
+- **Bulk operations** (cần quyền `ManageBacklog`):
+  - Bulk-change state: áp 1 refinement state (New/Refining/Ready) cho nhiều item cùng lúc. Item đang `Committed` bị **skip** (không revert promotion). Không cho bulk set sang `Committed`.
+  - Bulk-delete: item có **con không nằm trong danh sách chọn** thì bị **skip** (chống orphan) — giống rule single-delete "không xoá item còn con". Chọn cả cha lẫn con thì xoá được cả cụm.
+  - Kết quả trả về summary `{ affected, skipped }` để UI báo số item đã xử lý / bị bỏ qua.
 
 ## 4. Main Workflows / Use Cases
 
@@ -37,6 +42,7 @@ Quản lý product backlog dạng cây Epic → Feature → UserStory, có refin
 4. Gán SprintId để planning tạm (không đổi refinement state).
 5. Promote UserStory `Ready` → tạo `SprintTask` (state New) → BacklogItem chuyển `Committed`.
 6. Update acceptance criteria, đính kèm/xoá tài liệu refinement.
+7. Bulk: bật "Select mode" → tick nhiều item (hoặc "Select all" theo filter hiện tại) → đổi state hàng loạt hoặc xoá hàng loạt (có bước xác nhận).
 
 ## 5. Definition of Done
 

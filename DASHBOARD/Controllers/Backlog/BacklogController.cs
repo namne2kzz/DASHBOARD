@@ -1,4 +1,6 @@
 ﻿using DASHBOARD.Application.Common.Models;
+using DASHBOARD.Application.Backlog.Commands.BulkDeleteBacklogItems;
+using DASHBOARD.Application.Backlog.Commands.BulkUpdateBacklogState;
 using DASHBOARD.Application.Backlog.Commands.CreateBacklogItem;
 using DASHBOARD.Application.Backlog.Commands.DeleteBacklogItem;
 using DASHBOARD.Application.Backlog.Commands.MoveToIteration;
@@ -216,6 +218,40 @@ public sealed class BacklogController(ISender mediator) : ControllerBase
         var result = await mediator.Send(new PromoteToSprintCommand(repoId, itemId, sprintId), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });
         return Ok(new { sprintTaskId = result.Value });
+    }
+
+    /// <summary>Transitions multiple backlog items to the same refinement state in one operation.</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="request">The item IDs and target state.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with an affected/skipped summary, 400 on business-rule violation.</returns>
+    [HttpPost("bulk/state")]
+    [ProducesResponseType<BulkOperationResultDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> BulkState(Guid repoId, [FromBody] BulkUpdateBacklogStateRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new BulkUpdateBacklogStateCommand(repoId, request.ItemIds, request.State), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return Ok(result.Value);
+    }
+
+    /// <summary>Deletes multiple backlog items in one operation. Items whose children are not also selected are skipped.</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="request">The item IDs to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with a deleted/skipped summary, 400 on business-rule violation.</returns>
+    [HttpPost("bulk/delete")]
+    [ProducesResponseType<BulkOperationResultDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> BulkDelete(Guid repoId, [FromBody] BulkDeleteBacklogItemsRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new BulkDeleteBacklogItemsCommand(repoId, request.ItemIds), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return Ok(result.Value);
     }
 
     /// <summary>Deletes a backlog item. Fails if it has children.</summary>
