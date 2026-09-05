@@ -101,6 +101,7 @@ services:
       HubChat__BaseUrl: "http://chat:8080"
       HubChat__InternalToken: "${HUB_CHAT_INTERNAL_TOKEN:-CHANGE_THIS_INTERNAL_TOKEN_MIN_32_CHARS!}"
       HubChat__FrontendBaseUrl: "http://localhost:4202"
+      Google__ClientId: "${GOOGLE_CLIENT_ID}"
     ports:
       - "55432:8080"
     networks: [default, hub-net]
