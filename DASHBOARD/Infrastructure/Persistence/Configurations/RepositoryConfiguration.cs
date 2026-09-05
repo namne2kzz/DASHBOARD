@@ -14,14 +14,18 @@ internal sealed class RepositoryConfiguration : IEntityTypeConfiguration<Reposit
         builder.ToTable("Repositories");
         builder.HasKey(r => r.Id);
 
+        // Tenant — every repository is owned by exactly one organization.
+        builder.Property(r => r.OrgId).IsRequired();
+        builder.HasOne<Organization>().WithMany().HasForeignKey(r => r.OrgId).OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(r => r.Name).IsRequired().HasMaxLength(200);
 
-        // Code is the Jira-style project key (e.g. "DASH"). Max 10 chars, must be unique system-wide.
+        // Code is the Jira-style project key (e.g. "DASH"). Max 10 chars, unique per organization.
         builder.Property(r => r.Code).IsRequired().HasMaxLength(10);
         builder.Property(r => r.Description).HasMaxLength(2000);
         builder.Property(r => r.IsArchived).HasDefaultValue(false);
         builder.HasIndex(r => r.IsArchived);
 
-        builder.HasIndex(r => r.Code).IsUnique();
+        builder.HasIndex(r => new { r.OrgId, r.Code }).IsUnique();
     }
 }

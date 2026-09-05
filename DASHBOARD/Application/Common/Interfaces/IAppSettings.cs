@@ -59,4 +59,20 @@ public interface IAppSettings
     // ── UI Defaults ──────────────────────────────────────────────────────────
     /// <summary>Gets the default Tailwind avatar CSS class applied to new Google-authenticated users.</summary>
     string DefaultGoogleUserAvatarClass { get; }
+
+    // ── HUB Chat integration ─────────────────────────────────────────────────
+    /// <summary>
+    /// Gets the base URL of the HUB Chat internal API (e.g. <c>http://localhost:5001</c>).
+    /// Empty string means HUB integration is disabled.
+    /// </summary>
+    string HubChatBaseUrl { get; }
+
+    /// <summary>Gets the shared secret sent in <c>X-Internal-Token</c> when calling HUB Chat's /internal/* endpoints.</summary>
+    string HubChatInternalToken { get; }
+
+    /// <summary>
+    /// Gets the HUB frontend base URL used to build "Open in HUB" deep-links
+    /// (e.g. <c>http://localhost:4202</c>). Empty string means HUB integration is disabled.
+    /// </summary>
+    string HubFrontendBaseUrl { get; }
 }

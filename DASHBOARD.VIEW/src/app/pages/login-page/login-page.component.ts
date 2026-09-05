@@ -23,6 +23,7 @@ export class LoginPageComponent implements AfterViewInit {
 
   @ViewChild('googleButton') private googleButtonRef?: ElementRef<HTMLDivElement>;
 
+  readonly orgAlias     = signal(this.route.snapshot.queryParamMap.get('org') ?? '');
   readonly email        = signal('');
   readonly password     = signal('');
   readonly error        = signal<string | null>(null);
@@ -30,7 +31,22 @@ export class LoginPageComponent implements AfterViewInit {
   readonly showPassword = signal(false);
 
   constructor() {
+    const qp = this.route.snapshot.queryParamMap;
+
+    // Single logout: an add-on app (e.g. Nexus HUB) sends the user here with ?logout=1
+    // to also clear the DASHBOARD session. Clear it, then bounce back to the add-on's
+    // signed-out page if a returnUrl was supplied (no tokens — the user is logged out).
+    if (qp.get('logout') === '1') {
+      this.auth.logout();
+      const ret = qp.get('returnUrl');
+      if (ret && /^https?:\/\//.test(ret)) { window.location.href = ret; return; }
+      return;
+    }
+
+    // Already signed in: honour an external returnUrl (SSO pass-through to an add-on app)
+    // instead of bouncing to the dashboard home — otherwise HUB can never get its tokens.
     if (this.auth.isAuthenticated()) {
+      if (this.tryExternalReturn()) return;
       void this.router.navigate(['/']);
     }
   }
@@ -41,9 +57,11 @@ export class LoginPageComponent implements AfterViewInit {
    */
   ngAfterViewInit(): void {
     if (!this.googleButtonRef) return;
+    // Silently ignore init failures (Google SDK not configured in dev).
+    // Only propagate errors when the user actively clicks and gets an idToken.
     this.googleIdentity.renderSignInButton(this.googleButtonRef.nativeElement, { type: 'standard', size: 'large', width: 130 })
       .then(idToken => this.googleSignIn(idToken))
-      .catch((err: unknown) => this.error.set(err instanceof Error ? err.message : 'Google Sign-In is unavailable right now.'));
+      .catch(() => { /* Google Sign-In unavailable — hide button, user can still use email/password */ });
   }
 
   /** Toggle password field visibility between plain text and masked. */
@@ -56,10 +74,10 @@ export class LoginPageComponent implements AfterViewInit {
     this.error.set(null);
     this.loading.set(true);
 
-    this.auth.login({ email: this.email(), password: this.password() }).subscribe({
+    this.auth.login({ orgAlias: this.orgAlias(), email: this.email(), password: this.password() }).subscribe({
       next: () => this.enterApp(),
       error: () => {
-        this.error.set('Invalid email or password.');
+        this.error.set('Invalid organization, email or password.');
         this.loading.set(false);
       },
     });
@@ -87,8 +105,31 @@ export class LoginPageComponent implements AfterViewInit {
   private enterApp(): void {
     this.loading.set(false);
     this.repoCtx.load();
+
+    if (this.tryExternalReturn()) return;
+
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
     const target = returnUrl && !returnUrl.startsWith('/login') ? returnUrl : '/';
     void this.router.navigateByUrl(target);
+  }
+
+  /**
+   * If the query has an external (http/https) returnUrl — an add-on app like Nexus HUB —
+   * redirects there with the current tokens appended so it can bootstrap its own session.
+   * HUB's AppComponent stores the tokens and strips them from the URL immediately.
+   * @returns true if a redirect was issued (caller should stop), false otherwise.
+   */
+  private tryExternalReturn(): boolean {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (!returnUrl || !/^https?:\/\//.test(returnUrl)) return false;
+
+    const accessToken  = this.auth.getToken() ?? '';
+    const refreshToken = this.auth.getRefreshToken() ?? '';
+    if (!accessToken) return false;
+
+    const sep = returnUrl.includes('?') ? '&' : '?';
+    window.location.href =
+      `${returnUrl}${sep}t=${encodeURIComponent(accessToken)}&r=${encodeURIComponent(refreshToken)}`;
+    return true;
   }
 }

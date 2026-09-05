@@ -24,14 +24,15 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   // Sprint
   [Permission.ManageSprint]:    'Manage Sprint',
   [Permission.ActivateSprint]:  'Activate Sprint',
-  // Capacity / Wiki / Board
+  // Capacity / Board
   [Permission.ManageCapacity]:  'Manage Capacity',
-  [Permission.ManageWiki]:      'Manage Wiki',
   [Permission.ManageBoard]:     'Manage Board',
   // Analytics & Integrations
   [Permission.ViewAnalytics]:   'View Analytics',
   [Permission.ManagePipeline]:  'Manage Pipeline',
   [Permission.ManageRepo]:      'Manage Repo',
+  // Collaboration (HUB)
+  [Permission.ManageChannels]:  'Manage Channels',
 };
 
 // ── Work item status / priority ───────────────────────────────────────────────

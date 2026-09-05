@@ -71,9 +71,6 @@ export class PrivilegeService {
   /** Can configure board columns, WIP limits, split settings, and move cards. */
   readonly canManageBoard = computed(() => this.can(Permission.ManageBoard));
 
-  /** Can create, edit, and delete wiki pages. */
-  readonly canManageWiki = computed(() => this.can(Permission.ManageWiki));
-
   /** Can create new work items in the repository. */
   readonly canCreateWorkItem = computed(() => this.can(Permission.CreateWorkItem));
 

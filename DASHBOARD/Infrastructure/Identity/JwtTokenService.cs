@@ -18,8 +18,9 @@ public sealed class JwtTokenService(IOptions<JwtSettings> options) : ITokenServi
     /// <param name="userId">The user's unique identifier, stored in the <c>sub</c> and <c>uid</c> claims.</param>
     /// <param name="email">The user's email address, stored in the <c>email</c> claim.</param>
     /// <param name="name">The user's display name, stored in the <c>name</c> claim.</param>
+    /// <param name="orgId">The user's organization identifier, stored in the <c>org</c> claim.</param>
     /// <returns>A <see cref="TokenResult"/> containing the signed JWT, the <c>jti</c>, and the expiry time.</returns>
-    public TokenResult GenerateToken(Guid userId, string email, string name)
+    public TokenResult GenerateToken(Guid userId, string email, string name, Guid orgId)
     {
         var key         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -33,6 +34,7 @@ public sealed class JwtTokenService(IOptions<JwtSettings> options) : ITokenServi
             new(JwtRegisteredClaimNames.Jti, jwtId),
             new(AppConstants.UserIdClaim, userId.ToString()),
             new(AppConstants.UserNameClaim, name),
+            new(AppConstants.OrgIdClaim, orgId.ToString()),
         ];
 
         var token = new JwtSecurityToken(

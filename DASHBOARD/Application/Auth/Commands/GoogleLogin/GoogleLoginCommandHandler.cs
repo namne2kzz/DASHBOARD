@@ -46,7 +46,9 @@ internal sealed class GoogleLoginCommandHandler(
             return Result<LoginResult>.Failure(
                 "No account is linked to this Google account. Ask a repository admin to invite you first.");
 
-        var accessToken   = tokenService.GenerateToken(user.Id, user.Email, user.Name);
+        var orgAlias      = await db.Set<Organization>().AsNoTracking()
+            .Where(o => o.Id == user.OrgId).Select(o => o.Alias).FirstOrDefaultAsync(ct) ?? string.Empty;
+        var accessToken   = tokenService.GenerateToken(user.Id, user.Email, user.Name, user.OrgId);
         var refreshToken  = tokenService.GenerateRefreshToken();
         var refreshExpiry = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiresInDays);
 
@@ -72,6 +74,8 @@ internal sealed class GoogleLoginCommandHandler(
             UserId:                user.Id,
             Name:                  user.Name,
             Email:                 user.Email,
-            IsGlobalAdmin:         user.IsGlobalAdmin));
+            IsGlobalAdmin:         user.IsGlobalAdmin,
+            OrgId:                 user.OrgId,
+            OrgAlias:              orgAlias));
     }
 }

@@ -6,6 +6,7 @@ import { tap } from 'rxjs/operators';
 import { RepositoryContextService } from './repository-context.service';
 import { SprintSelectionService } from './sprint-selection.service';
 import { PrivilegeService } from '../core/services/privilege.service';
+import { ToastService } from '../core/components/toast/toast.service';
 import { environment } from '../../environments/environment';
 import {
   CapacityMemberApiDto,
@@ -23,6 +24,7 @@ export class SprintPlanningService {
   private readonly repoCtx         = inject(RepositoryContextService);
   private readonly sprintSelection = inject(SprintSelectionService);
   private readonly privilege       = inject(PrivilegeService);
+  private readonly toast           = inject(ToastService);
   private readonly destroyRef      = inject(DestroyRef);
 
   private readonly _detail   = signal<SprintDetailApiDto | null>(null);
@@ -41,6 +43,8 @@ export class SprintPlanningService {
     this.sprintSelection.sprints().map(s => ({
       id: s.id, name: s.name,
       startDate: s.startDate, endDate: s.endDate, isActive: s.isActive,
+      hubChannelId:  s.hubChannelId  ?? null,
+      hubChannelUrl: s.hubChannelUrl ?? null,
     })),
   );
 
@@ -116,12 +120,17 @@ export class SprintPlanningService {
     });
   }
 
-  /** Creates a new sprint (inactive). Caller must subscribe and handle error. @param name Sprint name. @param startDate ISO date. @param endDate ISO date. @returns Observable that emits the created sprint and adds it to the selection list. */
-  createSprint(name: string, startDate: string, endDate: string): Observable<SprintApiDto> {
+  /** Creates a new sprint (inactive). Caller must subscribe and handle error.
+   * @param name Sprint name.
+   * @param startDate ISO date.
+   * @param endDate ISO date.
+   * @param createHubChannel When true, a HUB Chat channel is created and linked to the sprint.
+   * @returns Observable that emits the created sprint and adds it to the selection list. */
+  createSprint(name: string, startDate: string, endDate: string, createHubChannel = false): Observable<SprintApiDto> {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return EMPTY;
     return this.http
-      .post<SprintApiDto>(this.sprintsUrl(repoId), { name, startDate, endDate })
+      .post<SprintApiDto>(this.sprintsUrl(repoId), { name, startDate, endDate, createHubChannel })
       .pipe(tap(sprint => this.sprintSelection.addSprint(sprint)));
   }
 
@@ -134,7 +143,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.sprintSelection.removeSprint(sprintId),
-        error: (err) => this._error.set(err?.error?.error ?? 'Failed to delete sprint.'),
+        error: (err) => this.toast.error(err?.error?.error ?? 'Failed to delete sprint.'),
       });
   }
 
@@ -165,7 +174,7 @@ export class SprintPlanningService {
           this.sprintSelection.patchSprint(sprintId, { name: name.trim(), startDate, endDate });
           this.reloadDetail();
         },
-        error: () => this._error.set('Failed to update sprint. Check dates do not overlap existing sprints.'),
+        error: () => this.toast.error('Failed to update sprint. Check dates do not overlap existing sprints.'),
       });
   }
 
@@ -204,7 +213,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
-        error: () => this._error.set('Failed to add capacity member.'),
+        error: () => this.toast.error('Failed to add capacity member.'),
       });
   }
 
@@ -237,7 +246,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
-        error: () => this._error.set('Failed to create task.'),
+        error: () => this.toast.error('Failed to create task.'),
       });
   }
 
@@ -252,7 +261,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => this.reloadDetail(),
-        error: () => this._error.set('Failed to de-scope story.'),
+        error: () => this.toast.error('Failed to de-scope story.'),
       });
   }
 
@@ -268,7 +277,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
-        error: () => this._error.set('Failed to update remaining work.'),
+        error: () => this.toast.error('Failed to update remaining work.'),
       });
   }
 
@@ -284,7 +293,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
-        error: () => this._error.set('Failed to reassign task.'),
+        error: () => this.toast.error('Failed to reassign task.'),
       });
   }
 
@@ -303,7 +312,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
-        error: () => this._error.set('Failed to change task state.'),
+        error: () => this.toast.error('Failed to change task state.'),
       });
   }
 
@@ -317,7 +326,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
-        error: (err) => this._error.set(err?.error?.error ?? 'Failed to remove capacity member.'),
+        error: (err) => this.toast.error(err?.error?.error ?? 'Failed to remove capacity member.'),
       });
   }
 
@@ -333,7 +342,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
-        error: () => this._error.set('Failed to add day off.'),
+        error: () => this.toast.error('Failed to add day off.'),
       });
   }
 
@@ -347,7 +356,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
-        error: (err) => this._error.set(err?.error?.error ?? 'Failed to remove day off.'),
+        error: (err) => this.toast.error(err?.error?.error ?? 'Failed to remove day off.'),
       });
   }
 
@@ -418,7 +427,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
-        error: () => this._error.set('Failed to update capacity.'),
+        error: () => this.toast.error('Failed to update capacity.'),
       });
   }
 

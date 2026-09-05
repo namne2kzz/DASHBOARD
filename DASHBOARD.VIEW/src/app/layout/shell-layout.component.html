@@ -310,7 +310,7 @@
       }
       <!-- My Work (global, cross-repository) -->
       <a
-        [routerLink]="['/my-work']"
+        [routerLink]="globalLink('my-work')"
         routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
         class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
         [class.justify-center]="collapsed()"
@@ -359,7 +359,7 @@
         @if (settingsOpen() && !collapsed()) {
           <div class="ml-[2.375rem] mt-0.5 space-y-0.5 border-l border-slate-800 pl-2.5">
             <a
-              [routerLink]="['/settings/general']"
+              [routerLink]="globalLink('settings/general')"
               routerLinkActive="text-sky-300 bg-sky-500/10 ring-1 ring-sky-500/20"
               [routerLinkActiveOptions]="{ exact: true }"
               class="flex items-center rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/60 hover:text-white"
@@ -368,7 +368,7 @@
             </a>
             @if (privilege.canManageMembers()) {
               <a
-                [routerLink]="['/settings/members']"
+                [routerLink]="globalLink('settings/members')"
                 routerLinkActive="text-sky-300 bg-sky-500/10 ring-1 ring-sky-500/20"
                 [routerLinkActiveOptions]="{ exact: true }"
                 class="flex items-center rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/60 hover:text-white"
@@ -378,7 +378,7 @@
             }
             @if (privilege.canManageMembers()) {
               <a
-                [routerLink]="['/settings/metadata']"
+                [routerLink]="globalLink('settings/metadata')"
                 routerLinkActive="text-sky-300 bg-sky-500/10 ring-1 ring-sky-500/20"
                 [routerLinkActiveOptions]="{ exact: true }"
                 class="flex items-center rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/60 hover:text-white"
@@ -388,7 +388,7 @@
             }
             @if (privilege.isGlobalAdmin()) {
               <a
-                [routerLink]="['/settings/users']"
+                [routerLink]="globalLink('settings/users')"
                 routerLinkActive="text-sky-300 bg-sky-500/10 ring-1 ring-sky-500/20"
                 [routerLinkActiveOptions]="{ exact: true }"
                 class="flex items-center rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/60 hover:text-white"
@@ -401,7 +401,7 @@
       </div>
 
       <a
-        [routerLink]="['/profile']"
+        [routerLink]="globalLink('profile')"
         routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
         class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
         [class.justify-center]="collapsed()"

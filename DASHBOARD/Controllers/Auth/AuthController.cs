@@ -28,7 +28,7 @@ public sealed class AuthController(ISender mediator, ICurrentUserService current
     [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
-        var result = await mediator.Send(new LoginCommand(request.Email, request.Password), ct);
+        var result = await mediator.Send(new LoginCommand(request.OrgAlias, request.Email, request.Password), ct);
         if (result.IsFailure) return Unauthorized(new { error = result.Error });
         return Ok(result.Value);
     }

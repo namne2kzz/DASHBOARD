@@ -90,12 +90,13 @@ export enum Permission {
   // Sprint
   ManageSprint    = 12,
   ActivateSprint  = 13,
-  // Capacity / Wiki / Board
+  // Capacity / Board
   ManageCapacity  = 14,
-  ManageWiki      = 15,
   ManageBoard     = 16,
   // Analytics & Integrations
   ViewAnalytics   = 17,
   ManagePipeline  = 18,
   ManageRepo      = 19,
+  // Collaboration (HUB)
+  ManageChannels  = 20,
 }

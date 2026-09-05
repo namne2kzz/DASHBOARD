@@ -57,6 +57,11 @@ export class AuthService {
     return this.storage.getString(StorageKeys.accessToken);
   }
 
+  /** @returns The stored refresh token, or null. Used by SSO redirect to add-on apps (e.g. Nexus HUB). */
+  getRefreshToken(): string | null {
+    return this.storage.getString(StorageKeys.refreshToken);
+  }
+
   /**
    * Stores a signed-in session and updates the auth signals. Public so flows that obtain a
    * session outside the regular login form (e.g. accepting an email invite) can reuse the same
@@ -70,6 +75,8 @@ export class AuthService {
       name: res.name,
       avatarClass: '',
       isGlobalAdmin: res.isGlobalAdmin,
+      orgId: res.orgId,
+      orgAlias: res.orgAlias,
     };
     this.storage.setString(StorageKeys.accessToken, res.accessToken);
     this.storage.setString(StorageKeys.refreshToken, res.refreshToken);

@@ -39,6 +39,11 @@ DASHBOARD.VIEW/node_modules/
 DASHBOARD.VIEW/dist/
 DASHBOARD.VIEW/.angular/
 
+# ── Test results ─────────────────────────────────────────────────────────────
+TestResults/
+coverage/
+*.trx
+
 # ── Docker & misc ───────────────────────────────────────────────────────────
 .env.*
 !.env.example

@@ -76,6 +76,11 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
+      # JWT secret MUST match HUB's JWT_SECRET so tokens issued here validate at the HUB gateway.
+      # Production env uses appsettings.json (placeholder secret) — override it here.
+      JwtSettings__Secret: "${JWT_SECRET:-dev-secret-key-change-in-production-32chars!}"
+      JwtSettings__Issuer: "dashboard-api"
+      JwtSettings__Audience: "dashboard-spa"
       ConnectionStrings__Default: "Server=sqlserver,1433;Database=DASHBOARD;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True;"
       RabbitMq__Username: "${RABBITMQ_USER:-guest}"
       RabbitMq__Password: "${RABBITMQ_PASS:-guest}"
@@ -90,8 +95,15 @@ services:
       GitConnections__DASH__1__RepoUrl: "${GITHUB_REPO_URL_DASH_1}"
       GitConnections__DASH__1__Token: "${GITHUB_TOKEN_DASH_1}"
       GitConnections__DASH__1__IsPrimary: "false"
+      # Token HUB DashboardGateway gửi khi gọi DASHBOARD /internal/v1/* — phải khớp InternalApi:Token.
+      InternalApi__Token: "${INTERNAL_API_TOKEN:-CHANGE_THIS_INTERNAL_TOKEN_MIN_32_CHARS!}"
+      # HUB Chat — Docker mode: gọi qua shared network hub-net bằng service name "chat".
+      HubChat__BaseUrl: "http://chat:8080"
+      HubChat__InternalToken: "${HUB_CHAT_INTERNAL_TOKEN:-CHANGE_THIS_INTERNAL_TOKEN_MIN_32_CHARS!}"
+      HubChat__FrontendBaseUrl: "http://localhost:4202"
     ports:
       - "55432:8080"
+    networks: [default, hub-net]
     restart: unless-stopped
 
   web:
@@ -105,6 +117,30 @@ services:
         condition: service_started
     ports:
       - "4201:80"
+    restart: unless-stopped
+
+  # Browser-based DB admin — http://localhost:8047
+  # Supports SQL Server, PostgreSQL, MySQL, SQLite, and more in one UI.
+  # Connection to dashboard-sqlserver is pre-configured via env vars (no manual setup).
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: dashboard-dbgate
+    ports:
+      - "8047:3000"
+    environment:
+      CONNECTIONS: con1
+      LABEL_con1: "DASHBOARD (SQL Server)"
+      SERVER_con1: sqlserver
+      PORT_con1: 1433
+      USER_con1: sa
+      PASSWORD_con1: "${MSSQL_SA_PASSWORD}"
+      DATABASE_con1: DASHBOARD
+      ENGINE_con1: mssql@dbgate-plugin-mssql
+    volumes:
+      - dbgate-data:/root/.dbgate
+    depends_on:
+      sqlserver:
+        condition: service_healthy
     restart: unless-stopped
 
   redis:
@@ -135,8 +171,16 @@ services:
   #     - postgres-data:/var/lib/postgresql/data
   #   restart: unless-stopped
 
+# Shared network với HUB Docker. HUB docker-compose.yml tạo network này khi `docker compose up`.
+# Chạy HUB trước, sau đó mới `docker compose --profile app up -d --build` ở DASHBOARD.
+networks:
+  hub-net:
+    external: true
+    name: hub-net
+
 volumes:
   sqlserver-data:
   rabbitmq-data:
   redis-data:
+  dbgate-data:
   # postgres-data:

@@ -26,16 +26,29 @@ public sealed class CreateRepositoryCommandHandler(
         if (!await user.IsGlobalAdminAsync(ct))
             throw new UnauthorizedAccessException("Only global admins may create repositories.");
 
+        var orgId = user.OrgId;
+
+        // Enforce the organization's license repo capacity.
+        var org = await db.Set<Organization>().AsNoTracking().FirstOrDefaultAsync(o => o.Id == orgId, ct)
+            ?? throw new InvalidOperationException("Organization not found.");
+        var repoCount = await db.Set<Repository>().CountAsync(r => r.OrgId == orgId, ct);
+        if (repoCount >= org.LicenseRepoCapacity)
+            throw new InvalidOperationException(
+                $"Your license allows up to {org.LicenseRepoCapacity} repositories. Contact Nexus to increase your capacity.");
+
+        // Code is unique per organization.
         var codeUpper = command.Code.ToUpperInvariant();
-        if (await db.Set<Repository>().AnyAsync(r => r.Code == codeUpper, ct))
+        if (await db.Set<Repository>().AnyAsync(r => r.OrgId == orgId && r.Code == codeUpper, ct))
             throw new InvalidOperationException($"A repository with code '{codeUpper}' already exists.");
 
-        var scrumMasterExists = await db.Set<User>().AnyAsync(u => u.Id == command.ScrumMasterId, ct);
+        // The Scrum Master must be a user in the same organization.
+        var scrumMasterExists = await db.Set<User>().AnyAsync(u => u.Id == command.ScrumMasterId && u.OrgId == orgId, ct);
         if (!scrumMasterExists)
             throw new InvalidOperationException($"User '{command.ScrumMasterId}' does not exist.");
 
         var repo = new Repository
         {
+            OrgId       = orgId,
             Name        = command.Name,
             Code        = codeUpper,
             Description = command.Description,

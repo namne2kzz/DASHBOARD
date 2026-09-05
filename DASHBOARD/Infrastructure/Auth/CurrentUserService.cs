@@ -19,6 +19,8 @@ public sealed class CurrentUserService : ICurrentUserService
 
         var rawId = claims!.FindFirst(AppConstants.UserIdClaim)?.Value;
         UserId = Guid.TryParse(rawId, out var id) ? id : null;
+        var rawOrgId = claims.FindFirst(AppConstants.OrgIdClaim)?.Value;
+        OrgId  = Guid.TryParse(rawOrgId, out var orgId) ? orgId : null;
         Email  = claims.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
         Name   = claims.FindFirst(AppConstants.UserNameClaim)?.Value;
         JwtId  = claims.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
@@ -26,6 +28,9 @@ public sealed class CurrentUserService : ICurrentUserService
 
     /// <inheritdoc/>
     public Guid? UserId { get; }
+
+    /// <inheritdoc/>
+    public Guid? OrgId { get; }
 
     /// <inheritdoc/>
     public string? Email { get; }

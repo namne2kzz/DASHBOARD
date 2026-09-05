@@ -19,20 +19,17 @@ public sealed class ListRepositoriesQueryHandler(
     public async Task<IReadOnlyList<RepositoryDto>> Handle(ListRepositoriesQuery query, CancellationToken ct)
     {
         var isAdmin = await user.IsGlobalAdminAsync(ct);
+        var orgId   = user.OrgId;
 
-        var repoQuery = db.Set<Repository>().AsNoTracking();
+        // Multi-tenant: everything is scoped to the caller's organization.
+        var repoQuery = db.Set<Repository>().AsNoTracking().Where(r => r.OrgId == orgId);
 
-        // Filter by membership when the caller is not an admin, or when MemberOnly is explicitly requested.
+        // Org admins see all (non-archived) repos in their org; everyone else only repos they belong to.
         if (isAdmin)
         {
-            var memberRepoIds = await db.Set<RepositoryMember>()
-                .AsNoTracking()     
-                .Select(m => m.RepositoryId)
-                .ToListAsync(ct);
-
-            repoQuery = repoQuery.Where(r => memberRepoIds.Contains(r.Id) && !r.IsArchived);
+            repoQuery = repoQuery.Where(r => !r.IsArchived);
         }
-        else if (!isAdmin)
+        else
         {
             var memberRepoIds = await db.Set<RepositoryMember>()
                 .AsNoTracking()
@@ -41,10 +38,6 @@ public sealed class ListRepositoriesQueryHandler(
                 .ToListAsync(ct);
 
             repoQuery = repoQuery.Where(r => memberRepoIds.Contains(r.Id) && !r.IsArchived);
-        }
-        else if (!query.IncludeArchived)
-        {
-            repoQuery = repoQuery.Where(r => !r.IsArchived);
         }
 
         if (!string.IsNullOrWhiteSpace(query.Search))

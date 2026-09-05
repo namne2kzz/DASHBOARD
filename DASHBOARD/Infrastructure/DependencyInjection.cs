@@ -87,6 +87,19 @@ public static class DependencyInjection
         // ── Email ─────────────────────────────────────────────────────────────
         services.AddScoped<IEmailService, EmailService>();
 
+        // ── HUB Chat integration ──────────────────────────────────────────────
+        // Named HttpClient pre-configured with base URL + internal token.
+        // Registered even when HubChatBaseUrl is empty — HubChannelService checks before calling.
+        services.AddHttpClient("HubChat", (sp, client) =>
+        {
+            var s = sp.GetRequiredService<IAppSettings>();
+            if (!string.IsNullOrWhiteSpace(s.HubChatBaseUrl))
+                client.BaseAddress = new Uri(s.HubChatBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(8);
+            client.DefaultRequestHeaders.Add("X-Internal-Token", s.HubChatInternalToken);
+        });
+        services.AddScoped<IHubChannelService, HubChannelService>();
+
         // ── Messaging (MassTransit + RabbitMQ) ───────────────────────────────
         services.AddMassTransit(bus =>
         {

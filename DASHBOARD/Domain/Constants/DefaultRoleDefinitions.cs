@@ -36,9 +36,7 @@ public static class DefaultRoleDefinitions
                 SystemFunction.ViewRepository,
                 SystemFunction.CreateWorkItem,
                 SystemFunction.EditWorkItem,
-                SystemFunction.AssignWorkItem,
-                SystemFunction.ManageWiki,
-                SystemFunction.ViewAnalytics,
+                SystemFunction.AssignWorkItem,                SystemFunction.ViewAnalytics,
                 SystemFunction.ManagePipeline,
                 SystemFunction.ManageRepo,
             ]),
@@ -49,9 +47,7 @@ public static class DefaultRoleDefinitions
                 SystemFunction.CreateWorkItem,
                 SystemFunction.EditWorkItem,
                 SystemFunction.AssignWorkItem,
-                SystemFunction.ManageBacklog,
-                SystemFunction.ManageWiki,
-                SystemFunction.ViewAnalytics,
+                SystemFunction.ManageBacklog,                SystemFunction.ViewAnalytics,
             ]),
 
         new(BusinessAnalyst, "Manages the product backlog and requirements; read-only on sprint execution.",
@@ -64,9 +60,7 @@ public static class DefaultRoleDefinitions
                 SystemFunction.ManageBacklog,
                 SystemFunction.PromoteToSprint,
                 SystemFunction.ManageSprint,
-                SystemFunction.ActivateSprint,
-                SystemFunction.ManageWiki,
-                SystemFunction.ViewAnalytics,
+                SystemFunction.ActivateSprint,                SystemFunction.ViewAnalytics,
             ]),
     ];
 }

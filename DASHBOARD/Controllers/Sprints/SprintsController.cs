@@ -77,7 +77,7 @@ public sealed class SprintsController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Create(Guid repoId, [FromBody] CreateSprintRequest request, CancellationToken ct)
     {
-        var result = await mediator.Send(new CreateSprintCommand(repoId, request.Name, request.StartDate, request.EndDate), ct);
+        var result = await mediator.Send(new CreateSprintCommand(repoId, request.Name, request.StartDate, request.EndDate, request.CreateHubChannel), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });
         return StatusCode(StatusCodes.Status201Created, result.Value);
     }

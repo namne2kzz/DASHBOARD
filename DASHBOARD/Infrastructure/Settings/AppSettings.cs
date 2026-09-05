@@ -70,6 +70,16 @@ public sealed class AppSettings : IAppSettings
     /// <inheritdoc/>
     public string DefaultGoogleUserAvatarClass => Require("Defaults:GoogleUserAvatarClass");
 
+    // ── HUB Chat integration ─────────────────────────────────────────────────
+    /// <inheritdoc/>
+    public string HubChatBaseUrl => _config["HubChat:BaseUrl"] ?? string.Empty;
+
+    /// <inheritdoc/>
+    public string HubChatInternalToken => _config["HubChat:InternalToken"] ?? string.Empty;
+
+    /// <inheritdoc/>
+    public string HubFrontendBaseUrl => _config["HubChat:FrontendBaseUrl"] ?? string.Empty;
+
     /// <summary>Returns the config value for <paramref name="key"/> or throws if missing/empty.</summary>
     /// <param name="key">The configuration key path (e.g. "EmailSettings:SmtpHost").</param>
     /// <returns>The non-null, non-empty configuration value.</returns>

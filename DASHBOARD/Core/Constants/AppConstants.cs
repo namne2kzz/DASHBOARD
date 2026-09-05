@@ -12,6 +12,9 @@ public static class AppConstants
     /// <summary>JWT claim type carrying the user's display name.</summary>
     public const string UserNameClaim = "name";
 
+    /// <summary>JWT claim type carrying the user's organization (tenant) <see cref="Guid"/> identifier.</summary>
+    public const string OrgIdClaim = "org";
+
     /// <summary>Named CORS policy allowing requests from the Angular dev server.</summary>
     public const string AngularCorsPolicy = "AllowAngular";
 }

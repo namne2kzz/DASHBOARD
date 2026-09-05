@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DIALOG_REF_TOKEN } from '../../models/dialog.model';
 import { SprintPlanningService } from '../../services/sprint-planning.service';
+import { ToastService } from '../../core/components/toast/toast.service';
 
 @Component({
   selector: 'app-create-sprint-dialog',
@@ -16,12 +17,13 @@ export class CreateSprintDialogComponent {
   private readonly dialogRef  = inject(DIALOG_REF_TOKEN);
   private readonly planning   = inject(SprintPlanningService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toast      = inject(ToastService);
 
-  readonly name        = signal('');
-  readonly startDate   = signal('');
-  readonly endDate     = signal('');
-  readonly submitting  = signal(false);
-  readonly submitError = signal<string | null>(null);
+  readonly name             = signal('');
+  readonly startDate        = signal('');
+  readonly endDate          = signal('');
+  readonly createHubChannel = signal(true);
+  readonly submitting       = signal(false);
 
   readonly canSubmit = computed(() =>
     !this.submitting() &&
@@ -31,19 +33,18 @@ export class CreateSprintDialogComponent {
     this.startDate() < this.endDate(),
   );
 
-  /** Creates the sprint, closes dialog on success or shows inline error on failure. */
+  /** Creates the sprint, closes dialog on success or shows a toast on API failure. */
   submit(): void {
     if (!this.canSubmit()) return;
     this.submitting.set(true);
-    this.submitError.set(null);
     this.planning
-      .createSprint(this.name().trim(), this.startDate(), this.endDate())
+      .createSprint(this.name().trim(), this.startDate(), this.endDate(), this.createHubChannel())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.dialogRef.close(),
         error: (err) => {
           this.submitting.set(false);
-          this.submitError.set(
+          this.toast.error(
             err?.error?.error
               ?? Object.values<string[]>(err?.error?.errors ?? {})?.[0]?.[0]
               ?? 'Failed to create sprint.',

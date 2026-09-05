@@ -28,9 +28,8 @@ export class SearchService {
   private readonly _labels: Record<SearchResultKind, string> = {
     task:    'Work items',
     backlog: 'Backlog',
-    wiki:    'Wiki',
   };
-  private readonly _order: SearchResultKind[] = ['task', 'backlog', 'wiki'];
+  private readonly _order: SearchResultKind[] = ['task', 'backlog'];
 
   /** Results grouped by kind, in a stable display order. */
   readonly groups = computed<SearchResultGroup[]>(() => {

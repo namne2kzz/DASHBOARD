@@ -67,21 +67,28 @@ internal sealed class AcceptInvitationCommandHandler(
             .AsTracking()
             .FirstOrDefaultAsync(u => u.GoogleSubjectId == googleUser.Subject, ct);
 
+        // The invited user belongs to the organization that owns the invited repository.
+        var repoOrgId = await db.Set<Repository>().AsNoTracking()
+            .Where(r => r.Id == invitation.RepositoryId).Select(r => r.OrgId).FirstOrDefaultAsync(ct);
+
         Guid   userId;
         string userName;
         string userEmail;
         bool   isGlobalAdmin;
+        Guid   userOrgId;
         if (existingUser is not null)
         {
             userId        = existingUser.Id;
             userName      = existingUser.Name;
             userEmail     = existingUser.Email;
             isGlobalAdmin = existingUser.IsGlobalAdmin;
+            userOrgId     = existingUser.OrgId;
         }
         else
         {
             var newUser = new User
             {
+                OrgId           = repoOrgId,
                 Name            = googleUser.Name ?? googleUser.Email,
                 Email           = googleUser.Email,
                 AuthProvider    = AuthProvider.Google,
@@ -98,6 +105,7 @@ internal sealed class AcceptInvitationCommandHandler(
             userName      = newUser.Name;
             userEmail     = newUser.Email;
             isGlobalAdmin = newUser.IsGlobalAdmin;
+            userOrgId     = newUser.OrgId;
         }
 
         // Add to repository if not already a member.
@@ -129,7 +137,9 @@ internal sealed class AcceptInvitationCommandHandler(
 
         // Invited users are Google-only (no password), so they can't use the regular login
         // endpoint afterwards — issue a session here exactly like LoginCommandHandler does.
-        var accessToken   = jwtService.GenerateToken(userId, userEmail, userName);
+        var orgAlias      = await db.Set<Organization>().AsNoTracking()
+            .Where(o => o.Id == userOrgId).Select(o => o.Alias).FirstOrDefaultAsync(ct) ?? string.Empty;
+        var accessToken   = jwtService.GenerateToken(userId, userEmail, userName, userOrgId);
         var refreshToken  = jwtService.GenerateRefreshToken();
         var refreshExpiry = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiresInDays);
 
@@ -155,6 +165,8 @@ internal sealed class AcceptInvitationCommandHandler(
             UserId:                userId,
             Name:                  userName,
             Email:                 userEmail,
-            IsGlobalAdmin:         isGlobalAdmin));
+            IsGlobalAdmin:         isGlobalAdmin,
+            OrgId:                 userOrgId,
+            OrgAlias:              orgAlias));
     }
 }

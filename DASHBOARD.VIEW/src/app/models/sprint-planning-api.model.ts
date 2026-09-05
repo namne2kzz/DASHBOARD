@@ -4,13 +4,17 @@ export { SprintTaskApiType, SprintTaskApiState, WorkItemApiPriority };
 
 /** Minimal sprint summary from GET /sprints. */
 export interface SprintApiDto {
-  id:           string;
-  repositoryId: string;
-  name:         string;
-  startDate:    string;
-  endDate:      string;
-  isActive:     boolean;
-  createdAt:    string;
+  id:             string;
+  repositoryId:   string;
+  name:           string;
+  startDate:      string;
+  endDate:        string;
+  isActive:       boolean;
+  createdAt:      string;
+  /** HUB Chat channel linked to this sprint, or null if none. */
+  hubChannelId?:  string | null;
+  /** Full URL to the linked HUB channel, e.g. http://localhost:4202/channels/{id}. */
+  hubChannelUrl?: string | null;
 }
 
 /** Full work item node (tree structure via subTasks). */

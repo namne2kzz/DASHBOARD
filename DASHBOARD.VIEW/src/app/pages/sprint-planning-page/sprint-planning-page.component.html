@@ -15,6 +15,21 @@
             <option [ngValue]="sprint.id">{{ sprint.name }}{{ sprint.isActive ? ' ✦' : '' }}</option>
           }
         </select>
+        @if (planning.selectedSprint()?.hubChannelUrl) {
+          <a
+            [href]="planning.selectedSprint()!.hubChannelUrl!"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open sprint channel in HUB"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-sky-700/60 bg-sky-950/60 px-3 py-2 text-xs font-medium text-sky-300 transition hover:border-sky-500 hover:text-sky-200"
+          >
+            <span>🔗</span>
+            Open in HUB
+            <svg class="h-3 w-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+          </a>
+        }
         <button
           type="button"
           class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400"
@@ -35,6 +50,20 @@
         <div class="flex items-center justify-between gap-2">
           <h2 class="text-sm font-semibold text-slate-100">Sprint backlog setup</h2>
 
+          <div class="flex items-center gap-1">
+          @if (planning.selectedSprint()?.hubChannelUrl) {
+            <a
+              [href]="planning.selectedSprint()!.hubChannelUrl!"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Go to sprint channel in HUB"
+              class="rounded-lg p-1.5 text-sky-400 transition hover:bg-slate-800 hover:text-sky-300"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+              </svg>
+            </a>
+          }
           @if (editMode()) {
             <!-- Save / Cancel -->
             <div class="flex items-center gap-1">
@@ -103,6 +132,7 @@
               }
             </div>
           }
+          </div>
         </div>
 
         <!-- Edit mode: name + dates -->

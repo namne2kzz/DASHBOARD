@@ -245,9 +245,20 @@
       <p class="rounded-xl border border-rose-700/50 bg-rose-900/20 px-4 py-3 text-sm text-rose-300">{{ board.error() }}</p>
     </div>
   } @else if (workflow.columns().length === 0) {
-    <div class="mt-10 flex flex-col items-center gap-2 px-4 text-center">
-      <p class="text-sm text-slate-500">No columns configured. Go to <strong class="text-slate-300">Workflow</strong> to set up board columns.</p>
-    </div>
+    <section class="mx-4 mt-8 rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center">
+      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-sky-300 ring-1 ring-slate-700">
+        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <rect x="2"  y="3" width="5" height="18" rx="1.2"/>
+          <rect x="9"  y="3" width="5" height="13" rx="1.2"/>
+          <rect x="16" y="3" width="5" height="16" rx="1.2"/>
+        </svg>
+      </div>
+      <h2 class="mt-4 text-lg font-semibold text-white">No columns configured</h2>
+      <p class="mx-auto mt-2 max-w-sm text-sm text-slate-400">
+        Add workflow columns to start tracking work items on the board.
+        Go to <strong class="text-slate-200">Workflow</strong> in the sidebar to configure board columns.
+      </p>
+    </section>
   } @else {
     <main class="custom-scroll overflow-x-auto px-4 py-5">
       <div cdkDropListGroup class="flex min-w-max items-start gap-4">

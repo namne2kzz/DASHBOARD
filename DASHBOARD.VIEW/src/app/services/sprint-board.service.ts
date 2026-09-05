@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import { RepositoryContextService } from './repository-context.service';
 import { SprintSelectionService } from './sprint-selection.service';
 import { AuthService } from './auth.service';
+import { ToastService } from '../core/components/toast/toast.service';
 import { BoardTaskApiDto, CapacityMemberApiDto, CreateWorkItemPayload, WorkItemPickerApiDto } from '../models/sprint-planning-api.model';
 import { SprintTaskApiState, SprintTaskApiType } from '../core/enums/system.enum';
 import { SPRINT_TASK_STATE_LABEL } from '../core/constants/system.constant';
@@ -153,6 +154,7 @@ export class SprintBoardService {
   private readonly sprintSelection = inject(SprintSelectionService);
   private readonly destroyRef      = inject(DestroyRef);
   private readonly auth            = inject(AuthService);
+  private readonly toast           = inject(ToastService);
 
   readonly searchQuery      = signal('');
   readonly assignedToMeOnly = signal(false);
@@ -290,7 +292,7 @@ export class SprintBoardService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.loadTasks(repoId, sprintId),
-        error: () => this.error.set('Failed to create work item'),
+        error: () => this.toast.error('Failed to create work item'),
       });
   }
 

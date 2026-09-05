@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SearchService } from '../../services/search.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
+import { AuthService } from '../../services/auth.service';
 import { DialogService } from '../../core/components/dialog/dialog.service';
 import { SprintTaskDetailDialogComponent } from '../sprint-task-detail-dialog/sprint-task-detail-dialog.component';
 import { SearchResultItem, SearchResultKind } from '../../models/search.model';
 
 /**
  * Global command-palette search overlay. Opened via the sidebar trigger or Ctrl/Cmd+K,
- * it queries the current repository across Work items, Backlog, and Wiki and routes to
+ * it queries the current repository across Work items and Backlog and routes to
  * the relevant section on selection.
  */
 @Component({
@@ -24,6 +25,7 @@ export class GlobalSearchComponent implements AfterViewChecked {
   private readonly repoCtx = inject(RepositoryContextService);
   private readonly router  = inject(Router);
   private readonly dialog  = inject(DialogService);
+  private readonly auth    = inject(AuthService);
 
   private readonly input = viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private _focused = false;
@@ -58,7 +60,7 @@ export class GlobalSearchComponent implements AfterViewChecked {
   }
 
   /**
-   * Opens the selected hit: work items open their detail dialog in place; Backlog and Wiki hits
+   * Opens the selected hit: work items open their detail dialog in place; Backlog hits
    * navigate to their section (the exact item may not be visible on the board).
    * @param item The selected search hit.
    */
@@ -74,14 +76,14 @@ export class GlobalSearchComponent implements AfterViewChecked {
       return;
     }
 
-    const code = this.repoCtx.selectedRepo()?.code;
+    const code  = this.repoCtx.selectedRepo()?.code;
+    const alias = this.auth.currentUser()?.orgAlias ?? '';
     if (!code) return;
-    void this.router.navigate(['/', code, item.kind === 'wiki' ? 'wiki' : 'backlog']);
+    void this.router.navigate(['/', alias, code, 'backlog']);
   }
 }
 
 const KIND_ACCENT: Record<SearchResultKind, string> = {
   task:    'text-sky-400 ring-sky-500/35 bg-sky-500/10',
   backlog: 'text-amber-300 ring-amber-400/35 bg-amber-400/10',
-  wiki:    'text-violet-400 ring-violet-500/35 bg-violet-500/10',
 };
