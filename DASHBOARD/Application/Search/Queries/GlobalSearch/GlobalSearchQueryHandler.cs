@@ -8,8 +8,8 @@ using Microsoft.EntityFrameworkCore;
 namespace DASHBOARD.Application.Search.Queries.GlobalSearch;
 
 /// <summary>
-/// Handles <see cref="GlobalSearchQuery"/>: runs a case-insensitive keyword match across Sprint tasks,
-/// Backlog items, and Wiki pages in the repository, returning a capped, unified result list.
+/// Handles <see cref="GlobalSearchQuery"/>: runs a case-insensitive keyword match across Sprint tasks
+/// and Backlog items in the repository, returning a capped, unified result list.
 /// </summary>
 public sealed class GlobalSearchQueryHandler(
     IApplicationDbContext db,
@@ -55,16 +55,6 @@ public sealed class GlobalSearchQueryHandler(
             .ToListAsync(ct);
         results.AddRange(backlog.Select(b => new SearchResultItemDto(
             "backlog", b.Id, b.Title, b.Type.ToString())));
-
-        var wiki = await db.Set<WikiPage>().AsNoTracking()
-            .Where(w => w.RepositoryId == query.RepositoryId &&
-                        (w.Title.ToLower().Contains(term) || w.Content.ToLower().Contains(term)))
-            .OrderByDescending(w => w.LastUpdated)
-            .Take(PerKindLimit)
-            .Select(w => new { w.Id, w.Title })
-            .ToListAsync(ct);
-        results.AddRange(wiki.Select(w => new SearchResultItemDto(
-            "wiki", w.Id, w.Title, "Wiki")));
 
         return results;
     }

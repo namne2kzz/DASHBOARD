@@ -41,7 +41,6 @@ export interface WorkItem {
   sprint: string;
   implementInBuild: string | null;
   fixedInVersion: string | null;
-  wikiLinks: string[];
 
   // ── UserStory ────────────────────────────────────────
   acceptanceCriteria: string | null;

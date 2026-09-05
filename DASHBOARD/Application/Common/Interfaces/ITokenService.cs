@@ -13,8 +13,9 @@ public interface ITokenService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="email">The user's email address embedded as a claim.</param>
     /// <param name="name">The user's display name embedded as a claim.</param>
+    /// <param name="orgId">The user's organization (tenant) identifier embedded as the <c>org</c> claim.</param>
     /// <returns>A <see cref="TokenResult"/> containing the signed JWT, its ID, and expiry.</returns>
-    TokenResult GenerateToken(Guid userId, string email, string name);
+    TokenResult GenerateToken(Guid userId, string email, string name, Guid orgId);
 
     /// <summary>
     /// Generates a cryptographically secure opaque refresh token (512-bit, Base64-encoded).

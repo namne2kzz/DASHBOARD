@@ -77,6 +77,8 @@ var app = builder.Build();
 
 // ── Middleware pipeline ───────────────────────────────────────────────────────
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+// Must run before UseAuthentication so /internal/* is blocked without touching JWT.
+app.UseMiddleware<InternalApiKeyMiddleware>();
 
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();

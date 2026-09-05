@@ -15,6 +15,8 @@ namespace DASHBOARD.Infrastructure.Persistence;
 public static class SeedData
 {
     // ── Fixed GUIDs ───────────────────────────────────────────────────────────
+    public static readonly Guid DefaultOrgId   = new("00000000-0000-0000-0009-000000000001");
+
     public static readonly Guid AdminUserId    = new("00000000-0000-0000-0001-000000000001");
     public static readonly Guid DevUserId      = new("00000000-0000-0000-0001-000000000002");
 
@@ -39,8 +41,6 @@ public static class SeedData
     public static readonly Guid Improvement1Id  = new("00000000-0000-0000-0005-000000000004");
     public static readonly Guid TestPlan1Id     = new("00000000-0000-0000-0005-000000000005");
 
-    public static readonly Guid WikiPage1Id    = new("00000000-0000-0000-0006-000000000001");
-    public static readonly Guid WikiPage2Id    = new("00000000-0000-0000-0006-000000000002");
 
     public static readonly Guid Sprint1Id      = new("00000000-0000-0000-0007-000000000001");
 
@@ -69,15 +69,35 @@ public static class SeedData
     /// <param name="modelBuilder">The EF Core model builder.</param>
     public static void Apply(ModelBuilder modelBuilder)
     {
+        SeedOrg(modelBuilder);
         SeedUsers(modelBuilder);
         SeedRepository(modelBuilder);
         SeedMetadata(modelBuilder);
         SeedRolesAndMembers(modelBuilder);
         SeedItems(modelBuilder);
-        SeedWikiPages(modelBuilder);
         SeedSprint(modelBuilder);
         SeedBacklog(modelBuilder);
         SeedSmartBoard(modelBuilder);
+    }
+
+    // ── Organization (default tenant for pre-existing data) ────────────────────
+    private static void SeedOrg(ModelBuilder mb)
+    {
+        mb.Entity<Organization>().HasData(new
+        {
+            Id = DefaultOrgId,
+            Name = "Default Organization",
+            Alias = "default",
+            ContactEmail = "admin@dashboard.local",
+            About = "Default organization created for pre-existing repositories and users.",
+            // Consumes license key #1 from appsettings (marked active: true there).
+            LicenseKey = "TkVYLTAwMDEtUFJPRA==",
+            LicenseDueDate = new DateTime(2026, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+            LicenseExpireDate = new DateTime(2027, 12, 31, 0, 0, 0, DateTimeKind.Utc),
+            LicenseRepoCapacity = 20,
+            CreatedAt = SeedDate,
+            UpdatedAt = (DateTime?)null,
+        });
     }
 
     // ── Users ─────────────────────────────────────────────────────────────────
@@ -87,6 +107,7 @@ public static class SeedData
             new
             {
                 Id = AdminUserId,
+                OrgId = DefaultOrgId,
                 Name = "Admin User",
                 Email = "admin@dashboard.local",
                 PasswordHash = AdminHash,
@@ -105,6 +126,7 @@ public static class SeedData
             new
             {
                 Id = DevUserId,
+                OrgId = DefaultOrgId,
                 Name = "Dev User",
                 Email = "dev@dashboard.local",
                 PasswordHash = DevHash,
@@ -128,6 +150,7 @@ public static class SeedData
         mb.Entity<Repository>().HasData(new
         {
             Id = DashRepoId,
+            OrgId = DefaultOrgId,
             Name = "Dashboard Project",
             Code = "DASH",
             Description = "Main project repository for the DASHBOARD application.",
@@ -205,7 +228,7 @@ public static class SeedData
                 {
                     SystemFunction.ViewRepository,  SystemFunction.CreateWorkItem,
                     SystemFunction.EditWorkItem,    SystemFunction.AssignWorkItem,
-                    SystemFunction.ManageWiki,      SystemFunction.ViewAnalytics,
+                    SystemFunction.ViewAnalytics,
                     SystemFunction.ManagePipeline,  SystemFunction.ManageRepo,
                 },
                 CreatedAt = SeedDate,
@@ -222,7 +245,7 @@ public static class SeedData
                 {
                     SystemFunction.ViewRepository, SystemFunction.CreateWorkItem,
                     SystemFunction.EditWorkItem,   SystemFunction.AssignWorkItem,
-                    SystemFunction.ManageBacklog,  SystemFunction.ManageWiki,
+                    SystemFunction.ManageBacklog,
                     SystemFunction.ViewAnalytics,
                 },
                 CreatedAt = SeedDate,
@@ -241,7 +264,7 @@ public static class SeedData
                     SystemFunction.EditWorkItem,    SystemFunction.DeleteWorkItem,
                     SystemFunction.AssignWorkItem,  SystemFunction.ManageBacklog,
                     SystemFunction.PromoteToSprint, SystemFunction.ManageSprint,
-                    SystemFunction.ActivateSprint,  SystemFunction.ManageWiki,
+                    SystemFunction.ActivateSprint,
                     SystemFunction.ViewAnalytics,
                 },
                 CreatedAt = SeedDate,
@@ -370,40 +393,6 @@ public static class SeedData
                 DeletedByUserId = (Guid?)null,
                 CreatedAt = SeedDate,
                 UpdatedAt = (DateTime?)null,
-            });
-    }
-
-    // ── Wiki ──────────────────────────────────────────────────────────────────
-    private static void SeedWikiPages(ModelBuilder mb)
-    {
-        mb.Entity<WikiPage>().HasData(
-            new
-            {
-                Id = WikiPage1Id,
-                RepositoryId = DashRepoId,
-                Title = "System Architecture Overview",
-                Content = "<h1>Architecture</h1><p>Full-stack .NET 10 + Angular v19 application.</p>",
-                LastUpdated = SeedDate,
-                ParentId = (Guid?)null,
-                CreatedAt = SeedDate,
-                UpdatedAt = (DateTime?)null,
-                IsDeleted = false,
-                DeletedAt = (DateTime?)null,
-                DeletedByUserId = (Guid?)null,
-            },
-            new
-            {
-                Id = WikiPage2Id,
-                RepositoryId = DashRepoId,
-                Title = "Authentication Flow",
-                Content = "<h2>Auth</h2><p>JWT Bearer tokens with PBKDF2-SHA512 password hashing.</p>",
-                LastUpdated = SeedDate,
-                ParentId = WikiPage1Id,
-                CreatedAt = SeedDate,
-                UpdatedAt = (DateTime?)null,
-                IsDeleted = false,
-                DeletedAt = (DateTime?)null,
-                DeletedByUserId = (Guid?)null,
             });
     }
 

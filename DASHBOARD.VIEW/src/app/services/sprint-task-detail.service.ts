@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../environments/environment';
 import { RepositoryContextService } from './repository-context.service';
 import { SprintBoardService, PRIORITY_MAP } from './sprint-board.service';
+import { ToastService } from '../core/components/toast/toast.service';
 import type { SprintTaskApiDto, SprintTaskApiState } from '../models/sprint-planning-api.model';
 import type { DiscussionApiDto, HistoryApiDto, UpdateSprintTaskPayload } from '../models/sprint-task-detail.model';
 
@@ -16,6 +17,7 @@ export class SprintTaskDetailService {
   private readonly http       = inject(HttpClient);
   private readonly repoCtx    = inject(RepositoryContextService);
   private readonly board      = inject(SprintBoardService);
+  private readonly toast      = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly detail      = signal<SprintTaskApiDto | null>(null);
@@ -62,7 +64,7 @@ export class SprintTaskDetailService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: dto => this.discussions.update(list => [...list, dto]),
-        error: () => this.error.set('Failed to post comment'),
+        error: () => this.toast.error('Failed to post comment'),
       });
   }
 
@@ -107,7 +109,7 @@ export class SprintTaskDetailService {
           this.board.patchItem(taskId, { apiState: newState, stateChangedAt: nowIso });
           this.reloadHistory(taskId);
         },
-        error: () => this.error.set('Failed to change state'),
+        error: () => this.toast.error('Failed to change state'),
       });
   }
 
@@ -134,7 +136,7 @@ export class SprintTaskDetailService {
           this.board.patchItem(taskId, { assignedToId: userId, assignedToName, assignedToAvatar });
           this.reloadHistory(taskId);
         },
-        error: () => this.error.set('Failed to reassign task'),
+        error: () => this.toast.error('Failed to reassign task'),
       });
   }
 

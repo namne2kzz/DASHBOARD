@@ -14,6 +14,10 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.ToTable("Users");
         builder.HasKey(u => u.Id);
 
+        // Tenant — every user belongs to exactly one organization.
+        builder.Property(u => u.OrgId).IsRequired();
+        builder.HasOne<Organization>().WithMany().HasForeignKey(u => u.OrgId).OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(u => u.Name).IsRequired().HasMaxLength(200);
         builder.Property(u => u.Email).IsRequired().HasMaxLength(320);
 
@@ -37,7 +41,8 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .OnDelete(DeleteBehavior.NoAction)
             .IsRequired(false);
 
-        builder.HasIndex(u => u.Email).IsUnique();
+        // Email is unique per organization (multi-tenant): the same email may exist in different orgs.
+        builder.HasIndex(u => new { u.OrgId, u.Email }).IsUnique();
 
         builder.Property(u => u.IsDeleted).HasDefaultValue(false);
         builder.Property(u => u.DeletedAt).IsRequired(false);

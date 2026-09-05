@@ -16,6 +16,10 @@ public sealed class RequestUserContext(
         ?? throw new InvalidOperationException("No authenticated user in context.");
 
     /// <inheritdoc/>
+    public Guid OrgId => currentUser.OrgId
+        ?? throw new InvalidOperationException("No authenticated organization in context.");
+
+    /// <inheritdoc/>
     public Task<bool> IsGlobalAdminAsync(CancellationToken ct = default) =>
         permissions.IsGlobalAdminAsync(UserId, ct);
 

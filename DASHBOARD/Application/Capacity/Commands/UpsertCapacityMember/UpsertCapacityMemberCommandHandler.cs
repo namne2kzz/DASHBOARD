@@ -9,11 +9,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DASHBOARD.Application.Capacity.Commands.UpsertCapacityMember;
 
-/// <summary>Handles <see cref="UpsertCapacityMemberCommand"/>: validates membership, creates or updates the capacity row, and commits.</summary>
+/// <summary>
+/// Handles <see cref="UpsertCapacityMemberCommand"/>: validates membership, creates or updates the capacity row,
+/// and fire-and-forget syncs the member to the sprint's linked HUB channel (if one exists).
+/// </summary>
 public sealed class UpsertCapacityMemberCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<UpsertCapacityMemberCommand, CapacityMemberDto>
+    IUnitOfWork           uow,
+    IHubChannelService    hub) : IRequestHandler<UpsertCapacityMemberCommand, CapacityMemberDto>
 {
     /// <summary>Validates ManageCapacity permission, upserts the capacity row, and returns the DTO.</summary>
     /// <param name="command">The upsert command.</param>
@@ -59,6 +63,15 @@ public sealed class UpsertCapacityMemberCommandHandler(
         }
 
         await uow.CommitAsync(ct);
+
+        // ── Fire-and-forget: sync new member to HUB channel ────────────────────
+        // Look up the channel link before leaving the handler (DbContext is in scope here).
+        var link = await db.Set<SprintChannelLink>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.SprintId == command.SprintId, ct);
+
+        if (link is not null)
+            _ = hub.AddMemberAsync(link.HubChannelId, command.UserId, CancellationToken.None);
 
         return new CapacityMemberDto(existing.Id, existing.SprintId, existing.UserId,
             memberUser.Name, memberUser.AvatarClass, existing.Role, existing.HoursPerDay, existing.OvertimeHoursPerDay);

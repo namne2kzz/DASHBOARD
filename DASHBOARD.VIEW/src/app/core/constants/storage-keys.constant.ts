@@ -23,7 +23,6 @@ export const StorageKeys = {
 
   // ── Mock / dev data ───────────────────────────────────────────
   // Keys used by mock services to seed and persist fake data.
-  wikiPages:        'ado.wiki.pages',
   reposIntegration: 'ado.github.integration.v1',
   pipelines:        'ado.mock.pipelines',
 } as const;

@@ -1,3 +1,13 @@
+/* Propagate flex context: host stretches to fill boards-page (its flex parent)
+   and becomes a flex column so the inner div's flex-1 can fill remaining height */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+}
+
 /* Expandable search input — grows from width:0 to 15rem on open */
 .search-expand {
   overflow: hidden;

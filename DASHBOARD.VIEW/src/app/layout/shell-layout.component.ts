@@ -38,10 +38,15 @@ export class ShellLayoutComponent {
     { initialValue: this.router.url },
   );
 
+  /** The current tenant's URL alias (constant per session). */
+  readonly orgAlias = computed(() => this.auth.currentUser()?.orgAlias ?? '');
+
   /** True when the current route is a global page (profile/settings) that doesn't require repo access. */
   readonly isGlobalRoute = computed(() => {
-    const url = this.currentUrl() ?? '';
-    return url.startsWith('/profile') || url.startsWith('/settings') || url.startsWith('/my-work');
+    // URL shape: /{orgAlias}/{section}/… — inspect the segment after the alias.
+    const parts   = (this.currentUrl() ?? '').split('/').filter(Boolean);
+    const section = parts[1] ?? '';
+    return section === 'profile' || section === 'settings' || section === 'my-work';
   });
 
   constructor() {
@@ -61,10 +66,16 @@ export class ShellLayoutComponent {
     this.collapsed.update(v => !v);
   }
 
-  /** @returns Router link segments for a repo-scoped page. @param page Sub-route path e.g. 'boards' or 'settings/general'. */
+  /** @returns Router link segments for a repo-scoped page under the current org. @param page Sub-route path e.g. 'boards'. */
   repoLink(page: string): string[] {
-    const code = this.repoCtx.selectedRepo()?.code;
-    return code ? ['/', code, ...page.split('/')] : ['/'];
+    const alias = this.orgAlias();
+    const code  = this.repoCtx.selectedRepo()?.code;
+    return code ? ['/', alias, code, ...page.split('/')] : ['/', alias];
+  }
+
+  /** @returns Router link segments for a global (non-repo) page under the current org. @param page Sub-route e.g. 'settings/members'. */
+  globalLink(page: string): string[] {
+    return ['/', this.orgAlias(), ...page.split('/')];
   }
 
   /** Selects a repository, preserves the current sub-route, and navigates. @param id Repository ID. */
@@ -73,9 +84,10 @@ export class ShellLayoutComponent {
     if (!repo) return;
     this.repoCtx.select(id);
     this.repoDropdownOpen.set(false);
-    const segments = this.router.url.split('/').filter(Boolean);
-    const subSegments = segments.length >= 2 ? segments.slice(1) : ['boards'];
-    void this.router.navigate(['/', repo.code, ...subSegments]);
+    // URL shape: /{alias}/{code}/{sub…} — preserve the sub-route after the repo code.
+    const segments    = this.router.url.split('/').filter(Boolean);
+    const subSegments = segments.length >= 3 ? segments.slice(2) : ['boards'];
+    void this.router.navigate(['/', this.orgAlias(), repo.code, ...subSegments]);
   }
 
   /**

@@ -10,6 +10,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     : DbContext(options), IApplicationDbContext
 {
     // ── Identity & Access ────────────────────────────────────────────────────
+    /// <summary>Organizations — top-level tenants owning users and repositories.</summary>
+    public DbSet<Organization> Organizations => Set<Organization>();
+
     /// <summary>Application users.</summary>
     public DbSet<User> Users => Set<User>();
 
@@ -61,10 +64,6 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     // ── Smart Board ───────────────────────────────────────────────────────────
     /// <summary>WIP-limited kanban board columns.</summary>
     public DbSet<SmartBoardColumn> SmartBoardColumns => Set<SmartBoardColumn>();
-
-    // ── Wiki ──────────────────────────────────────────────────────────────────
-    /// <summary>Wiki pages with tree hierarchy.</summary>
-    public DbSet<WikiPage> WikiPages => Set<WikiPage>();
 
     // ─────────────────────────────────────────────────────────────────────────
     protected override void OnModelCreating(ModelBuilder modelBuilder)

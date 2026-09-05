@@ -6,7 +6,9 @@ import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RepositoryContextService } from '../../services/repository-context.service';
 import { SystemUsersService } from '../../services/system-users.service';
+import { AuthService } from '../../services/auth.service';
 import { DIALOG_REF_TOKEN } from '../../models/dialog.model';
+import { ToastService } from '../../core/components/toast/toast.service';
 import { UserPickerItem } from '../../models/user.model';
 
 interface DropdownRect { top: number; left: number; width: number; }
@@ -22,6 +24,11 @@ export class NewRepoDialogComponent {
   private readonly repoCtx   = inject(RepositoryContextService);
   readonly usersSvc  = inject(SystemUsersService);
   private readonly dialogRef = inject(DIALOG_REF_TOKEN);
+  private readonly toast     = inject(ToastService);
+  private readonly auth      = inject(AuthService);
+
+  /** The organization this repository will belong to (the caller's org). Read-only. */
+  readonly orgAlias = this.auth.currentUser()?.orgAlias ?? '';
 
   // ── Form fields ───────────────────────────────────────────────
   name        = '';
@@ -40,7 +47,6 @@ export class NewRepoDialogComponent {
 
   // ── Submission state ──────────────────────────────────────────
   readonly submitting = signal(false);
-  readonly error      = signal<string | null>(null);
 
   private readonly search$ = new Subject<string>();
 
@@ -130,7 +136,6 @@ export class NewRepoDialogComponent {
     const user = this.selectedUser();
     if (!this.name.trim() || !this.code.trim() || !user || this.codeStatus() === 'taken') return;
     this.submitting.set(true);
-    this.error.set(null);
     this.repoCtx.create({
       name:          this.name.trim(),
       code:          this.code.trim(),
@@ -139,9 +144,8 @@ export class NewRepoDialogComponent {
     }).subscribe({
       next:  repo => { this.submitting.set(false); this.dialogRef.close(repo); },
       error: err  => {
-        const msg = err?.error?.detail ?? err?.error?.title ?? 'Failed to create repository.';
-        this.error.set(msg);
         this.submitting.set(false);
+        this.toast.error(err?.error?.detail ?? err?.error?.title ?? 'Failed to create repository.');
       },
     });
   }

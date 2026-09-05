@@ -10,6 +10,7 @@ export interface JwtClaims {
 }
 
 export interface LoginRequest {
+  orgAlias: string;
   email: string;
   password: string;
 }
@@ -24,6 +25,8 @@ export interface LoginResponse {
   name: string;
   email: string;
   isGlobalAdmin: boolean;
+  orgId: string;
+  orgAlias: string;
 }
 
 export interface RefreshTokenRequest {

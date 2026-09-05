@@ -4,4 +4,4 @@ namespace DASHBOARD.Controllers.Sprints.Requests;
 /// <param name="Name">Sprint display name.</param>
 /// <param name="StartDate">Inclusive start date.</param>
 /// <param name="EndDate">Inclusive end date.</param>
-public sealed record CreateSprintRequest(string Name, DateOnly StartDate, DateOnly EndDate);
+public sealed record CreateSprintRequest(string Name, DateOnly StartDate, DateOnly EndDate, bool CreateHubChannel);

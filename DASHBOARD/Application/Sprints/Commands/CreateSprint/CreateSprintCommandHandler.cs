@@ -1,4 +1,3 @@
-using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Sprints.DTOs;
@@ -7,16 +6,23 @@ using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace DASHBOARD.Application.Sprints.Commands.CreateSprint;
 
-/// <summary>Handles <see cref="CreateSprintCommand"/>: checks ManageSprint permission then creates the sprint (not yet active).</summary>
+/// <summary>
+/// Handles <see cref="CreateSprintCommand"/>: checks ManageSprint permission then creates the sprint (not yet active).
+/// Optionally creates a linked HUB channel (best-effort — sprint is always created regardless).
+/// </summary>
 public sealed class CreateSprintCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<CreateSprintCommand, Result<SprintDto>>
+    IUnitOfWork           uow,
+    IHubChannelService    hub,
+    IAppSettings          settings,
+    ILogger<CreateSprintCommandHandler> logger) : IRequestHandler<CreateSprintCommand, Result<SprintDto>>
 {
-    /// <summary>Validates permission and date overlap, then creates the sprint.</summary>
+    /// <summary>Validates permission and date overlap, creates the sprint, and optionally provisions a HUB channel.</summary>
     /// <param name="command">The create command.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The newly created <see cref="SprintDto"/>, or a failure result.</returns>
@@ -43,8 +49,60 @@ public sealed class CreateSprintCommandHandler(
         db.Set<Sprint>().Add(sprint);
         await uow.CommitAsync(ct);
 
+        // ── Optional: provision HUB channel (best-effort, 5 s timeout) ─────────
+        Guid?   hubChannelId  = null;
+        string? hubChannelUrl = null;
+
+        // Best-effort: a HUB outage or link-persist failure must never fail sprint creation
+        // (the sprint is already committed above). Any error here is logged and swallowed.
+        if (command.CreateHubChannel && !string.IsNullOrWhiteSpace(settings.HubChatBaseUrl))
+        {
+            try
+            {
+                var creatorId = user.UserId;
+                using var cts = CancellationToken.None == ct
+                    ? new CancellationTokenSource(TimeSpan.FromSeconds(5))
+                    : CancellationTokenSource.CreateLinkedTokenSource(
+                        ct, new CancellationTokenSource(TimeSpan.FromSeconds(5)).Token);
+
+                hubChannelId = await hub.FindOrCreateSprintChannelAsync(
+                    command.RepositoryId, sprint.Id, command.Name, creatorId, cts.Token);
+
+                if (hubChannelId.HasValue)
+                {
+                    hubChannelUrl = $"{settings.HubFrontendBaseUrl.TrimEnd('/')}/channels/{hubChannelId}";
+
+                    var link = new SprintChannelLink
+                    {
+                        SprintId      = sprint.Id,
+                        HubChannelId  = hubChannelId.Value,
+                        HubChannelUrl = hubChannelUrl,
+                    };
+                    db.Set<SprintChannelLink>().Add(link);
+                    await uow.CommitAsync(ct);
+
+                    logger.LogInformation(
+                        "Created HUB channel {ChannelId} for sprint {SprintId}.",
+                        hubChannelId, sprint.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Sprint stays created; the channel link just wasn't provisioned this time.
+                hubChannelId  = null;
+                hubChannelUrl = null;
+                logger.LogWarning(ex,
+                    "Failed to provision HUB channel for sprint {SprintId}; sprint created without a channel link.",
+                    sprint.Id);
+            }
+        }
+
         var today    = DateOnly.FromDateTime(DateTime.UtcNow);
         var isActive = sprint.StartDate <= today && sprint.EndDate >= today;
-        return Result<SprintDto>.Success(new SprintDto(sprint.Id, sprint.RepositoryId, sprint.Name, sprint.StartDate, sprint.EndDate, isActive, sprint.CreatedAt));
+
+        return Result<SprintDto>.Success(new SprintDto(
+            sprint.Id, sprint.RepositoryId, sprint.Name,
+            sprint.StartDate, sprint.EndDate, isActive, sprint.CreatedAt,
+            hubChannelId, hubChannelUrl));
     }
 }

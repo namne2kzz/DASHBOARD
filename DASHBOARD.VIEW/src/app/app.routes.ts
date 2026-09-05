@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { repoContextGuard, rootRedirectGuard } from './guards/repo-context.guard';
+import { orgContextGuard, orgHomeRedirectGuard } from './guards/org-context.guard';
 import { membersPrivilegeGuard, globalAdminGuard } from './guards/privilege.guard';
 
 export const routes: Routes = [
@@ -14,10 +15,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/invite-accept-page/invite-accept-page.component').then(m => m.InviteAcceptPageComponent),
   },
+  // ── Tenant-scoped app — all authenticated routes live under /{orgAlias}/… ─────
   {
-    path: '',
+    path: ':orgAlias',
     loadComponent: () =>
       import('./layout/shell-layout.component').then(m => m.ShellLayoutComponent),
+    canActivate: [orgContextGuard],
     canActivateChild: [authGuard],
     children: [
       {
@@ -98,11 +101,6 @@ export const routes: Routes = [
               import('./pages/sprint-planning-page/sprint-planning-page.component').then(m => m.SprintPlanningPageComponent),
           },
           {
-            path: 'wiki',
-            loadComponent: () =>
-              import('./pages/wiki-page/wiki-page.component').then(m => m.WikiPageComponent),
-          },
-          {
             path: 'repos',
             loadComponent: () =>
               import('./pages/repos-page/repos-page.component').then(m => m.ReposPageComponent),
@@ -121,5 +119,12 @@ export const routes: Routes = [
         ],
       },
     ],
+  },
+  // ── Bare root → redirect to the user's org home (or /login) ───────────────────
+  {
+    path: '',
+    pathMatch: 'full',
+    canActivate: [orgHomeRedirectGuard],
+    children: [],
   },
 ];

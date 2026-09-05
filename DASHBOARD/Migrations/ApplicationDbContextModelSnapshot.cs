@@ -369,6 +369,78 @@ namespace DASHBOARD.Migrations
                     b.ToTable("Invitations", (string)null);
                 });
 
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.Organization", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("About")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Alias")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LicenseDueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LicenseExpireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LicenseKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("LicenseRepoCapacity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Alias")
+                        .IsUnique();
+
+                    b.HasIndex("LicenseKey")
+                        .IsUnique();
+
+                    b.ToTable("Organizations", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0009-000000000001"),
+                            About = "Default organization created for pre-existing repositories and users.",
+                            Alias = "default",
+                            ContactEmail = "admin@dashboard.local",
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            LicenseDueDate = new DateTime(2026, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            LicenseExpireDate = new DateTime(2027, 12, 31, 0, 0, 0, 0, DateTimeKind.Utc),
+                            LicenseKey = "TkVYLTAwMDEtUFJPRA==",
+                            LicenseRepoCapacity = 20,
+                            Name = "Default Organization"
+                        });
+                });
+
             modelBuilder.Entity("DASHBOARD.Domain.Entities.Repository", b =>
                 {
                     b.Property<Guid>("Id")
@@ -398,15 +470,18 @@ namespace DASHBOARD.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
-                        .IsUnique();
-
                     b.HasIndex("IsArchived");
+
+                    b.HasIndex("OrgId", "Code")
+                        .IsUnique();
 
                     b.ToTable("Repositories", (string)null);
 
@@ -417,7 +492,8 @@ namespace DASHBOARD.Migrations
                             Code = "DASH",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Main project repository for the DASHBOARD application.",
-                            Name = "Dashboard Project"
+                            Name = "Dashboard Project",
+                            OrgId = new Guid("00000000-0000-0000-0009-000000000001")
                         });
                 });
 
@@ -629,7 +705,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000010"),
-                            AllowedFunctions = "[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]",
+                            AllowedFunctions = "[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18,19,20]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Full access to all repository functions.",
                             IsDefault = true,
@@ -639,7 +715,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000011"),
-                            AllowedFunctions = "[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]",
+                            AllowedFunctions = "[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,16,17,18,19,20]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Manages sprints, capacity, and team settings in addition to all work-item and backlog operations.",
                             IsDefault = true,
@@ -649,7 +725,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000012"),
-                            AllowedFunctions = "[0,6,7,9,15,17,18,19]",
+                            AllowedFunctions = "[0,6,7,9,17,18,19]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Creates and edits sprint tasks, manages the backlog, and can promote items to sprints.",
                             IsDefault = true,
@@ -659,7 +735,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000013"),
-                            AllowedFunctions = "[0,6,7,9,10,15,17]",
+                            AllowedFunctions = "[0,6,7,9,10,17]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Creates and edits sprint tasks and backlog items; focused on quality and test coverage.",
                             IsDefault = true,
@@ -669,7 +745,7 @@ namespace DASHBOARD.Migrations
                         new
                         {
                             Id = new Guid("00000000-0000-0000-0003-000000000014"),
-                            AllowedFunctions = "[0,6,7,8,9,10,11,12,13,15,17]",
+                            AllowedFunctions = "[0,6,7,8,9,10,11,12,13,17]",
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Manages the product backlog and requirements; read-only on sprint execution.",
                             IsDefault = true,
@@ -828,6 +904,39 @@ namespace DASHBOARD.Migrations
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001"),
                             StartDate = new DateOnly(2026, 5, 4)
                         });
+                });
+
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.SprintChannelLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("HubChannelId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("HubChannelUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("SprintId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HubChannelId");
+
+                    b.HasIndex("SprintId")
+                        .IsUnique();
+
+                    b.ToTable("SprintChannelLinks", (string)null);
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.SprintTask", b =>
@@ -1067,6 +1176,9 @@ namespace DASHBOARD.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -1082,9 +1194,6 @@ namespace DASHBOARD.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Email")
-                        .IsUnique();
-
                     b.HasIndex("GoogleSubjectId")
                         .IsUnique()
                         .HasDatabaseName("IX_Users_GoogleSubjectId")
@@ -1093,6 +1202,9 @@ namespace DASHBOARD.Migrations
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("ManagerId");
+
+                    b.HasIndex("OrgId", "Email")
+                        .IsUnique();
 
                     b.ToTable("Users", (string)null);
 
@@ -1107,6 +1219,7 @@ namespace DASHBOARD.Migrations
                             IsDeleted = false,
                             IsGlobalAdmin = true,
                             Name = "Admin User",
+                            OrgId = new Guid("00000000-0000-0000-0009-000000000001"),
                             PasswordHash = "X7gKv4CsinoBoFpwmHYf1N6UWn3XsQZoB0KFQ5fzmkMTANRcm7kbuThFVIEQpx1xb5eT1dGbhTKtWoBpzr0U6A==",
                             PasswordSalt = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
                         },
@@ -1121,6 +1234,7 @@ namespace DASHBOARD.Migrations
                             IsGlobalAdmin = false,
                             ManagerId = new Guid("00000000-0000-0000-0001-000000000001"),
                             Name = "Dev User",
+                            OrgId = new Guid("00000000-0000-0000-0009-000000000001"),
                             PasswordHash = "BF511GUnt57DQ+nwLLCRiKYHFj5nSCXA9RCUwUrV4pDG1WFwJwNMLFM8skh8SafmuxhaXuIgkRNqQjZd7ey6/w==",
                             PasswordSalt = "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="
                         });
@@ -1188,83 +1302,6 @@ namespace DASHBOARD.Migrations
                     b.HasIndex("UserId", "JwtId");
 
                     b.ToTable("UserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("DASHBOARD.Domain.Entities.WikiPage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("DeletedByUserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ParentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("RepositoryId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IsDeleted");
-
-                    b.HasIndex("ParentId");
-
-                    b.HasIndex("RepositoryId");
-
-                    b.HasIndex("RepositoryId", "ParentId");
-
-                    b.ToTable("WikiPages", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("00000000-0000-0000-0006-000000000001"),
-                            Content = "<h1>Architecture</h1><p>Full-stack .NET 10 + Angular v19 application.</p>",
-                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            LastUpdated = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            RepositoryId = new Guid("00000000-0000-0000-0002-000000000001"),
-                            Title = "System Architecture Overview"
-                        },
-                        new
-                        {
-                            Id = new Guid("00000000-0000-0000-0006-000000000002"),
-                            Content = "<h2>Auth</h2><p>JWT Bearer tokens with PBKDF2-SHA512 password hashing.</p>",
-                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsDeleted = false,
-                            LastUpdated = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ParentId = new Guid("00000000-0000-0000-0006-000000000001"),
-                            RepositoryId = new Guid("00000000-0000-0000-0002-000000000001"),
-                            Title = "Authentication Flow"
-                        });
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemMetadata", b =>
@@ -1414,6 +1451,15 @@ namespace DASHBOARD.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.Repository", b =>
+                {
+                    b.HasOne("DASHBOARD.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("DASHBOARD.Domain.Entities.RepositoryMember", b =>
                 {
                     b.HasOne("DASHBOARD.Domain.Entities.Repository", "Repository")
@@ -1461,6 +1507,17 @@ namespace DASHBOARD.Migrations
                     b.Navigation("Repository");
                 });
 
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.SprintChannelLink", b =>
+                {
+                    b.HasOne("DASHBOARD.Domain.Entities.Sprint", "Sprint")
+                        .WithOne()
+                        .HasForeignKey("DASHBOARD.Domain.Entities.SprintChannelLink", "SprintId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Sprint");
+                });
+
             modelBuilder.Entity("DASHBOARD.Domain.Entities.SprintTask", b =>
                 {
                     b.HasOne("DASHBOARD.Domain.Entities.User", "AssignedTo")
@@ -1499,6 +1556,12 @@ namespace DASHBOARD.Migrations
                         .HasForeignKey("ManagerId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("DASHBOARD.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrgId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Manager");
                 });
 
@@ -1511,16 +1574,6 @@ namespace DASHBOARD.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("DASHBOARD.Domain.Entities.WikiPage", b =>
-                {
-                    b.HasOne("DASHBOARD.Domain.Entities.WikiPage", "Parent")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemMetadata", b =>
@@ -1566,11 +1619,6 @@ namespace DASHBOARD.Migrations
             modelBuilder.Entity("DASHBOARD.Domain.Entities.User", b =>
                 {
                     b.Navigation("Subordinates");
-                });
-
-            modelBuilder.Entity("DASHBOARD.Domain.Entities.WikiPage", b =>
-                {
-                    b.Navigation("Children");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,5 +1,5 @@
 /** Entity kind a global-search hit belongs to. */
-export type SearchResultKind = 'task' | 'backlog' | 'wiki';
+export type SearchResultKind = 'task' | 'backlog';
 
 /** A single normalized global-search hit returned by GET /repositories/{id}/search. */
 export interface SearchResultItem {

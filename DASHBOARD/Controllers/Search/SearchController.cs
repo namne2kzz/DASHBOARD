@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DASHBOARD.Controllers.Search;
 
-/// <summary>Global keyword search across a repository's Backlog, Wiki, and Sprint tasks.</summary>
+/// <summary>Global keyword search across a repository's Backlog and Sprint tasks.</summary>
 [ApiController]
 [Route("api/repositories/{repoId:guid}/search")]
 [Authorize]

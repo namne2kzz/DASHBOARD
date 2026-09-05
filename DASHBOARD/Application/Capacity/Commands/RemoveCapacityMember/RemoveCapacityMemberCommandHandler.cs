@@ -9,13 +9,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DASHBOARD.Application.Capacity.Commands.RemoveCapacityMember;
 
-/// <summary>Handles <see cref="RemoveCapacityMemberCommand"/>: checks ManageCapacity permission then removes the row.</summary>
+/// <summary>
+/// Handles <see cref="RemoveCapacityMemberCommand"/>: checks ManageCapacity permission then removes the row,
+/// and fire-and-forget syncs the removal to the sprint's linked HUB channel (if one exists).
+/// </summary>
 public sealed class RemoveCapacityMemberCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<RemoveCapacityMemberCommand, Result>
+    IUnitOfWork           uow,
+    IHubChannelService    hub) : IRequestHandler<RemoveCapacityMemberCommand, Result>
 {
-    /// <summary>Validates permission and removes the capacity row.</summary>
+    /// <summary>Validates permission, removes the capacity row, and removes the member from the HUB channel.</summary>
     /// <param name="command">The remove command.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><see cref="Result.Ok"/> on success.</returns>
@@ -28,8 +32,20 @@ public sealed class RemoveCapacityMemberCommandHandler(
             .FirstOrDefaultAsync(c => c.Id == command.CapacityMemberId && c.SprintId == command.SprintId, ct)
             ?? throw new NotFoundException(nameof(CapacityMember), command.CapacityMemberId);
 
+        var removedUserId = cap.UserId;
+
+        // Look up channel link before removing (DbContext is in scope)
+        var link = await db.Set<SprintChannelLink>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.SprintId == command.SprintId, ct);
+
         db.Set<CapacityMember>().Remove(cap);
         await uow.CommitAsync(ct);
+
+        // ── Fire-and-forget: remove member from HUB channel ────────────────────
+        if (link is not null)
+            _ = hub.RemoveMemberAsync(link.HubChannelId, removedUserId, CancellationToken.None);
+
         return Result.Ok;
     }
 }

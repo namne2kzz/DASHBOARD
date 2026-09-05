@@ -29,8 +29,16 @@ public sealed class AddMemberCommandHandler(
         if (targetUser is null)
             return Result<MemberDto>.Failure("User not found.");
 
-        if (!await db.Set<Repository>().AnyAsync(r => r.Id == command.RepositoryId && !r.IsArchived, ct))
+        var repoOrgId = await db.Set<Repository>().AsNoTracking()
+            .Where(r => r.Id == command.RepositoryId && !r.IsArchived)
+            .Select(r => (Guid?)r.OrgId)
+            .FirstOrDefaultAsync(ct);
+        if (repoOrgId is null)
             return Result<MemberDto>.Failure("Repository not found or is archived.");
+
+        // Multi-tenant guard: a user can only be added to repositories within their own organization.
+        if (targetUser.OrgId != repoOrgId.Value)
+            return Result<MemberDto>.Failure("User does not belong to this organization.");
 
         var alreadyMember = await db.Set<RepositoryMember>()
             .AnyAsync(m => m.UserId == command.UserId && m.RepositoryId == command.RepositoryId, ct);

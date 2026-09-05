@@ -45,10 +45,6 @@ public enum SystemFunction
     /// <summary>Manage sprint capacity entries and team day-offs.</summary>
     ManageCapacity  = 14,
 
-    // ── Wiki ─────────────────────────────────────────────────── 15
-    /// <summary>Create, edit, move, and delete wiki pages.</summary>
-    ManageWiki      = 15,
-
     // ── Board ────────────────────────────────────────────────── 16
     /// <summary>Configure workflow board columns, WIP limits, and aging thresholds.</summary>
     ManageBoard     = 16,
@@ -60,4 +56,8 @@ public enum SystemFunction
     ManagePipeline  = 18,
     /// <summary>Manage repository integration settings (linked repos, webhooks).</summary>
     ManageRepo      = 19,
+
+    // ── Collaboration (HUB) ───────────────────────────────────────────── 20
+    /// <summary>Add and remove members in HUB chat channels for this repository.</summary>
+    ManageChannels  = 20,
 }

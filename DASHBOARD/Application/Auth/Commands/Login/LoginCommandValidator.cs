@@ -8,6 +8,10 @@ internal sealed class LoginCommandValidator : AbstractValidator<LoginCommand>
     /// <summary>Initializes validation rules for the login command.</summary>
     public LoginCommandValidator()
     {
+        RuleFor(x => x.OrgAlias)
+            .NotEmpty().WithMessage("Organization is required.")
+            .MaximumLength(50);
+
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required.")
             .EmailAddress().WithMessage("Email must be a valid email address.")

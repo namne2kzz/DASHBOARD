@@ -54,7 +54,9 @@ public sealed class RefreshTokenCommandHandler(
 
         // ── Issue new token pair ──────────────────────────────────────────────
         var user          = existingToken.User;
-        var newAccess     = tokenService.GenerateToken(user.Id, user.Email, user.Name);
+        var orgAlias      = await db.Set<Organization>().AsNoTracking()
+            .Where(o => o.Id == user.OrgId).Select(o => o.Alias).FirstOrDefaultAsync(ct) ?? string.Empty;
+        var newAccess     = tokenService.GenerateToken(user.Id, user.Email, user.Name, user.OrgId);
         var newRefresh    = tokenService.GenerateRefreshToken();
         var refreshExpiry = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiresInDays);
 
@@ -81,6 +83,8 @@ public sealed class RefreshTokenCommandHandler(
             UserId:                user.Id,
             Name:                  user.Name,
             Email:                 user.Email,
-            IsGlobalAdmin:         user.IsGlobalAdmin);
+            IsGlobalAdmin:         user.IsGlobalAdmin,
+            OrgId:                 user.OrgId,
+            OrgAlias:              orgAlias);
     }
 }

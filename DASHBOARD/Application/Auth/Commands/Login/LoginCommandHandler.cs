@@ -27,15 +27,22 @@ public sealed class LoginCommandHandler(
     /// <returns><see cref="Result{T}.Success"/> with a <see cref="LoginResult"/>, or <see cref="Result{T}.Failure"/> on invalid email or password.</returns>
     public async Task<Result<LoginResult>> Handle(LoginCommand command, CancellationToken ct)
     {
+        var alias = command.OrgAlias.Trim().ToLowerInvariant();
+        var org = await db.Set<Organization>().AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Alias == alias, ct);
+
+        // Same error for unknown org, unknown email, or wrong password — prevents enumeration.
+        if (org is null)
+            return Result<LoginResult>.Failure("Invalid organization, email or password.");
+
         var user = await db.Set<User>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email == command.Email.ToLowerInvariant(), ct);
+            .FirstOrDefaultAsync(u => u.OrgId == org.Id && u.Email == command.Email.ToLowerInvariant(), ct);
 
-        // Same error for both "not found" and "wrong password" — prevents user-enumeration.
         if (user is null || !passwordService.VerifyPassword(command.Password, user.PasswordHash, user.PasswordSalt))
-            return Result<LoginResult>.Failure("Invalid email or password.");
+            return Result<LoginResult>.Failure("Invalid organization, email or password.");
 
-        var accessToken   = tokenService.GenerateToken(user.Id, user.Email, user.Name);
+        var accessToken   = tokenService.GenerateToken(user.Id, user.Email, user.Name, user.OrgId);
         var refreshToken  = tokenService.GenerateRefreshToken();
         var refreshExpiry = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiresInDays);
 
@@ -62,7 +69,9 @@ public sealed class LoginCommandHandler(
             UserId:                user.Id,
             Name:                  user.Name,
             Email:                 user.Email,
-            IsGlobalAdmin:         user.IsGlobalAdmin));
+            IsGlobalAdmin:         user.IsGlobalAdmin,
+            OrgId:                 org.Id,
+            OrgAlias:              org.Alias));
     }
 
     /// <summary>Computes SHA-256 hash of the refresh token for safe database storage.</summary>

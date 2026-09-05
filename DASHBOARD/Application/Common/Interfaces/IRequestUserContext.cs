@@ -12,6 +12,9 @@ public interface IRequestUserContext
     /// <summary>Gets the authenticated user's ID. Throws <see cref="InvalidOperationException"/> when not authenticated.</summary>
     Guid UserId { get; }
 
+    /// <summary>Gets the authenticated user's organization (tenant) ID. Throws <see cref="InvalidOperationException"/> when not authenticated.</summary>
+    Guid OrgId { get; }
+
     /// <summary>Returns <c>true</c> when the user holds the global-admin flag.</summary>
     /// <param name="ct">Cancellation token.</param>
     Task<bool> IsGlobalAdminAsync(CancellationToken ct = default);

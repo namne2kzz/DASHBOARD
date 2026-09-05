@@ -6,6 +6,9 @@ namespace DASHBOARD.Domain.Entities;
 /// <summary>Application user. <see cref="IsGlobalAdmin"/> bypasses all repository-level permission checks.</summary>
 public sealed class User : Common.BaseEntity, ISoftDelete
 {
+    /// <summary>Gets or sets the organization this user belongs to. Email is unique per organization.</summary>
+    public Guid OrgId { get; set; }
+
     /// <summary>Gets or sets the user's display name.</summary>
     public string Name { get; set; } = default!;
 

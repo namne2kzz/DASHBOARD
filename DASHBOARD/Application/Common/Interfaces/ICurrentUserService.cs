@@ -6,6 +6,9 @@ public interface ICurrentUserService
     /// <summary>Gets the authenticated user's ID from the <c>uid</c> JWT claim. Null when not authenticated.</summary>
     Guid? UserId { get; }
 
+    /// <summary>Gets the authenticated user's organization ID from the <c>org</c> JWT claim. Null when not authenticated.</summary>
+    Guid? OrgId { get; }
+
     /// <summary>Gets the authenticated user's email from the <c>email</c> JWT claim. Null when not authenticated.</summary>
     string? Email { get; }
 

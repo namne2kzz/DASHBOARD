@@ -3,11 +3,15 @@ import type { SprintTaskApiType, WorkItemApiPriority } from '../core/enums/syste
 export type LoadState = 'safe' | 'warning' | 'overloaded';
 
 export interface Sprint {
-  id:        string;
-  name:      string;
-  startDate: string;
-  endDate:   string;
-  isActive:  boolean;
+  id:             string;
+  name:           string;
+  startDate:      string;
+  endDate:        string;
+  isActive:       boolean;
+  /** HUB Chat channel linked to this sprint, or null if none. */
+  hubChannelId?:  string | null;
+  /** Full URL to open the linked HUB channel in the browser. */
+  hubChannelUrl?: string | null;
 }
 
 export interface SprintTask {

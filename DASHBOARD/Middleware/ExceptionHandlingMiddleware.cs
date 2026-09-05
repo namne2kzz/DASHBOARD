@@ -22,6 +22,14 @@ public sealed class ExceptionHandlingMiddleware(
         {
             await next(context);
         }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            // The client went away mid-request (navigation, refresh, closed tab). Nothing is
+            // listening and the response may already be half-written — log and drop it instead
+            // of reporting a bogus 500.
+            logger.LogDebug("Request aborted by the client: {Method} {Path}",
+                context.Request.Method, context.Request.Path);
+        }
         catch (Exception ex)
         {
             await HandleAsync(context, ex);

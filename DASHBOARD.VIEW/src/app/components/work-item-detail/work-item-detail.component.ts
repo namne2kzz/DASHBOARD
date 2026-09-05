@@ -23,12 +23,12 @@ import {
 import { MembersService } from '../../services/members.service';
 import { ResourceService } from '../../services/resource.service';
 import { TaskBoardService } from '../../services/task-board.service';
-import { WikiService } from '../../services/wiki.service';
+import { RepositoryContextService } from '../../services/repository-context.service';
+import { AuthService } from '../../services/auth.service';
 import {
   stateToStatus,
   WORK_ITEM_TYPE_STATES,
 } from '../../utils/work-item-mapper.util';
-import { parseWikiPageIdFromLink } from '../../utils/wiki-link.util';
 import { BugFieldsComponent } from './type-fields/bug-fields/bug-fields.component';
 import { ImprovementFieldsComponent } from './type-fields/improvement-fields/improvement-fields.component';
 import { TaskFieldsComponent } from './type-fields/task-fields/task-fields.component';
@@ -55,9 +55,10 @@ export class WorkItemDetailComponent {
   private readonly router    = inject(Router);
   readonly board     = inject(TaskBoardService);
   readonly members   = inject(MembersService);
-  readonly wiki      = inject(WikiService);
   readonly resource  = inject(ResourceService);
   readonly privilege = inject(PrivilegeService);
+  private readonly repoCtx = inject(RepositoryContextService);
+  private readonly auth    = inject(AuthService);
 
   readonly workItemTypeLabels  = WORK_ITEM_TYPE_LABELS;
   readonly workItemTypeColors  = WORK_ITEM_TYPE_COLOR;
@@ -170,7 +171,6 @@ export class WorkItemDetailComponent {
     assignedToId:     [''],
     implementInBuild: [''],
     fixedInVersion:   [''],
-    wikiLinksText:    [''],
     // ── UserStory ────────────────────────────────────────────
     acceptanceCriteria: ['', Validators.maxLength(4000)],
     storyPoints:        this.fb.control<number | null>(null),
@@ -209,7 +209,6 @@ export class WorkItemDetailComponent {
           assignedToId:     task.assignedToId ?? '',
           implementInBuild: task.implementInBuild ?? '',
           fixedInVersion:   task.fixedInVersion  ?? '',
-          wikiLinksText:    task.wikiLinks.join('\n'),
           acceptanceCriteria: task.acceptanceCriteria ?? '',
           storyPoints:        task.storyPoints ?? null,
           stepsToReproduce:   task.stepsToReproduce ?? '',
@@ -233,7 +232,7 @@ export class WorkItemDetailComponent {
           workItemType: type,
           sprint:           'May 2026',
           assignedToId:     this.members.currentUserId() ?? '',
-          implementInBuild: '', fixedInVersion: '', wikiLinksText: '',
+          implementInBuild: '', fixedInVersion: '',
           acceptanceCriteria: '', storyPoints: null,
           stepsToReproduce: '', environment: '', rootCause: '', solution: '', impaction: '',
           unitTest: '', designReview: '',
@@ -281,25 +280,6 @@ export class WorkItemDetailComponent {
     };
   }
 
-  readonly savedWikiLinks = computed(() => this.board.dialogTask()?.wikiLinks ?? []);
-
-  /** @param link Wiki link string. @returns Human-readable label. */
-  wikiLinkLabel(link: string): string {
-    const id = parseWikiPageIdFromLink(link);
-    if (id) {
-      const page = this.wiki.getPage(id);
-      return page ? `${page.title} (${id})` : id;
-    }
-    return link;
-  }
-
-  /** @param link Wiki link to navigate to. */
-  openWikiLink(link: string): void {
-    const pageId = parseWikiPageIdFromLink(link);
-    if (!pageId) return;
-    this.board.closeDialog();
-    void this.router.navigate(['/wiki', pageId]);
-  }
 
   /** Posts the current comment draft to the work item discussion and clears the draft. */
   postComment(): void {
@@ -335,7 +315,6 @@ export class WorkItemDetailComponent {
       assignedToId: v.assignedToId || null,
       implementInBuild: v.implementInBuild || null,
       fixedInVersion:   v.fixedInVersion   || null,
-      wikiLinks: v.wikiLinksText.split('\n').map(l => l.trim()).filter(Boolean),
       acceptanceCriteria: v.acceptanceCriteria || null,
       storyPoints:        v.storyPoints ?? null,
       stepsToReproduce:   v.stepsToReproduce || null,

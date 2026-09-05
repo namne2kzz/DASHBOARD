@@ -23,7 +23,10 @@ public sealed class ListUsersQueryHandler(
         if (!await user.IsGlobalAdminAsync(ct))
             throw new UnauthorizedAccessException("Only global admins may list all users.");
 
-        var q = db.Set<User>().IgnoreQueryFilters().AsNoTracking();
+        // Multi-tenant: an org admin only sees users within their own organization.
+        var orgId = user.OrgId;
+        var q = db.Set<User>().IgnoreQueryFilters().AsNoTracking()
+            .Where(u => u.OrgId == orgId);
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {

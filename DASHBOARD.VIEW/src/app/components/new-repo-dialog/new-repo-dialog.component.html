@@ -1,5 +1,15 @@
 <form (ngSubmit)="submit()" class="flex flex-col gap-3 p-1">
 
+  <!-- Organization (read-only) — repo is created under the caller's org -->
+  @if (orgAlias) {
+    <div class="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-800/40 px-3 py-2 text-xs text-slate-400">
+      <svg class="h-3.5 w-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
+      </svg>
+      Organization: <span class="font-semibold text-slate-200">{{ orgAlias }}</span>
+    </div>
+  }
+
   <!-- Name + Code on same row -->
   <div class="grid grid-cols-[1fr_8rem] gap-3">
     <div class="flex flex-col gap-1">
@@ -128,11 +138,6 @@
       </div>
     }
   </div>
-
-  <!-- Error -->
-  @if (error()) {
-    <p class="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-400">{{ error() }}</p>
-  }
 
   <!-- Actions -->
   <div class="flex justify-end gap-2 pt-0.5">

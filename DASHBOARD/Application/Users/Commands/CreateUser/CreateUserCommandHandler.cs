@@ -26,19 +26,22 @@ public sealed class CreateUserCommandHandler(
         if (!await user.IsGlobalAdminAsync(ct))
             throw new UnauthorizedAccessException("Only global admins may create user accounts.");
 
+        var orgId = user.OrgId;
+
+        // Email is unique per organization (multi-tenant).
         var emailTaken = await db.Set<User>()
             .IgnoreQueryFilters()
-            .AnyAsync(u => u.Email.ToLower() == command.Email.ToLower(), ct);
+            .AnyAsync(u => u.OrgId == orgId && u.Email.ToLower() == command.Email.ToLower(), ct);
 
         if (emailTaken)
             throw new InvalidOperationException($"Email '{command.Email}' is already in use.");
 
-        // Resolve the optional manager (must be a real user) so we can echo the name back.
+        // Resolve the optional manager (must be a real user in the same org) so we can echo the name back.
         string? managerName = null;
         if (command.ManagerId is { } managerId)
         {
             managerName = await db.Set<User>().IgnoreQueryFilters().AsNoTracking()
-                .Where(u => u.Id == managerId)
+                .Where(u => u.Id == managerId && u.OrgId == orgId)
                 .Select(u => u.Name)
                 .FirstOrDefaultAsync(ct);
             if (managerName is null)
@@ -49,6 +52,7 @@ public sealed class CreateUserCommandHandler(
 
         var newUser = new User
         {
+            OrgId         = orgId,
             Name          = command.Name.Trim(),
             Email         = command.Email.Trim().ToLower(),
             PasswordHash  = hash,
