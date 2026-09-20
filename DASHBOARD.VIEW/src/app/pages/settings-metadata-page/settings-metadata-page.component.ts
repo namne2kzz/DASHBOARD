@@ -6,6 +6,7 @@ import { PrivilegeService } from '../../core/services/privilege.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
 import { DateTimeService } from '../../core/services/date-time.service';
 import { MetadataDto, CreateMetadataPayload, UpdateMetadataPayload } from '../../models/metadata.model';
+import { ConfirmService } from '../../core/components/confirm/confirm.service';
 
 type ActivePanel = 'create' | 'edit' | null;
 
@@ -29,6 +30,7 @@ export class SettingsMetadataPageComponent {
   protected readonly privilege       = inject(PrivilegeService);
   protected readonly repoCtx         = inject(RepositoryContextService);
   protected readonly dt              = inject(DateTimeService);
+  private   readonly confirm         = inject(ConfirmService);
 
   /** Entries grouped by metadata key for display. */
   readonly groups = computed<MetadataGroup[]>(() => {
@@ -105,10 +107,16 @@ export class SettingsMetadataPageComponent {
   }
 
   /** Soft-deletes an entry after confirmation. @param entry Entry to delete. */
-  remove(entry: MetadataDto): void {
+  async remove(entry: MetadataDto): Promise<void> {
     if (!this.canManage(entry)) return;
     const repoId = this.repoCtx.selectedRepoId();
-    if (!repoId || !confirm(`Delete "${entry.value}" from ${entry.displayName}?`)) return;
+    if (!repoId) return;
+    const ok = await this.confirm.ask(
+      `Delete "${entry.value}"?`,
+      `This will remove the ${entry.displayName} entry permanently.`,
+      'danger',
+    );
+    if (!ok) return;
     this.metadataService.delete(repoId, entry.id).subscribe();
   }
 }

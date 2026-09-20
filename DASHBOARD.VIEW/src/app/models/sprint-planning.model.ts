@@ -25,10 +25,13 @@ export interface SprintTask {
   assignedToId:     string | null;
   assignedToName:   string | null;
   state:            'new' | 'backlog' | 'todo' | 'active' | 'in-review' | 'done';
-  storyPoints:      number;
-  originalEstimate: number;
-  remainingWork:    number;
-  completedWork:    number;
+  storyPoints:        number;
+  originalEstimate:   number;
+  remainingWork:      number;
+  completedWork:      number;
+  // UserStory-specific
+  acceptanceCriteria: string | null;
+  documents:          string[];
 }
 
 export interface MemberLoad {

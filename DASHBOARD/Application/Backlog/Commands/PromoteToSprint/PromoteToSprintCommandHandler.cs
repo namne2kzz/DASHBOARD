@@ -45,15 +45,17 @@ public sealed class PromoteToSprintCommandHandler(
 
         var sprintTask = new SprintTask
         {
-            SprintId        = command.SprintId,
-            RepositoryId    = command.RepositoryId,
-            BacklogItemId   = command.ItemId,
-            WorkItemNumber  = maxNumber + 1,
-            Type            = SprintTaskType.UserStory,
-            Title           = item.Title,
-            State           = SprintTaskState.New,
-            StoryPoints     = item.StoryPoints ?? 0,
-            StateChangedAt  = DateTime.UtcNow,
+            SprintId            = command.SprintId,
+            RepositoryId        = command.RepositoryId,
+            BacklogItemId       = command.ItemId,
+            WorkItemNumber      = maxNumber + 1,
+            Type                = SprintTaskType.UserStory,
+            Title               = item.Title,
+            State               = SprintTaskState.New,
+            StoryPoints         = item.StoryPoints ?? 0,
+            AcceptanceCriteria  = string.IsNullOrWhiteSpace(item.AcceptanceCriteria) ? null : item.AcceptanceCriteria,
+            Documents           = [.. item.Documents],
+            StateChangedAt      = DateTime.UtcNow,
         };
         db.Set<SprintTask>().Add(sprintTask);
         historyService.Record(sprintTask.Id, command.RepositoryId, user.UserId, "Created this User Story work item.");

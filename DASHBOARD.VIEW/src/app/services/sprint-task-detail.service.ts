@@ -26,11 +26,26 @@ export class SprintTaskDetailService {
   readonly loading     = signal(false);
   readonly error       = signal<string | null>(null);
 
+  /**
+   * Resolves a formatted work-item key (e.g. "DASH-10") to its task UUID.
+   * Works across all sprints, not just the active one.
+   * @param key The formatted work-item key.
+   * @returns Observable that emits the task UUID string.
+   */
+  resolveKey(key: string): Observable<string> {
+    const repoId = this.repoCtx.selectedRepoId();
+    return this.http.get<string>(`${API}/${repoId}/sprint-tasks/by-key/${encodeURIComponent(key)}`);
+  }
+
   /** Loads detail, discussions, and history for a task in parallel. @param taskId The sprint task to load. */
   loadDetail(taskId: string): void {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return;
 
+    // Clear stale data immediately so the template shows "Loading…" without a flash of the previous task.
+    this.detail.set(null);
+    this.discussions.set([]);
+    this.history.set([]);
     this.loading.set(true);
     this.error.set(null);
 

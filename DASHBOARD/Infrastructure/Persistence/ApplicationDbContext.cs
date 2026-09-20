@@ -19,6 +19,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     /// <summary>Issued JWTs tracked for server-side revocation.</summary>
     public DbSet<UserToken> UserTokens => Set<UserToken>();
 
+    /// <summary>Per-user key-value preference store (date format, timezone, theme…).</summary>
+    public DbSet<UserSetting> UserSettings => Set<UserSetting>();
+
     /// <summary>Repository invitations sent to external email addresses.</summary>
     public DbSet<Invitation> Invitations => Set<Invitation>();
 

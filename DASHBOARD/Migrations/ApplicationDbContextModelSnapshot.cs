@@ -945,6 +945,10 @@ namespace DASHBOARD.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AcceptanceCriteria")
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<Guid?>("AssignedToId")
                         .HasColumnType("uniqueidentifier");
 
@@ -980,6 +984,13 @@ namespace DASHBOARD.Migrations
                     b.Property<string>("DesignReview")
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Documents")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10000)
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValueSql("'[]'");
 
                     b.Property<string>("Environment")
                         .HasMaxLength(500)
@@ -1238,6 +1249,42 @@ namespace DASHBOARD.Migrations
                             PasswordHash = "BF511GUnt57DQ+nwLLCRiKYHFj5nSCXA9RCUwUrV4pDG1WFwJwNMLFM8skh8SafmuxhaXuIgkRNqQjZd7ey6/w==",
                             PasswordSalt = "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="
                         });
+                });
+
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.UserSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Value")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("IX_UserSettings_UserId");
+
+                    b.HasIndex("UserId", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("IX_UserSettings_UserId_Key");
+
+                    b.ToTable("UserSettings", (string)null);
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.UserToken", b =>
@@ -1563,6 +1610,17 @@ namespace DASHBOARD.Migrations
                         .IsRequired();
 
                     b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.UserSetting", b =>
+                {
+                    b.HasOne("DASHBOARD.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.UserToken", b =>

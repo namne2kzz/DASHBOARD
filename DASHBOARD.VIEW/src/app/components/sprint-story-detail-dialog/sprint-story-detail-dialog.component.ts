@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, HostListener, inject, InjectionToken, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { DIALOG_REF_TOKEN } from '../../models/dialog.model';
 import { SprintStoryDetailDialogData, SprintTask } from '../../models/sprint-planning.model';
 import { SprintPlanningService } from '../../services/sprint-planning.service';
@@ -9,11 +10,14 @@ import { DialogService } from '../../core/components/dialog/dialog.service';
 import { AddSprintTaskDialogComponent } from '../add-sprint-task-dialog/add-sprint-task-dialog.component';
 import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL } from '../../core/constants/system.constant';
 import { SprintTaskApiState } from '../../core/enums/system.enum';
+import { RepositoryContextService } from '../../services/repository-context.service';
+import { AuthService } from '../../services/auth.service';
+import { FlipDropDirective } from '../../directives/flip-drop.directive';
 
 @Component({
   selector: 'app-sprint-story-detail-dialog',
   standalone: true,
-  imports: [NgClass, FormsModule],
+  imports: [NgClass, FormsModule, FlipDropDirective],
   templateUrl: './sprint-story-detail-dialog.component.html',
   styleUrl: './sprint-story-detail-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -23,6 +27,9 @@ export class SprintStoryDetailDialogComponent {
   readonly planning          = inject(SprintPlanningService);
   readonly members           = inject(MembersService);
   private readonly dialogSvc = inject(DialogService);
+  private readonly router    = inject(Router);
+  private readonly repoCtx   = inject(RepositoryContextService);
+  private readonly auth      = inject(AuthService);
 
   readonly data = inject('DIALOG_DATA' as unknown as InjectionToken<SprintStoryDetailDialogData>);
 
@@ -55,6 +62,42 @@ export class SprintStoryDetailDialogComponent {
     'bug':       'text-rose-400 ring-rose-500/35 bg-rose-500/10',
     'test-plan': 'text-violet-400 ring-violet-500/35 bg-violet-500/10',
   };
+
+  // ── Navigation ───────────────────────────────────────────────────────────────
+  /**
+   * Closes the dialog and navigates to the work-item detail page for the given work item number.
+   * @param workItemNumber Formatted number, e.g. "DASH-22".
+   */
+  navigateTo(workItemNumber: string): void {
+    const orgAlias  = this.auth.currentUser()?.orgAlias;
+    const repoCode  = this.repoCtx.selectedRepo()?.code;
+    if (!orgAlias || !repoCode) return;
+    this.dialogRef.close();
+    this.router.navigate(['/', orgAlias, repoCode, 'boards', workItemNumber]);
+  }
+
+  // ── Acceptance Criteria ──────────────────────────────────────────────────────
+  /** Parses the raw acceptanceCriteria (JSON array string or newline-separated) into individual items for display. */
+  readonly acLines = computed<string[]>(() => {
+    const raw = this.data.story.acceptanceCriteria ?? '';
+    if (!raw.trim()) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return (parsed as string[]).filter(Boolean);
+    } catch { /* not JSON — fall through */ }
+    return raw.split('\n').filter(l => l.trim());
+  });
+
+  /** Returns a short human-readable label for a document URL. @param url Full document URL. @returns Filename or truncated URL. */
+  docLabel(url: string): string {
+    try {
+      const u = new URL(url);
+      const parts = u.pathname.split('/').filter(Boolean);
+      return parts[parts.length - 1] ? decodeURIComponent(parts[parts.length - 1]) : u.hostname;
+    } catch {
+      return url;
+    }
+  }
 
   // ── Story assignee picker ────────────────────────────────────────────────────
   readonly showAssigneePicker = signal(false);

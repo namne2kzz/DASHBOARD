@@ -10,12 +10,13 @@ using DASHBOARD.Controllers.Repositories.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Repositories;
 
 /// <summary>Manages project repositories (create, read, update, archive).</summary>
-[ApiController]
-[Route("api/repositories")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories")]
 [Authorize]
 public sealed class RepositoriesController(ISender mediator) : ControllerBase
 {

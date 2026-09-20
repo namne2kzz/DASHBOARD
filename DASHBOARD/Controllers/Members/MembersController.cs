@@ -9,12 +9,13 @@ using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Members;
 
 /// <summary>Manages membership and role assignments within a repository.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/members")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/members")]
 [Authorize]
 public sealed class MembersController(ISender mediator) : ControllerBase
 {

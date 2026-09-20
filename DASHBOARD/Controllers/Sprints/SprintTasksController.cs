@@ -1,4 +1,4 @@
-using DASHBOARD.Application.SprintTasks.Commands.AssignSprintTask;
+﻿using DASHBOARD.Application.SprintTasks.Commands.AssignSprintTask;
 using DASHBOARD.Application.SprintTasks.Commands.ChangeSprintTaskState;
 using DASHBOARD.Application.SprintTasks.Commands.CreateSprintTask;
 using DASHBOARD.Application.SprintTasks.Commands.DescodeSprintTask;
@@ -11,12 +11,13 @@ using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Sprints;
 
 /// <summary>Manages tasks and sub-tasks scoped to a specific sprint.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/sprints/{sprintId:guid}/tasks")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/sprints/{sprintId:guid}/tasks")]
 [Authorize]
 public sealed class SprintTasksController(ISender mediator) : ControllerBase
 {

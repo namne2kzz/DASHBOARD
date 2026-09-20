@@ -63,6 +63,13 @@ public sealed class SprintTask : Common.BaseEntity, ISoftDelete
     /// <summary>Gets or sets the UTC timestamp of the most recent state transition. Null for items created before this field was added.</summary>
     public DateTime? StateChangedAt { get; set; }
 
+    // ── UserStory fields ─────────────────────────────────────────────────────
+    /// <summary>Acceptance criteria for this User Story. Each line is one criterion.</summary>
+    public string? AcceptanceCriteria { get; set; }
+
+    /// <summary>Refinement document URLs for this User Story. Serialized as JSON.</summary>
+    public List<string> Documents { get; set; } = [];
+
     // ── Bug fields ───────────────────────────────────────────────────────────
     /// <summary>Steps to reproduce the issue (Bug only).</summary>
     public string? StepsToReproduce { get; set; }

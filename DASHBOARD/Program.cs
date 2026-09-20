@@ -1,6 +1,8 @@
 using System.Text;
 using System.Threading.RateLimiting;
+using Asp.Versioning;
 using DASHBOARD.Application;
+using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Core.Constants;
 using DASHBOARD.Infrastructure;
 using DASHBOARD.Middleware;
@@ -16,6 +18,21 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 
 // ── Controllers & OpenAPI ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
+
+builder.Services.AddApiVersioning(opt =>
+{
+    opt.ReportApiVersions                  = true;
+    opt.DefaultApiVersion                  = new ApiVersion(1, 0);
+    opt.AssumeDefaultVersionWhenUnspecified = true;
+    // URL segment only: /api/v1/... — simple, cacheable, no header gymnastics.
+    opt.ApiVersionReader = new UrlSegmentApiVersionReader();
+})
+.AddApiExplorer(opt =>
+{
+    opt.GroupNameFormat           = "'v'VVV";   // → "v1", "v2"
+    opt.SubstituteApiVersionInUrl = true;
+});
+
 builder.Services.AddOpenApi();
 
 // ── JWT Authentication ────────────────────────────────────────────────────────
@@ -74,6 +91,14 @@ builder.Services.AddCors(opt =>
 
 // ─────────────────────────────────────────────────────────────────────────────
 var app = builder.Build();
+
+// ── Object storage — ensure required buckets exist before serving requests ────
+using (var scope = app.Services.CreateScope())
+{
+    var storage  = scope.ServiceProvider.GetRequiredService<IStorageService>();
+    var settings = scope.ServiceProvider.GetRequiredService<IAppSettings>();
+    await storage.EnsureBucketExistsAsync(settings.MinioAvatarBucket, CancellationToken.None);
+}
 
 // ── Middleware pipeline ───────────────────────────────────────────────────────
 app.UseMiddleware<ExceptionHandlingMiddleware>();

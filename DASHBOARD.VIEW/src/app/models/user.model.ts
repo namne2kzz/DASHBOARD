@@ -4,6 +4,8 @@ export interface UserProfile {
   email: string;
   name: string;
   avatarClass: string;
+  /** Public URL of the uploaded avatar image. Null/absent = use avatarClass colour chip instead. */
+  avatarUrl?: string | null;
   isGlobalAdmin: boolean;
   /** Organization (tenant) the user belongs to. */
   orgId: string;

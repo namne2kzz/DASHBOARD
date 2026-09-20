@@ -24,9 +24,8 @@ export class BacklogItemDetailDialogComponent {
   readonly sprintId    = signal(this.data.item.sprintId ?? '');
   readonly storyPoints = signal(this.data.item.storyPoints);
   readonly tshirtSize  = signal(this.data.item.tshirtSize);
-  readonly documents   = signal<string[]>(
-    this.data.item.documents.length ? [...this.data.item.documents] : [''],
-  );
+  readonly documents       = signal<string[]>([...this.data.item.documents]);
+  readonly editingDocIndex = signal<number | null>(null);
   readonly acRows      = signal<string[]>(
     this.data.item.acceptanceCriteria.length ? [...this.data.item.acceptanceCriteria] : [''],
   );
@@ -58,30 +57,46 @@ export class BacklogItemDetailDialogComponent {
     return value as TshirtSize;
   }
 
-  /** Appends a new empty document row. */
+  /** Appends a new empty document row and opens it in edit mode. */
   addDoc(): void {
     this.documents.update(list => [...list, '']);
+    const newIdx = this.documents().length - 1;
+    this.editingDocIndex.set(newIdx);
+    setTimeout(() => document.getElementById(`doc-edit-${newIdx}`)?.focus(), 0);
   }
 
-  /**
-   * Removes a document row. Keeps at least one row.
-   * @param index Zero-based position to remove.
-   */
+  /** Removes a document row and clears editing state if needed. @param index Zero-based position to remove. */
   removeDoc(index: number): void {
-    if (this.documents().length <= 1) {
-      this.documents.set(['']);
-      return;
-    }
     this.documents.update(list => list.filter((_, i) => i !== index));
+    if (this.editingDocIndex() === index) this.editingDocIndex.set(null);
   }
 
-  /**
-   * Updates the text of a document row.
-   * @param index Zero-based row index.
-   * @param value New text value.
-   */
+  /** Updates the text of a document row. @param index Zero-based row index. @param value New text value. */
   updateDoc(index: number, value: string): void {
     this.documents.update(list => list.map((d, i) => i === index ? value : d));
+  }
+
+  /** Opens the document at the given index for inline editing. @param index Row to edit. */
+  editDoc(index: number): void {
+    this.editingDocIndex.set(index);
+    setTimeout(() => document.getElementById(`doc-edit-${index}`)?.focus(), 0);
+  }
+
+  /** Commits the current document edit and returns to view mode. */
+  commitDocEdit(): void { this.editingDocIndex.set(null); }
+
+  /**
+   * Returns a short human-readable label for a document value.
+   * @param value URL or document name.
+   * @returns Filename extracted from URL, or raw value if not a URL.
+   */
+  docLabel(value: string): string {
+    try {
+      const u = new URL(value);
+      const parts = u.pathname.split('/').filter(Boolean);
+      const last  = parts[parts.length - 1];
+      return last ? decodeURIComponent(last) : u.hostname;
+    } catch { return value; }
   }
 
   /** Appends a new empty acceptance-criteria row. */

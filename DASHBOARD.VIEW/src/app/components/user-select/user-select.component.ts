@@ -1,6 +1,7 @@
 import { Component, ElementRef, HostListener, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { FlipDropDirective } from '../../directives/flip-drop.directive';
 
 /** A selectable user option, normalised across the app's various user shapes. */
 export interface UserOption {
@@ -16,7 +17,7 @@ export interface UserOption {
  */
 @Component({
   selector: 'app-user-select',
-  imports: [FormsModule, NgClass],
+  imports: [FormsModule, NgClass, FlipDropDirective],
   templateUrl: './user-select.component.html',
   styleUrl: './user-select.component.css',
 })

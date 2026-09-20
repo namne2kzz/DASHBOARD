@@ -74,6 +74,8 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
       # JWT secret MUST match HUB's JWT_SECRET so tokens issued here validate at the HUB gateway.
@@ -101,6 +103,12 @@ services:
       HubChat__BaseUrl: "http://chat:8080"
       HubChat__InternalToken: "${HUB_CHAT_INTERNAL_TOKEN:-CHANGE_THIS_INTERNAL_TOKEN_MIN_32_CHARS!}"
       HubChat__FrontendBaseUrl: "http://localhost:4202"
+      # MinIO — trong Docker: gọi qua service name, public URL dùng localhost cho browser.
+      MinIO__Endpoint: "http://minio:9000"
+      MinIO__AccessKey: "${MINIO_ACCESS_KEY:-minioadmin}"
+      MinIO__SecretKey: "${MINIO_SECRET_KEY:-minioadmin}"
+      MinIO__AvatarBucket: "dashboard-avatars"
+      MinIO__PublicBaseUrl: "http://localhost:9100"
     ports:
       - "55432:8080"
     networks: [default, hub-net]
@@ -157,6 +165,26 @@ services:
       retries: 5
     restart: unless-stopped
 
+  minio:
+    image: minio/minio:latest
+    container_name: dashboard-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ACCESS_KEY:-minioadmin}"
+      MINIO_ROOT_PASSWORD: "${MINIO_SECRET_KEY:-minioadmin}"
+    ports:
+      - "9100:9000"   # S3 API  → http://localhost:9100
+      - "9101:9001"   # Console → http://localhost:9101
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
   # Optional — uncomment when you start using PostgreSQL (EF Core / Npgsql).
   # postgres:
   #   image: postgres:16-alpine
@@ -183,4 +211,5 @@ volumes:
   rabbitmq-data:
   redis-data:
   dbgate-data:
+  minio-data:
   # postgres-data:

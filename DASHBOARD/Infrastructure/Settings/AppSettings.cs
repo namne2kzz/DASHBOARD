@@ -70,6 +70,22 @@ public sealed class AppSettings : IAppSettings
     /// <inheritdoc/>
     public string DefaultGoogleUserAvatarClass => Require("Defaults:GoogleUserAvatarClass");
 
+    // ── MinIO object storage ─────────────────────────────────────────────────
+    /// <inheritdoc/>
+    public string MinioEndpoint => Require("MinIO:Endpoint");
+
+    /// <inheritdoc/>
+    public string MinioAccessKey => Require("MinIO:AccessKey");
+
+    /// <inheritdoc/>
+    public string MinioSecretKey => Require("MinIO:SecretKey");
+
+    /// <inheritdoc/>
+    public string MinioAvatarBucket => Require("MinIO:AvatarBucket");
+
+    /// <inheritdoc/>
+    public string MinioPublicBaseUrl => Require("MinIO:PublicBaseUrl");
+
     // ── HUB Chat integration ─────────────────────────────────────────────────
     /// <inheritdoc/>
     public string HubChatBaseUrl => _config["HubChat:BaseUrl"] ?? string.Empty;

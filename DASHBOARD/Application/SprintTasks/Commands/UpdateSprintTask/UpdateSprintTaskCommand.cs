@@ -22,6 +22,9 @@ namespace DASHBOARD.Application.SprintTasks.Commands.UpdateSprintTask;
 /// <param name="DesignReview">Design review notes (Task/Bug only).</param>
 /// <param name="TestSteps">Test steps (TestPlan only).</param>
 /// <param name="Automated">Whether automated (TestPlan only).</param>
+/// <param name="AcceptanceCriteria">Acceptance criteria JSON array string (UserStory only).</param>
+/// <param name="Documents">Document URLs (UserStory only).</param>
+/// <param name="RemainingWork">Remaining work in hours (Task/Bug — pass 0 for other types).</param>
 /// <param name="ParentId">New parent User Story id; null to remove. Defaults to null for update paths where re-parenting isn't applicable.</param>
 public sealed record UpdateSprintTaskCommand(
     Guid             RepositoryId,
@@ -41,4 +44,7 @@ public sealed record UpdateSprintTaskCommand(
     string?          DesignReview,
     List<string>?    TestSteps,
     bool?            Automated,
+    string?          AcceptanceCriteria,
+    List<string>?    Documents,
+    decimal          RemainingWork,
     Guid?            ParentId = null) : IRequest<Result>;

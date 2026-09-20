@@ -76,6 +76,7 @@ internal sealed class AcceptInvitationCommandHandler(
         string userEmail;
         bool   isGlobalAdmin;
         Guid   userOrgId;
+        string avatarClass;
         if (existingUser is not null)
         {
             userId        = existingUser.Id;
@@ -83,6 +84,7 @@ internal sealed class AcceptInvitationCommandHandler(
             userEmail     = existingUser.Email;
             isGlobalAdmin = existingUser.IsGlobalAdmin;
             userOrgId     = existingUser.OrgId;
+            avatarClass   = existingUser.AvatarClass;
         }
         else
         {
@@ -106,6 +108,7 @@ internal sealed class AcceptInvitationCommandHandler(
             userEmail     = newUser.Email;
             isGlobalAdmin = newUser.IsGlobalAdmin;
             userOrgId     = newUser.OrgId;
+            avatarClass   = newUser.AvatarClass;
         }
 
         // Add to repository if not already a member.
@@ -167,6 +170,7 @@ internal sealed class AcceptInvitationCommandHandler(
             Email:                 userEmail,
             IsGlobalAdmin:         isGlobalAdmin,
             OrgId:                 userOrgId,
-            OrgAlias:              orgAlias));
+            OrgAlias:              orgAlias,
+            AvatarClass:           avatarClass));
     }
 }

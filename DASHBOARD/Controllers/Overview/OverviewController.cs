@@ -1,14 +1,15 @@
-using DASHBOARD.Application.Overview.DTOs;
+﻿using DASHBOARD.Application.Overview.DTOs;
 using DASHBOARD.Application.Overview.Queries.GetOverviewStats;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Overview;
 
 /// <summary>Provides aggregated overview and analytics statistics for a repository.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/overview")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/overview")]
 [Authorize]
 public sealed class OverviewController(ISender mediator) : ControllerBase
 {

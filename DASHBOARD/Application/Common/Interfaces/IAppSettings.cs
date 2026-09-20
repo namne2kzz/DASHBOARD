@@ -60,6 +60,25 @@ public interface IAppSettings
     /// <summary>Gets the default Tailwind avatar CSS class applied to new Google-authenticated users.</summary>
     string DefaultGoogleUserAvatarClass { get; }
 
+    // ── MinIO object storage ─────────────────────────────────────────────────
+    /// <summary>Gets the MinIO / S3-compatible endpoint URL (e.g. "http://localhost:9100").</summary>
+    string MinioEndpoint { get; }
+
+    /// <summary>Gets the MinIO access key (root user).</summary>
+    string MinioAccessKey { get; }
+
+    /// <summary>Gets the MinIO secret key (root password).</summary>
+    string MinioSecretKey { get; }
+
+    /// <summary>Gets the bucket name used for storing user avatar images.</summary>
+    string MinioAvatarBucket { get; }
+
+    /// <summary>
+    /// Gets the public base URL used to build object URLs returned to the browser
+    /// (e.g. "http://localhost:9100"). May differ from <see cref="MinioEndpoint"/> in Docker.
+    /// </summary>
+    string MinioPublicBaseUrl { get; }
+
     // ── HUB Chat integration ─────────────────────────────────────────────────
     /// <summary>
     /// Gets the base URL of the HUB Chat internal API (e.g. <c>http://localhost:5001</c>).

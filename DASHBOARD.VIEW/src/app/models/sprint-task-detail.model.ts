@@ -40,4 +40,10 @@ export interface UpdateSprintTaskPayload {
   automated:        boolean | null;
   /** New parent User Story id; null to remove. */
   parentId:         string | null;
+  /** Acceptance criteria serialised as a JSON array string (UserStory only); null for other types. */
+  acceptanceCriteria: string | null;
+  /** Document URLs (UserStory only); null for other types. */
+  documents:          string[] | null;
+  /** Remaining work hours (Task/Bug — updated by the user; for other types pass 0). */
+  remainingWork:      number;
 }

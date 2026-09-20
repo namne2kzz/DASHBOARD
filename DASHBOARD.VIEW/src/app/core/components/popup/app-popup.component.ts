@@ -1,12 +1,14 @@
 import {
-  Component, ElementRef, HostListener, input, signal, TemplateRef, contentChild, viewChild,
+  AfterViewInit, Component, ElementRef, HostListener, input, signal, TemplateRef,
+  contentChild, viewChild,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { FlipDropDirective } from '../../../directives/flip-drop.directive';
 
 @Component({
   selector: 'app-popup',
   standalone: true,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, FlipDropDirective],
   templateUrl: './app-popup.component.html',
   styleUrl: './app-popup.component.scss',
   host: { class: 'relative inline-block' },

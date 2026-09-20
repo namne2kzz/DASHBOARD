@@ -1,10 +1,10 @@
 import { CommonModule, NgClass } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MyWorkService } from '../../services/my-work.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
-import { DialogService } from '../../core/components/dialog/dialog.service';
-import { SprintTaskDetailDialogComponent } from '../../components/sprint-task-detail-dialog/sprint-task-detail-dialog.component';
+import { AuthService } from '../../services/auth.service';
 import { MyWorkGrouping, MyWorkGroup, MyWorkItemApiDto } from '../../models/my-work.model';
 import { SprintTaskApiState, SprintTaskApiType, WorkItemApiPriority } from '../../core/enums/system.enum';
 import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL } from '../../core/constants/system.constant';
@@ -22,7 +22,8 @@ import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL } from '../../core/con
 export class MyWorkPageComponent implements OnInit {
   readonly myWork      = inject(MyWorkService);
   private readonly repoCtx = inject(RepositoryContextService);
-  private readonly dialog  = inject(DialogService);
+  private readonly auth    = inject(AuthService);
+  private readonly router  = inject(Router);
 
   readonly stateBadge = SPRINT_TASK_STATE_BADGE;
   readonly stateLabel = SPRINT_TASK_STATE_LABEL;
@@ -77,17 +78,16 @@ export class MyWorkPageComponent implements OnInit {
   }
 
   /**
-   * Opens the work item's detail dialog. Switches repository context to the item's repository
-   * first so the detail loads from the correct project (items are cross-repository here).
+   * Switches the active repository to the item's repository, then navigates to the
+   * work-item detail page. Cross-repository items are supported because the repo context
+   * is updated before navigation so the page loads the correct data.
    * @param item The work item to open.
    */
   openItem(item: MyWorkItemApiDto): void {
+    const orgAlias = this.auth.currentUser()?.orgAlias;
+    if (!orgAlias) return;
     this.repoCtx.select(item.repositoryId);
-    this.dialog.open(SprintTaskDetailDialogComponent, {
-      title: item.workItemNumber,
-      width: '44rem',
-      data:  { taskId: item.id },
-    });
+    this.router.navigate(['/', orgAlias, item.repositoryCode, 'boards', item.workItemNumber]);
   }
 
   // ── Display helpers ───────────────────────────────────────────

@@ -165,6 +165,9 @@ export class SprintBoardService {
   private readonly _allItems        = signal<BoardItem[]>([]);
   private readonly _capacityMembers = signal<CapacityMemberApiDto[]>([]);
 
+  /** All board items for the active sprint — unfiltered. @see {@link filteredItems} for the query-filtered view. */
+  readonly allItems = this._allItems.asReadonly();
+
   readonly loading = signal(false);
   readonly error   = signal<string | null>(null);
 

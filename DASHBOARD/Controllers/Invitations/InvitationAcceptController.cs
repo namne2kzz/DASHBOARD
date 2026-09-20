@@ -1,16 +1,17 @@
-using DASHBOARD.Application.Auth.Commands.Login;
+﻿using DASHBOARD.Application.Auth.Commands.Login;
 using DASHBOARD.Application.Invitations.Commands.AcceptInvitation;
 using DASHBOARD.Controllers.Invitations.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Invitations;
 
 /// <summary>Accepts a repository invitation for an unauthenticated, externally-invited user.</summary>
-[ApiController]
-[Route("api/invitations")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/invitations")]
 [AllowAnonymous]
 public sealed class InvitationAcceptController(ISender mediator) : ControllerBase
 {

@@ -76,6 +76,7 @@ internal sealed class GoogleLoginCommandHandler(
             Email:                 user.Email,
             IsGlobalAdmin:         user.IsGlobalAdmin,
             OrgId:                 user.OrgId,
-            OrgAlias:              orgAlias));
+            OrgAlias:              orgAlias,
+            AvatarClass:           user.AvatarClass));
     }
 }

@@ -9,12 +9,13 @@ using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Sprints;
 
 /// <summary>Manages team capacity configuration and day-off entries for a sprint.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/sprints/{sprintId:guid}/capacity")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/sprints/{sprintId:guid}/capacity")]
 [Authorize]
 public sealed class CapacityController(ISender mediator) : ControllerBase
 {

@@ -35,11 +35,8 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/my-work-page/my-work-page.component').then(m => m.MyWorkPageComponent),
       },
-      {
-        path: 'profile',
-        loadComponent: () =>
-          import('./pages/profile-page/profile-page.component').then(m => m.ProfilePageComponent),
-      },
+      // Redirect old /profile → settings/general (content merged)
+      { path: 'profile', redirectTo: 'settings/general', pathMatch: 'full' },
       {
         path: 'settings',
         children: [
@@ -75,10 +72,22 @@ export const routes: Routes = [
         canActivate: [repoContextGuard],
         children: [
           { path: '', pathMatch: 'full', redirectTo: 'boards' },
+          // boards + work-item detail share the same router-outlet slot via componentless parent
           {
             path: 'boards',
-            loadComponent: () =>
-              import('./pages/boards-page/boards-page.component').then(m => m.BoardsPageComponent),
+            children: [
+              {
+                path: '',
+                pathMatch: 'full',
+                loadComponent: () =>
+                  import('./pages/boards-page/boards-page.component').then(m => m.BoardsPageComponent),
+              },
+              {
+                path: ':itemKey',
+                loadComponent: () =>
+                  import('./pages/work-item-detail-page/work-item-detail-page.component').then(m => m.WorkItemDetailPageComponent),
+              },
+            ],
           },
           {
             path: 'overview',

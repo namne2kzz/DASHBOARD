@@ -400,23 +400,6 @@
         }
       </div>
 
-      <a
-        [routerLink]="globalLink('profile')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
-        [class.justify-center]="collapsed()"
-        [class.px-2]="collapsed()"
-        title="Your Profile"
-      >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="12" cy="8" r="4"/>
-            <path stroke-linecap="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-          </svg>
-        </span>
-        @if (!collapsed()) { <span>Your Profile</span> }
-      </a>
-
       <button
         type="button"
         class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"

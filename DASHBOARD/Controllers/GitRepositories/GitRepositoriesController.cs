@@ -1,9 +1,10 @@
-using DASHBOARD.Application.GitRepositories.DTOs;
+﻿using DASHBOARD.Application.GitRepositories.DTOs;
 using DASHBOARD.Application.GitRepositories.Queries.GetGitRepositoryOverview;
 using DASHBOARD.Application.GitRepositories.Queries.ListGitRepositoryConnections;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.GitRepositories;
 
@@ -12,8 +13,8 @@ namespace DASHBOARD.Controllers.GitRepositories;
 /// (branches/commits/PRs/rate-limit). Connections themselves are configured server-side
 /// (see <c>GitConnectionsOptions</c>) — there is no endpoint to create/edit/delete them.
 /// </summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/git-repositories")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/git-repositories")]
 [Authorize]
 public sealed class GitRepositoriesController(ISender mediator) : ControllerBase
 {

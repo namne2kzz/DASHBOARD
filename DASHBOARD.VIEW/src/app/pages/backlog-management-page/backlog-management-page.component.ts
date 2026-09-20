@@ -7,11 +7,12 @@ import { DialogService } from '../../core/components/dialog/dialog.service';
 import { AddBacklogItemDialogComponent } from '../../components/add-backlog-item-dialog/add-backlog-item-dialog.component';
 import { BacklogItemDetailDialogComponent } from '../../components/backlog-item-detail-dialog/backlog-item-detail-dialog.component';
 import { InfiniteScrollDirective } from '../../directives/infinite-scroll.directive';
+import { FlipDropDirective } from '../../directives/flip-drop.directive';
 import type { BacklogItem, BacklogState } from '../../models/backlog.model';
 
 @Component({
   selector: 'app-backlog-management-page',
-  imports: [CommonModule, FormsModule, DragDropModule, InfiniteScrollDirective],
+  imports: [CommonModule, FormsModule, DragDropModule, InfiniteScrollDirective, FlipDropDirective],
   templateUrl: './backlog-management-page.component.html',
   styleUrl: './backlog-management-page.component.css',
 })

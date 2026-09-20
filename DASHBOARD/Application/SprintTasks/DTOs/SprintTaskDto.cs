@@ -25,6 +25,9 @@ public sealed record SprintTaskDto(
     decimal           RemainingWork,
     decimal           CompletedWork,
     DateTime?         ClosedAt,
+    // UserStory fields
+    string?           AcceptanceCriteria,
+    List<string>      Documents,
     // Bug fields
     string?           StepsToReproduce,
     string?           Environment,

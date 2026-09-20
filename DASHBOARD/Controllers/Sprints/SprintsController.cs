@@ -10,12 +10,13 @@ using DASHBOARD.Controllers.Sprints.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Sprints;
 
 /// <summary>Manages sprints, activation lifecycle, and capacity/velocity summaries.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/sprints")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/sprints")]
 [Authorize]
 public sealed class SprintsController(ISender mediator) : ControllerBase
 {

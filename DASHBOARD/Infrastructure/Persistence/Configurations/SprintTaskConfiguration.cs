@@ -20,6 +20,15 @@ internal sealed class SprintTaskConfiguration : IEntityTypeConfiguration<SprintT
         builder.Property(t => t.RemainingWork).HasPrecision(8, 2);
         builder.Property(t => t.CompletedWork).HasPrecision(8, 2);
 
+        // UserStory fields
+        builder.Property(t => t.AcceptanceCriteria).HasMaxLength(10_000);
+        builder.Property(t => t.Documents)
+            .HasConversion(
+                v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new())
+            .HasMaxLength(10_000)
+            .HasDefaultValueSql("'[]'");
+
         // Bug fields — optional, max lengths guard against runaway text
         builder.Property(t => t.StepsToReproduce).HasMaxLength(5_000);
         builder.Property(t => t.Environment).HasMaxLength(500);

@@ -103,6 +103,13 @@ public sealed class UpdateSprintTaskCommandHandler(
             changeMessages.Add($"Design review notes changed from '{task.DesignReview}' to '{command.DesignReview}'.");
         if (!(task.TestSteps ?? []).SequenceEqual(command.TestSteps ?? []))
             changeMessages.Add($"Test steps changed from '{string.Join("; ", task.TestSteps ?? [])}' to '{string.Join("; ", command.TestSteps ?? [])}'.");
+        if (task.AcceptanceCriteria != command.AcceptanceCriteria)
+            changeMessages.Add("Acceptance criteria updated.");
+        if (!(task.Documents).SequenceEqual(command.Documents ?? []))
+            changeMessages.Add("Documents updated.");
+        var newRemaining = Math.Max(0, command.RemainingWork);
+        if (task.RemainingWork != newRemaining)
+            changeMessages.Add($"Remaining work changed from {task.RemainingWork}h to {newRemaining}h.");
 
         task.Title            = command.Title;
         task.Description      = command.Description;
@@ -118,8 +125,11 @@ public sealed class UpdateSprintTaskCommandHandler(
         task.Impaction        = command.Impaction;
         task.UnitTest         = command.UnitTest;
         task.DesignReview     = command.DesignReview;
-        task.TestSteps        = command.TestSteps;
-        task.Automated        = command.Automated;
+        task.TestSteps          = command.TestSteps;
+        task.Automated          = command.Automated;
+        task.AcceptanceCriteria = command.AcceptanceCriteria;
+        task.Documents          = command.Documents ?? [];
+        task.RemainingWork      = newRemaining;
         task.Touch();
 
         foreach (var message in changeMessages)
