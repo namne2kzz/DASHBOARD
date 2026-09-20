@@ -109,6 +109,7 @@ services:
       MinIO__SecretKey: "${MINIO_SECRET_KEY:-minioadmin}"
       MinIO__AvatarBucket: "dashboard-avatars"
       MinIO__PublicBaseUrl: "http://localhost:9100"
+      Google__ClientId: "${GOOGLE_CLIENT_ID}"
     ports:
       - "55432:8080"
     networks: [default, hub-net]
