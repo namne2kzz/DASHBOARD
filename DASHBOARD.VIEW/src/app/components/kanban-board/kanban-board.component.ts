@@ -2,6 +2,7 @@ import { CdkDragDrop, DragDropModule, type CdkDrag, type CdkDropList } from '@an
 import { NgClass } from '@angular/common';
 import { computed, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import type { BoardItem } from '../../models/boards.model';
 import type { BoardColumn, WipMode } from '../../models/workflow.model';
 import { SprintBoardService, STATE_KEY_TO_API, type QueryRow } from '../../services/sprint-board.service';
@@ -10,7 +11,6 @@ import { PrivilegeService } from '../../core/services/privilege.service';
 import { DialogService } from '../../core/components/dialog/dialog.service';
 import { KanbanColumnComponent } from '../kanban-column/kanban-column.component';
 import { CreateWorkItemDialogComponent } from '../create-workitem-dialog/create-workitem-dialog.component';
-import { SprintTaskDetailDialogComponent } from '../sprint-task-detail-dialog/sprint-task-detail-dialog.component';
 import { SprintTaskApiType } from '../../core/enums/system.enum';
 
 @Component({
@@ -24,6 +24,8 @@ export class KanbanBoardComponent {
   readonly workflow = inject(WorkflowService);
   readonly privilege  = inject(PrivilegeService);
   private readonly dialog = inject(DialogService);
+  private readonly router = inject(Router);
+  private readonly route  = inject(ActivatedRoute);
 
   /** Exposed so the template @switch can compare against enum members. */
   readonly sprintTaskApiType = SprintTaskApiType;
@@ -174,12 +176,12 @@ export class KanbanBoardComponent {
     });
   }
 
-  /** Opens the task detail dialog for a clicked card. @param item The board item to show detail for. */
+  /**
+   * Navigates to the work-item detail page for the clicked card.
+   * URL pattern: `/{orgAlias}/{repoCode}/boards/{workItemNumber}`.
+   * @param item The board item to show detail for.
+   */
   openDetail(item: BoardItem): void {
-    this.dialog.open(SprintTaskDetailDialogComponent, {
-      title: item.workItemNumber,
-      width: '44rem',
-      data:  { taskId: item.id },
-    });
+    this.router.navigate([item.workItemNumber], { relativeTo: this.route });
   }
 }

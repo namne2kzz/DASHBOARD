@@ -10,6 +10,7 @@ import { RoleService } from '../../services/role.service';
 import { MetadataService } from '../../services/metadata.service';
 import { InvitationsService } from '../../services/invitations.service';
 import { ConfirmService } from '../../core/components/confirm/confirm.service';
+import { PromptService } from '../../core/components/prompt/prompt.service';
 import { ToastService } from '../../core/components/toast/toast.service';
 import { PrivilegeService } from '../../core/services/privilege.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
@@ -19,7 +20,7 @@ import { UserPickerItem } from '../../models/user.model';
 import { RoleDto, CreateRolePayload, UpdateRolePayload } from '../../models/role.model';
 import { InvitationListItemDto, InvitationStatus } from '../../models/invitation.model';
 import { Permission } from '../../core/enums/system.enum';
-import { PERMISSION_LABELS } from '../../core/constants/system.constant';
+import { PERMISSION_LABELS, PERMISSION_GROUPS } from '../../core/constants/system.constant';
 import { UserSelectComponent, UserOption } from '../../components/user-select/user-select.component';
 
 type ActivePanel = 'add-member' | 'invite-email' | 'create-role' | 'edit-role' | null;
@@ -37,15 +38,17 @@ export class SettingsMembersPageComponent {
   protected readonly metadataService    = inject(MetadataService);
   protected readonly invitationsService = inject(InvitationsService);
   private  readonly confirm             = inject(ConfirmService);
+  private  readonly prompt              = inject(PromptService);
   private  readonly toast               = inject(ToastService);
   protected readonly privilege          = inject(PrivilegeService);
   protected readonly repoCtx            = inject(RepositoryContextService);
   protected readonly dt                 = inject(DateTimeService);
 
-  protected readonly PERMISSION_LABELS = PERMISSION_LABELS;
-  protected readonly InvitationStatus  = InvitationStatus;
+  protected readonly PERMISSION_LABELS  = PERMISSION_LABELS;
+  protected readonly PERMISSION_GROUPS  = PERMISSION_GROUPS;
+  protected readonly InvitationStatus   = InvitationStatus;
   // Numeric enum: Object.values yields both names and numbers — keep only the numeric values.
-  protected readonly ALL_PERMISSIONS   = Object.values(Permission).filter((v): v is Permission => typeof v === 'number');
+  protected readonly ALL_PERMISSIONS    = Object.values(Permission).filter((v): v is Permission => typeof v === 'number');
 
   /** Team-role (discipline) options loaded from RepoRole metadata of the active repo. */
   readonly disciplines = computed(() =>
@@ -294,13 +297,19 @@ export class SettingsMembersPageComponent {
     return err.error?.error ?? err.error?.title ?? 'Có lỗi xảy ra. Vui lòng thử lại.';
   }
 
-  /** Clones a role (default or custom) into a new custom role, prompting for the new name. @param role Source role to clone. */
-  cloneRole(role: RoleDto): void {
+  /** Clones a role (default or custom) into a new custom role, prompting for the new name via the dashboard dialog. @param role Source role to clone. */
+  async cloneRole(role: RoleDto): Promise<void> {
     if (!this.privilege.canManageRoles()) return;
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return;
 
-    const newName = prompt('Name for the cloned role:', `${role.name} (Copy)`)?.trim();
+    const newName = await this.prompt.ask({
+      title:        'Clone role',
+      label:        'Name for the cloned role',
+      defaultValue: `${role.name} (Copy)`,
+      placeholder:  'Enter a name…',
+      confirmText:  'Clone',
+    });
     if (!newName) return;
 
     this.roleService.clone(repoId, role.id, newName).subscribe({

@@ -1,9 +1,10 @@
 import { CommonModule, NgClass } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuditLogService } from '../../services/audit-log.service';
 import { MembersService } from '../../services/members.service';
 import { InfiniteScrollDirective } from '../../directives/infinite-scroll.directive';
+import { FlipDropDirective } from '../../directives/flip-drop.directive';
 import { AuditLogCategory, AuditLogFilters } from '../../models/audit-log.model';
 
 /**
@@ -12,7 +13,7 @@ import { AuditLogCategory, AuditLogFilters } from '../../models/audit-log.model'
  */
 @Component({
   selector: 'app-audit-log-page',
-  imports: [CommonModule, NgClass, FormsModule, InfiniteScrollDirective],
+  imports: [CommonModule, NgClass, FormsModule, InfiniteScrollDirective, FlipDropDirective],
   templateUrl: './audit-log-page.component.html',
   styleUrl: './audit-log-page.component.css',
 })
@@ -21,10 +22,14 @@ export class AuditLogPageComponent implements OnInit {
   readonly members = inject(MembersService);
 
   // ── Filters ───────────────────────────────────────────────────
-  readonly authorId = signal('');
-  readonly from     = signal('');
-  readonly to       = signal('');
-  readonly category = signal<AuditLogCategory | ''>('');
+  readonly authorId          = signal('');
+  readonly from              = signal('');
+  readonly to                = signal('');
+  readonly category          = signal<AuditLogCategory | ''>('');
+  readonly showAuthorPicker  = signal(false);
+
+  @HostListener('document:click')
+  onDocumentClick(): void { this.showAuthorPicker.set(false); }
 
   readonly categoryOptions: ReadonlyArray<{ value: AuditLogCategory | ''; label: string }> = [
     { value: '',           label: 'All actions' },

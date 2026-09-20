@@ -1,4 +1,4 @@
-using DASHBOARD.Application.Common.Models;
+﻿using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.SmartBoard.Commands.CreateColumn;
 using DASHBOARD.Application.SmartBoard.Commands.ReorderColumns;
 using DASHBOARD.Application.SmartBoard.Commands.UpdateColumn;
@@ -8,12 +8,13 @@ using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.SmartBoard;
 
 /// <summary>Manages the WIP-limited kanban board columns.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/board")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/board")]
 [Authorize]
 public sealed class SmartBoardController(ISender mediator) : ControllerBase
 {

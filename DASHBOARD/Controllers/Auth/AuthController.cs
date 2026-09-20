@@ -1,4 +1,4 @@
-using DASHBOARD.Application.Auth.Commands.GoogleLogin;
+﻿using DASHBOARD.Application.Auth.Commands.GoogleLogin;
 using DASHBOARD.Application.Auth.Commands.Login;
 using DASHBOARD.Application.Auth.Commands.Logout;
 using DASHBOARD.Application.Auth.Commands.RefreshToken;
@@ -9,12 +9,13 @@ using DASHBOARD.Controllers.Auth.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Auth;
 
 /// <summary>Handles authentication: login, token refresh, logout, and current-user profile.</summary>
-[ApiController]
-[Route("api/auth")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/auth")]
 public sealed class AuthController(ISender mediator, ICurrentUserService currentUser) : ControllerBase
 {
     /// <summary>Authenticates a user and returns an access + refresh token pair.</summary>

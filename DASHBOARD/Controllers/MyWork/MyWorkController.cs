@@ -1,14 +1,15 @@
-using DASHBOARD.Application.MyWork.DTOs;
+﻿using DASHBOARD.Application.MyWork.DTOs;
 using DASHBOARD.Application.MyWork.Queries.GetMyWork;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.MyWork;
 
 /// <summary>Exposes the current user's personal cross-repository work queue.</summary>
-[ApiController]
-[Route("api/my-work")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/my-work")]
 [Authorize]
 public sealed class MyWorkController(ISender mediator) : ControllerBase
 {

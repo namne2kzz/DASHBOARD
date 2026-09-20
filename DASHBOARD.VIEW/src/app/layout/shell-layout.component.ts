@@ -6,6 +6,7 @@ import { AuthService } from '../services/auth.service';
 import { RepositoryContextService } from '../services/repository-context.service';
 import { PrivilegeService } from '../core/services/privilege.service';
 import { DialogService } from '../core/components/dialog/dialog.service';
+import { ConfirmService } from '../core/components/confirm/confirm.service';
 import { LoadingOverlayComponent } from '../core/components/loading/loading-overlay.component';
 import { DialogComponent } from '../core/components/dialog/dialog.component';
 import { NewRepoDialogComponent } from '../components/new-repo-dialog/new-repo-dialog.component';
@@ -27,8 +28,9 @@ export class ShellLayoutComponent {
   readonly repoCtx   = inject(RepositoryContextService);
   readonly privilege = inject(PrivilegeService);
   readonly search    = inject(SearchService);
-  private readonly dialog = inject(DialogService);
-  private readonly router = inject(Router);
+  private readonly dialog  = inject(DialogService);
+  private readonly confirm = inject(ConfirmService);
+  private readonly router  = inject(Router);
 
   private readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -46,7 +48,7 @@ export class ShellLayoutComponent {
     // URL shape: /{orgAlias}/{section}/… — inspect the segment after the alias.
     const parts   = (this.currentUrl() ?? '').split('/').filter(Boolean);
     const section = parts[1] ?? '';
-    return section === 'profile' || section === 'settings' || section === 'my-work';
+    return section === 'settings' || section === 'my-work';
   });
 
   constructor() {
@@ -107,7 +109,10 @@ export class ShellLayoutComponent {
     });
   }
 
-  logout(): void {
+  /** Asks for confirmation before ending the session. */
+  async logout(): Promise<void> {
+    const ok = await this.confirm.ask('Log out?', 'Your current session will be ended.', 'info');
+    if (!ok) return;
     this.auth.logout();
     void this.router.navigate(['/login']);
   }

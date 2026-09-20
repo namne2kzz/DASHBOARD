@@ -1,4 +1,4 @@
-using DASHBOARD.Application.Common.Models;
+﻿using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Invitations.Commands.CreateInvitation;
 using DASHBOARD.Application.Invitations.Commands.RevokeInvitation;
 using DASHBOARD.Application.Invitations.DTOs;
@@ -7,12 +7,13 @@ using DASHBOARD.Controllers.Invitations.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Invitations;
 
 /// <summary>Issues and manages repository invitations to external emails.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/invitations")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/invitations")]
 [Authorize]
 public sealed class InvitationsController(ISender mediator) : ControllerBase
 {

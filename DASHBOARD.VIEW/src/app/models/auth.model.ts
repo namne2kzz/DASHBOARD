@@ -27,6 +27,8 @@ export interface LoginResponse {
   isGlobalAdmin: boolean;
   orgId: string;
   orgAlias: string;
+  /** Tailwind CSS background class for the user's avatar chip. */
+  avatarClass: string;
 }
 
 export interface RefreshTokenRequest {

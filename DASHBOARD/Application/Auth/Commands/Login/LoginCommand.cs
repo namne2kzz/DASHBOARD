@@ -21,6 +21,7 @@ public record LoginCommand(string OrgAlias, string Email, string Password) : IRe
 /// <param name="IsGlobalAdmin">Whether the authenticated user has system-wide admin privileges.</param>
 /// <param name="OrgId">The organization (tenant) the user belongs to.</param>
 /// <param name="OrgAlias">The organization's URL alias.</param>
+/// <param name="AvatarClass">Tailwind CSS background class for the user's avatar chip.</param>
 public record LoginResult(
     string AccessToken,
     string JwtId,
@@ -32,4 +33,5 @@ public record LoginResult(
     string Email,
     bool IsGlobalAdmin,
     Guid OrgId,
-    string OrgAlias);
+    string OrgAlias,
+    string AvatarClass);

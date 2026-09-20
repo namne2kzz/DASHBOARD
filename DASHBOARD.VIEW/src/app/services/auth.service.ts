@@ -6,12 +6,14 @@ import { LoginRequest, LoginResponse, RefreshTokenRequest } from '../models/auth
 import { UserProfile } from '../models/user.model';
 import { StorageService } from '../core/services/storage.service';
 import { StorageKeys } from '../core/constants/storage-keys.constant';
+import { PreferencesService } from '../core/services/preferences.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly http    = inject(HttpClient);
-  private readonly storage = inject(StorageService);
-  private readonly apiUrl  = `${environment.apiBaseUrl}/auth`;
+  private readonly http        = inject(HttpClient);
+  private readonly storage     = inject(StorageService);
+  private readonly preferences = inject(PreferencesService);
+  private readonly apiUrl      = `${environment.apiBaseUrl}/auth`;
 
   readonly isAuthenticated = signal<boolean>(this.storage.has(StorageKeys.accessToken));
   readonly currentUser     = signal<UserProfile | null>(this.storage.get<UserProfile>(StorageKeys.userProfile));
@@ -52,6 +54,21 @@ export class AuthService {
     this.isAuthenticated.set(false);
   }
 
+  /**
+   * Patches the cached user profile in memory and localStorage after a profile update.
+   * Call after a successful PUT /users/{id}/profile so the new name and avatarClass
+   * survive a page reload without requiring the user to log in again.
+   * @param patch Partial profile fields to merge.
+   */
+  patchProfile(patch: Partial<UserProfile>): void {
+    this.currentUser.update(u => {
+      if (!u) return u;
+      const updated = { ...u, ...patch };
+      this.storage.set(StorageKeys.userProfile, updated);
+      return updated;
+    });
+  }
+
   /** @returns The stored JWT access token, or null. */
   getToken(): string | null {
     return this.storage.getString(StorageKeys.accessToken);
@@ -73,7 +90,7 @@ export class AuthService {
       userId: res.userId,
       email: res.email,
       name: res.name,
-      avatarClass: '',
+      avatarClass: res.avatarClass ?? 'bg-sky-600',
       isGlobalAdmin: res.isGlobalAdmin,
       orgId: res.orgId,
       orgAlias: res.orgAlias,
@@ -83,5 +100,11 @@ export class AuthService {
     this.storage.set(StorageKeys.userProfile, profile);
     this.currentUser.set(profile);
     this.isAuthenticated.set(true);
+    // Pull persisted display preferences (and avatar URL) from the server in the background.
+    // syncFromServer() returns the stored avatar URL so we can patch the profile without
+    // circular DI (PreferencesService cannot inject AuthService).
+    this.preferences.syncFromServer().subscribe(avatarUrl => {
+      if (avatarUrl) this.patchProfile({ avatarUrl });
+    });
   }
 }

@@ -87,6 +87,9 @@ public static class DependencyInjection
         // ── Email ─────────────────────────────────────────────────────────────
         services.AddScoped<IEmailService, EmailService>();
 
+        // ── Object storage (MinIO / S3-compatible) ────────────────────────────
+        services.AddScoped<IStorageService, MinioStorageService>();
+
         // ── HUB Chat integration ──────────────────────────────────────────────
         // Named HttpClient pre-configured with base URL + internal token.
         // Registered even when HubChatBaseUrl is empty — HubChannelService checks before calling.

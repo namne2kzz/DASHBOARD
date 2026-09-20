@@ -1,5 +1,5 @@
-using DASHBOARD.Domain.Interfaces;
 using DASHBOARD.Domain.Entities;
+using DASHBOARD.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -134,6 +134,34 @@ public sealed class InternalController(IApplicationDbContext db) : ControllerBas
         ).ToListAsync(ct);
 
         return Ok(members);
+    }
+
+    // ── User settings ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns all persisted preference settings for a user.
+    /// HUB dashboard-gateway calls this so the HUB shell can honour the user's date/timezone preferences
+    /// without requiring them to configure them again inside HUB.
+    /// </summary>
+    /// <param name="id">User id.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with a flat key→value map; 404 if the user does not exist.</returns>
+    [HttpGet("users/{id:guid}/settings")]
+    [ProducesResponseType(typeof(Dictionary<string, string?>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUserSettings(Guid id, CancellationToken ct)
+    {
+        // Verify user exists first — we don't want to silently return an empty dict for a bad id.
+        var exists = await db.Set<User>().AsNoTracking().AnyAsync(u => u.Id == id, ct);
+        if (!exists) return NotFound();
+
+        var rows = await db.Set<UserSetting>()
+            .AsNoTracking()
+            .Where(s => s.UserId == id)
+            .Select(s => new { s.Key, s.Value })
+            .ToListAsync(ct);
+
+        return Ok(rows.ToDictionary(r => r.Key, r => r.Value));
     }
 
     // ── Work items ───────────────────────────────────────────────────────────

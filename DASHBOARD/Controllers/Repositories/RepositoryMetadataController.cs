@@ -9,6 +9,7 @@ using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Repositories;
 
@@ -17,8 +18,8 @@ namespace DASHBOARD.Controllers.Repositories;
 /// well-known metadata key (e.g. all released versions for FixedInVersion).
 /// Members read the catalog; ManageSettings privilege is required to add or delete entries.
 /// </summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/metadata")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/metadata")]
 [Authorize]
 public sealed class RepositoryMetadataController(ISender mediator) : ControllerBase
 {

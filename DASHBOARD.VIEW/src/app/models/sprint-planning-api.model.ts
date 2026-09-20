@@ -52,6 +52,9 @@ export interface SprintTaskApiDto {
   // Task + Bug shared
   unitTest:         string | null;
   designReview:     string | null;
+  // UserStory fields
+  acceptanceCriteria: string | null;
+  documents:          string[] | null;
   // TestPlan fields
   testSteps:        string[] | null;
   automated:        boolean | null;

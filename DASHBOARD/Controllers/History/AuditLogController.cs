@@ -1,15 +1,16 @@
-using DASHBOARD.Application.Common.Models;
+﻿using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.History.DTOs;
 using DASHBOARD.Application.History.Queries.ListRepositoryHistory;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.History;
 
 /// <summary>Exposes the repository-wide, filterable audit log. Restricted to repository admins.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/audit-log")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/audit-log")]
 [Authorize]
 public sealed class AuditLogController(ISender mediator) : ControllerBase
 {

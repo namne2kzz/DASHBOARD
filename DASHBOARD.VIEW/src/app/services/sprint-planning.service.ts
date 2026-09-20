@@ -452,10 +452,12 @@ export class SprintPlanningService {
       assignedToId:     t.assignedToId,
       assignedToName:   t.assignedToName,
       state:            (['new', 'backlog', 'todo', 'active', 'in-review', 'done'] as const)[t.state],
-      storyPoints:      t.storyPoints,
-      originalEstimate: t.originalEstimate,
-      remainingWork:    t.remainingWork,
-      completedWork:    t.completedWork,
+      storyPoints:        t.storyPoints,
+      originalEstimate:   t.originalEstimate,
+      remainingWork:      t.remainingWork,
+      completedWork:      t.completedWork,
+      acceptanceCriteria: t.acceptanceCriteria ?? null,
+      documents:          t.documents ?? [],
     };
   }
 

@@ -1,4 +1,4 @@
-using DASHBOARD.Application.Common.Models;
+﻿using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Discussions.Commands.AddDiscussion;
 using DASHBOARD.Application.Discussions.DTOs;
 using DASHBOARD.Application.Discussions.Queries.ListDiscussions;
@@ -9,19 +9,39 @@ using DASHBOARD.Application.SprintTasks.Commands.UpdateSprintTask;
 using DASHBOARD.Application.SprintTasks.DTOs;
 using DASHBOARD.Application.SprintTasks.Queries.GetSprintTaskDetail;
 using DASHBOARD.Application.SprintTasks.Queries.GetSprintTaskMetadata;
+using DASHBOARD.Application.SprintTasks.Queries.ResolveSprintTaskKey;
 using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Sprints;
 
 /// <summary>Provides task detail, discussions, and history for a single sprint task — independent of which sprint it sits in.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/sprint-tasks/{taskId:guid}")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/sprint-tasks/{taskId:guid}")]
 [Authorize]
 public sealed class SprintTaskDetailController(ISender mediator) : ControllerBase
 {
+    /// <summary>
+    /// Resolves a formatted work-item key (e.g. "DASH-10") to its sprint task UUID.
+    /// This route is intentionally absolute so it does not inherit the /{taskId:guid} segment.
+    /// </summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="key">Formatted work-item key, e.g. "DASH-10".</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the task UUID as a JSON string; 404 if not found.</returns>
+    [HttpGet("/api/repositories/{repoId:guid}/sprint-tasks/by-key/{key}")]
+    [ProducesResponseType<Guid>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ResolveByKey(Guid repoId, string key, CancellationToken ct)
+    {
+        var taskId = await mediator.Send(new ResolveSprintTaskKeyQuery(repoId, key), ct);
+        return Ok(taskId);
+    }
+
     /// <summary>Returns the full detail for a single sprint task.</summary>
     /// <param name="repoId">The repository ID.</param>
     /// <param name="taskId">The sprint task ID.</param>
@@ -56,7 +76,10 @@ public sealed class SprintTaskDetailController(ISender mediator) : ControllerBas
             request.AssignedToId, request.StoryPoints, request.OriginalEstimate,
             request.StepsToReproduce, request.Environment, request.RootCause,
             request.Solution, request.Impaction, request.UnitTest, request.DesignReview,
-            request.TestSteps, request.Automated, request.ParentId), ct);
+            request.TestSteps, request.Automated,
+            request.AcceptanceCriteria, request.Documents,
+            request.RemainingWork,
+            request.ParentId), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });
         return NoContent();
     }
@@ -155,7 +178,10 @@ public sealed record UpdateSprintTaskDetailRequest(
     string?          DesignReview,
     List<string>?    TestSteps,
     bool?            Automated,
-    Guid?            ParentId);
+    Guid?            ParentId,
+    string?          AcceptanceCriteria,
+    List<string>?    Documents,
+    decimal          RemainingWork);
 
 /// <summary>Request body for replacing a work item's metadata catalog assignments.</summary>
 /// <param name="MetadataIds">The complete desired set of repository metadata value IDs.</param>

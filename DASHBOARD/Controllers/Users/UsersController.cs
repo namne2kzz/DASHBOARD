@@ -5,22 +5,27 @@ using DASHBOARD.Application.Users.Commands.CreateUser;
 using DASHBOARD.Application.Users.Commands.SetUserManager;
 using DASHBOARD.Application.Users.Commands.ToggleActive;
 using DASHBOARD.Application.Users.Commands.ToggleAdmin;
+using DASHBOARD.Application.Users.Commands.ConfirmAvatarUpload;
+using DASHBOARD.Application.Users.Commands.RequestAvatarUploadUrl;
 using DASHBOARD.Application.Users.Commands.UpdateProfile;
+using DASHBOARD.Application.Users.Commands.UpsertUserSettings;
 using DASHBOARD.Application.Users.DTOs;
 using DASHBOARD.Application.Users.Queries.GetUser;
 using DASHBOARD.Application.Users.Queries.GetUserHierarchy;
+using DASHBOARD.Application.Users.Queries.GetUserSettings;
 using DASHBOARD.Application.Users.Queries.ListUsers;
 using DASHBOARD.Application.Users.Queries.SearchUsers;
 using DASHBOARD.Controllers.Users.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Users;
 
 /// <summary>Manages user profiles and password changes.</summary>
-[ApiController]
-[Route("api/users")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/users")]
 [Authorize]
 public sealed class UsersController(ISender mediator, ICurrentUserService currentUser) : ControllerBase
 {
@@ -204,6 +209,68 @@ public sealed class UsersController(ISender mediator, ICurrentUserService curren
         {
             return Forbid();
         }
+    }
+
+    /// <summary>Returns all stored preference settings for the currently authenticated user.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with a flat key → value dictionary; missing keys should be treated as "use app default".</returns>
+    [HttpGet("me/settings")]
+    [ProducesResponseType(typeof(Dictionary<string, string?>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetSettings(CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetUserSettingsQuery(), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Batch-upserts preference settings for the currently authenticated user.</summary>
+    /// <param name="request">Key-value pairs to persist. A null value clears the setting without deleting the row.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 on success, 400 on validation failure.</returns>
+    [HttpPut("me/settings")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> UpsertSettings([FromBody] UpsertUserSettingsRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new UpsertUserSettingsCommand(request.Settings), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Generates a presigned PUT URL so the browser can upload an avatar image directly to
+    /// object storage without routing the binary through the API server.
+    /// The returned <c>objectKey</c> must be sent back to <see cref="ConfirmAvatarUpload"/> after the upload completes.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with <c>{ uploadUrl, objectKey }</c>; the URL expires in 5 minutes.</returns>
+    [HttpPost("me/avatar/upload-url")]
+    [ProducesResponseType<AvatarUploadUrlResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RequestAvatarUploadUrl(CancellationToken ct)
+    {
+        var result = await mediator.Send(new RequestAvatarUploadUrlCommand(), ct);
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Confirms that the browser has finished uploading an avatar to object storage.
+    /// The server verifies the object actually exists in MinIO before persisting the URL —
+    /// the browser cannot fake a successful upload.
+    /// </summary>
+    /// <param name="request">The object key returned by <see cref="RequestAvatarUploadUrl"/>.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the public avatar URL on success, 400 if the file was not found in storage.</returns>
+    [HttpPatch("me/avatar")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ConfirmAvatarUpload([FromBody] ConfirmAvatarUploadRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new ConfirmAvatarUploadCommand(request.ObjectKey), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return Ok(new { avatarUrl = result.Value });
     }
 
     /// <summary>Promote or demote the target user for global admin role. Only a global admin may call this.</summary>

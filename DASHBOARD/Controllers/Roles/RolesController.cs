@@ -1,4 +1,4 @@
-using DASHBOARD.Application.Roles.Commands.CloneRole;
+﻿using DASHBOARD.Application.Roles.Commands.CloneRole;
 using DASHBOARD.Application.Roles.Commands.CreateRole;
 using DASHBOARD.Application.Roles.Commands.DeleteRole;
 using DASHBOARD.Application.Roles.Commands.UpdateRole;
@@ -8,12 +8,13 @@ using DASHBOARD.Controllers.Roles.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Roles;
 
 /// <summary>Manages roles available to a repository — global default roles and repository-scoped custom roles.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/roles")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/roles")]
 [Authorize]
 public sealed class RolesController(ISender mediator) : ControllerBase
 {

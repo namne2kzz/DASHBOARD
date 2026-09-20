@@ -5,8 +5,6 @@ import { Router } from '@angular/router';
 import { SearchService } from '../../services/search.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
 import { AuthService } from '../../services/auth.service';
-import { DialogService } from '../../core/components/dialog/dialog.service';
-import { SprintTaskDetailDialogComponent } from '../sprint-task-detail-dialog/sprint-task-detail-dialog.component';
 import { SearchResultItem, SearchResultKind } from '../../models/search.model';
 
 /**
@@ -24,7 +22,6 @@ export class GlobalSearchComponent implements AfterViewChecked {
   readonly search  = inject(SearchService);
   private readonly repoCtx = inject(RepositoryContextService);
   private readonly router  = inject(Router);
-  private readonly dialog  = inject(DialogService);
   private readonly auth    = inject(AuthService);
 
   private readonly input = viewChild<ElementRef<HTMLInputElement>>('searchInput');
@@ -60,25 +57,26 @@ export class GlobalSearchComponent implements AfterViewChecked {
   }
 
   /**
-   * Opens the selected hit: work items open their detail dialog in place; Backlog hits
-   * navigate to their section (the exact item may not be visible on the board).
+   * Navigates to the selected hit: sprint-task hits open the work-item detail page;
+   * Backlog hits navigate to the backlog section.
    * @param item The selected search hit.
    */
   goTo(item: SearchResultItem): void {
     this.search.close();
 
-    if (item.kind === 'task') {
-      this.dialog.open(SprintTaskDetailDialogComponent, {
-        title: item.subtitle?.split(' ·')[0] ?? item.title,
-        width: '44rem',
-        data:  { taskId: item.id },
-      });
-      return;
-    }
-
     const code  = this.repoCtx.selectedRepo()?.code;
     const alias = this.auth.currentUser()?.orgAlias ?? '';
     if (!code) return;
+
+    if (item.kind === 'task') {
+      // subtitle format: "DASH-34 · UserStory" — extract the work-item key for the URL.
+      const itemKey = item.subtitle?.split(' ·')[0]?.trim();
+      if (itemKey) {
+        void this.router.navigate(['/', alias, code, 'boards', itemKey]);
+      }
+      return;
+    }
+
     void this.router.navigate(['/', alias, code, 'backlog']);
   }
 }

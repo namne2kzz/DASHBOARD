@@ -165,6 +165,7 @@ public sealed class CreateSprintTaskCommandHandler(
                t.Type, t.Title, t.Description, t.Priority,
                t.AssignedToId, assigneeName, assigneeAvatar,
                t.State, t.StoryPoints, t.OriginalEstimate, t.RemainingWork, t.CompletedWork, t.ClosedAt,
+               t.AcceptanceCriteria, t.Documents,
                t.StepsToReproduce, t.Environment, t.RootCause, t.Solution, t.Impaction,
                t.UnitTest, t.DesignReview, t.TestSteps, t.Automated, []);
 }

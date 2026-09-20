@@ -19,8 +19,12 @@
     </span>
   </div>
 
-  <!-- Title -->
-  <h2 class="text-lg font-semibold leading-snug text-slate-100">{{ data.story.title }}</h2>
+  <!-- Title (clickable → work-item detail page) -->
+  <h2
+    class="cursor-pointer text-lg font-semibold leading-snug text-slate-100 underline-offset-2 hover:text-sky-300 hover:underline"
+    (click)="navigateTo(data.story.workItemNumber)"
+    [title]="'Open ' + data.story.workItemNumber"
+  >{{ data.story.title }}</h2>
 
   <!-- Meta row: story points + estimate + remaining -->
   <div class="flex flex-wrap gap-4 rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3">
@@ -67,7 +71,7 @@
 
       @if (showAssigneePicker()) {
         <div
-          class="absolute left-0 top-full z-50 mt-1 w-52 rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl max-h-64 overflow-y-auto"
+          class="absolute left-0 top-full z-50 mt-1 w-52 rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl max-h-64 overflow-y-auto" appFlipDrop
           (click)="$event.stopPropagation()"
         >
           <div class="px-2 pb-1">
@@ -119,6 +123,44 @@
     </div>
   }
 
+  <!-- Acceptance Criteria -->
+  @if (data.story.acceptanceCriteria) {
+    <div>
+      <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Acceptance Criteria</h3>
+      <ul class="space-y-1.5 rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3">
+        @for (line of acLines(); track $index) {
+          @if (line.trim()) {
+            <li class="flex items-start gap-2.5 text-sm text-slate-300">
+              <svg class="mt-0.5 h-4 w-4 shrink-0 text-sky-500/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span class="leading-snug">{{ line.trim() }}</span>
+            </li>
+          }
+        }
+      </ul>
+    </div>
+  }
+
+  <!-- Documents -->
+  @if (data.story.documents.length > 0) {
+    <div>
+      <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Documents</h3>
+      <ul class="space-y-1.5 rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3">
+        @for (doc of data.story.documents; track $index) {
+          <li class="flex items-center gap-2">
+            <svg class="h-3.5 w-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+            <a [href]="doc" target="_blank" rel="noopener noreferrer"
+              class="min-w-0 flex-1 truncate text-sm text-sky-400 underline-offset-2 hover:underline"
+              [title]="doc">{{ docLabel(doc) }}</a>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+
   <!-- Sub-tasks -->
   <div>
     <div class="mb-2 flex items-center justify-between">
@@ -164,8 +206,12 @@
               }
             </div>
 
-            <!-- title -->
-            <span class="min-w-0 flex-1 truncate text-sm text-slate-200" [title]="sub.title">{{ sub.title }}</span>
+            <!-- title (clickable → work-item detail) -->
+            <span
+              class="min-w-0 flex-1 cursor-pointer truncate text-sm text-slate-200 underline-offset-2 hover:text-sky-300 hover:underline"
+              [title]="sub.title + ' — open detail'"
+              (click)="navigateTo(sub.workItemNumber)"
+            >{{ sub.title }}</span>
 
             <!-- remaining -->
             <span class="shrink-0 text-xs text-slate-500">{{ sub.remainingWork }}h</span>
@@ -203,7 +249,7 @@
 
               @if (openSubTaskPickerId() === sub.id) {
                 <div
-                  class="absolute right-0 top-full z-50 mt-1 w-52 max-h-64 overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl"
+                  class="absolute right-0 top-full z-50 mt-1 w-52 max-h-64 overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl" appFlipDrop
                   (click)="$event.stopPropagation()"
                 >
                   <div class="px-2 pb-1">

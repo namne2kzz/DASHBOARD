@@ -71,7 +71,8 @@ public sealed class LoginCommandHandler(
             Email:                 user.Email,
             IsGlobalAdmin:         user.IsGlobalAdmin,
             OrgId:                 org.Id,
-            OrgAlias:              org.Alias));
+            OrgAlias:              org.Alias,
+            AvatarClass:           user.AvatarClass));
     }
 
     /// <summary>Computes SHA-256 hash of the refresh token for safe database storage.</summary>

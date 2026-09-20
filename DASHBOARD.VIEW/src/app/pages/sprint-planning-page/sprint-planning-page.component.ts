@@ -2,7 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, effect, ElementRef, HostListener, inject, OnInit, QueryList, signal, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
+import { Router } from '@angular/router';
 import { InfiniteScrollDirective } from '../../directives/infinite-scroll.directive';
+import { FlipDropDirective } from '../../directives/flip-drop.directive';
 import { SprintPlanningService } from '../../services/sprint-planning.service';
 import { MembersService } from '../../services/members.service';
 import { DialogService } from '../../core/components/dialog/dialog.service';
@@ -13,10 +15,13 @@ import { SprintStoryDetailDialogComponent } from '../../components/sprint-story-
 import type { SprintTask } from '../../models/sprint-planning.model';
 import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant';
 import { SprintTaskApiState } from '../../core/enums/system.enum';
+import { ConfirmService } from '../../core/components/confirm/confirm.service';
+import { RepositoryContextService } from '../../services/repository-context.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-sprint-planning-page',
-  imports: [CommonModule, FormsModule, NgClass, InfiniteScrollDirective],
+  imports: [CommonModule, FormsModule, NgClass, InfiniteScrollDirective, FlipDropDirective],
   templateUrl: './sprint-planning-page.component.html',
   styleUrl: './sprint-planning-page.component.css',
 })
@@ -25,6 +30,9 @@ export class SprintPlanningPageComponent implements OnInit {
   readonly taskStateOptions  = SPRINT_TASK_STATE_OPTIONS;
   readonly stateBadge        = SPRINT_TASK_STATE_BADGE;
   readonly stateLabel        = SPRINT_TASK_STATE_LABEL;
+  private readonly router    = inject(Router);
+  private readonly repoCtx   = inject(RepositoryContextService);
+  private readonly auth      = inject(AuthService);
 
   private readonly _stateToApi: Record<SprintTask['state'], SprintTaskApiState> = {
     'new':       SprintTaskApiState.New,
@@ -40,8 +48,20 @@ export class SprintPlanningPageComponent implements OnInit {
 
   /** Reloads sprint detail on every navigation to this page to pick up state changes made on the Board. */
   ngOnInit(): void { this.planning.refresh(); }
+
+  /**
+   * Navigates to the work-item detail page for a given work item number.
+   * @param workItemNumber Formatted number (e.g. "DASH-22").
+   */
+  navigateToItem(workItemNumber: string): void {
+    const orgAlias = this.auth.currentUser()?.orgAlias;
+    const repoCode = this.repoCtx.selectedRepo()?.code;
+    if (!orgAlias || !repoCode) return;
+    this.router.navigate(['/', orgAlias, repoCode, 'boards', workItemNumber]);
+  }
   readonly members        = inject(MembersService);
-  private readonly dialog = inject(DialogService);
+  private readonly dialog  = inject(DialogService);
+  private readonly confirm = inject(ConfirmService);
 
   // ── Sprint setup edit mode ───────────────────────────────────
   readonly setupMenuOpen = signal(false);
@@ -51,11 +71,12 @@ export class SprintPlanningPageComponent implements OnInit {
   readonly editEnd       = signal('');
 
   // ── Day-off add form ─────────────────────────────────────────
-  readonly showDayOffForm = signal(false);
-  readonly dayOffDate     = signal('');
-  readonly dayOffHours    = signal(8);
-  readonly dayOffReason   = signal('');
-  readonly dayOffUserId   = signal<string | null>(null);
+  readonly showDayOffForm        = signal(false);
+  readonly dayOffDate            = signal('');
+  readonly dayOffHours           = signal(8);
+  readonly dayOffReason          = signal('');
+  readonly dayOffUserId          = signal<string | null>(null);
+  readonly showDayOffMemberPicker = signal(false);
 
   readonly canAddDayOff = computed(() =>
     this.dayOffDate().length > 0 && this.dayOffHours() > 0,
@@ -150,6 +171,7 @@ export class SprintPlanningPageComponent implements OnInit {
   onDocumentClick(): void {
     this.setupMenuOpen.set(false);
     this.closeReassign();
+    this.showDayOffMemberPicker.set(false);
   }
 
   /** Recalculates dropdown position on scroll so it stays anchored to the trigger. */
@@ -292,17 +314,29 @@ export class SprintPlanningPageComponent implements OnInit {
   }
 
   /** Deletes the selected sprint after confirmation. */
-  deleteSprint(): void {
+  async deleteSprint(): Promise<void> {
     const s = this.planning.selectedSprint();
-    if (!s || !confirm(`Delete sprint "${s.name}"? This cannot be undone.`)) return;
+    if (!s) return;
+    const ok = await this.confirm.ask(
+      `Delete sprint "${s.name}"?`,
+      'All tasks and capacity data will be permanently removed. This cannot be undone.',
+      'danger',
+    );
+    if (!ok) return;
     this.setupMenuOpen.set(false);
     this.planning.deleteSprint(s.id);
   }
 
   /** Removes a capacity member from the sprint after confirmation. @param userId Member's user ID. */
-  removeCapacityMember(userId: string): void {
+  async removeCapacityMember(userId: string): Promise<void> {
     const capacityMemberId = this.planning.getCapacityMemberId(userId);
-    if (!capacityMemberId || !confirm('Remove this member from sprint capacity?')) return;
+    if (!capacityMemberId) return;
+    const ok = await this.confirm.ask(
+      'Remove member from sprint?',
+      'Their capacity and day-off entries for this sprint will be deleted.',
+      'warning',
+    );
+    if (!ok) return;
     this.planning.removeCapacityMember(capacityMemberId);
   }
 

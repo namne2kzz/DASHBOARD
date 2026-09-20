@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using DASHBOARD.Application.Contracts;
@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Webhooks;
 
@@ -29,8 +30,8 @@ namespace DASHBOARD.Controllers.Webhooks;
 /// 401 regardless of the (lack of) JWT, so this endpoint is not actually open to arbitrary callers.
 /// </para>
 /// </remarks>
-[ApiController]
-[Route("api/webhooks/github")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/webhooks/github")]
 [AllowAnonymous]
 public sealed class GitHubWebhookController(
     IApplicationDbContext db,

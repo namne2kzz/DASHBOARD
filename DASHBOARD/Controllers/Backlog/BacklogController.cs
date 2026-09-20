@@ -18,12 +18,13 @@ using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Backlog;
 
 /// <summary>Manages the product backlog hierarchy (Epic â†’ Feature â†’ UserStory) for a repository.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/backlog")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/backlog")]
 [Authorize]
 public sealed class BacklogController(ISender mediator) : ControllerBase
 {

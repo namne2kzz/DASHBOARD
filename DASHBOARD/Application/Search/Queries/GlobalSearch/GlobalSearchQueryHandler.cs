@@ -35,11 +35,21 @@ public sealed class GlobalSearchQueryHandler(
             .Select(r => r.Code)
             .FirstAsync(ct);
 
+        // Try to extract a numeric work-item number from the search term.
+        // Handles patterns like "DASH-34", "34", "dash-34" → 34.
+        int? searchNumber = null;
+        var numPart = term.Split('-').Last().Trim();
+        if (int.TryParse(numPart, out var parsed) && parsed > 0)
+            searchNumber = parsed;
+
         var results = new List<SearchResultItemDto>();
 
         var tasks = await db.Set<SprintTask>().AsNoTracking()
             .Where(t => t.RepositoryId == query.RepositoryId &&
-                        (t.Title.ToLower().Contains(term) || t.Description.ToLower().Contains(term)))
+                        (t.Title.ToLower().Contains(term)            ||
+                         t.Description.ToLower().Contains(term)      ||
+                         (t.AcceptanceCriteria != null && t.AcceptanceCriteria.ToLower().Contains(term)) ||
+                         (searchNumber.HasValue && t.WorkItemNumber == searchNumber.Value)))
             .OrderByDescending(t => t.StateChangedAt)
             .Take(PerKindLimit)
             .Select(t => new { t.Id, t.Title, t.WorkItemNumber, t.Type })

@@ -1,4 +1,4 @@
-using DASHBOARD.Application.SprintTasks.Commands.ChangeSprintTaskState;
+﻿using DASHBOARD.Application.SprintTasks.Commands.ChangeSprintTaskState;
 using DASHBOARD.Application.SprintTasks.Commands.CreateSprintTask;
 using DASHBOARD.Application.SprintTasks.Commands.DeleteSprintTask;
 using DASHBOARD.Application.SprintTasks.Commands.UpdateSprintTask;
@@ -9,12 +9,13 @@ using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.WorkItems;
 
 /// <summary>Manages work items (Bug, TestPlan, Task) independently of sprints.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/items")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/items")]
 [Authorize]
 public sealed class ItemsController(ISender mediator) : ControllerBase
 {
@@ -90,7 +91,7 @@ public sealed class ItemsController(ISender mediator) : ControllerBase
             request.AssignedToId, 0, request.OriginalEstimate,
             request.StepsToReproduce, request.Environment, request.RootCause,
             request.Solution, request.Impaction, request.UnitTest, request.DesignReview,
-            request.TestSteps, request.Automated), ct);
+            request.TestSteps, request.Automated, null, null, 0), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });
         return NoContent();
     }

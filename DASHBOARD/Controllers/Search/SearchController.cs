@@ -1,14 +1,15 @@
-using DASHBOARD.Application.Search.DTOs;
+﻿using DASHBOARD.Application.Search.DTOs;
 using DASHBOARD.Application.Search.Queries.GlobalSearch;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Search;
 
 /// <summary>Global keyword search across a repository's Backlog and Sprint tasks.</summary>
-[ApiController]
-[Route("api/repositories/{repoId:guid}/search")]
+[ApiVersion("1.0")][ApiController]
+[Route("api/v{version:apiVersion}/repositories/{repoId:guid}/search")]
 [Authorize]
 public sealed class SearchController(ISender mediator) : ControllerBase
 {
