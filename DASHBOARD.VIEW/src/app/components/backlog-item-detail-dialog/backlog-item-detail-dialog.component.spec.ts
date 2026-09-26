@@ -40,6 +40,13 @@ describe('BacklogItemDetailDialogComponent', () => {
   };
 
   beforeEach(async () => {
+    // Spies are shared across specs in this block — reset so call counts do not leak.
+    mockDialogRef.close.calls.reset();
+    mockBacklog.saveItemDetails.calls.reset();
+    mockBacklog.updateTitle.calls.reset();
+    mockBacklog.updateDocuments.calls.reset();
+    mockBacklog.updateAcceptanceCriteria.calls.reset();
+
     await TestBed.configureTestingModule({
       imports: [BacklogItemDetailDialogComponent],
       providers: [
@@ -80,9 +87,10 @@ describe('BacklogItemDetailDialogComponent', () => {
     expect(component.documents()).toEqual(['Spec.docx', 'New doc']);
   });
 
-  it('removeDoc keeps at least one row', () => {
+  it('removeDoc drops the row entirely', () => {
+    // Unlike removeAcRow, the document list is allowed to be empty.
     component.removeDoc(0);
-    expect(component.documents()).toEqual(['']);
+    expect(component.documents()).toEqual([]);
   });
 
   it('addAcRow appends an empty row', () => {

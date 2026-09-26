@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on rapid pushes to the same ref to save Actions minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NODE_VERSION: "22"
+
+jobs:
+  backend:
+    name: Backend (.NET 10)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore DASHBOARD.slnx
+
+      - name: Build
+        run: dotnet build DASHBOARD.slnx --configuration Release --no-restore
+
+      # DASHBOARD.slnx holds a single project and has NO test project yet.
+      # Uncomment once DASHBOARD.Tests is added to the solution.
+      # - name: Test
+      #   run: dotnet test DASHBOARD.slnx --configuration Release --no-build --verbosity normal
+
+  frontend:
+    name: Frontend (Angular 19)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: DASHBOARD.VIEW
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: DASHBOARD.VIEW/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The two configurations swap in different environment files, so build both:
+      #   production → environment.prod.ts   (enforces bundle budgets)
+      #   docker     → environment.docker.ts (what DASHBOARD.VIEW/Dockerfile ships)
+      - name: Build (production)
+        run: npm run build -- --configuration production
+
+      - name: Build (docker)
+        run: npm run build -- --configuration docker
+
+      - name: Test
+        run: npm run test:ci
+
+  docker-images:
+    name: Docker images
+    needs: [backend, frontend]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: DASHBOARD/Dockerfile
+          tags: dashboard-api:${{ github.sha }}
+          push: false
+          cache-from: type=gha,scope=dashboard-api
+          cache-to: type=gha,scope=dashboard-api,mode=max
+
+      - name: Build Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: DASHBOARD.VIEW/Dockerfile
+          tags: dashboard-web:${{ github.sha }}
+          push: false
+          cache-from: type=gha,scope=dashboard-web
+          cache-to: type=gha,scope=dashboard-web,mode=max

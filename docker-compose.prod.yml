@@ -1,0 +1,159 @@
+# DASHBOARD — production stack for a self-hosted Docker server.
+#
+# How this differs from docker-compose.yml (local):
+#   - Pulls images from GHCR via `image:` instead of `build:` — the server needs no source
+#   - Tag comes from ${DASHBOARD_TAG}, which CD writes into .env — one line to roll back
+#   - No dbgate / mailpit (developer tooling)
+#   - api and web are not behind a profile — they always run
+#
+# First-time setup on the server:
+#   mkdir -p /opt/dashboard && cd /opt/dashboard
+#   # copy this file + .env.prod.example
+#   cp .env.prod.example .env && nano .env      # fill in real secrets
+#   docker network create hub-net               # if absent (shared with HUB)
+#   echo <GITHUB_PAT> | docker login ghcr.io -u <user> --password-stdin
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# After that CD takes over: pull → up -d → health check → rollback on failure.
+#
+# NOTE: CD runs plain `docker compose` without -f, so on the server rename this file
+# to `docker-compose.yml`, or export COMPOSE_FILE=docker-compose.prod.yml in the
+# deploy user's shell profile.
+
+name: dashboard
+
+services:
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: dashboard-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD:?required}"
+      MSSQL_PID: "Developer"   # switch to Standard/Enterprise if licensed
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+      - ./backups:/var/opt/mssql/backup
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    # Production: 1433 is deliberately NOT published. Only api reaches it over the network.
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: dashboard-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_USER:?required}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS:?required}"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks: [default, hub-net]   # HUB shares this broker
+
+  redis:
+    image: redis:7-alpine
+    container_name: dashboard-redis
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks: [default, hub-net]   # HUB shares this Redis
+
+  minio:
+    image: minio/minio:latest
+    container_name: dashboard-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ACCESS_KEY:?required}"
+      MINIO_ROOT_PASSWORD: "${MINIO_SECRET_KEY:?required}"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    ports:
+      - "9100:9000"   # S3 API — must be reachable so browsers can fetch presigned avatar URLs
+
+  # ── Application ─────────────────────────────────────────────────────────────
+  # DASHBOARD_TAG is the ONLY line CD rewrites in .env.
+  # Rollback = write the previous tag back and run `up -d`.
+  api:
+    image: ghcr.io/${GHCR_OWNER:?required}/dashboard-api:${DASHBOARD_TAG:-latest}
+    container_name: dashboard-api
+    depends_on:
+      sqlserver: { condition: service_healthy }
+      rabbitmq:  { condition: service_healthy }
+      redis:     { condition: service_healthy }
+      minio:     { condition: service_healthy }
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      JwtSettings__Secret:    "${JWT_SECRET:?required}"
+      JwtSettings__Issuer:    "dashboard-api"
+      JwtSettings__Audience:  "dashboard-spa"
+      ConnectionStrings__Default: "Server=sqlserver,1433;Database=DASHBOARD;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True;"
+      ConnectionStrings__Redis:   "redis:6379"
+      RabbitMq__Username: "${RABBITMQ_USER}"
+      RabbitMq__Password: "${RABBITMQ_PASS}"
+      # Token for HUB → DASHBOARD /internal/v1/*. Must match INTERNAL_API_TOKEN on the HUB side.
+      InternalApi__Token: "${INTERNAL_API_TOKEN:?required}"
+      # DASHBOARD → HUB Chat. Must match HUB_CHAT_INTERNAL_TOKEN on the HUB side.
+      HubChat__BaseUrl:          "http://chat:8080"
+      HubChat__InternalToken:    "${HUB_CHAT_INTERNAL_TOKEN:?required}"
+      HubChat__FrontendBaseUrl:  "${HUB_FRONTEND_URL:?required}"
+      Invitation__FrontendBaseUrl: "${DASHBOARD_FRONTEND_URL:?required}"
+      MinIO__Endpoint:      "http://minio:9000"
+      MinIO__AccessKey:     "${MINIO_ACCESS_KEY}"
+      MinIO__SecretKey:     "${MINIO_SECRET_KEY}"
+      MinIO__AvatarBucket:  "dashboard-avatars"
+      MinIO__PublicBaseUrl: "${MINIO_PUBLIC_URL:?required}"
+      Google__ClientId:     "${GOOGLE_CLIENT_ID}"
+      GitConnections__DASH__0__RepoUrl:   "${GITHUB_REPO_URL_DASH}"
+      GitConnections__DASH__0__Token:     "${GITHUB_TOKEN_DASH}"
+      GitConnections__DASH__0__IsPrimary: "true"
+    healthcheck:
+      # /health is liveness only (never touches the DB). CD probes the same endpoint from outside.
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s   # generous: EF migrations run during startup
+    restart: unless-stopped
+    networks: [default, hub-net]
+
+  web:
+    image: ghcr.io/${GHCR_OWNER}/dashboard-web:${DASHBOARD_TAG:-latest}
+    container_name: dashboard-web
+    depends_on:
+      api: { condition: service_healthy }
+    ports:
+      - "${WEB_PORT:-4201}:80"
+    restart: unless-stopped
+
+# hub-net is created by HUB (docker network create hub-net). Both stacks join it as external.
+networks:
+  hub-net:
+    external: true
+    name: hub-net
+
+volumes:
+  sqlserver-data:
+  rabbitmq-data:
+  redis-data:
+  minio-data:
