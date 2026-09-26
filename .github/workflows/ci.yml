@@ -1,7 +1,10 @@
 name: CI
 
 on:
+  # Feature branches are covered by the pull_request trigger, so pushing to one
+  # does not build twice. Direct pushes to main still build on their own.
   push:
+    branches: [main]
   pull_request:
     branches: [main]
 
