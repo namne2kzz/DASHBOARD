@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideToastr } from 'ngx-toastr';
 import { WorkItemMetadataEditorComponent } from './work-item-metadata-editor.component';
 
 describe('WorkItemMetadataEditorComponent', () => {
@@ -10,7 +13,7 @@ describe('WorkItemMetadataEditorComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [WorkItemMetadataEditorComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), provideNoopAnimations(), provideToastr()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(WorkItemMetadataEditorComponent);

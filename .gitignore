@@ -47,3 +47,4 @@ coverage/
 # ── Docker & misc ───────────────────────────────────────────────────────────
 .env.*
 !.env.example
+!.env.prod.example

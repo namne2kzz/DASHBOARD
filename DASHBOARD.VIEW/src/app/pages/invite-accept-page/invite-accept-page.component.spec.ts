@@ -29,6 +29,9 @@ describe('InviteAcceptPageComponent', () => {
     name: 'Test User',
     email: 'invitee@test.com',
     isGlobalAdmin: false,
+    orgId: 'org-1',
+    orgAlias: 'acme',
+    avatarClass: 'bg-sky-600',
   };
 
   beforeEach(async () => {

@@ -5,9 +5,12 @@ using DASHBOARD.Application;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Core.Constants;
 using DASHBOARD.Infrastructure;
+using DASHBOARD.Infrastructure.Persistence;
 using DASHBOARD.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +37,12 @@ builder.Services.AddApiVersioning(opt =>
 });
 
 builder.Services.AddOpenApi();
+
+// ── Health checks ─────────────────────────────────────────────────────────────
+// /health       — liveness: process is up; never touches the DB (CD's deploy gate).
+// /health/ready — readiness: also verifies the database connection.
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>("database", tags: ["ready"]);
 
 // ── JWT Authentication ────────────────────────────────────────────────────────
 var jwtSecret = builder.Configuration["JwtSettings:Secret"]
@@ -92,9 +101,15 @@ builder.Services.AddCors(opt =>
 // ─────────────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
-// ── Object storage — ensure required buckets exist before serving requests ────
+// ── Startup: schema + object storage ─────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
+    // Apply pending EF migrations so a fresh deploy targets the right schema.
+    // Matches HUB's chat/media/notification services. Single-instance assumption:
+    // if this ever scales past one replica, move migrations to a release step.
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync();
+
     var storage  = scope.ServiceProvider.GetRequiredService<IStorageService>();
     var settings = scope.ServiceProvider.GetRequiredService<IAppSettings>();
     await storage.EnsureBucketExistsAsync(settings.MinioAvatarBucket, CancellationToken.None);
@@ -113,6 +128,18 @@ app.UseCors(AppConstants.AngularCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+
+// Health endpoints — intentionally unauthenticated so CD and load balancers can poll them.
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    // Liveness: skip every registered check; only confirm the process responds.
+    Predicate = _ => false,
+});
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+});
+
 app.MapControllers();
 
 app.Run();

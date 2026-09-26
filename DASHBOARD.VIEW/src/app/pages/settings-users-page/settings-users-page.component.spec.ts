@@ -8,6 +8,9 @@ import { SettingsUsersPageComponent } from './settings-users-page.component';
 import { SystemUsersService } from '../../services/system-users.service';
 import { AuthService } from '../../services/auth.service';
 import { SystemUserDto, AuthProvider } from '../../models/system-user.model';
+import { DateTimeService } from '../../core/services/date-time.service';
+import { PrivilegeService } from '../../core/services/privilege.service';
+import { ToastService } from '../../core/components/toast/toast.service';
 
 const mockUser = (overrides: Partial<SystemUserDto> = {}): SystemUserDto => ({
   userId:          'u1',
@@ -19,6 +22,8 @@ const mockUser = (overrides: Partial<SystemUserDto> = {}): SystemUserDto => ({
   authProvider:    AuthProvider.System,
   createdAt:       '2024-01-01T00:00:00Z',
   lastLoginAt:     null,
+  managerId:       null,
+  managerName:     null,
   repoMemberships: [],
   ...overrides,
 });
@@ -39,6 +44,21 @@ describe('SettingsUsersPageComponent', () => {
     currentUser: signal({ userId: 'me', email: 'admin@test.com', name: 'Admin', avatarClass: '', isGlobalAdmin: true }),
   } as unknown as Partial<AuthService>;
 
+  // DateTimeService and PrivilegeService pull in PreferencesService / MembersService /
+  // RoleService transitively — stub them so the page under test stays isolated.
+  const dtStub = {
+    format:   (utc: string | null | undefined) => utc ?? '',
+    relative: (utc: string | null | undefined) => utc ?? '',
+  } as unknown as DateTimeService;
+
+  const privilegeStub = {
+    isGlobalAdmin:     signal(true),
+    canManageMembers:  signal(true),
+  } as unknown as PrivilegeService;
+
+  const toastStub = jasmine.createSpyObj<ToastService>(
+    'ToastService', ['success', 'error', 'warning', 'info']);
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SettingsUsersPageComponent],
@@ -48,6 +68,9 @@ describe('SettingsUsersPageComponent', () => {
         provideRouter([]),
         { provide: SystemUsersService, useValue: svcStub },
         { provide: AuthService,        useValue: authStub },
+        { provide: DateTimeService,    useValue: dtStub },
+        { provide: PrivilegeService,   useValue: privilegeStub },
+        { provide: ToastService,       useValue: toastStub },
       ],
     }).compileComponents();
 
