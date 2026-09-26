@@ -24,7 +24,7 @@
 
 ### sprints-01 — List sprints: trả về sprint hiện có
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §4.2 — list sprints của repo; `ListSprintsQueryHandler` trả đủ sprint.
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §4.2 — list sprints của repo; `ListSprintsQueryHandler` trả đủ sprint.
 - **Bước thực hiện**: Navigate `http://localhost:4200/DASH/sprint-planning`. Xác nhận page load và hiện sprint list.
 - **Kết quả mong đợi**: Page load thành công. "Sprint 1 July 2026" xuất hiện trong UI.
 
@@ -32,7 +32,7 @@
 
 ### sprints-02 — IsActive = true khi hôm nay trong [StartDate, EndDate]
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §2 + §3 — "`IsActive` là giá trị tính toán, không lưu DB — true khi hôm nay trong [StartDate, EndDate]."
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §2 + §3 — "`IsActive` là giá trị tính toán, không lưu DB — true khi hôm nay trong [StartDate, EndDate]."
 - **Bước thực hiện**: Gọi `GET /sprints`. Kiểm tra field `isActive` của "Sprint 1 July 2026".
 - **Kết quả mong đợi**: `isActive = true` vì 2026-07-01 nằm trong range sprint này.
 
@@ -40,7 +40,7 @@
 
 ### sprints-03 — IsActive = false với sprint ngoài khoảng hôm nay
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §3 — "`IsActive` luôn tính lại tại thời điểm query, không cache."
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §3 — "`IsActive` luôn tính lại tại thời điểm query, không cache."
 - **Bước thực hiện**: Tạo 1 sprint trong quá khứ (`startDate=2026-05-01`, `endDate=2026-05-14`). Gọi `GET /sprints`, kiểm tra `isActive` của sprint mới.
 - **Kết quả mong đợi**: `isActive = false`. "Sprint 1 July 2026" cùng list vẫn `isActive = true`.
 
@@ -48,7 +48,7 @@
 
 ### sprints-04 — Create sprint hợp lệ (tương lai, không overlap)
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §4.1 — tạo sprint (name + date range) → validate không overlap.
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §4.1 — tạo sprint (name + date range) → validate không overlap.
 - **Bước thực hiện**: `POST /sprints` với `name="Sprint 2 August 2026"`, `startDate=2026-08-03`, `endDate=2026-08-14`.
 - **Kết quả mong đợi**: 201 Created. Sprint trả về có `id` mới, `isActive = false`.
 
@@ -88,7 +88,7 @@
 
 ### sprints-09 — Create: Dates overlap sprint hiện có → bị chặn
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §3 + `CreateSprintCommandHandler.cs:28-35` — "Date range không được overlap."
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §3 + `CreateSprintCommandHandler.cs:28-35` — "Date range không được overlap."
 - **Bước thực hiện**: `POST /sprints` với dates giao thoa "Sprint 1 July 2026" (`startDate=2026-06-28`, `endDate=2026-07-07`).
 - **Kết quả mong đợi**: 422, message "Sprint dates overlap with an existing sprint in this repository."
 
@@ -104,7 +104,7 @@
 
 ### sprints-11 — Tên sprint không cần unique
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §6 — "Tên sprint không cần unique."
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §6 — "Tên sprint không cần unique."
 - **Bước thực hiện**: `POST /sprints` với `name="Sprint 1 July 2026"` (trùng tên), dates tháng 10 (không overlap).
 - **Kết quả mong đợi**: 201 Created — tên trùng không bị chặn.
 
@@ -112,7 +112,7 @@
 
 ### sprints-12 — Update sprint: đổi tên và dates hợp lệ
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §4.3 — "Update tên hoặc ngày sprint (re-validate overlap)."
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §4.3 — "Update tên hoặc ngày sprint (re-validate overlap)."
 - **Bước thực hiện**: `PUT /sprints/{id}` lên sprint past (sprints-03), đổi tên + dời dates sang tháng 11.
 - **Kết quả mong đợi**: 204 No Content. GET list → tên và dates đã cập nhật.
 
@@ -136,7 +136,7 @@
 
 ### sprints-15 — Update sprint đang active: cho phép rebase boundary
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §6 — "Đổi date range được cho phép cả khi sprint đang active."
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §6 — "Đổi date range được cho phép cả khi sprint đang active."
 - **Bước thực hiện**: `PUT /sprints/{id}` lên "Sprint 1 July 2026" → mở rộng EndDate thêm 1 tuần (không overlap).
 - **Kết quả mong đợi**: 204 No Content — không bị chặn dù đang active. Khôi phục EndDate cũ sau khi test.
 
@@ -170,7 +170,7 @@
 
 ### sprints-19 — Thêm capacity member vào sprint
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §4.4 — "Khai báo capacity từng member (giờ/ngày, overtime, role)." `UpsertCapacityMemberCommandHandler` — upsert (tạo mới nếu chưa có).
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §4.4 — "Khai báo capacity từng member (giờ/ngày, overtime, role)." `UpsertCapacityMemberCommandHandler` — upsert (tạo mới nếu chưa có).
 - **Bước thực hiện**: Qua UI sprint-planning-page → panel capacity → thêm admin user vào "Sprint 1 July 2026" với `hoursPerDay=8`, `overtimeHoursPerDay=0`, `role="Scrum Master"`.
 - **Kết quả mong đợi**: Member xuất hiện trong capacity table. GET /sprints/{id}/detail → `capacityMembers` chứa user này.
 
@@ -220,7 +220,7 @@
 
 ### sprints-25 — Thêm day-off cá nhân trong khoảng sprint
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §3 + `AddDayOffCommandHandler.cs:31-33` — "DayOff phải nằm trong [StartDate, EndDate] của sprint."
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §3 + `AddDayOffCommandHandler.cs:31-33` — "DayOff phải nằm trong [StartDate, EndDate] của sprint."
 - **Bước thực hiện**: Thêm day-off cho admin user vào 1 ngày trong khoảng "Sprint 1 July 2026", `hours=8`, `reason="Public holiday"`.
 - **Kết quả mong đợi**: Day-off được tạo. Detail → `daysOff` chứa record này. Summary → `totalCapacity` giảm đúng 8h.
 
@@ -388,7 +388,7 @@
 
 ### sprints-45 — Product backlog tab: hiển thị UserStory trạng thái Ready chưa gán sprint
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §2 — "`BacklogItem` có thể gán tạm `SprintId` trước khi promote chính thức thành `SprintTask`."
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §2 — "`BacklogItem` có thể gán tạm `SprintId` trước khi promote chính thức thành `SprintTask`."
 - **Bước thực hiện**: Qua UI sprint-planning-page → tab/section "Product Backlog". Xem danh sách item.
 - **Kết quả mong đợi**: Hiển thị các UserStory Ready chưa gán sprint (từ backlog đã seed). Không hiển thị item đã promote (Committed).
 
@@ -396,7 +396,7 @@
 
 ### sprints-46 — Gán sprint cho backlog item (planning, chưa promote)
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §4.4 — "Gán `SprintId` để planning tạm (không đổi refinement state)." Tham chiếu `MoveToIterationCommandHandler`.
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §4.4 — "Gán `SprintId` để planning tạm (không đổi refinement state)." Tham chiếu `MoveToIterationCommandHandler`.
 - **Bước thực hiện**: Gán 1 UserStory Ready vào "Sprint 1 July 2026" qua UI (drag hoặc nút assign).
 - **Kết quả mong đợi**: Item xuất hiện trong sprint planning. State của BacklogItem vẫn là Ready (không thay đổi về Committed — đó là sau promote).
 
@@ -404,7 +404,7 @@
 
 ### sprints-47 — Promote backlog item từ planning → tạo SprintTask
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §5 — "Promote luôn tạo đúng 1 SprintTask và set BacklogItem = Committed." Tham chiếu `PromoteToSprintCommandHandler`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §5 — "Promote luôn tạo đúng 1 SprintTask và set BacklogItem = Committed." Tham chiếu `PromoteToSprintCommandHandler`.
 - **Bước thực hiện**: Promote UserStory ở sprints-46 (đã gán sprint, state Ready).
 - **Kết quả mong đợi**: 200/201. Backlog item chuyển Committed. SprintTask mới xuất hiện trong sprint với `backlogItemId` liên kết.
 
@@ -414,7 +414,7 @@
 
 ### sprints-48 — UI: Tạo sprint mới qua dialog
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §4.1.
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §4.1.
 - **Bước thực hiện**: Trên sprint-planning-page → mở dialog tạo sprint (tháng 9, không overlap). Submit.
 - **Kết quả mong đợi**: Dialog đóng. Sprint mới xuất hiện trong list. Không có lỗi console.
 
@@ -430,7 +430,7 @@
 
 ### sprints-50 — UI: Summary widget hiển thị workingDays + capacity đúng
 
-- **Business rule**: [sprints.dod.md](../../histories/sprints.dod.md) §4.6 — "tính member load để hỗ trợ planning."
+- **Business rule**: [sprints.dod.md](../../business/sprints.dod.md) §4.6 — "tính member load để hỗ trợ planning."
 - **Bước thực hiện**: Xem widget summary trên sprint-planning-page cho "Sprint 1 July 2026" (sau khi đã thêm capacity member ở sprints-19).
 - **Kết quả mong đợi**: Widget hiện `workingDays`, `totalCapacity`, `committedPoints`, `completedTasks` khớp với API summary.
 

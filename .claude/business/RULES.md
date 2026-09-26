@@ -1,15 +1,15 @@
-# Quy tắc Document — `.claude/histories/`
+# Quy tắc Document — `.claude/business/`
 
-Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/update các file business document trong thư mục `.claude/histories/`. Đây là rule bắt buộc — **phải đọc file này trước khi tạo hoặc sửa bất kỳ file `.dod.md` hoặc `domain-business.md`.**
+Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/update các file business document trong thư mục `.claude/business/`. Đây là rule bắt buộc — **phải đọc file này trước khi tạo hoặc sửa bất kỳ file `.dod.md` hoặc `domain-business.md`.**
 
 ## 1. Mục đích thư mục
 
-`.claude/histories/` lưu document mô tả **business** của project — không phải document kỹ thuật (kiến trúc, code convention đã có ở `.claude/docs/`). Mục tiêu: người không đọc code (PM, BA, dev mới) vẫn hiểu được mỗi feature làm gì, rule gì, workflow nào.
+`.claude/business/` lưu document mô tả **business** của project — không phải document kỹ thuật (kiến trúc, code convention đã có ở `.claude/docs/`). Mục tiêu: người không đọc code (PM, BA, dev mới) vẫn hiểu được mỗi feature làm gì, rule gì, workflow nào.
 
 ## 2. Cấu trúc thư mục
 
 ```
-.claude/histories/
+.claude/business/
 ├── RULES.md                # file này — quy tắc document
 ├── domain-business.md      # tổng quan domain/business toàn project
 ├── auth.dod.md
@@ -74,7 +74,7 @@ Bố cục cố định, theo thứ tự:
 Bất kỳ lúc nào thêm/sửa/xóa code làm thay đổi **business logic** của 1 feature (rule mới, workflow mới, field mới ảnh hưởng nghiệp vụ, thay đổi permission, v.v.) — **không phải refactor thuần kỹ thuật không đổi business** — thì sau khi code xong PHẢI:
 
 1. Xác định feature bị ảnh hưởng (map theo `Application/{Feature}/`).
-2. Mở `.claude/histories/{feature}.dod.md` tương ứng.
+2. Mở `.claude/business/{feature}.dod.md` tương ứng.
 3. Thêm 1 dòng mới vào **Update Log** (đầu bảng).
 4. Sửa lại **Business Doc** (phần B) cho đúng với state mới nhất — xóa/sửa nội dung cũ không còn đúng.
 5. Nếu thay đổi ảnh hưởng tới domain tổng thể (entity mới, quan hệ mới giữa các feature, khái niệm business mới) → update thêm `domain-business.md` theo cùng quy tắc (Update Log + nội dung mới nhất).
@@ -83,7 +83,7 @@ Nếu thay đổi chỉ là kỹ thuật thuần (đổi tên biến, refactor, 
 
 ## 5. Khi tạo feature mới
 
-1. Tạo file `.claude/histories/{feature-kebab-case}.dod.md` mới theo đúng bố cục mục 3.
+1. Tạo file `.claude/business/{feature-kebab-case}.dod.md` mới theo đúng bố cục mục 3.
 2. Update Log dòng đầu tiên: ngày/giờ tạo, title "Khởi tạo document", mô tả "Tạo document business ban đầu cho feature {Tên}".
 3. Nếu feature mới giới thiệu entity/khái niệm domain mới → thêm vào `domain-business.md`.
 4. Thêm dòng trỏ tới file mới vào danh sách ở mục 2 của file này.

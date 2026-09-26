@@ -187,19 +187,47 @@ Detailed patterns and code templates in `C:\DEV\DASHBOARD\.claude\skills\`:
 | Frontend | `generate-angular` · `angular-signals` · `angular-rxjs` · `unit-testing-angular` |
 | Database | `efcore-sqlserver` · `efcore-postgresql` · `redis-cache` · `migrations` · `query-optimization` |
 
-Agents: `auto` · `dotnet-coder` · `angular-coder` · `reviewer` · `architect` · `db-optimizer` · `security-auditor` · `build-error-resolver`
+Agents: `auto` · `dotnet-coder` · `angular-coder` · `reviewer` · `architect` · `db-optimizer` · `security-auditor` · `build-error-resolver` · `ui-tester`
 
-Workflows (slash commands): `/build-feature` · `/fix-bug` · `/pr-review` · `/deploy-to-azure` · `/tdd` · `/security-scan` · `/health-check`
+Workflows (slash commands): `/build-feature` · `/fix-bug` · `/pr-review` · `/deploy-to-azure` · `/tdd` · `/security-scan` · `/health-check` · `/self-test`
 
 Trước khi sinh code .NET/Angular, đọc thêm `C:\DEV\DASHBOARD\.claude\memory\mistakes.md` (lỗi thường gặp cần tránh) và `C:\DEV\DASHBOARD\.claude\memory\patterns.md` (pattern nên dùng).
 
 ---
 
-## Business Documentation (`.claude/histories/`)
+## Business Documentation (`.claude/business/`)
 
-Sau khi thêm/sửa **business logic** của 1 feature (rule mới, workflow mới, permission đổi...), PHẢI update lại file business document tương ứng trong `C:\DEV\DASHBOARD\.claude\histories\`.
+Sau khi thêm/sửa **business logic** của 1 feature (rule mới, workflow mới, permission đổi...), PHẢI update lại file business document tương ứng trong `C:\DEV\DASHBOARD\.claude\business\`.
 
-- Đọc `.claude/histories/RULES.md` để biết quy tắc document (cấu trúc Update Log + Business Doc, ngôn ngữ, khi nào cần update).
+- Đọc `.claude/business/RULES.md` để biết quy tắc document (cấu trúc Update Log + Business Doc, ngôn ngữ, khi nào cần update).
 - Mỗi feature có 1 file `{feature}.dod.md` (vd `backlog.dod.md`, `sprints.dod.md`...).
-- Thay đổi ảnh hưởng domain tổng thể → update thêm `.claude/histories/domain-business.md`.
+- Thay đổi ảnh hưởng domain tổng thể → update thêm `.claude/business/domain-business.md`.
 - Refactor kỹ thuật thuần (không đổi business) → không cần update.
+
+---
+
+## UI Self-Test (`.claude/self-test/`)
+
+Test UI thật bằng Playwright MCP (Microsoft Edge) thay cho test tay: `/self-test` hoặc agent `ui-tester`.
+
+- Quy tắc ghi/đọc: `.claude/self-test/RULES.md` — **đọc trước khi chạy hoặc ghi**.
+- Môi trường + danh sách module + ưu tiên: `.claude/self-test/test-plan.md`.
+- Module đang code dở → khai vào `.claude/self-test/wip-features.md` để self-test skip.
+- Kết quả từng module: `.claude/self-test/modules/{feature}.test.md` · bug: `bugs.md` · cải tiến: `improvements.md`.
+- Credential: `.claude/self-test.local.json` (gitignored, mẫu ở `.claude/self-test.local.example.json`).
+- App chạy **native, không qua Docker**, **không có `/health`**: API `dotnet run` (`:5152`), UI `npm start` (`:4200`). Không tự bật app, không tự chạy migration/seed.
+- **Không sửa code app lúc test** — chỉ ghi bug/improvement. Không tự promote ticket lên Nexus.
+
+---
+
+## Implementation Plan (`.claude/plans/`)
+
+Plan chi tiết cho feature lớn **trước khi code** (schema, API contract, thứ tự implement, migration). 1 feature = 1 file `{feature-slug}.md`.
+
+Phân biệt: `plans/` = sẽ làm gì · `business/` = nghiệp vụ phải đúng thế nào · `self-test/` = đã kiểm chứng chưa.
+
+---
+
+## Kiến thức bổ sung (`.claude/docs/`)
+
+Tài liệu nền do **user cung cấp** (domain knowledge, glossary, quy ước nghiệp vụ, spec, ADR, hợp đồng API bên thứ ba). Claude **đọc** khi cần, **không tự ghi** vào đây trừ khi user yêu cầu rõ ràng. Xem `.claude/docs/README.md`.

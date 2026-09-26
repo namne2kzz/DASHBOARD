@@ -12,7 +12,7 @@ Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/u
 
 ## 1. Mục đích thư mục
 
-`.claude/self-test/` lưu **test plan + kết quả + bug + improvement** phát sinh từ việc tự test UI bằng Playwright MCP (xem `/self-test`). Khác với `.claude/histories/` (business doc — mô tả nghiệp vụ "phải đúng như thế nào"), folder này lưu **bằng chứng đã/chưa kiểm chứng đúng nghiệp vụ đó trên app thật**.
+`.claude/self-test/` lưu **test plan + kết quả + bug + improvement** phát sinh từ việc tự test UI bằng Playwright MCP (xem `/self-test`). Khác với `.claude/business/` (business doc — mô tả nghiệp vụ "phải đúng như thế nào"), folder này lưu **bằng chứng đã/chưa kiểm chứng đúng nghiệp vụ đó trên app thật**.
 
 ## 2. Cấu trúc thư mục
 
@@ -23,7 +23,7 @@ Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/u
 ├── bugs.md               # bug tracker tổng — chỉ lỗi hệ thống (sai so với business doc)
 ├── improvements.md       # ý tưởng cải tiến UX/nghiệp vụ — KHÔNG phải bug
 └── modules/
-    └── {feature}.test.md # 1 file / module, tên khớp `.claude/histories/{feature}.dod.md` nếu có
+    └── {feature}.test.md # 1 file / module, tên khớp `.claude/business/{feature}.dod.md` nếu có
 ```
 
 ## 3. Cấu trúc bên trong `modules/{feature}.test.md`
@@ -53,7 +53,7 @@ Chỉ chứa **định nghĩa case** — KHÔNG có trạng thái pass/fail ở 
 ```markdown
 ### {feature}-01 — {Tên case ngắn}
 
-- **Business rule**: trích/link rule liên quan trong [`{feature}.dod.md`](../../histories/{feature}.dod.md) (nếu không có doc, ghi "Chưa có business doc — test theo khám phá UI").
+- **Business rule**: trích/link rule liên quan trong [`{feature}.dod.md`](../../business/{feature}.dod.md) (nếu không có doc, ghi "Chưa có business doc — test theo khám phá UI").
 - **Bước thực hiện**: 1, 2, 3...
 - **Kết quả mong đợi**: ...
 ```
@@ -124,4 +124,4 @@ Sau **mỗi lần** chạy `/self-test` (toàn bộ hoặc 1 module):
 
 ## 7. Ngôn ngữ
 
-Viết tiếng Việt, giữ nguyên tên entity/field/route/component bằng tiếng Anh như trong code (đồng bộ với `.claude/histories/RULES.md`).
+Viết tiếng Việt, giữ nguyên tên entity/field/route/component bằng tiếng Anh như trong code (đồng bộ với `.claude/business/RULES.md`).

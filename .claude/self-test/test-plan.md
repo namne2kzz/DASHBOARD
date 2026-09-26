@@ -15,7 +15,7 @@ Thay thế việc test tay từng chức năng trên UI — dùng Playwright MCP
 
 ## 3. Quy trình chung (mỗi module)
 
-1. Đọc `.claude/histories/{feature}.dod.md` (nếu có) để biết business rule hiện tại.
+1. Đọc `.claude/business/{feature}.dod.md` (nếu có) để biết business rule hiện tại.
 2. Đọc `.claude/self-test/modules/{feature}.test.md` — nếu Phần B (Test Cases) chưa có case nào, tự soạn case dựa trên `.dod.md` rồi ghi vào trước khi chạy.
 3. Chạy từng case bằng Playwright: `navigate` → `snapshot` → thao tác → assert. Chụp `screenshot` khi Fail.
 4. Ghi kết quả: append Run Log của module, cập nhật "Trạng thái lần chạy gần nhất" từng case.
@@ -25,22 +25,22 @@ Thay thế việc test tay từng chức năng trên UI — dùng Playwright MCP
 
 | Module | File test | Business doc | Ưu tiên |
 |--------|-----------|---------------|---------|
-| Auth (login) | [auth.test.md](modules/auth.test.md) | [auth.dod.md](../histories/auth.dod.md) | Cao — chặn mọi flow khác |
-| Boards (Kanban) | [boards.test.md](modules/boards.test.md) | [boards.dod.md](../histories/boards.dod.md) | Cao |
-| Backlog | [backlog.test.md](modules/backlog.test.md) | [backlog.dod.md](../histories/backlog.dod.md) | Cao |
-| Wiki | [wiki.test.md](modules/wiki.test.md) | [wiki.dod.md](../histories/wiki.dod.md) | Trung bình |
-| Sprints | [sprints.test.md](modules/sprints.test.md) | [sprints.dod.md](../histories/sprints.dod.md) | Trung bình |
-| Sprint Tasks | [sprint-tasks.test.md](modules/sprint-tasks.test.md) | [sprint-tasks.dod.md](../histories/sprint-tasks.dod.md) | Trung bình |
-| Board Item Detail (dialog) | [board-detail.test.md](modules/board-detail.test.md) | [sprint-tasks.dod.md](../histories/sprint-tasks.dod.md), [discussions.dod.md](../histories/discussions.dod.md), [history.dod.md](../histories/history.dod.md) | Trung bình |
-| Workflow (Smart Board) | [workflow.test.md](modules/workflow.test.md) | [workflow.dod.md](../histories/workflow.dod.md) | Trung bình |
-| Capacity (Sprint Planning) | [capacity.test.md](modules/capacity.test.md) | [capacity.dod.md](../histories/capacity.dod.md) | Trung bình |
-| Members | [members.test.md](modules/members.test.md) | [members.dod.md](../histories/members.dod.md) | **Cao** — BUG-004/BUG-005 đang Open |
-| Roles | [roles.test.md](modules/roles.test.md) | [roles.dod.md](../histories/roles.dod.md) | **Cao** — BUG-004/BUG-005 đang Open |
-| Invitations | [invitations.test.md](modules/invitations.test.md) | [invitations.dod.md](../histories/invitations.dod.md) | Thấp — feature WIP, xem `wip-features.md` |
-| Repositories (repos page) | [repositories.test.md](modules/repositories.test.md) | [repositories.dod.md](../histories/repositories.dod.md) | Trung bình |
-| Discussions | [discussions.test.md](modules/discussions.test.md) | [discussions.dod.md](../histories/discussions.dod.md) | Thấp |
-| Overview | [overview.test.md](modules/overview.test.md) | [overview.dod.md](../histories/overview.dod.md) | Thấp |
-| Users (settings/users) | [users.test.md](modules/users.test.md) | [users.dod.md](../histories/users.dod.md) | **Cao** — BUG-003 (Critical) đang Open |
+| Auth (login) | [auth.test.md](modules/auth.test.md) | [auth.dod.md](../business/auth.dod.md) | Cao — chặn mọi flow khác |
+| Boards (Kanban) | [boards.test.md](modules/boards.test.md) | [boards.dod.md](../business/boards.dod.md) | Cao |
+| Backlog | [backlog.test.md](modules/backlog.test.md) | [backlog.dod.md](../business/backlog.dod.md) | Cao |
+| Wiki | [wiki.test.md](modules/wiki.test.md) | [wiki.dod.md](../business/wiki.dod.md) | Trung bình |
+| Sprints | [sprints.test.md](modules/sprints.test.md) | [sprints.dod.md](../business/sprints.dod.md) | Trung bình |
+| Sprint Tasks | [sprint-tasks.test.md](modules/sprint-tasks.test.md) | [sprint-tasks.dod.md](../business/sprint-tasks.dod.md) | Trung bình |
+| Board Item Detail (dialog) | [board-detail.test.md](modules/board-detail.test.md) | [sprint-tasks.dod.md](../business/sprint-tasks.dod.md), [discussions.dod.md](../business/discussions.dod.md), [history.dod.md](../business/history.dod.md) | Trung bình |
+| Workflow (Smart Board) | [workflow.test.md](modules/workflow.test.md) | [workflow.dod.md](../business/workflow.dod.md) | Trung bình |
+| Capacity (Sprint Planning) | [capacity.test.md](modules/capacity.test.md) | [capacity.dod.md](../business/capacity.dod.md) | Trung bình |
+| Members | [members.test.md](modules/members.test.md) | [members.dod.md](../business/members.dod.md) | **Cao** — BUG-004/BUG-005 đang Open |
+| Roles | [roles.test.md](modules/roles.test.md) | [roles.dod.md](../business/roles.dod.md) | **Cao** — BUG-004/BUG-005 đang Open |
+| Invitations | [invitations.test.md](modules/invitations.test.md) | [invitations.dod.md](../business/invitations.dod.md) | Thấp — feature WIP, xem `wip-features.md` |
+| Repositories (repos page) | [repositories.test.md](modules/repositories.test.md) | [repositories.dod.md](../business/repositories.dod.md) | Trung bình |
+| Discussions | [discussions.test.md](modules/discussions.test.md) | [discussions.dod.md](../business/discussions.dod.md) | Thấp |
+| Overview | [overview.test.md](modules/overview.test.md) | [overview.dod.md](../business/overview.dod.md) | Thấp |
+| Users (settings/users) | [users.test.md](modules/users.test.md) | [users.dod.md](../business/users.dod.md) | **Cao** — BUG-003 (Critical) đang Open |
 
 Module UI chưa có business doc tương ứng (analytics, pipelines) — chưa tạo file test, sẽ tạo khi cần test theo khám phá UI thuần (ghi rõ "chưa có business doc" trong file).
 
