@@ -1,11 +1,11 @@
 ---
-description: Drive the running app in Microsoft Edge via Playwright MCP to self-test UI flows against business rules in .claude/histories/, tracking results/bugs/improvements in .claude/self-test/.
+description: Drive the running app in Microsoft Edge via Playwright MCP to self-test UI flows against business rules in .claude/business/, tracking results/bugs/improvements in .claude/self-test/.
 argument-hint: [optional: module name e.g. "auth" | "boards" | "backlog" | "all"]
 ---
 
 # Workflow: UI Self-Test (Playwright Edge MCP)
 
-Tự lái Microsoft Edge qua các luồng UI chính, đối chiếu với business rule trong `.claude/histories/`, và ghi kết quả/bug/improvement vào `.claude/self-test/` — thay cho việc test tay từng chức năng.
+Tự lái Microsoft Edge qua các luồng UI chính, đối chiếu với business rule trong `.claude/business/`, và ghi kết quả/bug/improvement vào `.claude/self-test/` — thay cho việc test tay từng chức năng.
 
 ## Usage
 ```
@@ -33,7 +33,7 @@ App chạy **native**, KHÔNG qua Docker, và **không có endpoint `/health`**.
 
 > Trước khi vào module bất kỳ: nếu module đó có tên trong `.claude/self-test/wip-features.md` → skip ngay, ghi vào báo cáo cuối là `⏭️ Skipped (WIP)`, không thực hiện 4 bước dưới. Nếu user gọi `/self-test {module}` đích danh 1 module đang WIP → vẫn dừng, báo lý do, không cố chạy.
 
-1. **Đọc business doc**: `.claude/histories/{feature}.dod.md` (nếu tồn tại) — nắm rule/invariant hiện tại.
+1. **Đọc business doc**: `.claude/business/{feature}.dod.md` (nếu tồn tại) — nắm rule/invariant hiện tại.
 2. **Đọc file test**: `.claude/self-test/modules/{feature}.test.md` (3 phần: Run Log đầu file, Test Cases giữa, Case Status cuối file).
    - Nếu Phần "Test Cases" đã có case → dùng case đó.
    - Nếu chưa có case nào (file khung rỗng) → tự soạn case dựa trên business doc vừa đọc, ghi vào Phần "Test Cases" + thêm dòng tương ứng (`Chưa chạy`) vào bảng "Case Status" cuối file, TRƯỚC khi chạy.

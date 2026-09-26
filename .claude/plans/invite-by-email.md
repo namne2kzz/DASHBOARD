@@ -77,7 +77,7 @@ nối các mảnh đã có, vá 1 lỗ hổng authorization, và thêm phần th
   `LoginResult` / 400 khi failure. Request DTO
   `Controllers/Invitations/Requests/AcceptInvitationRequest.cs` (`RawToken`, `GoogleIdToken`).
 
-**B. Update `.claude/histories/invitations.dod.md`**
+**B. Update `.claude/business/invitations.dod.md`**
 Check các mục DoD đã đạt, thêm dòng Update Log ngắn gọn.
 
 ### Frontend

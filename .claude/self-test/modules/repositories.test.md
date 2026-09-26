@@ -11,4 +11,4 @@
 
 ## Test Cases
 
-_Chưa có case nào. Trước khi chạy `/self-test repositories` lần đầu: đọc [repositories.dod.md](../../histories/repositories.dod.md), tự soạn case theo Business Rules & Invariants của doc đó, rồi ghi vào đây trước khi test._
+_Chưa có case nào. Trước khi chạy `/self-test repositories` lần đầu: đọc [repositories.dod.md](../../business/repositories.dod.md), tự soạn case theo Business Rules & Invariants của doc đó, rồi ghi vào đây trước khi test._

@@ -57,6 +57,7 @@ Mỗi context match → cộng thêm agent + skills tương ứng vào list.
 | **Architecture/design** | design, architecture, ADR, bounded context, aggregate boundary, pattern, diagram | `architect` | — |
 | **Build error** | error, compile, CS0246, TS2339, build fail, red squiggle, cannot find | `build-error-resolver` | — |
 | **RxJS / HTTP streams** | Observable, pipe, switchMap, takeUntil, RxJS, HTTP stream | — | `angular-rxjs` |
+| **UI / E2E test (Playwright)** | self-test, E2E, end-to-end, Playwright, browser, test UI, chạy thử, kiểm tra trên app, regression, repro, test tay | `ui-tester` | — |
 
 ---
 

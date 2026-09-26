@@ -26,7 +26,7 @@
 
 ### workflow-01 — Load trang: columns hiển thị đúng thứ tự
 
-- **Business rule**: [workflow.dod.md](../../histories/workflow.dod.md) §3 — `Order` quyết định thứ tự trái→phải; `GetBoardQueryHandler` trả columns `OrderBy(c => c.Order)`.
+- **Business rule**: [workflow.dod.md](../../business/workflow.dod.md) §3 — `Order` quyết định thứ tự trái→phải; `GetBoardQueryHandler` trả columns `OrderBy(c => c.Order)`.
 - **Bước thực hiện**: Navigate `http://localhost:4200/DASH/workflow`. Quan sát bảng "Column configuration".
 - **Kết quả mong đợi**: Mỗi row hiển thị: tên cột, state badge (tên tiếng Anh), WIP limit input, WIP mode select, aging limit input. Thứ tự row khớp với `Order` tăng dần từ API.
 
@@ -34,7 +34,7 @@
 
 ### workflow-02 — Stats widget tính đúng
 
-- **Business rule**: [workflow.dod.md](../../histories/workflow.dod.md) §4 — UI tổng hợp từ danh sách cột.
+- **Business rule**: [workflow.dod.md](../../business/workflow.dod.md) §4 — UI tổng hợp từ danh sách cột.
 - **Bước thực hiện**: Gọi `GET /board/columns`. Đếm tổng cột, đếm cột có `wipLimit > 0`. So sánh với widget "Columns", "With WIP limit", "States mapped X/6".
 - **Kết quả mong đợi**: `Columns = tổng số cột`. `With WIP limit = số cột wipLimit > 0`. `States mapped = số cột / 6`.
 
@@ -44,7 +44,7 @@
 
 ### workflow-03 — Tạo cột hợp lệ qua modal
 
-- **Business rule**: [workflow.dod.md](../../histories/workflow.dod.md) §4.1 — "Tạo cột board"; `CreateColumnCommandHandler.cs:39` — `Order = maxOrder + 1`.
+- **Business rule**: [workflow.dod.md](../../business/workflow.dod.md) §4.1 — "Tạo cột board"; `CreateColumnCommandHandler.cs:39` — `Order = maxOrder + 1`.
 - **Bước thực hiện**: Click nút ⋯ cạnh "Column configuration" → chọn "Add column". Điền name = "In Progress", mappedState = Active, WIP limit = 3, mode = Hard-stop, aging = 7 ngày. Click "Add column".
 - **Kết quả mong đợi**: Modal đóng. Cột "In Progress" xuất hiện ở cuối bảng (Order lớn nhất). Verify qua `GET /board/columns` → cột mới có `order = maxOrder + 1`, `mappedState = 3 (Active)`, `wipLimit = 3`, `wipMode = 1 (Hard)`, `agingLimitDays = 7`.
 
@@ -102,7 +102,7 @@
 
 ### workflow-10 — Lưu tên + state mới
 
-- **Business rule**: [workflow.dod.md](../../histories/workflow.dod.md) §4.3 — "Update config cột (name, mapping state, WIP limit/mode, aging days)."
+- **Business rule**: [workflow.dod.md](../../business/workflow.dod.md) §4.3 — "Update config cột (name, mapping state, WIP limit/mode, aging days)."
 - **Bước thực hiện**: Mở inline edit (workflow-09). Đổi tên thành "Code Review", state thành "In Review". Click Save.
 - **Kết quả mong đợi**: Row về view mode, tên hiện "Code Review", state badge hiện "In Review". `PUT /board/columns/{id}` trả 204. `GET /board/columns` → `mappedState = 4 (InReview)`.
 
@@ -128,7 +128,7 @@
 
 ### workflow-13 — Đổi WIP limit inline → PUT ngay khi thay đổi giá trị
 
-- **Business rule**: [workflow.dod.md](../../histories/workflow.dod.md) §3 — `WipLimit` lưu trên cột.
+- **Business rule**: [workflow.dod.md](../../business/workflow.dod.md) §3 — `WipLimit` lưu trên cột.
 - **Bước thực hiện**: Trên bảng, sửa input WIP limit của 1 cột từ 0 → 5 (blur khỏi input hoặc ngModel change).
 - **Kết quả mong đợi**: `PUT /board/columns/{id}` được gửi với `wipLimit=5`. 204. `GET /board/columns` → cột đó `wipLimit = 5`. Stats "With WIP limit" tăng lên 1 nếu trước đó là 0.
 
@@ -136,7 +136,7 @@
 
 ### workflow-14 — Đổi WIP mode Soft → Hard
 
-- **Business rule**: [workflow.dod.md](../../histories/workflow.dod.md) §3 — `WipMode` Soft=cảnh báo, Hard=chặn move.
+- **Business rule**: [workflow.dod.md](../../business/workflow.dod.md) §3 — `WipMode` Soft=cảnh báo, Hard=chặn move.
 - **Bước thực hiện**: Đổi select WIP mode của 1 cột từ "Soft-warning" sang "Hard-stop".
 - **Kết quả mong đợi**: `PUT /board/columns/{id}` với `wipMode=1 (Hard)`. 204. `GET /board/columns` → `wipMode = 1`.
 
@@ -144,7 +144,7 @@
 
 ### workflow-15 — Đổi aging limit → PUT
 
-- **Business rule**: [workflow.dod.md](../../histories/workflow.dod.md) §3 — `AgingLimitDays` ngưỡng cảnh báo.
+- **Business rule**: [workflow.dod.md](../../business/workflow.dod.md) §3 — `AgingLimitDays` ngưỡng cảnh báo.
 - **Bước thực hiện**: Đổi input aging limit của 1 cột từ 5 → 14 ngày (trigger change event).
 - **Kết quả mong đợi**: `PUT /board/columns/{id}` với `agingLimitDays=14`. 204. `GET /board/columns` → cột đó `agingLimitDays = 14`.
 

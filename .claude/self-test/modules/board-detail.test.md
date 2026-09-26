@@ -13,7 +13,7 @@
 ## Test Cases
 
 > **Component**: `SprintTaskDetailDialogComponent` — mở khi click 1 card trên board (`kanban-board.component.ts` → `dialog.open(SprintTaskDetailDialogComponent, ...)`).
-> **Business rule**: [sprint-tasks.dod.md](../../histories/sprint-tasks.dod.md), [discussions.dod.md](../../histories/discussions.dod.md), [history.dod.md](../../histories/history.dod.md).
+> **Business rule**: [sprint-tasks.dod.md](../../business/sprint-tasks.dod.md), [discussions.dod.md](../../business/discussions.dod.md), [history.dod.md](../../business/history.dod.md).
 > **API base**: `http://localhost:5152/api/repositories/{repoId}/sprint-tasks/{taskId}` (detail/discussions/history) + `http://localhost:5152/api/repositories/{repoId}/sprints/{sprintId}/tasks/{taskId}` (state/assign).
 > **Data hiện có**: repo DASH, sprint active "Sprint 1 July 2026" (`275c24bc-fc54-426a-bf54-a7a2cf73cc12`).
 
@@ -45,7 +45,7 @@
 
 ### bd-04 — Sửa Title/Description/Priority → Save → board card đồng bộ ngay (patchItem)
 
-- **Business rule**: [sprint-tasks.dod.md](../../histories/sprint-tasks.dod.md) §4.5 — "Update detail"; `updateTask()` gọi `board.patchItem()` cập nhật cục bộ, không reload toàn board.
+- **Business rule**: [sprint-tasks.dod.md](../../business/sprint-tasks.dod.md) §4.5 — "Update detail"; `updateTask()` gọi `board.patchItem()` cập nhật cục bộ, không reload toàn board.
 - **Bước thực hiện**: Đổi Title + Priority, bấm Save.
 - **Kết quả mong đợi**: `PUT /sprint-tasks/{id}` trả 204. Đóng dialog (hoặc quan sát board phía sau) → card trên board hiện đúng title/priority mới ngay lập tức, không cần F5.
 
@@ -136,7 +136,7 @@
 
 ### bd-17 — Post comment → hiện ngay trong list
 
-- **Business rule**: [discussions.dod.md](../../histories/discussions.dod.md) §4.1; `postComment()` append vào cuối list local sau khi POST thành công.
+- **Business rule**: [discussions.dod.md](../../business/discussions.dod.md) §4.1; `postComment()` append vào cuối list local sau khi POST thành công.
 - **Bước thực hiện**: Gõ nội dung vào ô comment, bấm Post/Enter.
 - **Kết quả mong đợi**: `POST .../discussions` trả 201. Comment mới xuất hiện ngay cuối danh sách, không cần reload toàn bộ discussion.
 
@@ -164,13 +164,13 @@
 
 ### bd-21 — History hiển thị newest-first, message rõ nghĩa
 
-- **Business rule**: [history.dod.md](../../histories/history.dod.md) §4 — "sort mới nhất trước"; `ListHistoryQuery`.
+- **Business rule**: [history.dod.md](../../business/history.dod.md) §4 — "sort mới nhất trước"; `ListHistoryQuery`.
 - **Bước thực hiện**: Xem tab History của 1 task đã có nhiều thay đổi (create + state change + assign).
 - **Kết quả mong đợi**: Entry mới nhất ở đầu danh sách. Mỗi entry có `Message` dễ hiểu (vd "State changed from 'Todo' to 'Active'.", "Assigned to 'John Doe'.") kèm tên tác giả + thời điểm.
 
 ### bd-22 — Mọi thay đổi đều sinh đúng 1 HistoryEntry (transactional)
 
-- **Business rule**: [history.dod.md](../../histories/history.dod.md) §3 — "Entry được ghi trong cùng SaveChangesAsync với thay đổi gốc."
+- **Business rule**: [history.dod.md](../../business/history.dod.md) §3 — "Entry được ghi trong cùng SaveChangesAsync với thay đổi gốc."
 - **Bước thực hiện**: Đổi state 1 lần, đổi assignee 1 lần. Đếm số entry mới trong history trước/sau mỗi action.
 - **Kết quả mong đợi**: Mỗi action tương ứng đúng 1 entry mới, không thiếu không thừa, không có action nào thành công mà thiếu history.
 

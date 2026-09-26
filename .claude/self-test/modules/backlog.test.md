@@ -15,44 +15,44 @@
 
 ### backlog-01 — Create Epic with no parent
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §4.1 — create a BacklogItem at any level, parent is optional.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §4.1 — create a BacklogItem at any level, parent is optional.
 - **Bước thực hiện**: Navigate `/{repoCode}/backlog` → create item Type = Epic, no parent selected.
 - **Kết quả mong đợi**: Epic created successfully (201), appears at root level (`parentId = null`), initial `state = New`, `rank` = previous max root rank + 1000.
 
 ### backlog-02 — Create Feature under an existing Epic
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §2 — Epic → Feature → UserStory tree (3 nested levels).
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §2 — Epic → Feature → UserStory tree (3 nested levels).
 - **Bước thực hiện**: Create a Feature with `ParentId` = an existing Epic's id.
 - **Kết quả mong đợi**: Feature created with the correct `parentId`; appears nested under that Epic in the tree.
 
 ### backlog-03 — Create UserStory under an existing Feature
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §2 — 3-level hierarchy.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §2 — 3-level hierarchy.
 - **Bước thực hiện**: Create a UserStory with `ParentId` = an existing Feature's id.
 - **Kết quả mong đợi**: UserStory created and nested correctly under the Feature, which itself sits under its Epic — full 3-level tree visible via `GET /backlog`.
 
 ### backlog-04 — ⚠️ Hierarchy Type is NOT enforced server-side at creation
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §2 implies Epic→Feature→UserStory, but `CreateBacklogItemCommandHandler.cs:22-30` only validates that `ParentId` exists **in the same repository** — it never checks that the parent's `Type` is one level above the child's `Type`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §2 implies Epic→Feature→UserStory, but `CreateBacklogItemCommandHandler.cs:22-30` only validates that `ParentId` exists **in the same repository** — it never checks that the parent's `Type` is one level above the child's `Type`.
 - **Bước thực hiện**: Create a UserStory with `ParentId` pointing directly at an Epic (skipping Feature), or create an Epic with `ParentId` pointing at a UserStory.
 - **Kết quả mong đợi theo doc**: Nên bị chặn (tree phải đúng 3 cấp).
 - **Kết quả thực tế dự kiến (theo code)**: Request **thành công** — không có validation nào chặn việc trộn cấp. Đây là phát hiện qua code review, cần verify thực tế và cân nhắc ghi `improvements.md` (hoặc `bugs.md` nếu coi đây là sai lệch so với doc) tuỳ kết quả.
 
 ### backlog-05 — Estimate: cannot set both StoryPoints and TshirtSize at once
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §2 — "không dùng cả 2 loại estimate cùng lúc"; `CreateBacklogItemCommandValidator.cs:22-24` / `UpdateBacklogItemCommandValidator.cs:16-18` — `Must(x => !(StoryPoints.HasValue && TshirtSize.HasValue))`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §2 — "không dùng cả 2 loại estimate cùng lúc"; `CreateBacklogItemCommandValidator.cs:22-24` / `UpdateBacklogItemCommandValidator.cs:16-18` — `Must(x => !(StoryPoints.HasValue && TshirtSize.HasValue))`.
 - **Bước thực hiện**: Gọi Create hoặc Update với cả `storyPoints` và `tshirtSize` cùng khác null.
 - **Kết quả mong đợi**: 422 validation error "Specify either StoryPoints or TshirtSize, not both."
 
 ### backlog-06 — UI estimate picker: UserStory chỉ thấy Fibonacci, Epic/Feature chỉ thấy T-shirt
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §2. **Lưu ý**: đây là rule chỉ enforce ở **UI** (`FIBONACCI_POINTS`/`TSHIRT_SIZES` constants + `updateStoryPoints`/`updateTshirtSize` trong `backlog-management.service.ts:238-262`) — backend KHÔNG validate loại estimate theo Type (xem backlog-04), chỉ chặn dùng-cả-2 (backlog-05).
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §2. **Lưu ý**: đây là rule chỉ enforce ở **UI** (`FIBONACCI_POINTS`/`TSHIRT_SIZES` constants + `updateStoryPoints`/`updateTshirtSize` trong `backlog-management.service.ts:238-262`) — backend KHÔNG validate loại estimate theo Type (xem backlog-04), chỉ chặn dùng-cả-2 (backlog-05).
 - **Bước thực hiện**: Mở refinement editor cho 1 UserStory và cho 1 Epic, so sánh option hiển thị.
 - **Kết quả mong đợi**: UserStory chỉ thấy Fibonacci (1,2,3,5,8,13,21,34,55,89...); Epic/Feature chỉ thấy XS/S/M/L/XL.
 
 ### backlog-07 — StoryPoints phải trong khoảng 1–100
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §2 — Fibonacci 1–100; `CreateBacklogItemCommandValidator.cs:17-19` `InclusiveBetween(1, 100)`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §2 — Fibonacci 1–100; `CreateBacklogItemCommandValidator.cs:17-19` `InclusiveBetween(1, 100)`.
 - **Bước thực hiện**: Gọi Create/Update với `storyPoints = 0` và `storyPoints = 101`.
 - **Kết quả mong đợi**: Cả 2 trường hợp bị validation chặn (422).
 
@@ -106,7 +106,7 @@
 
 ### backlog-16 — Reorder (drag-drop) tính lại rank theo midpoint
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §3 — rank = `(prev + next) / 2`; code `RankBacklogItemCommandHandler.cs:55-61`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §3 — rank = `(prev + next) / 2`; code `RankBacklogItemCommandHandler.cs:55-61`.
 - **Bước thực hiện**: Kéo 1 item vào giữa 2 sibling khác trong cùng cấp (drag-drop trên UI hoặc gọi PATCH `.../rank` trực tiếp với `previousItemId`/`nextItemId`).
 - **Kết quả mong đợi**: `rank` mới = trung bình cộng rank của 2 sibling; thứ tự hiển thị đúng vị trí kéo tới và giữ nguyên sau khi reload trang.
 
@@ -118,13 +118,13 @@
 
 ### backlog-18 — Re-normalize rank khi gap < 0.001
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §3; code `RankBacklogItemCommandHandler.cs:18,64-77` — `MinGap = 0.001m`, khi `(nextRank - prevRank) < MinGap` thì re-normalize toàn bộ sibling về spacing 1000.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §3; code `RankBacklogItemCommandHandler.cs:18,64-77` — `MinGap = 0.001m`, khi `(nextRank - prevRank) < MinGap` thì re-normalize toàn bộ sibling về spacing 1000.
 - **Bước thực hiện**: Lặp lại thao tác rank 1 item vào giữa cùng 1 cặp sibling nhiều lần liên tiếp (mỗi lần halving khoảng cách) cho tới khi gap < 0.001.
 - **Kết quả mong đợi**: Tại lần gap sụp xuống dưới ngưỡng, toàn bộ sibling cùng cấp được re-normalize về rank = `(index+1) * 1000`, không lỗi tràn precision, thứ tự tương đối vẫn giữ nguyên.
 
 ### backlog-19 — Refine state transitions New → Refining → Ready
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §4.3; code `UpdateBacklogStateCommandHandler.cs`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §4.3; code `UpdateBacklogStateCommandHandler.cs`.
 - **Bước thực hiện**: Tạo item mới (state mặc định New) → PATCH state = Refining → PATCH state = Ready.
 - **Kết quả mong đợi**: Mỗi transition thành công (204), state hiển thị đúng theo thứ tự.
 
@@ -143,7 +143,7 @@
 
 ### backlog-22 — Gán SprintId (Move to Iteration) không đổi refinement state
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §3; code `MoveToIterationCommandHandler.cs` chỉ set `item.SprintId`, không đụng `item.State`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §3; code `MoveToIterationCommandHandler.cs` chỉ set `item.SprintId`, không đụng `item.State`.
 - **Bước thực hiện**: Đưa 1 item về state Refining → gọi PATCH `.../iteration` gán `sprintId` = 1 sprint hợp lệ.
 - **Kết quả mong đợi**: Item vẫn hiển thị state Refining sau khi gán sprint; chỉ `sprintId`/`sprintName` đổi.
 
@@ -155,21 +155,21 @@
 
 ### backlog-24 — Chỉ Type = UserStory mới được Promote
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §3; code `PromoteToSprintCommandHandler.cs:32-33`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §3; code `PromoteToSprintCommandHandler.cs:32-33`.
 - **Bước thực hiện**: Thử Promote 1 Epic hoặc 1 Feature (kể cả khi state đã Ready — set thủ công qua API để bypass UI nếu UI chỉ cho UserStory).
 - **Kết quả mong đợi**: 400 "Only UserStory backlog items can be promoted to a sprint."
 
 ### backlog-25 — Chỉ Promote được khi UserStory ở state Ready
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §3; code `PromoteToSprintCommandHandler.cs:35-36`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §3; code `PromoteToSprintCommandHandler.cs:35-36`.
 - **Bước thực hiện**: Thử Promote 1 UserStory đang ở state New/Refining (chưa Ready).
 - **Kết quả mong đợi**: Nút Promote bị disable trên UI hoặc API trả 400 "Backlog item must be in 'Ready' state before promoting to a sprint. Current state: {state}."
 
 ### backlog-26 — Promote UserStory Ready → tạo đúng 1 SprintTask + BacklogItem chuyển Committed
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §4.5, §5; code `PromoteToSprintCommandHandler.cs:41-65`.
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §4.5, §5; code `PromoteToSprintCommandHandler.cs:41-65`.
 - **Bước thực hiện**: Refine 1 UserStory tới Ready (kèm StoryPoints) → Promote vào 1 sprint hợp lệ.
-- **Kết quả mong đợi**: 200 với `sprintTaskId`; BacklogItem chuyển `state=Committed`, `sprintId` = sprint đích; sang Boards/Sprint của sprint đó thấy đúng 1 SprintTask mới, `Type=UserStory`, `StoryPoints` kế thừa từ BacklogItem, `WorkItemNumber` tự tăng theo Repository, có `HistoryEntry` "Work item created." (xem [history.dod.md](../../histories/history.dod.md)).
+- **Kết quả mong đợi**: 200 với `sprintTaskId`; BacklogItem chuyển `state=Committed`, `sprintId` = sprint đích; sang Boards/Sprint của sprint đó thấy đúng 1 SprintTask mới, `Type=UserStory`, `StoryPoints` kế thừa từ BacklogItem, `WorkItemNumber` tự tăng theo Repository, có `HistoryEntry` "Work item created." (xem [history.dod.md](../../business/history.dod.md)).
 
 ### backlog-27 — Promote vào Sprint không tồn tại / khác Repository bị chặn
 
@@ -197,7 +197,7 @@
 
 ### backlog-31 — Item chưa estimate vẫn hợp lệ (estimate optional)
 
-- **Business rule**: [backlog.dod.md](../../histories/backlog.dod.md) §6 — "Item chưa estimate (null story points/T-shirt size) vẫn hợp lệ trong backlog — estimate là optional."
+- **Business rule**: [backlog.dod.md](../../business/backlog.dod.md) §6 — "Item chưa estimate (null story points/T-shirt size) vẫn hợp lệ trong backlog — estimate là optional."
 - **Bước thực hiện**: Tạo item không điền estimate, để state ở New.
 - **Kết quả mong đợi**: Tạo thành công, `storyPoints = null`, `tshirtSize = null`, hiển thị bình thường trong list (không bị ẩn/lỗi).
 

@@ -301,4 +301,4 @@ Edits to existing files: `DASHBOARD.VIEW/src/app/pages/repos-page/repos-page.com
 
 ## 9. Business Documentation follow-up
 
-Per `CLAUDE.md`, once this feature ships, update `.claude/histories/` per `RULES.md`: a new/extended doc noting the new **config-based** per-project GitHub connection model (keyed by `Repository.Code`, no in-app credential management) so future readers don't assume there's an admin UI for this.
+Per `CLAUDE.md`, once this feature ships, update `.claude/business/` per `RULES.md`: a new/extended doc noting the new **config-based** per-project GitHub connection model (keyed by `Repository.Code`, no in-app credential management) so future readers don't assume there's an admin UI for this.
