@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DASHBOARD.Application.Common.Caching;
 using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.GitRepositories.DTOs;
@@ -79,7 +80,7 @@ public sealed class GetGitRepositoryOverviewQueryHandler(
         var (owner, name) = GitRepoUrlParser.Parse(selected.RepoUrl);
         var fullName = $"{owner}/{name}";
 
-        var cacheKey = $"git:overview:{query.RepositoryId}:{selected.RepoUrl}";
+        var cacheKey = CacheKeys.GitOverview(query.RepositoryId, selected.RepoUrl);
 
         var cached = await cache.GetAsync(cacheKey, ct);
         if (cached is not null)

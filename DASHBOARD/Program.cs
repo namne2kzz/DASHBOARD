@@ -127,6 +127,9 @@ app.UseHttpsRedirection();
 app.UseCors(AppConstants.AngularCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
+// Must run after UseAuthorization: an unauthenticated request must get its 401 rather than a 304
+// built from the ETag of some other user's cached payload.
+app.UseMiddleware<ETagMiddleware>();
 app.UseRateLimiter();
 
 // Health endpoints — intentionally unauthenticated so CD and load balancers can poll them.
