@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-09-26 | 14:02 | Đổi ManageSettings → ManageMembers | `ManageSettings` không còn tồn tại trong `SystemFunction` — quyền add/update/remove member và guard "chống mất admin" giờ dùng `ManageMembers` |
 | 2026-06-28 | 16:00 | Chức danh = RepoRole metadata | `DefaultRole` đổi từ enum `TeamRole` (đã xoá) sang **string value** lấy từ RepoRole metadata. Dropdown chức danh load từ metadata RepoRole của repo. `canActOnMember` đổi sang thuần permission (ManageSettings). |
 | 2026-06-28 | 14:30 | RoleId bắt buộc + guard quyền | `RoleId` thành bắt buộc khi add/update (auto chọn default role khớp chức danh). Guard "last ScrumMaster" đổi thành "luôn còn ≥1 member có quyền ManageSettings". TeamRole không còn cấp quyền. |
 | 2026-06-28 | 13:58 | Đổi CustomRole → Role | Member trỏ `RoleId` (default hoặc custom role) thay `CustomRoleId`; validate role là default global hoặc custom cùng Repository. |
@@ -25,12 +26,12 @@ Quản lý thành viên của 1 Repository và quyền của họ (team role m�
 
 ## 3. Business Rules & Invariants
 
-- Cần quyền `ManageSettings` để add/update/remove member.
+- Cần quyền `ManageMembers` để add/update/remove member.
 - 1 user chỉ được làm member 1 lần trong cùng 1 Repository (không trùng).
 - User phải tồn tại trong hệ thống trước khi add làm member.
 - `RoleId` **bắt buộc**, phải là default role (global) hoặc custom role thuộc cùng Repository. UI mặc định auto chọn default role khớp chức danh (Dev→Developer...).
 - Repository đã `IsArchived` thì không add thêm member được.
-- Không cho update/remove khiến repo **không còn member nào có quyền `ManageSettings`** (guard chống mất admin, dựa permission thật).
+- Không cho update/remove khiến repo **không còn member nào có quyền `ManageMembers`** (guard chống mất admin, dựa permission thật — `ManageSettingsGuard`).
 - Remove member chỉ xoá quan hệ membership, không xoá `User`.
 - `DefaultRole` (chức danh, value RepoRole metadata) chỉ dùng cho capacity/planning, **không cấp quyền**. Quyền của member = `Role.AllowedFunctions` (xem [roles.dod.md](roles.dod.md)).
 
@@ -43,9 +44,9 @@ Quản lý thành viên của 1 Repository và quyền của họ (team role m�
 
 ## 5. Definition of Done
 
-- [ ] Add member luôn check quyền `ManageSettings` của caller.
+- [ ] Add member luôn check quyền `ManageMembers` của caller.
 - [ ] Add member luôn check Repository chưa `IsArchived`.
-- [ ] Update/Remove luôn check repo còn ≥1 member có quyền `ManageSettings`.
+- [ ] Update/Remove luôn check repo còn ≥1 member có quyền `ManageMembers`.
 - [ ] RoleId bắt buộc + validate là default global hoặc custom cùng Repository trước khi gán.
 
 ## 6. Edge Cases & Notes

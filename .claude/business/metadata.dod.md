@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |---|---|---|---|
+| 2026-09-26 | 14:02 | Đổi ManageSettings → ManageMetadata | `ManageSettings` không còn tồn tại trong `SystemFunction` — quyền thao tác metadata theo repo giờ dùng `ManageMetadata` |
 | 2026-06-28 | 16:00 | RepoRole thay enum TeamRole | Member.DefaultRole & CapacityMember.Role giờ lưu **value RepoRole metadata** (string) thay enum `TeamRole` (đã xoá). Dropdown chức danh load từ metadata RepoRole của repo. |
 | 2026-06-28 | 15:10 | Thêm IsGlobal + RepoRole + UI | Thêm cột `IsGlobal` (entry dùng chung mọi repo), `RepositoryId` nullable, key `RepoRole` (Team Role), lệnh Update, và trang quản lý Metadata (nav cạnh Members). |
 | 2026-06-23 | 20:58 | Khởi tạo document | Document ban đầu cho catalog metadata repo (đính kèm trong repositories). |
@@ -25,7 +26,7 @@ Quản lý **catalog key/value** cho repo: admin định nghĩa sẵn các giá 
 
 ## 3. Business Rules & Invariants
 
-- **Quyền**: entry `IsGlobal` → chỉ **GlobalAdmin** create/update/delete; entry theo repo → cần **ManageSettings** của repo đó. Mọi member đọc được (List).
+- **Quyền**: entry `IsGlobal` → chỉ **GlobalAdmin** create/update/delete; entry theo repo → cần **`ManageMetadata`** của repo đó. Mọi member đọc được (List).
 - Tạo global → `RepositoryId = null`, `IsGlobal = true`.
 - Trùng value: không cho 2 entry cùng `(scope, Key, Value)` đang active (scope = global hoặc 1 repo).
 - Update chỉ sửa `Value` (không đổi Key/scope).
@@ -43,7 +44,7 @@ Quản lý **catalog key/value** cho repo: admin định nghĩa sẵn các giá 
 
 ## 5. Definition of Done
 
-- [ ] Global entry chỉ GlobalAdmin thao tác; repo entry cần ManageSettings.
+- [ ] Global entry chỉ GlobalAdmin thao tác; repo entry cần `ManageMetadata`.
 - [ ] List trả về global + repo của repo hiện tại.
 - [ ] Chặn trùng (scope, Key, Value) active khi create/update.
 - [ ] Delete là soft-delete.

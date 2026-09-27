@@ -12,8 +12,10 @@ Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/u
 .claude/business/
 ├── RULES.md                # file này — quy tắc document
 ├── domain-business.md      # tổng quan domain/business toàn project
+├── organizations.dod.md    # tenant (Organization) + license
 ├── auth.dod.md
 ├── users.dod.md
+├── user-settings.dod.md    # preference key-value + avatar MinIO
 ├── members.dod.md
 ├── invitations.dod.md
 ├── roles.dod.md
@@ -22,15 +24,24 @@ Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/u
 ├── backlog.dod.md
 ├── sprints.dod.md
 ├── sprint-tasks.dod.md
-├── smart-board.dod.md
+├── workflow.dod.md         # cấu hình cột board/WIP (backend tên `SmartBoard`)
 ├── capacity.dod.md
 ├── repositories.dod.md
 ├── git-repositories.dod.md
-├── wiki.dod.md
 ├── discussions.dod.md
 ├── history.dod.md
-└── overview.dod.md
+├── search.dod.md           # command palette Ctrl/Cmd+K
+├── my-work.dod.md          # dashboard cá nhân xuyên repository
+├── overview.dod.md
+├── hub-integration.dod.md  # kênh chat HUB theo sprint + internal API
+└── wiki.dod.md             # ⚠️ DEPRECATED — Wiki đã chuyển sang HUB, giữ để tra cứu lịch sử
 ```
+
+> Lưu ý về naming: tên file **không phải lúc nào cũng khớp 1-1** với tên folder trong `Application/`:
+>
+> - `workflow.dod.md` ↔ `Application/SmartBoard/` (frontend gọi là Workflow).
+> - `organizations.dod.md`, `user-settings.dod.md`, `hub-integration.dod.md` là feature cross-cutting,
+>   không có folder `Application/{Feature}/` riêng — nghiệp vụ nằm rải ở nhiều feature.
 
 - Mỗi file `{feature}.dod.md` tương ứng 1 feature trong `DASHBOARD/Application/{Feature}/`.
 - Tên file: kebab-case, số ít theo tên feature (ví dụ feature `Roles` → `roles.dod.md`, `SprintTasks` → `sprint-tasks.dod.md`).
@@ -88,6 +99,20 @@ Nếu thay đổi chỉ là kỹ thuật thuần (đổi tên biến, refactor, 
 3. Nếu feature mới giới thiệu entity/khái niệm domain mới → thêm vào `domain-business.md`.
 4. Thêm dòng trỏ tới file mới vào danh sách ở mục 2 của file này.
 
-## 6. Ngôn ngữ
+## 6. Khi feature bị bỏ / chuyển sang sản phẩm khác
+
+**Không xoá file `.dod.md`** — Update Log là lịch sử, phải giữ. Thay vào đó:
+
+1. Thêm `⚠️ ĐÃ BỎ KHỎI DASHBOARD` vào heading đầu file.
+2. Thêm 1 block quote ngay dưới heading, nói rõ: feature không còn tồn tại, bị bỏ/chuyển đi từ commit + ngày nào,
+   những gì đã bị xoá khỏi code (entity, folder, permission...), và **không được dùng nội dung bên dưới làm spec**.
+3. Thêm 1 dòng mới vào Update Log mô tả việc bỏ feature (như mọi thay đổi business khác).
+4. **Giữ nguyên** phần Business Doc bên dưới — đó là snapshot lịch sử, không sửa thành "trạng thái hiện tại".
+5. Update `domain-business.md`: bỏ entity khỏi bảng khái niệm domain, đánh dấu rõ ở danh sách document.
+6. Đánh dấu file trong danh sách ở mục 2 của file này là `⚠️ DEPRECATED`.
+
+Ví dụ: `wiki.dod.md` (Wiki chuyển sang HUB, 2026-09-05).
+
+## 7. Ngôn ngữ
 
 Document viết bằng tiếng Việt (xen tên entity/field/enum bằng tiếng Anh giữ nguyên như trong code) để người trong team dễ đọc. Không dịch tên kỹ thuật (ví dụ giữ `SprintTask`, `WipLimit`, không dịch thành "giới hạn công việc đang làm").

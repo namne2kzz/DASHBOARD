@@ -2,6 +2,7 @@ using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
+using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -20,8 +21,11 @@ public sealed class LogWorkCommandHandler(
     /// <returns><see cref="Result.Ok"/> on success.</returns>
     public async Task<Result> Handle(LogWorkCommand command, CancellationToken ct)
     {
-        if (!await user.IsMemberOfAsync(command.RepositoryId, ct))
-            return Result.Failure("You are not a member of this repository.");
+        // Logging work can auto-close the item when remaining work reaches zero, so this needs the
+        // same privilege as editing a work item directly — membership alone would let any member
+        // close items through the back door.
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.EditWorkItem, ct))
+            return Result.Failure("You do not have permission to edit work items in this repository.");
 
         if (command.HoursWorked <= 0)
             return Result.Failure("HoursWorked must be greater than zero.");

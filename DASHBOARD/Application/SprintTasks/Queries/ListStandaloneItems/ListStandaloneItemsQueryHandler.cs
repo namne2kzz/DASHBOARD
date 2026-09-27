@@ -27,6 +27,9 @@ public sealed class ListStandaloneItemsQueryHandler(
         var q = db.Set<SprintTask>()
             .AsNoTracking()
             .Include(t => t.AssignedTo)
+            // SubTasks is counted after materialisation, so it has to be loaded here — without
+            // this the navigation stays empty and every sub-task badge reads zero.
+            .Include(t => t.SubTasks)
             .Where(t => t.RepositoryId == query.RepositoryId && t.SprintId == null && t.ParentId == null);
 
         if (query.Type.HasValue)

@@ -43,8 +43,20 @@ public sealed class RemoveCapacityMemberCommandHandler(
         await uow.CommitAsync(ct);
 
         // ── Fire-and-forget: remove member from HUB channel ────────────────────
+        // The removal is already committed, so a HUB client fault must not reach the caller.
+        // Discarding the task only covers a faulted task — a client that throws before returning
+        // one would otherwise escape the handler.
         if (link is not null)
-            _ = hub.RemoveMemberAsync(link.HubChannelId, removedUserId, CancellationToken.None);
+        {
+            try
+            {
+                _ = hub.RemoveMemberAsync(link.HubChannelId, removedUserId, CancellationToken.None);
+            }
+            catch
+            {
+                // Best-effort sync — the capacity row is removed either way.
+            }
+        }
 
         return Result.Ok;
     }

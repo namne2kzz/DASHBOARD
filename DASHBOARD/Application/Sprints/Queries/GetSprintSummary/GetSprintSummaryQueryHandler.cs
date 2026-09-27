@@ -45,10 +45,20 @@ public sealed class GetSprintSummaryQueryHandler(
         decimal totalCapacity = 0m;
         foreach (var cap in capacityRows)
         {
-            var personalDaysOff = daysOff
-                .Where(d => d.UserId == cap.UserId || d.UserId == null)
+            var dailyHours = cap.HoursPerDay + cap.OvertimeHoursPerDay;
+
+            var personalOffHours = daysOff
+                .Where(d => d.UserId == cap.UserId)
                 .Sum(d => d.Hours);
-            totalCapacity += (cap.HoursPerDay + cap.OvertimeHoursPerDay) * workingDays - personalDaysOff;
+
+            // A team-wide day off cannot remove more than the member actually works that day:
+            // a company holiday of 8 h costs a 4 h/day member only their own 4 h.
+            var teamOffHours = daysOff
+                .Where(d => d.UserId == null)
+                .Sum(d => Math.Min(d.Hours, dailyHours));
+
+            // Clamped per member, so one heavily absent person cannot eat into someone else's capacity.
+            totalCapacity += Math.Max(0, dailyHours * workingDays - personalOffHours - teamOffHours);
         }
 
         // Sprint tasks: story points and completion.
@@ -63,7 +73,7 @@ public sealed class GetSprintSummaryQueryHandler(
         return new SprintSummaryDto(
             sprint.Id, sprint.Name,
             workingDays,
-            Math.Max(0, totalCapacity),
+            totalCapacity,
             committedPoints,
             completedPoints,
             tasks.Count,
