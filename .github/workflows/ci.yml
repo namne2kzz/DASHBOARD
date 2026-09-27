@@ -42,8 +42,19 @@ jobs:
       - name: Build
         run: dotnet build DASHBOARD.slnx --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test DASHBOARD.slnx --configuration Release --no-build --verbosity normal
+      # Unit tests: fast, no external dependencies. This is the gate that must never be flaky.
+      - name: Unit tests
+        run: >
+          dotnet test DASHBOARD.Tests/DASHBOARD.Tests.csproj
+          --configuration Release --no-build --verbosity normal
+
+      # Integration tests: start a real SQL Server via Testcontainers, so they need a Docker
+      # daemon. ubuntu-latest runners provide one; they are kept in a separate step so a Docker
+      # or image-pull problem is distinguishable from a genuine test failure.
+      - name: Integration tests
+        run: >
+          dotnet test DASHBOARD.IntegrationTests/DASHBOARD.IntegrationTests.csproj
+          --configuration Release --no-build --verbosity normal
 
   frontend:
     name: Frontend (Angular 19)
