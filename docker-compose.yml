@@ -112,6 +112,10 @@ services:
       Google__ClientId: "${GOOGLE_CLIENT_ID}"
     ports:
       - "55432:8080"
+    # Serilog writes to /app/logs inside the container (WORKDIR is /app). Bind-mounted so the
+    # rolling log files survive `docker compose down` — see docs/LOGGING-DESIGN.md.
+    volumes:
+      - ./logs/api:/app/logs
     networks: [default, hub-net]
     restart: unless-stopped
 

@@ -10,6 +10,7 @@ import { provideToastr } from 'ngx-toastr';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { authInterceptor } from './interceptors/auth.interceptor';
+import { correlationIdInterceptor } from './interceptors/correlation-id.interceptor';
 import { errorInterceptor } from './interceptors/error.interceptor';
 import { ThemeService } from './core/services/theme.service';
 import { routes } from './app.routes';
@@ -21,7 +22,9 @@ export const appConfig: ApplicationConfig = {
     // from localStorage and applied app-wide, independent of which page loads.
     provideAppInitializer(() => { inject(ThemeService); }),
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor, errorInterceptor])),
+    provideHttpClient(
+      withInterceptors([correlationIdInterceptor, authInterceptor, errorInterceptor]),
+    ),
     provideAnimations(),
     provideToastr({
       timeOut: 4000,

@@ -39,6 +39,10 @@ DASHBOARD.VIEW/node_modules/
 DASHBOARD.VIEW/dist/
 DASHBOARD.VIEW/.angular/
 
+# ── Serilog output (rolling file sinks — see docs/LOGGING-DESIGN.md) ─────────
+logs/
+**/logs/
+
 # ── Test results ─────────────────────────────────────────────────────────────
 TestResults/
 coverage/
