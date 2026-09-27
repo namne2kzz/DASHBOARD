@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Backlog.DTOs;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
@@ -26,7 +27,7 @@ public sealed class BulkDeleteBacklogItemsCommandHandler(
     public async Task<Result<BulkOperationResultDto>> Handle(BulkDeleteBacklogItemsCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBacklog, ct))
-            return Result<BulkOperationResultDto>.Failure("You do not have permission to manage backlog items in this repository.");
+            throw new ForbiddenException("You do not have permission to manage backlog items in this repository.");
 
         var ids = command.ItemIds.Distinct().ToList();
         if (ids.Count == 0)

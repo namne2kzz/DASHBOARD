@@ -21,7 +21,7 @@ public sealed class AddDiscussionCommandHandler(
     public async Task<DiscussionDto> Handle(AddDiscussionCommand command, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(command.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         if (!await db.Set<SprintTask>().AnyAsync(t => t.Id == command.SprintTaskId && t.RepositoryId == command.RepositoryId, ct))
             throw new NotFoundException(nameof(SprintTask), command.SprintTaskId);

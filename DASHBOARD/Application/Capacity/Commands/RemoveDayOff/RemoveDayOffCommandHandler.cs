@@ -22,7 +22,7 @@ public sealed class RemoveDayOffCommandHandler(
     public async Task<Result> Handle(RemoveDayOffCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageCapacity, ct))
-            return Result.Failure("You do not have permission to manage capacity in this repository.");
+            throw new ForbiddenException("You do not have permission to manage capacity in this repository.");
 
         var dayOff = await db.Set<DayOff>()
             .FirstOrDefaultAsync(d => d.Id == command.DayOffId && d.SprintId == command.SprintId, ct)

@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Search.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -24,7 +25,7 @@ public sealed class GlobalSearchQueryHandler(
     public async Task<IReadOnlyList<SearchResultItemDto>> Handle(GlobalSearchQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var term = query.Term.Trim().ToLower();
         if (term.Length < 2)

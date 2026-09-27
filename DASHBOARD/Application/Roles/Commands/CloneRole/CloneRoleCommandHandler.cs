@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Roles.DTOs;
@@ -22,7 +23,7 @@ public sealed class CloneRoleCommandHandler(
     public async Task<Result<RoleDto>> Handle(CloneRoleCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageRoles, ct))
-            return Result<RoleDto>.Failure("You do not have permission to manage roles in this repository.");
+            throw new ForbiddenException("You do not have permission to manage roles in this repository.");
 
         // Source may be a global default role or a custom role within this repository.
         var source = await db.Set<Role>()

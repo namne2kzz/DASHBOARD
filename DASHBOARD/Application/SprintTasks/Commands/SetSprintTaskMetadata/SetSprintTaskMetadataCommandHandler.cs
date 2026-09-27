@@ -25,7 +25,7 @@ public sealed class SetSprintTaskMetadataCommandHandler(
     public async Task<Result> Handle(SetSprintTaskMetadataCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.EditWorkItem, ct))
-            return Result.Failure("You do not have permission to edit work items in this repository.");
+            throw new ForbiddenException("You do not have permission to edit work items in this repository.");
 
         var task = await db.Set<SprintTask>().AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == command.SprintTaskId && t.RepositoryId == command.RepositoryId, ct)

@@ -21,7 +21,7 @@ public sealed class GetSprintSummaryQueryHandler(
     public async Task<SprintSummaryDto> Handle(GetSprintSummaryQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var sprint = await db.Set<Sprint>().AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == query.SprintId && s.RepositoryId == query.RepositoryId, ct)

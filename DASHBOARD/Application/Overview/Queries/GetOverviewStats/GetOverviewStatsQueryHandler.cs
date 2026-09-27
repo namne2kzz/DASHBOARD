@@ -21,7 +21,7 @@ public sealed class GetOverviewStatsQueryHandler(
     public async Task<OverviewStatsDto> Handle(GetOverviewStatsQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var sprints = await db.Set<Sprint>().AsNoTracking()
             .Where(s => s.RepositoryId == query.RepositoryId)

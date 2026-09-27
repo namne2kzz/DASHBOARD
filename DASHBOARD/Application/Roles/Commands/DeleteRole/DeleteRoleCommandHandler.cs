@@ -22,7 +22,7 @@ public sealed class DeleteRoleCommandHandler(
     public async Task<Result> Handle(DeleteRoleCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageRoles, ct))
-            return Result.Failure("You do not have permission to manage roles in this repository.");
+            throw new ForbiddenException("You do not have permission to manage roles in this repository.");
 
         var role = await db.Set<Role>()
             .FirstOrDefaultAsync(r => r.Id == command.RoleId && r.RepositoryId == command.RepositoryId, ct)

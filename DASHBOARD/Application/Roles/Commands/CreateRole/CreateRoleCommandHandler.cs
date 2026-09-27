@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Roles.DTOs;
@@ -22,7 +23,7 @@ public sealed class CreateRoleCommandHandler(
     public async Task<Result<RoleDto>> Handle(CreateRoleCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageRoles, ct))
-            return Result<RoleDto>.Failure("You do not have permission to manage roles in this repository.");
+            throw new ForbiddenException("You do not have permission to manage roles in this repository.");
 
         var nameExists = await db.Set<Role>()
             .AnyAsync(r => !r.IsDefault && r.RepositoryId == command.RepositoryId && r.Name == command.Name, ct);

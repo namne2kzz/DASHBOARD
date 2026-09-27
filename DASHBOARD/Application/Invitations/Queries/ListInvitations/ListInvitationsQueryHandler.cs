@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Invitations.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -21,7 +22,7 @@ internal sealed class ListInvitationsQueryHandler(
     public async Task<IReadOnlyList<InvitationListItemDto>> Handle(ListInvitationsQuery query, CancellationToken ct)
     {
         if (!await user.CanAsync(query.RepositoryId, SystemFunction.InviteMembers, ct))
-            throw new UnauthorizedAccessException("You do not have permission to view invitations for this repository.");
+            throw new ForbiddenException("You do not have permission to view invitations for this repository.");
 
         var invitations = await db.Set<Invitation>()
             .AsNoTracking()

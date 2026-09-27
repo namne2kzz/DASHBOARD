@@ -23,7 +23,7 @@ public sealed class CreateBacklogItemCommandHandler(
     public async Task<Result<BacklogItemDto>> Handle(CreateBacklogItemCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBacklog, ct))
-            return Result<BacklogItemDto>.Failure("You do not have permission to manage backlog items in this repository.");
+            throw new ForbiddenException("You do not have permission to manage backlog items in this repository.");
 
         // Validate parent exists and belongs to the same repo.
         if (command.ParentId.HasValue &&

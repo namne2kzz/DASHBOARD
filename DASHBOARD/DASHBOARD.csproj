@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <!-- FluentValidation validators are internal by design; the test project needs to instantiate them. -->
-    <InternalsVisibleTo Include="DASHBOARD.Tests" />
+    <InternalsVisibleTo Include="DASHBOARD.UnitTests" />
     <!-- Program is generated internal from top-level statements; WebApplicationFactory<Program> needs it. -->
     <InternalsVisibleTo Include="DASHBOARD.IntegrationTests" />
   </ItemGroup>

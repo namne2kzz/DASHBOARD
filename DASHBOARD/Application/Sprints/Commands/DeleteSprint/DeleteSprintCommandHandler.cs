@@ -22,7 +22,7 @@ public sealed class DeleteSprintCommandHandler(
     public async Task<Result> Handle(DeleteSprintCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSprint, ct))
-            return Result.Failure("You do not have permission to manage sprints in this repository.");
+            throw new ForbiddenException("You do not have permission to manage sprints in this repository.");
 
         var sprint = await db.Set<Sprint>().AsTracking()
             .FirstOrDefaultAsync(s => s.Id == command.SprintId && s.RepositoryId == command.RepositoryId, ct)

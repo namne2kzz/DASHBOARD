@@ -23,7 +23,7 @@ public sealed class PromoteToSprintCommandHandler(
     public async Task<Result<Guid>> Handle(PromoteToSprintCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.PromoteToSprint, ct))
-            return Result<Guid>.Failure("You do not have permission to promote backlog items to a sprint.");
+            throw new ForbiddenException("You do not have permission to promote backlog items to a sprint.");
 
         var item = await db.Set<BacklogItem>().AsTracking()
             .AsTracking()

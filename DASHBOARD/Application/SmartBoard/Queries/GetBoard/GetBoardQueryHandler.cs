@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.SmartBoard.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -19,7 +20,7 @@ public sealed class GetBoardQueryHandler(
     public async Task<IReadOnlyList<SmartBoardColumnDto>> Handle(GetBoardQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var columns = await db.Set<SmartBoardColumn>()
             .AsNoTracking()

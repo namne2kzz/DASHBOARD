@@ -22,7 +22,7 @@ public sealed class UpdateSprintCommandHandler(
     public async Task<Result> Handle(UpdateSprintCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSprint, ct))
-            return Result.Failure("You do not have permission to manage sprints in this repository.");
+            throw new ForbiddenException("You do not have permission to manage sprints in this repository.");
 
         if (command.EndDate <= command.StartDate)
             return Result.Failure("EndDate must be after StartDate.");

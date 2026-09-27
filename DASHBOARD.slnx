@@ -1,5 +1,5 @@
 <Solution>
   <Project Path="DASHBOARD/DASHBOARD.csproj" />
-  <Project Path="DASHBOARD.Tests/DASHBOARD.Tests.csproj" />
+  <Project Path="DASHBOARD.UnitTests/DASHBOARD.UnitTests.csproj" />
   <Project Path="DASHBOARD.IntegrationTests/DASHBOARD.IntegrationTests.csproj" />
 </Solution>

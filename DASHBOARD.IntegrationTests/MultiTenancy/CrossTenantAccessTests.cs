@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using DASHBOARD.Domain.Enums;
 using DASHBOARD.IntegrationTests.Infrastructure;
 
 namespace DASHBOARD.IntegrationTests.MultiTenancy;
@@ -45,18 +46,15 @@ public sealed class CrossTenantAccessTests(SqlServerFixture database) : IAsyncLi
     }
 
     /// <summary>
-    /// Statuses that count as a refusal. Which one comes back is a design choice, and this codebase
-    /// uses more than one: a controller filter answers 403, a missing row 404, and a handler that
-    /// returns <c>Result.Failure</c> is mapped to 400 — the convention adopted when BUG-005 replaced
-    /// thrown exceptions with results. What matters to these tests is that the request is refused
-    /// and nothing is written, not which of the four the pipeline picked.
+    /// Statuses that count as a refusal. A permission or membership failure is a 403; a resource
+    /// the caller may not even know exists can legitimately come back as 404. 400 is deliberately
+    /// absent — a cross-tenant request is not a malformed one, and answering it with 400 would tell
+    /// a client to fix its payload when the real answer is "not yours".
     /// </summary>
     private static readonly HttpStatusCode[] Refused =
     [
-        HttpStatusCode.Unauthorized,
         HttpStatusCode.Forbidden,
         HttpStatusCode.NotFound,
-        HttpStatusCode.BadRequest,
     ];
 
     // ── Reading another tenant's repository ─────────────────────────────────
@@ -126,7 +124,10 @@ public sealed class CrossTenantAccessTests(SqlServerFixture database) : IAsyncLi
             $"{ApiClient.V1}/repositories/{_globex.RepositoryId}/backlog",
             new
             {
-                type               = "UserStory",
+                // The API has no string-enum converter, so an enum must go over the wire as its numeric
+                // value — a name here fails model binding with 400 and never reaches the handler, which
+                // would leave the tenant check unproven.
+                type               = (int)BacklogItemType.UserStory,
                 title              = "Injected item",
                 acceptanceCriteria = string.Empty,
             });
@@ -147,7 +148,7 @@ public sealed class CrossTenantAccessTests(SqlServerFixture database) : IAsyncLi
             {
                 name             = "Injected role",
                 description      = "Should never exist",
-                allowedFunctions = new[] { "ViewRepository" },
+                permissions      = new[] { (int)SystemFunction.ViewRepository },
             });
 
         response.StatusCode.Should().BeOneOf(Refused);

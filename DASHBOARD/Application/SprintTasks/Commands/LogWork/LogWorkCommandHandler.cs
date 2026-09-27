@@ -25,7 +25,7 @@ public sealed class LogWorkCommandHandler(
         // same privilege as editing a work item directly — membership alone would let any member
         // close items through the back door.
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.EditWorkItem, ct))
-            return Result.Failure("You do not have permission to edit work items in this repository.");
+            throw new ForbiddenException("You do not have permission to edit work items in this repository.");
 
         if (command.HoursWorked <= 0)
             return Result.Failure("HoursWorked must be greater than zero.");

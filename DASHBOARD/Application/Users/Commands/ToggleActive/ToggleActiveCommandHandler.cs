@@ -21,7 +21,7 @@ namespace DASHBOARD.Application.Users.Commands.ToggleActive
         public async Task<Result> Handle(ToggleActiveCommand command, CancellationToken ct)
         {
             if (!await user.CanManageUserAsync(command.TargetUserId, ct))
-                return Result.Failure("Only global admins may activate or deactivate user accounts.");
+                throw new ForbiddenException("Only global admins may activate or deactivate user accounts.");
 
             var target = await db.Set<User>().IgnoreQueryFilters().AsTracking()
                 .FirstOrDefaultAsync(u => u.Id == command.TargetUserId, ct)

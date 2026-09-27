@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Repositories.DTOs;
 using DASHBOARD.Domain.Constants;
@@ -24,7 +25,7 @@ public sealed class CreateRepositoryCommandHandler(
     public async Task<RepositoryDto> Handle(CreateRepositoryCommand command, CancellationToken ct)
     {
         if (!await user.IsGlobalAdminAsync(ct))
-            throw new UnauthorizedAccessException("Only global admins may create repositories.");
+            throw new ForbiddenException("Only global admins may create repositories.");
 
         var orgId = user.OrgId;
 

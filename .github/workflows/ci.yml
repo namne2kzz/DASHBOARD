@@ -45,7 +45,7 @@ jobs:
       # Unit tests: fast, no external dependencies. This is the gate that must never be flaky.
       - name: Unit tests
         run: >
-          dotnet test DASHBOARD.Tests/DASHBOARD.Tests.csproj
+          dotnet test DASHBOARD.UnitTests/DASHBOARD.UnitTests.csproj
           --configuration Release --no-build --verbosity normal
 
       # Integration tests: start a real SQL Server via Testcontainers, so they need a Docker

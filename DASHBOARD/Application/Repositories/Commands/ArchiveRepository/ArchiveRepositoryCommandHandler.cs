@@ -21,7 +21,7 @@ public sealed class ArchiveRepositoryCommandHandler(
     public async Task<Result> Handle(ArchiveRepositoryCommand command, CancellationToken ct)
     {
         if (!await user.IsGlobalAdminAsync(ct))
-            return Result.Failure("Only global admins may archive repositories.");
+            throw new ForbiddenException("Only global admins may archive repositories.");
 
         var repo = await db.Set<Repository>()
             .AsTracking()

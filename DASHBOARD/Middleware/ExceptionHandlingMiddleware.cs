@@ -50,6 +50,13 @@ public sealed class ExceptionHandlingMiddleware(
                 nfe.Message,
                 (object)new Dictionary<string, string[]>()),
 
+            // The caller is authenticated but not allowed to do this. Distinct from 401 below,
+            // which means the credentials themselves are missing or no longer valid.
+            ForbiddenException fe => (
+                HttpStatusCode.Forbidden,
+                fe.Message,
+                (object)new Dictionary<string, string[]>()),
+
             UnauthorizedAccessException => (
                 HttpStatusCode.Unauthorized,
                 "Unauthorized.",

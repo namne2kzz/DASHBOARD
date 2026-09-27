@@ -27,7 +27,7 @@ public sealed class DeleteDiscussionCommandHandler(
             ?? throw new NotFoundException(nameof(DiscussionEntry), command.EntryId);
 
         if (!user.IsSelf(entry.AuthorId) && !await user.IsGlobalAdminAsync(ct))
-            return Result.Failure("Only the original author or a global admin may delete a comment.");
+            throw new ForbiddenException("Only the original author or a global admin may delete a comment.");
 
         entry.DeletedByUserId = user.UserId;
         db.Set<DiscussionEntry>().Remove(entry);

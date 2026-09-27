@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Members.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -19,7 +20,7 @@ public sealed class ListMembersQueryHandler(
     public async Task<IReadOnlyList<MemberDto>> Handle(ListMembersQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var q = db.Set<RepositoryMember>()
             .AsNoTracking()

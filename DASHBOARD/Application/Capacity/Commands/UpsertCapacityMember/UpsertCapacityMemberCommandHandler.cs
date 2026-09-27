@@ -26,7 +26,7 @@ public sealed class UpsertCapacityMemberCommandHandler(
     public async Task<CapacityMemberDto> Handle(UpsertCapacityMemberCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageCapacity, ct))
-            throw new UnauthorizedAccessException("You do not have permission to manage capacity in this repository.");
+            throw new ForbiddenException("You do not have permission to manage capacity in this repository.");
 
         if (!await db.Set<Sprint>().AnyAsync(s => s.Id == command.SprintId && s.RepositoryId == command.RepositoryId, ct))
             throw new NotFoundException(nameof(Sprint), command.SprintId);

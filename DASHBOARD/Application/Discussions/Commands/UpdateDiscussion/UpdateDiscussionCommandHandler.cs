@@ -28,7 +28,7 @@ public sealed class UpdateDiscussionCommandHandler(
             ?? throw new NotFoundException(nameof(DiscussionEntry), command.EntryId);
 
         if (!user.IsSelf(entry.AuthorId))
-            return Result.Failure("Only the original author may edit a comment.");
+            throw new ForbiddenException("Only the original author may edit a comment.");
 
         entry.Body = command.Body;
         entry.Touch();

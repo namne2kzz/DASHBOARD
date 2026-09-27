@@ -22,7 +22,7 @@ namespace DASHBOARD.Application.Users.Commands.ToggleAdmin
         {
             // Only another global admin may toggle a user's global admin status — never self.
             if (user.IsSelf(command.TargetUserId) || !await user.IsGlobalAdminAsync(ct))
-                return Result.Failure("You do not have permission to toggle to global admin.");
+                throw new ForbiddenException("You do not have permission to toggle to global admin.");
 
             var target = await db.Set<User>().AsTracking()
                 .FirstOrDefaultAsync(u => u.Id == command.TargetUserId, ct)

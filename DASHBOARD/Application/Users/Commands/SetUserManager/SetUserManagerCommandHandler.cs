@@ -24,7 +24,7 @@ public sealed class SetUserManagerCommandHandler(
     public async Task<Result> Handle(SetUserManagerCommand command, CancellationToken ct)
     {
         if (!await user.IsGlobalAdminAsync(ct))
-            return Result.Failure("Only global admins may change the organisation hierarchy.");
+            throw new ForbiddenException("Only global admins may change the organisation hierarchy.");
 
         if (command.ManagerId == command.UserId)
             return Result.Failure("A user cannot be their own manager.");

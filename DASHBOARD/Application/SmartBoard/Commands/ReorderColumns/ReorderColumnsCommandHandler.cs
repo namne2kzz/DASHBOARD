@@ -1,4 +1,5 @@
 ﻿using DASHBOARD.Application.Common.Interfaces;
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
@@ -21,7 +22,7 @@ public sealed class ReorderColumnsCommandHandler(
     public async Task<Result> Handle(ReorderColumnsCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBoard, ct))
-            return Result.Failure("You do not have permission to manage the board in this repository.");
+            throw new ForbiddenException("You do not have permission to manage the board in this repository.");
 
         var columns = await db.Set<SmartBoardColumn>()
             .AsTracking()

@@ -22,7 +22,7 @@ public sealed class DeleteSprintTaskCommandHandler(
     public async Task<Result> Handle(DeleteSprintTaskCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.DeleteWorkItem, ct))
-            return Result.Failure("You do not have permission to delete work items in this repository.");
+            throw new ForbiddenException("You do not have permission to delete work items in this repository.");
 
         var task = await db.Set<SprintTask>()
             .Include(t => t.SubTasks)

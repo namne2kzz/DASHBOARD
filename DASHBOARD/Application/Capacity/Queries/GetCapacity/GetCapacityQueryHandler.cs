@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Capacity.DTOs;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Domain.Entities;
@@ -19,7 +20,7 @@ public sealed class GetCapacityQueryHandler(
     public async Task<GetCapacityResult> Handle(GetCapacityQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var members = await db.Set<CapacityMember>()
             .AsNoTracking()

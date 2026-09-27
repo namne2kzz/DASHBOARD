@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.SmartBoard.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -21,7 +22,7 @@ public sealed class CreateColumnCommandHandler(
     public async Task<SmartBoardColumnDto> Handle(CreateColumnCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBoard, ct))
-            throw new UnauthorizedAccessException("You do not have permission to manage the board in this repository.");
+            throw new ForbiddenException("You do not have permission to manage the board in this repository.");
 
         var maxOrder = await db.Set<SmartBoardColumn>()
             .AsNoTracking()

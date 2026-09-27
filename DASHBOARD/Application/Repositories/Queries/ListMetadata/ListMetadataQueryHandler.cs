@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Repositories.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -20,7 +21,7 @@ public sealed class ListMetadataQueryHandler(
     public async Task<IReadOnlyList<RepositoryMetadataDto>> Handle(ListMetadataQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         // Global entries (shared across repos) plus entries owned by this repository.
         var q = db.Set<RepositoryMetadata>()
