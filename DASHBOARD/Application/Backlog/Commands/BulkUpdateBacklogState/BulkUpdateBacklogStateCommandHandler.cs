@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Backlog.DTOs;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
@@ -25,7 +26,7 @@ public sealed class BulkUpdateBacklogStateCommandHandler(
     public async Task<Result<BulkOperationResultDto>> Handle(BulkUpdateBacklogStateCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBacklog, ct))
-            return Result<BulkOperationResultDto>.Failure("You do not have permission to manage backlog items in this repository.");
+            throw new ForbiddenException("You do not have permission to manage backlog items in this repository.");
 
         if (command.State == BacklogItemState.Committed)
             return Result<BulkOperationResultDto>.Failure("Use 'Move to Iteration' or 'Promote to Sprint' to commit backlog items.");

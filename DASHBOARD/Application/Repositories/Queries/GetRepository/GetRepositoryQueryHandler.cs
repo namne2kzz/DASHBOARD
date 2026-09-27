@@ -22,7 +22,7 @@ public sealed class GetRepositoryQueryHandler(
     public async Task<RepositoryDto> Handle(GetRepositoryQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var memberCount = await db.Set<RepositoryMember>()
             .AsNoTracking()

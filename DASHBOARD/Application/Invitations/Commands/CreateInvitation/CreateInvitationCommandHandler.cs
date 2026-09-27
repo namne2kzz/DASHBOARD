@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Domain.Interfaces;
 using DASHBOARD.Application.Common.Models;
@@ -30,7 +31,7 @@ internal sealed class CreateInvitationCommandHandler(
     public async Task<Result<InvitationDto>> Handle(CreateInvitationCommand request, CancellationToken ct)
     {
         if (!await user.CanAsync(request.RepositoryId, SystemFunction.InviteMembers, ct))
-            return Result<InvitationDto>.Failure("You do not have permission to invite members to this repository.");
+            throw new ForbiddenException("You do not have permission to invite members to this repository.");
 
         var repositoryName = await db.Set<Repository>().AsNoTracking()
             .Where(r => r.Id == request.RepositoryId && !r.IsArchived)

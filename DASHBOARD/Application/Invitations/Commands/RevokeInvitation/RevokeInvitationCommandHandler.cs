@@ -22,7 +22,7 @@ public sealed class RevokeInvitationCommandHandler(
     public async Task<Result> Handle(RevokeInvitationCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.InviteMembers, ct))
-            return Result.Failure("You do not have permission to manage invitations in this repository.");
+            throw new ForbiddenException("You do not have permission to manage invitations in this repository.");
 
         var invitation = await db.Set<Invitation>().AsTracking()
             .FirstOrDefaultAsync(i => i.Id == command.InvitationId && i.RepositoryId == command.RepositoryId, ct)

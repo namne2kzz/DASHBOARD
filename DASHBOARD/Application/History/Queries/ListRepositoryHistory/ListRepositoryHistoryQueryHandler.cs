@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.History.DTOs;
@@ -24,7 +25,7 @@ public sealed class ListRepositoryHistoryQueryHandler(
     public async Task<PagedResult<AuditLogEntryDto>> Handle(ListRepositoryHistoryQuery query, CancellationToken ct)
     {
         if (!await user.CanAsync(query.RepositoryId, SystemFunction.ManageMembers, ct))
-            throw new UnauthorizedAccessException("You do not have permission to view the audit log for this repository.");
+            throw new ForbiddenException("You do not have permission to view the audit log for this repository.");
 
         var repoCode = await db.Set<Repository>().AsNoTracking()
             .Where(r => r.Id == query.RepositoryId)

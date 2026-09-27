@@ -22,7 +22,7 @@ public sealed class UpdateProfileCommandHandler(
     {
         // Only the user themselves or a global admin may update a profile.
         if (!user.IsSelf(command.TargetUserId) && !await user.IsGlobalAdminAsync(ct))
-            return Result.Failure("You do not have permission to update this profile.");
+            throw new ForbiddenException("You do not have permission to update this profile.");
 
         var target = await db.Set<User>()
             .AsTracking()

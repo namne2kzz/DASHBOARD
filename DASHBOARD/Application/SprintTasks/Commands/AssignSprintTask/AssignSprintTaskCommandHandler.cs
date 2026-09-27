@@ -23,7 +23,7 @@ public sealed class AssignSprintTaskCommandHandler(
     public async Task<Result> Handle(AssignSprintTaskCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.AssignWorkItem, ct))
-            return Result.Failure("You do not have permission to assign work items in this repository.");
+            throw new ForbiddenException("You do not have permission to assign work items in this repository.");
 
         var task = await db.Set<SprintTask>()
             .AsTracking()

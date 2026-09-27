@@ -21,7 +21,7 @@ public sealed class UpdateRemainingWorkCommandHandler(
     public async Task<Result> Handle(UpdateRemainingWorkCommand command, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(command.RepositoryId, ct))
-            return Result.Failure("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         if (command.RemainingWork < 0)
             return Result.Failure("RemainingWork cannot be negative.");

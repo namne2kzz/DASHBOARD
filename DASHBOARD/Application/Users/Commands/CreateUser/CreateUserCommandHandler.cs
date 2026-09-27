@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Users.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -24,7 +25,7 @@ public sealed class CreateUserCommandHandler(
     public async Task<SystemUserListItemDto> Handle(CreateUserCommand command, CancellationToken ct)
     {
         if (!await user.IsGlobalAdminAsync(ct))
-            throw new UnauthorizedAccessException("Only global admins may create user accounts.");
+            throw new ForbiddenException("Only global admins may create user accounts.");
 
         var orgId = user.OrgId;
 

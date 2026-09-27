@@ -22,7 +22,7 @@ public sealed class DeleteBacklogItemCommandHandler(
     public async Task<Result> Handle(DeleteBacklogItemCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBacklog, ct))
-            return Result.Failure("You do not have permission to manage backlog items in this repository.");
+            throw new ForbiddenException("You do not have permission to manage backlog items in this repository.");
 
         var item = await db.Set<BacklogItem>()
             .FirstOrDefaultAsync(b => b.Id == command.ItemId && b.RepositoryId == command.RepositoryId, ct)

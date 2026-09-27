@@ -23,7 +23,7 @@ public sealed class ChangeSprintTaskStateCommandHandler(
     public async Task<Result> Handle(ChangeSprintTaskStateCommand command, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(command.RepositoryId, ct))
-            return Result.Failure("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var task = await db.Set<SprintTask>()
             .AsTracking()

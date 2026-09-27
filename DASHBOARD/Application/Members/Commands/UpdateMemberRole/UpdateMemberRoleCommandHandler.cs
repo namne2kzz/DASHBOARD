@@ -23,7 +23,7 @@ public sealed class UpdateMemberRoleCommandHandler(
     public async Task<Result> Handle(UpdateMemberRoleCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageMembers, ct))
-            return Result.Failure("You do not have permission to manage members in this repository.");
+            throw new ForbiddenException("You do not have permission to manage members in this repository.");
 
         var member = await db.Set<RepositoryMember>()
             .AsTracking()

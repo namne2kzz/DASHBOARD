@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.SprintTasks.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -20,7 +21,7 @@ public sealed class GetSprintTaskMetadataQueryHandler(
     public async Task<IReadOnlyList<WorkItemMetadataDto>> Handle(GetSprintTaskMetadataQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var rows = await db.Set<WorkItemMetadata>().AsNoTracking()
             .Where(w => w.SprintTaskId == query.SprintTaskId)

@@ -22,7 +22,7 @@ public sealed class UpdateBacklogItemCommandHandler(
     public async Task<Result> Handle(UpdateBacklogItemCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBacklog, ct))
-            return Result.Failure("You do not have permission to manage backlog items in this repository.");
+            throw new ForbiddenException("You do not have permission to manage backlog items in this repository.");
 
         if (command.State == BacklogItemState.Committed)
             return Result.Failure("Cannot set state to 'Committed' directly. Use 'Promote to Sprint' to commit a backlog item.");

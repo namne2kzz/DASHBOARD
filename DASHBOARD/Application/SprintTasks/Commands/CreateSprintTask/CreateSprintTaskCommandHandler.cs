@@ -40,7 +40,7 @@ public sealed class CreateSprintTaskCommandHandler(
     public async Task<Result<SprintTaskDto>> Handle(CreateSprintTaskCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.CreateWorkItem, ct))
-            return Result<SprintTaskDto>.Failure("You do not have permission to create work items in this repository.");
+            throw new ForbiddenException("You do not have permission to create work items in this repository.");
 
         // UserStory must not have an assignee.
         if (command.Type == SprintTaskType.UserStory && command.AssignedToId.HasValue)

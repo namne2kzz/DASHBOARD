@@ -22,7 +22,7 @@ public sealed class UpdateRepositoryCommandHandler(
     public async Task<Result> Handle(UpdateRepositoryCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.EditRepository, ct))
-            return Result.Failure("You do not have permission to edit this repository.");
+            throw new ForbiddenException("You do not have permission to edit this repository.");
 
         var repo = await db.Set<Repository>()
             .AsTracking()

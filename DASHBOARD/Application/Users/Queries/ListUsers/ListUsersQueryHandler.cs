@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Users.DTOs;
@@ -21,7 +22,7 @@ public sealed class ListUsersQueryHandler(
     public async Task<PagedResult<SystemUserListItemDto>> Handle(ListUsersQuery query, CancellationToken ct)
     {
         if (!await user.IsGlobalAdminAsync(ct))
-            throw new UnauthorizedAccessException("Only global admins may list all users.");
+            throw new ForbiddenException("Only global admins may list all users.");
 
         // Multi-tenant: an org admin only sees users within their own organization.
         var orgId = user.OrgId;

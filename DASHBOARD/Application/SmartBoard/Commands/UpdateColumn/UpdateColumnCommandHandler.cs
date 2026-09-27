@@ -22,7 +22,7 @@ public sealed class UpdateColumnCommandHandler(
     public async Task<Result> Handle(UpdateColumnCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageBoard, ct))
-            return Result.Failure("You do not have permission to manage the board in this repository.");
+            throw new ForbiddenException("You do not have permission to manage the board in this repository.");
 
         var column = await db.Set<SmartBoardColumn>()
             .AsTracking()

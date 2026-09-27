@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using DASHBOARD.Domain.Constants;
+using DASHBOARD.Domain.Enums;
 using DASHBOARD.IntegrationTests.Infrastructure;
 
 namespace DASHBOARD.IntegrationTests.Authorization;
@@ -127,8 +128,8 @@ public sealed class EndpointAuthorizationTests(SqlServerFixture database) : IAsy
             $"{ApiClient.V1}/repositories/{_developer.RepositoryId}/sprints",
             new { name = "Unauthorised sprint", startDate = "2026-07-01", endDate = "2026-07-14" });
 
-        response.StatusCode.Should().BeOneOf(
-            [HttpStatusCode.Forbidden, HttpStatusCode.BadRequest],
+        response.StatusCode.Should().Be(
+            HttpStatusCode.Forbidden,
             "managing sprints needs ManageSprint, which the Developer role does not carry");
 
         await using var db = database.CreateContext();
@@ -144,10 +145,11 @@ public sealed class EndpointAuthorizationTests(SqlServerFixture database) : IAsy
             {
                 name             = "Unauthorised role",
                 description      = "Should not exist",
-                allowedFunctions = new[] { "ViewRepository" },
+                permissions      = new[] { (int)SystemFunction.ViewRepository },
             });
 
-        response.StatusCode.Should().BeOneOf([HttpStatusCode.Forbidden, HttpStatusCode.BadRequest]);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "creating roles needs ManageRoles, which the Developer role does not carry");
 
         await using var db = database.CreateContext();
         db.Roles.Any(r => r.Name == "Unauthorised role").Should().BeFalse();
@@ -163,7 +165,8 @@ public sealed class EndpointAuthorizationTests(SqlServerFixture database) : IAsy
             $"{ApiClient.V1}/repositories/{_developer.RepositoryId}/members",
             new { userId = _scrumMaster.UserId, defaultRole = "Developer", roleId });
 
-        response.StatusCode.Should().BeOneOf([HttpStatusCode.Forbidden, HttpStatusCode.BadRequest]);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "adding members needs ManageMembers, which the Developer role does not carry");
     }
 
     [Fact]
@@ -171,13 +174,38 @@ public sealed class EndpointAuthorizationTests(SqlServerFixture database) : IAsy
     {
         var response = await _developerClient.GetAsync($"{ApiClient.V1}/users");
 
-        // The handler throws UnauthorizedAccessException, which the exception middleware maps to
-        // 401 rather than 403. Worth noting: an authenticated caller who simply lacks a privilege
-        // is arguably a 403, and a client seeing 401 may try to refresh a token that was never the
-        // problem. Recorded here as current behaviour rather than asserted as correct.
-        response.StatusCode.Should().BeOneOf(
-            [HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden, HttpStatusCode.BadRequest],
-            "the system user list is global-admin only");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
+            "the caller is authenticated and known — they simply lack the privilege, " +
+            "and a 401 here would send the client off to refresh a perfectly good token");
+    }
+
+    // ── 401 and 403 mean different things ───────────────────────────────────
+
+    [Fact]
+    public async Task MissingCredentialsGive401WhileMissingPrivilegeGives403()
+    {
+        // The two must never be conflated. 401 tells a client its credentials are absent or stale,
+        // so the sensible reaction is to sign in again; 403 tells it the credentials are fine and
+        // the answer is still no. Returning 401 for an authorisation failure sends the browser
+        // into a pointless token refresh, and can mask a genuine permission problem as a session
+        // problem.
+        using var anonymous = ApiClient.Anonymous(_factory);
+
+        var noToken = await anonymous.GetAsync($"{ApiClient.V1}/users");
+        var noRight = await _developerClient.GetAsync($"{ApiClient.V1}/users");
+
+        noToken.StatusCode.Should().Be(HttpStatusCode.Unauthorized, "no credentials were presented");
+        noRight.StatusCode.Should().Be(HttpStatusCode.Forbidden, "the credentials are valid, the privilege is not");
+    }
+
+    [Fact]
+    public async Task ARepositoryTheCallerIsNotAMemberOfGives403NotA401()
+    {
+        // Membership failures run through the same path, so they are pinned here too.
+        var response = await _developerClient.GetAsync(
+            $"{ApiClient.V1}/repositories/{_scrumMaster.RepositoryId}/sprints");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     // ── Authenticated and allowed ───────────────────────────────────────────

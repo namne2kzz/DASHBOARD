@@ -23,7 +23,7 @@ public sealed class AddDayOffCommandHandler(
     public async Task<Result<DayOffDto>> Handle(AddDayOffCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageCapacity, ct))
-            return Result<DayOffDto>.Failure("You do not have permission to manage capacity in this repository.");
+            throw new ForbiddenException("You do not have permission to manage capacity in this repository.");
 
         var sprint = await db.Set<Sprint>().AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == command.SprintId && s.RepositoryId == command.RepositoryId, ct)

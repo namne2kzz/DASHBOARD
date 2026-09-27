@@ -26,7 +26,7 @@ public sealed class RemoveCapacityMemberCommandHandler(
     public async Task<Result> Handle(RemoveCapacityMemberCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageCapacity, ct))
-            return Result.Failure("You do not have permission to manage capacity in this repository.");
+            throw new ForbiddenException("You do not have permission to manage capacity in this repository.");
 
         var cap = await db.Set<CapacityMember>()
             .FirstOrDefaultAsync(c => c.Id == command.CapacityMemberId && c.SprintId == command.SprintId, ct)

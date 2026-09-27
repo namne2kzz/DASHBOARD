@@ -29,11 +29,11 @@ public sealed class UpdateMetadataCommandHandler(
         if (entry.IsGlobal)
         {
             if (!await user.IsGlobalAdminAsync(ct))
-                return Result.Failure("Only global admins may manage global metadata.");
+                throw new ForbiddenException("Only global admins may manage global metadata.");
         }
         else if (!await user.CanAsync(entry.RepositoryId!.Value, SystemFunction.ManageMetadata, ct))
         {
-            return Result.Failure("You do not have permission to manage settings in this repository.");
+            throw new ForbiddenException("You do not have permission to manage settings in this repository.");
         }
 
         var duplicate = await db.Set<RepositoryMetadata>()

@@ -22,7 +22,7 @@ public sealed class ResolveSprintTaskKeyQueryHandler(
     public async Task<Guid> Handle(ResolveSprintTaskKeyQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         // Parse the numeric suffix: "DASH-10" → 10, "10" → 10.
         var segments = query.Key.Trim().Split('-');

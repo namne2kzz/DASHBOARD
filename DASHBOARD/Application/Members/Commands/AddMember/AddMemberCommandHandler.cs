@@ -1,4 +1,5 @@
 ﻿using DASHBOARD.Application.Common.Interfaces;
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Members.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -22,7 +23,7 @@ public sealed class AddMemberCommandHandler(
     public async Task<Result<MemberDto>> Handle(AddMemberCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageMembers, ct))
-            return Result<MemberDto>.Failure("You do not have permission to manage members in this repository.");
+            throw new ForbiddenException("You do not have permission to manage members in this repository.");
 
         var targetUser = await db.Set<User>().AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == command.UserId, ct);

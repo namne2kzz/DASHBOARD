@@ -21,7 +21,7 @@ public sealed class GetSprintTaskDetailQueryHandler(
     public async Task<SprintTaskDto> Handle(GetSprintTaskDetailQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var task = await db.Set<SprintTask>()
             .AsNoTracking()

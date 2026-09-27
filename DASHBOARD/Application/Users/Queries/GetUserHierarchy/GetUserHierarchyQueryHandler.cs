@@ -20,7 +20,7 @@ public sealed class GetUserHierarchyQueryHandler(
     public async Task<UserHierarchyDto> Handle(GetUserHierarchyQuery query, CancellationToken ct)
     {
         if (!await user.IsGlobalAdminAsync(ct))
-            throw new UnauthorizedAccessException("Only global admins may view the organisation hierarchy.");
+            throw new ForbiddenException("Only global admins may view the organisation hierarchy.");
 
         var all = await db.Set<User>().IgnoreQueryFilters().AsNoTracking()
             .Select(u => new { u.Id, u.Name, u.Email, u.AvatarClass, u.IsGlobalAdmin, u.IsDeleted, u.ManagerId })

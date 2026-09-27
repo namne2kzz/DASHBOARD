@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Repositories.DTOs;
 using DASHBOARD.Domain.Entities;
@@ -24,11 +25,11 @@ public sealed class AddMetadataCommandHandler(
         if (command.IsGlobal)
         {
             if (!await user.IsGlobalAdminAsync(ct))
-                throw new UnauthorizedAccessException("Only global admins may manage global metadata.");
+                throw new ForbiddenException("Only global admins may manage global metadata.");
         }
         else if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageMetadata, ct))
         {
-            throw new UnauthorizedAccessException("You do not have permission to manage settings in this repository.");
+            throw new ForbiddenException("You do not have permission to manage settings in this repository.");
         }
 
         Guid? repositoryId = command.IsGlobal ? null : command.RepositoryId;

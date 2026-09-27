@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Sprints.DTOs;
@@ -29,7 +30,7 @@ public sealed class CreateSprintCommandHandler(
     public async Task<Result<SprintDto>> Handle(CreateSprintCommand command, CancellationToken ct)
     {
         if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSprint, ct))
-            return Result<SprintDto>.Failure("You do not have permission to manage sprints in this repository.");
+            throw new ForbiddenException("You do not have permission to manage sprints in this repository.");
 
         var overlaps = await db.Set<Sprint>()
             .AnyAsync(s => s.RepositoryId == command.RepositoryId

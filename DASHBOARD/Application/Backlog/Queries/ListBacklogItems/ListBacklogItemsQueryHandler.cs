@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Backlog.Commands.CreateBacklogItem;
 using DASHBOARD.Application.Backlog.DTOs;
 using DASHBOARD.Application.Common.Interfaces;
@@ -21,7 +22,7 @@ public sealed class ListBacklogItemsQueryHandler(
     public async Task<IReadOnlyList<BacklogItemDto>> Handle(ListBacklogItemsQuery query, CancellationToken ct)
     {
         if (!await user.IsMemberOfAsync(query.RepositoryId, ct))
-            throw new UnauthorizedAccessException("You are not a member of this repository.");
+            throw new ForbiddenException("You are not a member of this repository.");
 
         var all = await db.Set<BacklogItem>()
             .AsNoTracking()
