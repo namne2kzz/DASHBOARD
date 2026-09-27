@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Caching;
 using DASHBOARD.Application.Contracts;
 using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;
@@ -18,9 +19,10 @@ public sealed class GitSyncConsumer(IDistributedCache cache) : IConsumer<GitSync
     {
         var msg = context.Message;
 
-        // Must match the cache key format used by GetGitRepositoryOverviewQueryHandler exactly,
-        // or the invalidation silently misses and the stale entry survives until its TTL expires.
-        var cacheKey = $"git:overview:{msg.RepositoryId}:{msg.RepoUrl}";
+        // Built from the shared CacheKeys helper so this invalidation cannot drift away from the key
+        // GetGitRepositoryOverviewQueryHandler writes — a mismatch would silently miss and leave the
+        // stale entry alive until its TTL expires.
+        var cacheKey = CacheKeys.GitOverview(msg.RepositoryId, msg.RepoUrl);
 
         await cache.RemoveAsync(cacheKey, context.CancellationToken);
     }
