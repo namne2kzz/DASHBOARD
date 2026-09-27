@@ -42,10 +42,8 @@ jobs:
       - name: Build
         run: dotnet build DASHBOARD.slnx --configuration Release --no-restore
 
-      # DASHBOARD.slnx holds a single project and has NO test project yet.
-      # Uncomment once DASHBOARD.Tests is added to the solution.
-      # - name: Test
-      #   run: dotnet test DASHBOARD.slnx --configuration Release --no-build --verbosity normal
+      - name: Test
+        run: dotnet test DASHBOARD.slnx --configuration Release --no-build --verbosity normal
 
   frontend:
     name: Frontend (Angular 19)

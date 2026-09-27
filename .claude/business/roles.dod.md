@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-09-26 | 14:02 | Cập nhật lại danh sách SystemFunction | `SystemFunction` giờ có 20 quyền (thêm ManageMembers/ManageRoles/InviteMembers/ManageMetadata/AssignWorkItem/ManageBacklog/PromoteToSprint/ActivateSprint/ViewAnalytics/ManagePipeline/ManageRepo/ManageChannels); **bỏ `ManageSettings` và `ManageWiki`**. Cập nhật lại bộ quyền của 5 default role cho khớp `DefaultRoleDefinitions` |
 | 2026-06-28 | 17:00 | Default role per-repo | Bỏ default role global + hardcode GUID (`DefaultRoleIds`). Mỗi repo tự sinh 5 default role + 5 RepoRole discipline lúc `CreateRepository` (template `DefaultRoleDefinitions`). `Role.RepositoryId` luôn set. |
 | 2026-06-28 | 16:00 | Chức danh = RepoRole metadata | Chức danh (`DefaultRole`) đổi từ enum `TeamRole` (đã xoá) sang value RepoRole metadata (string). "TeamRole" trong doc dưới đây = chức danh lấy từ metadata. |
 | 2026-06-28 | 14:30 | Role là nguồn quyền duy nhất | Bỏ `RolePrivilegeService`: permission = chỉ `Role.AllowedFunctions` (GlobalAdmin bypass). `TeamRole` thành chức danh thuần (không còn quyền). `RepositoryMember.RoleId` thành **bắt buộc** (NOT NULL). |
@@ -23,14 +24,36 @@
 - `Role`: có `Name`, `Description`, danh sách `SystemFunction` được phép (lưu JSON), và 2 field phân loại:
   - `IsDefault`: `true` = default role (tạo tự động lúc tạo repo, không sửa được); `false` = custom role.
   - `RepositoryId`: **luôn set** (mọi role thuộc 1 Repository — không còn role global).
-- `SystemFunction` (enum): ViewRepository, EditRepository, ManageSettings, CreateWorkItem, EditWorkItem, DeleteWorkItem, ManageSprint, ManageCapacity, ManageWiki, ManageBoard.
-- **Mỗi Repository tự có 5 default role** (sinh lúc `CreateRepository` từ template `DefaultRoleDefinitions`, không hardcode GUID): **Scrum Master** (tất cả quyền), **Project Manager** (View/Create/Edit + ManageSprint/ManageCapacity/ManageSettings), **Developer / Tester / Business Analyst** (View/Create/EditWorkItem).
+- `SystemFunction` (enum) — 20 quyền, nhóm theo chức năng:
+  - **Repository**: `ViewRepository`, `EditRepository`
+  - **Members & Access**: `ManageMembers`, `ManageRoles`, `InviteMembers`, `ManageMetadata`
+  - **Work Item**: `CreateWorkItem`, `EditWorkItem`, `DeleteWorkItem`, `AssignWorkItem`
+  - **Backlog**: `ManageBacklog`, `PromoteToSprint`
+  - **Sprint**: `ManageSprint`, `ActivateSprint`
+  - **Capacity**: `ManageCapacity`
+  - **Board**: `ManageBoard`
+  - **Analytics & Integration**: `ViewAnalytics`, `ManagePipeline`, `ManageRepo`
+  - **Collaboration (HUB)**: `ManageChannels`
+
+  > `ManageSettings` và `ManageWiki` **đã bị bỏ**: quyền settings tách thành `ManageMembers`/`ManageRoles`/`ManageMetadata`/`ManageRepo`; Wiki chuyển sang HUB.
+
+- **Mỗi Repository tự có 5 default role** (sinh lúc `CreateRepository` từ template `DefaultRoleDefinitions`, không hardcode GUID):
+
+  | Default role | Quyền |
+  |---|---|
+  | **Scrum Master** | **Tất cả** `SystemFunction` |
+  | **Project Manager** | **Tất cả** `SystemFunction` (hiện giống Scrum Master) |
+  | **Developer** | View + Create/Edit/AssignWorkItem + ViewAnalytics + ManagePipeline + ManageRepo |
+  | **Tester** | View + Create/Edit/AssignWorkItem + ManageBacklog + ViewAnalytics |
+  | **Business Analyst** | View + Create/Edit/Delete/AssignWorkItem + ManageBacklog + PromoteToSprint + ManageSprint + ActivateSprint + ViewAnalytics |
+
+  > Tên 5 default role cũng được dùng làm value chức danh (`RepoRole` metadata) — xem [metadata.dod.md](metadata.dod.md).
 - `RepositoryMember.RoleId`: **bắt buộc (NOT NULL)** — trỏ tới đúng 1 `Role` (default hoặc custom). Đây là **nguồn quyền duy nhất** của member.
 - `RepositoryMember.DefaultRole` (string, value RepoRole metadata): chỉ là **chức danh** (discipline) cho capacity/planning, **không cấp quyền gì**.
 
 ## 3. Business Rules & Invariants
 
-- Cần quyền `ManageSettings` để create/update/delete/clone role.
+- Cần quyền `ManageRoles` để create/update/delete/clone role.
 - **Default role không sửa được, không xoá được** (`Update`/`Delete` trả lỗi "Default roles cannot be modified/deleted"). Chỉ custom role mới sửa/xoá được.
 - Tên custom role unique trong phạm vi 1 Repository (default role không tính vào check unique).
 - Tên không được rỗng; description optional.
@@ -39,7 +62,7 @@
 - Clone: clone được **cả default lẫn custom** role → luôn ra 1 **custom role mới** (`IsDefault = false`) cùng permission, name mới, scope theo Repository hiện tại.
 - **Permission của member = đúng `AllowedFunctions` của role được gán** (GlobalAdmin bypass có hết quyền). Chức danh (`DefaultRole`) KHÔNG cộng quyền. Không còn merge "default ∪ custom".
 - `RoleId` bắt buộc: khi add member phải gán 1 role (mặc định auto chọn default role khớp chức danh: Dev→Developer...). Không có trạng thái "no role".
-- Guard chống mất admin: không cho đổi/xoá khiến repo **không còn member nào có quyền `ManageSettings`** (dựa permission thật, không dựa chức danh SM).
+- Guard chống mất admin: không cho đổi/xoá khiến repo **không còn member nào có quyền `ManageMembers`** (dựa permission thật, không dựa chức danh SM) — `ManageSettingsGuard`.
 - `ListRoles` của 1 Repository trả về tất cả role của Repository đó (default + custom), default role xếp trước.
 
 ## 4. Main Workflows / Use Cases

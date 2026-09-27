@@ -51,7 +51,10 @@ public sealed class BulkDeleteBacklogItemsCommandHandler(
             await uow.CommitAsync(ct);
         }
 
+        // Skipped is measured against the ids the caller asked for, so Affected + Skipped always
+        // equals the selection size. An id that matches no row — already deleted, or belonging to
+        // another repository — counts as skipped rather than vanishing from both figures.
         return Result<BulkOperationResultDto>.Success(
-            new BulkOperationResultDto(deletable.Count, items.Count - deletable.Count));
+            new BulkOperationResultDto(deletable.Count, ids.Count - deletable.Count));
     }
 }

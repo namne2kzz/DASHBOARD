@@ -70,8 +70,20 @@ public sealed class UpsertCapacityMemberCommandHandler(
             .AsNoTracking()
             .FirstOrDefaultAsync(l => l.SprintId == command.SprintId, ct);
 
+        // Capacity is already committed, so nothing the HUB client does may surface to the caller.
+        // Discarding the task alone is not enough: a client that throws *before* returning a task
+        // (disposed HttpClient, argument validation) would escape straight out of the handler.
         if (link is not null)
-            _ = hub.AddMemberAsync(link.HubChannelId, command.UserId, CancellationToken.None);
+        {
+            try
+            {
+                _ = hub.AddMemberAsync(link.HubChannelId, command.UserId, CancellationToken.None);
+            }
+            catch
+            {
+                // Best-effort sync — the member is configured either way.
+            }
+        }
 
         return new CapacityMemberDto(existing.Id, existing.SprintId, existing.UserId,
             memberUser.Name, memberUser.AvatarClass, existing.Role, existing.HoursPerDay, existing.OvertimeHoursPerDay);

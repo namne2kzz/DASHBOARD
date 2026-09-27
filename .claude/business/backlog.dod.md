@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-09-26 | 16:20 | Filter giữ nguyên cây · thống nhất Skipped | (1) Filter `type`/`state` khi list backlog: item khớp filter được giữ **kèm toàn bộ cha ông** để không có item nào mồ côi — trước đó lọc `type=UserStory` làm Epic/Feature cha bị loại, kéo theo US biến mất khỏi kết quả. Cha chỉ được giữ khi dẫn tới ít nhất 1 match, và không kéo theo các con khác không khớp. (2) `BulkDelete` đổi cách đếm `Skipped` cho khớp `BulkUpdateState`: `Affected + Skipped` luôn bằng số item người dùng chọn |
 | 2026-07-25 | 17:06 | Thêm bulk operations | Cho phép multi-select nhiều BacklogItem để bulk-change state và bulk-delete (có skip rule chống orphan) |
 | 2026-06-23 | 20:58 | Khởi tạo document | Tạo document business ban đầu cho feature Backlog |
 
@@ -32,6 +33,8 @@ Quản lý product backlog dạng cây Epic → Feature → UserStory, có refin
 - **Bulk operations** (cần quyền `ManageBacklog`):
   - Bulk-change state: áp 1 refinement state (New/Refining/Ready) cho nhiều item cùng lúc. Item đang `Committed` bị **skip** (không revert promotion). Không cho bulk set sang `Committed`.
   - Bulk-delete: item có **con không nằm trong danh sách chọn** thì bị **skip** (chống orphan) — giống rule single-delete "không xoá item còn con". Chọn cả cha lẫn con thì xoá được cả cụm.
+  - Summary trả về `Affected + Skipped` = **đúng số item người dùng chọn** (cả 2 bulk operation). Id không khớp row nào (đã bị xoá, hoặc thuộc repo khác) tính là `Skipped` — không biến mất khỏi cả 2 cột.
+- **Filter khi list backlog** (`type` / `state`): item khớp filter được trả về **kèm toàn bộ cha ông** của nó, giữ nguyên cấu trúc cây Epic → Feature → UserStory. Không có item nào bị mồ côi. Cha chỉ xuất hiện khi dẫn tới ít nhất 1 item khớp (Epic rỗng không lọt vào), và việc được giữ lại **không** kéo theo các con khác không khớp filter.
   - Kết quả trả về summary `{ affected, skipped }` để UI báo số item đã xử lý / bị bỏ qua.
 
 ## 4. Main Workflows / Use Cases

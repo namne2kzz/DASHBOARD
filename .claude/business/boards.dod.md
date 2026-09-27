@@ -13,12 +13,12 @@
 
 ## 1. Purpose
 
-Trang Kanban Board (route `/boards`) là **view vận hành** — hiển thị toàn bộ task của sprint đang chọn dưới dạng card kéo-thả qua các cột, nơi team thực sự làm việc hàng ngày. Khác với [smart-board.dod.md](smart-board.dod.md) (Workflow page — chỉ cấu hình cột/WIP limit) và [sprint-tasks.dod.md](sprint-tasks.dod.md) (business rule chung của SprintTask) — feature này là lớp **trải nghiệm tương tác** (drag-drop, filter, quick-create) kết hợp dữ liệu từ cả 2 feature đó.
+Trang Kanban Board (route `/boards`) là **view vận hành** — hiển thị toàn bộ task của sprint đang chọn dưới dạng card kéo-thả qua các cột, nơi team thực sự làm việc hàng ngày. Khác với [workflow.dod.md](workflow.dod.md) (Workflow page — chỉ cấu hình cột/WIP limit) và [sprint-tasks.dod.md](sprint-tasks.dod.md) (business rule chung của SprintTask) — feature này là lớp **trải nghiệm tương tác** (drag-drop, filter, quick-create) kết hợp dữ liệu từ cả 2 feature đó.
 
 ## 2. Key Entities & Relationships
 
 - Không có entity riêng — đây là **read/interaction layer** kết hợp:
-  - `SmartBoardColumn` (xem [smart-board.dod.md](smart-board.dod.md)): định nghĩa cột, state mapping, WIP limit/mode.
+  - `SmartBoardColumn` (xem [workflow.dod.md](workflow.dod.md)): định nghĩa cột, state mapping, WIP limit/mode.
   - `SprintTask` (xem [sprint-tasks.dod.md](sprint-tasks.dod.md)): dữ liệu card hiển thị — `BoardTaskDto` gồm WorkItemNumber, Type, Title, Priority, AssignedTo, OriginalEstimate/RemainingWork/CompletedWork, State, StateChangedAt.
 - Board load **flat list** toàn bộ SprintTask của 1 Sprint (không phân cấp parent-child), sắp theo Type → State → CreatedAt.
 - Mỗi card thuộc đúng 1 cột dựa trên `mappedState` của cột khớp với `SprintTaskState` hiện tại của task.
