@@ -35,7 +35,7 @@ public sealed class RoleAndMemberListingTests : IDisposable
 
     private ListRolesQueryHandler RolesHandler(IRequestUserContext user) => new(_db, user);
 
-    private ListMembersQueryHandler MembersHandler(IRequestUserContext user) => new(_db, user);
+    private ListMembersQueryHandler MembersHandler(IRequestUserContext user) => new(_db, user, new FakeQueryCache());
 
     private IRequestUserContext RoleManager() =>
         RequestUserContextMock.ForUser()

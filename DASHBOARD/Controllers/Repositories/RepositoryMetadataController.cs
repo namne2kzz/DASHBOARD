@@ -5,6 +5,8 @@ using DASHBOARD.Application.Repositories.Commands.UpdateMetadata;
 using DASHBOARD.Application.Repositories.DTOs;
 using DASHBOARD.Application.Repositories.Queries.ListMetadata;
 using DASHBOARD.Controllers.Repositories.Requests;
+using DASHBOARD.Core.Attributes;
+using DASHBOARD.Core.Constants;
 using DASHBOARD.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -49,6 +51,9 @@ public sealed class RepositoryMetadataController(ISender mediator) : ControllerB
     /// </summary>
     /// <returns>200 with the array of <c>{ key, displayName }</c> objects.</returns>
     [HttpGet("keys")]
+    // Safe to hold for an hour: this is Enum.GetValues over a compile-time enum, so no runtime
+    // mutation can change it — only a redeploy can, and that comes with a fresh page load.
+    [ClientCache(CacheProfiles.ReferenceSeconds)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetKeys() =>
         Ok(Enum.GetValues<MetadataKey>()

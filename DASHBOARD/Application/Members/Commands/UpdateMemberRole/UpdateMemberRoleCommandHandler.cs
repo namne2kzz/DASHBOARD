@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Caching;
 using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Guards;
 using DASHBOARD.Application.Common.Interfaces;
@@ -14,7 +15,8 @@ namespace DASHBOARD.Application.Members.Commands.UpdateMemberRole;
 public sealed class UpdateMemberRoleCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<UpdateMemberRoleCommand, Result>
+    IUnitOfWork           uow,
+    IQueryCache           cache) : IRequestHandler<UpdateMemberRoleCommand, Result>
 {
     /// <summary>Validates permission and the ManageMembers guard, then applies the role change.</summary>
     /// <param name="command">The update command.</param>
@@ -45,6 +47,11 @@ public sealed class UpdateMemberRoleCommandHandler(
         member.Touch();
 
         await uow.CommitAsync(ct);
+
+        // After the commit, never before: an eviction ahead of a failed commit would drop a valid
+        // entry and let the next reader repopulate it from pre-commit state.
+        await cache.RemoveByTagAsync(CacheKeys.RepositoryTag(command.RepositoryId), ct);
+
         return Result.Ok;
     }
 }

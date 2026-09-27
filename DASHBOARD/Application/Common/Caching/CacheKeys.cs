@@ -19,6 +19,13 @@ public static class CacheKeys
     /// <returns>Tag usable with tag-based cache eviction.</returns>
     public static string RepositoryTag(Guid repositoryId) => $"{AppPrefix}:tag:repo:{repositoryId}";
 
+    /// <summary>Key holding a repository's member list for one optional role filter.</summary>
+    /// <param name="repositoryId">Repository identifier.</param>
+    /// <param name="roleFilter">Role name the list was filtered by, or null for the full list.</param>
+    /// <returns>Fully qualified cache key.</returns>
+    public static string Members(Guid repositoryId, string? roleFilter) =>
+        $"{AppPrefix}:members:repo:{repositoryId}:{roleFilter ?? "all"}";
+
     /// <summary>Key holding a repository's live GitHub overview for one connection.</summary>
     /// <param name="repositoryId">Repository identifier.</param>
     /// <param name="repoUrl">Git connection URL the overview was fetched from.</param>

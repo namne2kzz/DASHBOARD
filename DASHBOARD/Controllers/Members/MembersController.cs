@@ -6,6 +6,8 @@ using DASHBOARD.Application.Members.DTOs;
 using DASHBOARD.Application.Members.Queries.ListMembers;
 using DASHBOARD.Controllers.Members.Requests;
 using DASHBOARD.Domain.Enums;
+using DASHBOARD.Core.Attributes;
+using DASHBOARD.Core.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +27,7 @@ public sealed class MembersController(ISender mediator) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the member list.</returns>
     [HttpGet]
+    [ClientCache(CacheProfiles.RevalidateSeconds)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

@@ -7,12 +7,14 @@ import { UserProfile } from '../models/user.model';
 import { StorageService } from '../core/services/storage.service';
 import { StorageKeys } from '../core/constants/storage-keys.constant';
 import { PreferencesService } from '../core/services/preferences.service';
+import { HttpCacheService } from './http-cache.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http        = inject(HttpClient);
   private readonly storage     = inject(StorageService);
   private readonly preferences = inject(PreferencesService);
+  private readonly httpCache   = inject(HttpCacheService);
   private readonly apiUrl      = `${environment.apiBaseUrl}/auth`;
 
   readonly isAuthenticated = signal<boolean>(this.storage.has(StorageKeys.accessToken));
@@ -52,6 +54,9 @@ export class AuthService {
     this.storage.remove(StorageKeys.userProfile);
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
+    // The HTTP cache is a singleton that outlives the session: without this, the next user to sign in
+    // on this browser would be served the previous user's cached reads.
+    this.httpCache.clear();
   }
 
   /**

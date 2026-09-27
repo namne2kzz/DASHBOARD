@@ -26,7 +26,9 @@ public sealed class RemoveMemberCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private RemoveMemberCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow);
+        new(_db, user, _database.Uow, _cache);
+
+    private readonly FakeQueryCache _cache = new();
 
     private IRequestUserContext AuthorizedUser() =>
         RequestUserContextMock.ForUser()

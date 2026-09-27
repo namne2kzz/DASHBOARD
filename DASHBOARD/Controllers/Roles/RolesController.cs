@@ -5,6 +5,8 @@ using DASHBOARD.Application.Roles.Commands.UpdateRole;
 using DASHBOARD.Application.Roles.DTOs;
 using DASHBOARD.Application.Roles.Queries.ListRoles;
 using DASHBOARD.Controllers.Roles.Requests;
+using DASHBOARD.Core.Attributes;
+using DASHBOARD.Core.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +25,10 @@ public sealed class RolesController(ISender mediator) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the list of <see cref="RoleDto"/>.</returns>
     [HttpGet]
+    // Deliberately revalidate-only rather than a long max-age: this same controller creates, updates
+    // and deletes roles, so an admin who just edited one must not be served their own stale list from
+    // the browser cache. The ETag keeps the payload off the wire while the list is unchanged.
+    [ClientCache(CacheProfiles.RevalidateSeconds)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

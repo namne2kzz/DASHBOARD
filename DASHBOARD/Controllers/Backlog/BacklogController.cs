@@ -15,6 +15,8 @@ using DASHBOARD.Application.Backlog.DTOs;
 using DASHBOARD.Application.Backlog.Queries.ListBacklogItems;
 using DASHBOARD.Controllers.Backlog.Requests;
 using DASHBOARD.Domain.Enums;
+using DASHBOARD.Core.Attributes;
+using DASHBOARD.Core.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -35,6 +37,7 @@ public sealed class BacklogController(ISender mediator) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with root-level items including nested children.</returns>
     [HttpGet]
+    [ClientCache(CacheProfiles.RevalidateSeconds)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
