@@ -119,7 +119,10 @@ public static class DependencyInjection
                 client.BaseAddress = new Uri(s.HubChatBaseUrl);
             client.Timeout = TimeSpan.FromSeconds(8);
             client.DefaultRequestHeaders.Add("X-Internal-Token", s.HubChatInternalToken);
-        });
+        })
+        // Forwards X-Correlation-Id so HUB Chat logs under the same id as this request.
+        .AddHttpMessageHandler<CorrelationIdForwardingHandler>();
+        services.AddTransient<CorrelationIdForwardingHandler>();
         services.AddScoped<IHubChannelService, HubChannelService>();
 
         // ── Messaging (MassTransit + RabbitMQ) ───────────────────────────────
