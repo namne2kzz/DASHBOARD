@@ -155,6 +155,10 @@ services:
   redis:
     image: redis:7-alpine
     container_name: dashboard-redis
+    # Bounded memory with LRU eviction: everything stored here is a rebuildable cache entry, so
+    # dropping the coldest key is always preferable to letting Redis grow until the OOM killer takes
+    # the whole container down. Note HUB shares this instance.
+    command: ["redis-server", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
     ports:
       - "6379:6379"
     volumes:

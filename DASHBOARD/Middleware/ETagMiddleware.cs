@@ -51,6 +51,12 @@ public sealed class ETagMiddleware(RequestDelegate next)
 
         if (taggable)
         {
+            // Deny-by-default: a read that did not opt in via [ClientCache] gets no-store, so the
+            // browser cannot keep a per-user payload on its own heuristics. Opted-in actions have
+            // already written their own private/max-age header by this point, and are left alone.
+            if (!context.Response.Headers.ContainsKey(HeaderNames.CacheControl))
+                context.Response.Headers.CacheControl = "no-store";
+
             var etag = ComputeETag(buffer.GetBuffer().AsSpan(0, (int)buffer.Length));
             context.Response.Headers.ETag = etag;
 

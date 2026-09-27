@@ -10,6 +10,7 @@ using DASHBOARD.Infrastructure.Services.GitHub;
 using DASHBOARD.Infrastructure.Settings;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -69,6 +70,24 @@ public static class DependencyInjection
         // on the IDistributedCache abstraction. Known limitation of this fallback: the cache is
         // per-instance, not shared across horizontally scaled app instances.
         // services.AddDistributedMemoryCache();
+
+        // ── Query cache (L1 in-process + L2 Redis, tag-based eviction) ────────
+        // HybridCache layers its own in-memory L1 over the IDistributedCache registered above, so a
+        // repeat hit costs no network round-trip, and it collapses concurrent misses for one key into
+        // a single factory call — the stampede protection a bare IDistributedCache cannot give.
+        services.AddHybridCache(options =>
+        {
+            options.DefaultEntryOptions = new HybridCacheEntryOptions
+            {
+                // L2 default. Every entry here is tag-evicted by its mutation handler, so the TTL is
+                // only a backstop for an eviction that never arrived (dropped message, crash).
+                Expiration = TimeSpan.FromMinutes(5),
+                // L1 stays far shorter than L2: a local copy must not outlive an eviction performed
+                // on another instance, which this process never sees.
+                LocalCacheExpiration = TimeSpan.FromSeconds(20),
+            };
+        });
+        services.AddSingleton<IQueryCache, HybridQueryCache>();
 
         // ── Auth ──────────────────────────────────────────────────────────────
         services.Configure<JwtSettings>(configuration.GetSection(nameof(JwtSettings)));

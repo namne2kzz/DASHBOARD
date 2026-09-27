@@ -7,6 +7,8 @@ using DASHBOARD.Application.Sprints.Queries.GetSprintDetail;
 using DASHBOARD.Application.Sprints.Queries.GetSprintSummary;
 using DASHBOARD.Application.Sprints.Queries.ListSprints;
 using DASHBOARD.Controllers.Sprints.Requests;
+using DASHBOARD.Core.Attributes;
+using DASHBOARD.Core.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +27,7 @@ public sealed class SprintsController(ISender mediator) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the sprint list.</returns>
     [HttpGet]
+    [ClientCache(CacheProfiles.RevalidateSeconds)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -40,6 +43,7 @@ public sealed class SprintsController(ISender mediator) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with <see cref="SprintDetailDto"/>.</returns>
     [HttpGet("{sprintId:guid}/detail")]
+    [ClientCache(CacheProfiles.RevalidateSeconds)]
     [ProducesResponseType<SprintDetailDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -56,6 +60,7 @@ public sealed class SprintsController(ISender mediator) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with <see cref="SprintSummaryDto"/>.</returns>
     [HttpGet("{sprintId:guid}/summary")]
+    [ClientCache(CacheProfiles.RevalidateSeconds)]
     [ProducesResponseType<SprintSummaryDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

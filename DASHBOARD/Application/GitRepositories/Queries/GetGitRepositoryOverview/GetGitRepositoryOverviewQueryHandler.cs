@@ -1,4 +1,3 @@
-using System.Text.Json;
 using DASHBOARD.Application.Common.Caching;
 using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
@@ -8,7 +7,6 @@ using DASHBOARD.Domain.Interfaces;
 using DASHBOARD.Infrastructure.Settings;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 
 namespace DASHBOARD.Application.GitRepositories.Queries.GetGitRepositoryOverview;
@@ -27,16 +25,19 @@ public sealed class GetGitRepositoryOverviewQueryHandler(
     IRequestUserContext user,
     IOptionsMonitor<GitConnectionsOptions> gitConnections,
     IGitHubIntegrationService gitHub,
-    IDistributedCache cache)
+    IQueryCache cache)
     : IRequestHandler<GetGitRepositoryOverviewQuery, GitRepositoryOverviewDto>
 {
     /// <summary>How long a fetched overview is cached before the next request re-pulls from GitHub.</summary>
+    /// <remarks>
+    /// Kept short because the Repos tab polls it, and safe to keep short because the cache collapses
+    /// concurrent misses into one GitHub call — without that, every TTL expiry let a burst of pollers
+    /// through at once and burned the hourly rate limit several requests at a time.
+    /// </remarks>
     private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(60);
 
     /// <summary>How many recent commits to pull per overview.</summary>
     private const int RecentCommitCount = 30;
-
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     /// <summary>Validates membership, resolves the project's <c>Code</c>, and builds the overview for the selected (or default) connection.</summary>
     /// <param name="query">The query containing the project (repository) ID and optional connection selector.</param>
@@ -82,59 +83,22 @@ public sealed class GetGitRepositoryOverviewQueryHandler(
 
         var cacheKey = CacheKeys.GitOverview(query.RepositoryId, selected.RepoUrl);
 
-        var cached = await cache.GetAsync(cacheKey, ct);
-        if (cached is not null)
-        {
-            var cachedDto = JsonSerializer.Deserialize<GitRepositoryOverviewDto>(cached, JsonOptions);
-            if (cachedDto is not null)
-                return cachedDto;
-        }
-
         GitRepositoryOverviewDto overview;
 
+        // The GitHub call sits inside the cache factory, and the catch blocks sit outside it. That
+        // ordering is what keeps a failure out of the cache: the factory throws, HybridCache stores
+        // nothing, and the failure DTO below is built fresh per request — a rate-limit message must
+        // not be pinned for the whole TTL once the limit resets.
         try
         {
-            var branchesTask = gitHub.ListBranchesAsync(owner, name, selected.Token, ct);
-            var commitsTask = gitHub.ListRecentCommitsAsync(owner, name, selected.Token, selected.DefaultBranchOverride, RecentCommitCount, ct);
-            var pullRequestsTask = gitHub.ListPullRequestsAsync(owner, name, selected.Token, ct);
-            var rateLimitTask = gitHub.GetRateLimitAsync(selected.Token, ct);
-
-            await Task.WhenAll(branchesTask, commitsTask, pullRequestsTask, rateLimitTask);
-
-            var branches = branchesTask.Result;
-            var defaultBranch = selected.DefaultBranchOverride ?? branches.FirstOrDefault(b => b.IsDefault)?.Name;
-
-            // ListRecentCommitsAsync leaves Branch empty when no explicit branch was requested (it used
-            // GitHub's own default-branch resolution) — backfill it here now that defaultBranch is known,
-            // so the frontend always has a branch label to show against each commit.
-            var commits = commitsTask.Result
-                .Select(c => c with
-                {
-                    Branch = string.IsNullOrEmpty(c.Branch) ? defaultBranch ?? string.Empty : c.Branch,
-                    LinkedWorkItemId = GitWorkItemLinkResolver.Resolve(c.Message, repo.Code)
-                })
-                .ToList();
-            var pullRequests = pullRequestsTask.Result
-                .Select(p => p with { LinkedWorkItemId = GitWorkItemLinkResolver.Resolve(p.Title, repo.Code) })
-                .ToList();
-
-            overview = new GitRepositoryOverviewDto(
-                HasConnection: true,
-                RepoUrl: selected.RepoUrl,
-                FullName: fullName,
-                DefaultBranch: defaultBranch,
-                Branches: branches,
-                Commits: commits,
-                PullRequests: pullRequests,
-                RateLimit: rateLimitTask.Result,
-                Status: "Connected",
-                LastSyncError: null);
-
-            await cache.SetAsync(
+            overview = await cache.GetOrCreateAsync(
                 cacheKey,
-                JsonSerializer.SerializeToUtf8Bytes(overview, JsonOptions),
-                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = CacheTtl },
-                ct);
+                token => FetchOverviewAsync(selected, owner, name, fullName, repo.Code, token),
+                // No repository tag: this entry mirrors GitHub, not our own data, so a member or
+                // settings change must not evict it. GitSyncConsumer evicts it by key instead.
+                tags: [],
+                ttl: CacheTtl,
+                ct: ct);
         }
         catch (GitRateLimitExceededException ex)
         {
@@ -150,6 +114,62 @@ public sealed class GetGitRepositoryOverviewQueryHandler(
         }
 
         return overview;
+    }
+
+    /// <summary>Pulls branches, commits, pull requests and rate limit from GitHub and assembles the overview.</summary>
+    /// <param name="selected">The resolved Git connection to pull from.</param>
+    /// <param name="owner">Repository owner parsed from the connection URL.</param>
+    /// <param name="name">Repository name parsed from the connection URL.</param>
+    /// <param name="fullName">The <c>owner/repo</c> label shown by the frontend.</param>
+    /// <param name="projectCode">Project code used to resolve work-item links in commit and PR titles.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A fully populated <see cref="GitRepositoryOverviewDto"/> with <c>Status = "Connected"</c>.</returns>
+    /// <exception cref="GitRateLimitExceededException">Propagated so the caller can report it without caching it.</exception>
+    /// <exception cref="GitCredentialInvalidException">Propagated so the caller can report it without caching it.</exception>
+    /// <exception cref="GitProviderUnavailableException">Propagated so the caller can report it without caching it.</exception>
+    private async Task<GitRepositoryOverviewDto> FetchOverviewAsync(
+        GitConnectionEntry selected,
+        string owner,
+        string name,
+        string fullName,
+        string projectCode,
+        CancellationToken ct)
+    {
+        var branchesTask = gitHub.ListBranchesAsync(owner, name, selected.Token, ct);
+        var commitsTask = gitHub.ListRecentCommitsAsync(owner, name, selected.Token, selected.DefaultBranchOverride, RecentCommitCount, ct);
+        var pullRequestsTask = gitHub.ListPullRequestsAsync(owner, name, selected.Token, ct);
+        var rateLimitTask = gitHub.GetRateLimitAsync(selected.Token, ct);
+
+        await Task.WhenAll(branchesTask, commitsTask, pullRequestsTask, rateLimitTask);
+
+        var branches = branchesTask.Result;
+        var defaultBranch = selected.DefaultBranchOverride ?? branches.FirstOrDefault(b => b.IsDefault)?.Name;
+
+        // ListRecentCommitsAsync leaves Branch empty when no explicit branch was requested (it used
+        // GitHub's own default-branch resolution) — backfill it here now that defaultBranch is known,
+        // so the frontend always has a branch label to show against each commit.
+        var commits = commitsTask.Result
+            .Select(c => c with
+            {
+                Branch = string.IsNullOrEmpty(c.Branch) ? defaultBranch ?? string.Empty : c.Branch,
+                LinkedWorkItemId = GitWorkItemLinkResolver.Resolve(c.Message, projectCode)
+            })
+            .ToList();
+        var pullRequests = pullRequestsTask.Result
+            .Select(p => p with { LinkedWorkItemId = GitWorkItemLinkResolver.Resolve(p.Title, projectCode) })
+            .ToList();
+
+        return new GitRepositoryOverviewDto(
+            HasConnection: true,
+            RepoUrl: selected.RepoUrl,
+            FullName: fullName,
+            DefaultBranch: defaultBranch,
+            Branches: branches,
+            Commits: commits,
+            PullRequests: pullRequests,
+            RateLimit: rateLimitTask.Result,
+            Status: "Connected",
+            LastSyncError: null);
     }
 
     /// <summary>Builds the DTO returned when a configured connection exists but the live GitHub call failed.</summary>

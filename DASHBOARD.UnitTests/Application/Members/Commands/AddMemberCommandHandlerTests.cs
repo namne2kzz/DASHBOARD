@@ -1,3 +1,4 @@
+using DASHBOARD.Application.Common.Caching;
 using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Members.Commands.AddMember;
@@ -40,7 +41,9 @@ public sealed class AddMemberCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private AddMemberCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow);
+        new(_db, user, _database.Uow, _cache);
+
+    private readonly FakeQueryCache _cache = new();
 
     private IRequestUserContext AuthorizedUser() =>
         RequestUserContextMock.ForUser()
@@ -269,5 +272,35 @@ public sealed class AddMemberCommandHandlerTests : IDisposable
 
         second.IsSuccess.Should().BeTrue("the duplicate check is per repository");
         (await _db.Set<RepositoryMember>().CountAsync()).Should().Be(2);
+    }
+
+    // ── Cache invalidation ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_WhenMemberAdded_EvictsTheRepositoryCacheTag()
+    {
+        var user    = await AddUserAsync();
+        var role    = await AddRoleAsync();
+        var handler = CreateHandler(AuthorizedUser());
+
+        await handler.Handle(
+            new AddMemberCommand(_repositoryId, user.Id, "Developer", role.Id), CancellationToken.None);
+
+        _cache.EvictedTags.Should().Contain(
+            CacheKeys.RepositoryTag(_repositoryId),
+            "a stale member list would otherwise survive until its TTL expires");
+    }
+
+    [Fact]
+    public async Task Handle_WhenAddFails_DoesNotEvictTheCache()
+    {
+        var role    = await AddRoleAsync();
+        var handler = CreateHandler(AuthorizedUser());
+
+        // Unknown user id — the command fails before anything is committed.
+        await handler.Handle(
+            new AddMemberCommand(_repositoryId, Guid.NewGuid(), "Developer", role.Id), CancellationToken.None);
+
+        _cache.EvictedTags.Should().BeEmpty("nothing changed, so no cached entry went stale");
     }
 }

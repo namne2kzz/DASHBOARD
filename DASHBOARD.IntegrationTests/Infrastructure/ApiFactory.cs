@@ -118,7 +118,9 @@ public sealed class ApiFactory(SqlServerFixture database) : WebApplicationFactor
 
     private static void ReplaceDistributedCache(IServiceCollection services)
     {
-        // Redis is not running in a test; an in-process cache keeps the same semantics.
+        // Redis is not running in a test; an in-process cache keeps the same semantics. HybridCache
+        // layers over whatever IDistributedCache is registered, so it still caches and still evicts
+        // by tag here — these tests exercise the real invalidation path, not a no-op stand-in.
         services.RemoveAll<IDistributedCache>();
         services.AddDistributedMemoryCache();
     }

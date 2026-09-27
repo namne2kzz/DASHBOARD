@@ -6,6 +6,8 @@ using DASHBOARD.Application.SprintTasks.DTOs;
 using DASHBOARD.Application.SprintTasks.Queries.ListStandaloneItems;
 using DASHBOARD.Application.SprintTasks.Queries.SearchParentStories;
 using DASHBOARD.Domain.Enums;
+using DASHBOARD.Core.Attributes;
+using DASHBOARD.Core.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +28,7 @@ public sealed class ItemsController(ISender mediator) : ControllerBase
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the list of <see cref="SprintTaskSummaryDto"/>.</returns>
     [HttpGet]
+    [ClientCache(CacheProfiles.RevalidateSeconds)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> List(
