@@ -111,19 +111,18 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                 "UPDATE [RepositoryMembers] SET [RoleId] = NULL WHERE [RoleId] IN (" +
                 $"'{ScrumMasterRoleId}','{ProjectManagerRoleId}','{DeveloperRoleId}','{TesterRoleId}','{BusinessAnalystRoleId}');");
 
-            migrationBuilder.DeleteData(table: "Roles", keyColumn: "Id", keyValue: new Guid(ScrumMasterRoleId));
-            migrationBuilder.DeleteData(table: "Roles", keyColumn: "Id", keyValue: new Guid(ProjectManagerRoleId));
-            migrationBuilder.DeleteData(table: "Roles", keyColumn: "Id", keyValue: new Guid(DeveloperRoleId));
-            migrationBuilder.DeleteData(table: "Roles", keyColumn: "Id", keyValue: new Guid(TesterRoleId));
-            migrationBuilder.DeleteData(table: "Roles", keyColumn: "Id", keyValue: new Guid(BusinessAnalystRoleId));
+            // Raw SQL rather than DeleteData/UpdateData: those two ask EF to look the table up in
+            // the current model so it can infer the key's column type, and by the time this Down()
+            // runs the model no longer maps a table called "Roles" — the generator then fails with
+            // "There is no entity type mapped to the table 'Roles'" before emitting any SQL. The
+            // statement above already had to be written this way for the same reason.
+            migrationBuilder.Sql(
+                "DELETE FROM [Roles] WHERE [Id] IN (" +
+                $"'{ScrumMasterRoleId}','{ProjectManagerRoleId}','{DeveloperRoleId}','{TesterRoleId}','{BusinessAnalystRoleId}');");
 
             // Restore the renamed custom seed role.
-            migrationBuilder.UpdateData(
-                table: "Roles",
-                keyColumn: "Id",
-                keyValue: new Guid(SeniorDeveloperRoleId),
-                column: "Name",
-                value: "Developer");
+            migrationBuilder.Sql(
+                $"UPDATE [Roles] SET [Name] = N'Developer' WHERE [Id] = '{SeniorDeveloperRoleId}';");
 
             migrationBuilder.RenameColumn(
                 name: "RoleId",
@@ -139,6 +138,20 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                 name: "IsDefault",
                 table: "Roles");
 
+            // SQL Server refuses to ALTER a column an index is built on, and this index already
+            // exists by the time Down() runs — Up() got away with the same alter only because it
+            // renames the index into place beforehand and never widens it. So drop the index,
+            // change the column back, and recreate it under its original name.
+            migrationBuilder.DropIndex(
+                name: "IX_Roles_RepositoryId",
+                table: "Roles");
+
+            // Rows whose RepositoryId went null while the column was nullable cannot be restored;
+            // point them at the empty guid so the NOT NULL alter below has something to write.
+            migrationBuilder.Sql(
+                "UPDATE [Roles] SET [RepositoryId] = '00000000-0000-0000-0000-000000000000' " +
+                "WHERE [RepositoryId] IS NULL;");
+
             migrationBuilder.AlterColumn<Guid>(
                 name: "RepositoryId",
                 table: "Roles",
@@ -149,7 +162,10 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                 oldType: "uniqueidentifier",
                 oldNullable: true);
 
-            migrationBuilder.Sql("EXEC sp_rename N'Roles.IX_Roles_RepositoryId', N'IX_CustomRoles_RepositoryId', N'INDEX';");
+            migrationBuilder.CreateIndex(
+                name: "IX_CustomRoles_RepositoryId",
+                table: "Roles",
+                column: "RepositoryId");
             migrationBuilder.Sql("EXEC sp_rename N'FK_Roles_Repositories_RepositoryId', N'FK_CustomRoles_Repositories_RepositoryId';");
             migrationBuilder.Sql("EXEC sp_rename N'PK_Roles', N'PK_CustomRoles';");
 

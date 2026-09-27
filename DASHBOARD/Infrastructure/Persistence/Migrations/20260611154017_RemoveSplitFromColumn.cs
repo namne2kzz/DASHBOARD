@@ -26,33 +26,18 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                 nullable: false,
                 defaultValue: false);
 
-            migrationBuilder.UpdateData(
-                table: "SmartBoardColumns",
-                keyColumn: "Id",
-                keyValue: new Guid("00000000-0000-0000-000a-000000000001"),
-                columns: new string[0],
-                values: new object[0]);
-
+            // Only the second seed column had Split set. The scaffolder also emitted an UpdateData
+            // for each of the other three with an empty column list, which generates the literal
+            // text "UPDATE [SmartBoardColumns] SET " followed by the WHERE clause — invalid SQL
+            // that fails the whole rollback with "Incorrect syntax near the keyword 'WHERE'".
+            // Those rows take false from the column default added above, so there is nothing to
+            // write and the statements are simply dropped.
             migrationBuilder.UpdateData(
                 table: "SmartBoardColumns",
                 keyColumn: "Id",
                 keyValue: new Guid("00000000-0000-0000-000a-000000000002"),
                 column: "Split",
                 value: true);
-
-            migrationBuilder.UpdateData(
-                table: "SmartBoardColumns",
-                keyColumn: "Id",
-                keyValue: new Guid("00000000-0000-0000-000a-000000000003"),
-                columns: new string[0],
-                values: new object[0]);
-
-            migrationBuilder.UpdateData(
-                table: "SmartBoardColumns",
-                keyColumn: "Id",
-                keyValue: new Guid("00000000-0000-0000-000a-000000000004"),
-                columns: new string[0],
-                values: new object[0]);
         }
     }
 }
