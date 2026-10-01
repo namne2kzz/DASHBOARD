@@ -6,8 +6,10 @@ using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.Members.Commands.UpdateMemberRole;
 
@@ -16,7 +18,8 @@ public sealed class UpdateMemberRoleCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
     IUnitOfWork           uow,
-    IQueryCache           cache) : IRequestHandler<UpdateMemberRoleCommand, Result>
+    IQueryCache           cache,
+    IPublishEndpoint      publisher) : IRequestHandler<UpdateMemberRoleCommand, Result>
 {
     /// <summary>Validates permission and the ManageMembers guard, then applies the role change.</summary>
     /// <param name="command">The update command.</param>
@@ -51,6 +54,10 @@ public sealed class UpdateMemberRoleCommandHandler(
         // After the commit, never before: an eviction ahead of a failed commit would drop a valid
         // entry and let the next reader repopulate it from pre-commit state.
         await cache.RemoveByTagAsync(CacheKeys.RepositoryTag(command.RepositoryId), ct);
+
+        // A role change is a permission change, so HUB must re-read it rather than keep serving the
+        // old role from its cached memberships.
+        await publisher.Publish(new MemberDirectoryChangedEvent(command.RepositoryId, member.UserId), ct);
 
         return Result.Ok;
     }

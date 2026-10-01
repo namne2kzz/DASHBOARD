@@ -6,8 +6,10 @@ using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.Members.Commands.RemoveMember;
 
@@ -16,7 +18,8 @@ public sealed class RemoveMemberCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
     IUnitOfWork           uow,
-    IQueryCache           cache) : IRequestHandler<RemoveMemberCommand, Result>
+    IQueryCache           cache,
+    IPublishEndpoint      publisher) : IRequestHandler<RemoveMemberCommand, Result>
 {
     /// <summary>Checks permission and the ManageMembers guard, then deletes the membership.</summary>
     /// <param name="command">The remove command.</param>
@@ -41,6 +44,10 @@ public sealed class RemoveMemberCommandHandler(
         // After the commit, never before: an eviction ahead of a failed commit would drop a valid
         // entry and let the next reader repopulate it from pre-commit state.
         await cache.RemoveByTagAsync(CacheKeys.RepositoryTag(command.RepositoryId), ct);
+
+        // Matters most on removal: until HUB drops its cached memberships, a user who just lost access
+        // still passes HUB's membership check for up to three minutes.
+        await publisher.Publish(new MemberDirectoryChangedEvent(command.RepositoryId, member.UserId), ct);
 
         return Result.Ok;
     }
