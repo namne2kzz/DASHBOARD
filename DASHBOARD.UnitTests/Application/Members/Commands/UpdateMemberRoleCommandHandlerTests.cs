@@ -26,9 +26,10 @@ public sealed class UpdateMemberRoleCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private UpdateMemberRoleCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow, _cache);
+        new(_db, user, _database.Uow, _cache, _publisher);
 
     private readonly FakeQueryCache _cache = new();
+    private readonly RecordingPublishEndpoint _publisher = new();
 
     private IRequestUserContext AuthorizedUser() =>
         RequestUserContextMock.ForUser()

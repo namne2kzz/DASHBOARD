@@ -6,6 +6,7 @@ using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.UnitTests.Common;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.UnitTests.Application.Members.Commands;
 
@@ -41,9 +42,10 @@ public sealed class AddMemberCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private AddMemberCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow, _cache);
+        new(_db, user, _database.Uow, _cache, _publisher);
 
     private readonly FakeQueryCache _cache = new();
+    private readonly RecordingPublishEndpoint _publisher = new();
 
     private IRequestUserContext AuthorizedUser() =>
         RequestUserContextMock.ForUser()
@@ -302,5 +304,35 @@ public sealed class AddMemberCommandHandlerTests : IDisposable
             new AddMemberCommand(_repositoryId, Guid.NewGuid(), "Developer", role.Id), CancellationToken.None);
 
         _cache.EvictedTags.Should().BeEmpty("nothing changed, so no cached entry went stale");
+    }
+
+    [Fact]
+    public async Task Handle_WhenMemberAdded_PublishesTheDirectoryChangeForHub()
+    {
+        var user    = await AddUserAsync();
+        var role    = await AddRoleAsync();
+        var handler = CreateHandler(AuthorizedUser());
+
+        await handler.Handle(
+            new AddMemberCommand(_repositoryId, user.Id, "Developer", role.Id), CancellationToken.None);
+
+        // HUB caches this repository's member list for five minutes; without the event the new member
+        // stays invisible there until that TTL expires.
+        var published = _publisher.PublishedOf<MemberDirectoryChangedEvent>();
+        published.Should().ContainSingle();
+        published[0].RepositoryId.Should().Be(_repositoryId);
+        published[0].UserId.Should().Be(user.Id);
+    }
+
+    [Fact]
+    public async Task Handle_WhenAddFails_PublishesNothing()
+    {
+        var role    = await AddRoleAsync();
+        var handler = CreateHandler(AuthorizedUser());
+
+        await handler.Handle(
+            new AddMemberCommand(_repositoryId, Guid.NewGuid(), "Developer", role.Id), CancellationToken.None);
+
+        _publisher.Published.Should().BeEmpty("nothing changed, so HUB has nothing to invalidate");
     }
 }

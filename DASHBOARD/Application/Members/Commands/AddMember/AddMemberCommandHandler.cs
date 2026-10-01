@@ -6,8 +6,10 @@ using DASHBOARD.Application.Members.DTOs;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.Members.Commands.AddMember;
 
@@ -16,7 +18,8 @@ public sealed class AddMemberCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
     IUnitOfWork           uow,
-    IQueryCache           cache) : IRequestHandler<AddMemberCommand, Result<MemberDto>>
+    IQueryCache           cache,
+    IPublishEndpoint      publisher) : IRequestHandler<AddMemberCommand, Result<MemberDto>>
 {
     /// <summary>Validates permissions and constraints, creates the member row, and returns the member DTO.</summary>
     /// <param name="command">The add-member command.</param>
@@ -67,6 +70,10 @@ public sealed class AddMemberCommandHandler(
         // After the commit, never before: an eviction ahead of a failed commit would drop a valid
         // entry and let the next reader repopulate it from pre-commit state.
         await cache.RemoveByTagAsync(CacheKeys.RepositoryTag(command.RepositoryId), ct);
+
+        // HUB caches this repository's directory too, and its own TTL would otherwise leave the new
+        // member invisible there for up to five minutes.
+        await publisher.Publish(new MemberDirectoryChangedEvent(command.RepositoryId, command.UserId), ct);
 
         return Result<MemberDto>.Success(new MemberDto(member.Id, targetUser.Id, targetUser.Name, targetUser.Email, targetUser.AvatarClass,
             member.DefaultRole, member.RoleId, role.Name, member.CreatedAt));

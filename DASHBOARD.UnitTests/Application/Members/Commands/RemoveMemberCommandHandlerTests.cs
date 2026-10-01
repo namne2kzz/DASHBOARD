@@ -5,6 +5,7 @@ using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.UnitTests.Common;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.UnitTests.Application.Members.Commands;
 
@@ -26,9 +27,10 @@ public sealed class RemoveMemberCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private RemoveMemberCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow, _cache);
+        new(_db, user, _database.Uow, _cache, _publisher);
 
     private readonly FakeQueryCache _cache = new();
+    private readonly RecordingPublishEndpoint _publisher = new();
 
     private IRequestUserContext AuthorizedUser() =>
         RequestUserContextMock.ForUser()
@@ -189,5 +191,43 @@ public sealed class RemoveMemberCommandHandlerTests : IDisposable
             new RemoveMemberCommand(_repositoryId, soleManager.Id), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue("cover must come from within the same repository");
+    }
+
+    // ── Cross-system cache invalidation ─────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_WhenMemberRemoved_PublishesTheDirectoryChangeForHub()
+    {
+        var managerRole = await AddRoleAsync("Manager", SystemFunction.ManageMembers);
+        var plainRole   = await AddRoleAsync("Developer");
+        await AddMemberAsync(managerRole.Id);                     // keeps the ManageMembers guard satisfied
+        var plainMember = await AddMemberAsync(plainRole.Id);
+
+        var handler = CreateHandler(AuthorizedUser());
+
+        await handler.Handle(new RemoveMemberCommand(_repositoryId, plainMember.Id), CancellationToken.None);
+
+        // Without this event HUB keeps the revoked user in its cached memberships, and they pass its
+        // membership check for up to three minutes after losing access.
+        var published = _publisher.PublishedOf<MemberDirectoryChangedEvent>();
+        published.Should().ContainSingle();
+        published[0].RepositoryId.Should().Be(_repositoryId);
+        published[0].UserId.Should().Be(plainMember.UserId);
+    }
+
+    [Fact]
+    public async Task Handle_WhenRemovalRejected_PublishesNothing()
+    {
+        var managerRole = await AddRoleAsync("Manager", SystemFunction.ManageMembers);
+        var soleManager = await AddMemberAsync(managerRole.Id);
+
+        var handler = CreateHandler(AuthorizedUser());
+
+        // Guard rejects this: removing the last member who can manage members.
+        var result = await handler.Handle(
+            new RemoveMemberCommand(_repositoryId, soleManager.Id), CancellationToken.None);
+
+        result.IsFailure.Should().BeTrue();
+        _publisher.Published.Should().BeEmpty("nothing changed, so HUB has nothing to invalidate");
     }
 }
