@@ -3,8 +3,10 @@ using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.Users.Commands.ToggleActive
 {
@@ -12,7 +14,8 @@ namespace DASHBOARD.Application.Users.Commands.ToggleActive
     public sealed class ToggleActiveCommandHandler(
         IApplicationDbContext db,
         IRequestUserContext   user,
-        IUnitOfWork           uow) : IRequestHandler<ToggleActiveCommand, Result>
+        IUnitOfWork           uow,
+        IPublishEndpoint      publisher) : IRequestHandler<ToggleActiveCommand, Result>
     {
         /// <summary>Validates requester is a global admin and not targeting themselves, then flips the active state.</summary>
         /// <param name="command">The toggle request.</param>
@@ -42,6 +45,12 @@ namespace DASHBOARD.Application.Users.Commands.ToggleActive
 
             target.Touch();
             await uow.CommitAsync(ct);
+
+            // Matters more than a name change: IsDeleted rides on the cached profile, so a deactivated
+            // account would keep looking active in HUB for up to fifteen minutes.
+            await publisher.Publish(
+                new DirectoryEntryChangedEvent(DirectoryEntryKind.UserProfile, command.TargetUserId), ct);
+
             return Result.Ok;
         }
     }

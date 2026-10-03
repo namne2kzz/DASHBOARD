@@ -4,8 +4,10 @@ using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.SprintTasks.Commands.ChangeSprintTaskState;
 
@@ -14,7 +16,8 @@ public sealed class ChangeSprintTaskStateCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
     IHistoryService       historyService,
-    IUnitOfWork           uow) : IRequestHandler<ChangeSprintTaskStateCommand, Result>
+    IUnitOfWork           uow,
+    IPublishEndpoint      publisher) : IRequestHandler<ChangeSprintTaskStateCommand, Result>
 {
     /// <summary>Validates permission, applies the state transition, auto-zeroes remaining work on Done, and commits.</summary>
     /// <param name="command">The state change command.</param>
@@ -52,6 +55,11 @@ public sealed class ChangeSprintTaskStateCommandHandler(
                 $"State changed from '{oldState}' to '{command.NewState}'.");
 
         await uow.CommitAsync(ct);
+
+        // State is part of the cached context HUB shows against a linked thread.
+        await publisher.Publish(
+            new DirectoryEntryChangedEvent(DirectoryEntryKind.WorkItem, command.TaskId), ct);
+
         return Result.Ok;
     }
 }

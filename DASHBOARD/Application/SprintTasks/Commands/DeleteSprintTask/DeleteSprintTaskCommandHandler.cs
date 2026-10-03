@@ -4,8 +4,10 @@ using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.SprintTasks.Commands.DeleteSprintTask;
 
@@ -13,7 +15,8 @@ namespace DASHBOARD.Application.SprintTasks.Commands.DeleteSprintTask;
 public sealed class DeleteSprintTaskCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<DeleteSprintTaskCommand, Result>
+    IUnitOfWork           uow,
+    IPublishEndpoint      publisher) : IRequestHandler<DeleteSprintTaskCommand, Result>
 {
     /// <summary>Validates permission, soft-deletes the item (and sub-tasks for UserStory), and commits.</summary>
     /// <param name="command">The delete command.</param>
@@ -49,6 +52,12 @@ public sealed class DeleteSprintTaskCommandHandler(
         }
 
         await uow.CommitAsync(ct);
+
+        // The /internal endpoint filters out soft-deleted items, so a cached copy would keep a deleted
+        // work item linkable in HUB until the TTL expires.
+        await publisher.Publish(
+            new DirectoryEntryChangedEvent(DirectoryEntryKind.WorkItem, command.TaskId), ct);
+
         return Result.Ok;
     }
 

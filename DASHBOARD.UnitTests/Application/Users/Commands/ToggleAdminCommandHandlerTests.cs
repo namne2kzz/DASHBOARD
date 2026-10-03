@@ -4,6 +4,7 @@ using DASHBOARD.Application.Users.Commands.ToggleAdmin;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.UnitTests.Common;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.UnitTests.Application.Users.Commands;
 
@@ -32,7 +33,9 @@ public sealed class ToggleAdminCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private ToggleAdminCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow);
+        new(_db, user, _database.Uow, _publisher);
+
+    private readonly RecordingPublishEndpoint _publisher = new();
 
     private async Task<User> AddUserAsync(string name, bool isGlobalAdmin = false, Guid? id = null)
     {
@@ -169,5 +172,23 @@ public sealed class ToggleAdminCommandHandlerTests : IDisposable
 
         var unaffected = await _db.Set<User>().AsNoTracking().SingleAsync(u => u.Id == bystander.Id);
         unaffected.IsGlobalAdmin.Should().BeFalse();
+    }
+
+    // ── Cross-system cache invalidation ─────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_WhenAdminToggled_PublishesTheProfileChangeForHub()
+    {
+        var target  = await AddUserAsync("Promoted", isGlobalAdmin: false);
+        var handler = CreateHandler(RequestUserContextMock.ForUser().AsGlobalAdmin().Object);
+
+        await handler.Handle(new ToggleAdminCommand(target.Id), CancellationToken.None);
+
+        // IsGlobalAdmin rides on the profile HUB caches for 15 minutes — a privilege change, so the
+        // stale window matters more than for a display name.
+        var published = _publisher.PublishedOf<DirectoryEntryChangedEvent>();
+        published.Should().ContainSingle();
+        published[0].Kind.Should().Be(DirectoryEntryKind.UserProfile);
+        published[0].EntityId.Should().Be(target.Id);
     }
 }

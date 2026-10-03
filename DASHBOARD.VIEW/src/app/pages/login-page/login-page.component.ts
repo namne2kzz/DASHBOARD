@@ -69,12 +69,34 @@ export class LoginPageComponent implements AfterViewInit {
     this.showPassword.update(v => !v);
   }
 
-  /** Submit email/password credentials and navigate on success. */
-  login(): void {
+  /**
+   * Submits credentials and navigates on success.
+   *
+   * The values are taken from the DOM rather than from the signals: a browser autofill writes
+   * straight to `input.value` without raising the `input` event `ngModelChange` listens for, so a
+   * field the user can plainly see filled in would otherwise be submitted empty.
+   * @param orgAlias Organization alias as currently shown in its field.
+   * @param email Email as currently shown in its field.
+   * @param password Password as currently shown in its field.
+   */
+  login(orgAlias: string, email: string, password: string): void {
+    // The DOM wins when it holds something, since that is what the user sees — including a value
+    // the browser autofilled without raising an event. An empty field falls back to the signal,
+    // which still carries a value ngModel has set but not yet flushed to the element (the ?org=
+    // prefill on first render).
+    const org  = orgAlias || this.orgAlias();
+    const mail = email    || this.email();
+    const pass = password || this.password();
+
+    // Keep the signals in step, so error re-renders and later reads see what was sent.
+    this.orgAlias.set(org);
+    this.email.set(mail);
+    this.password.set(pass);
+
     this.error.set(null);
     this.loading.set(true);
 
-    this.auth.login({ orgAlias: this.orgAlias(), email: this.email(), password: this.password() }).subscribe({
+    this.auth.login({ orgAlias: org, email: mail, password: pass }).subscribe({
       next: () => this.enterApp(),
       error: () => {
         this.error.set('Invalid organization, email or password.');

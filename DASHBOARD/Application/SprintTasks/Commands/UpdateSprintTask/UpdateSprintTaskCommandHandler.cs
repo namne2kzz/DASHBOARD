@@ -4,8 +4,10 @@ using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.SprintTasks.Commands.UpdateSprintTask;
 
@@ -14,7 +16,8 @@ public sealed class UpdateSprintTaskCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
     IHistoryService       historyService,
-    IUnitOfWork           uow) : IRequestHandler<UpdateSprintTaskCommand, Result>
+    IUnitOfWork           uow,
+    IPublishEndpoint      publisher) : IRequestHandler<UpdateSprintTaskCommand, Result>
 {
     private static readonly Dictionary<WorkItemPriority, string> PriorityLabels = new()
     {
@@ -136,6 +139,12 @@ public sealed class UpdateSprintTaskCommandHandler(
             historyService.Record(task.Id, command.RepositoryId, user.UserId, message);
 
         await uow.CommitAsync(ct);
+
+        // HUB caches the title for discussion-thread headers; without this the thread keeps showing
+        // the old title for up to two minutes.
+        await publisher.Publish(
+            new DirectoryEntryChangedEvent(DirectoryEntryKind.WorkItem, command.TaskId), ct);
+
         return Result.Ok;
     }
 }

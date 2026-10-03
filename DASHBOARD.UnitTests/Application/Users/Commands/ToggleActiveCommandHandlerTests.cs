@@ -4,6 +4,7 @@ using DASHBOARD.Application.Users.Commands.ToggleActive;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.UnitTests.Common;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.UnitTests.Application.Users.Commands;
 
@@ -25,7 +26,9 @@ public sealed class ToggleActiveCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private ToggleActiveCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow);
+        new(_db, user, _database.Uow, _publisher);
+
+    private readonly RecordingPublishEndpoint _publisher = new();
 
     private IRequestUserContext AdminUser() =>
         RequestUserContextMock.ForUser(_requesterId).AsGlobalAdmin().Object;
@@ -164,5 +167,35 @@ public sealed class ToggleActiveCommandHandlerTests : IDisposable
         var updated = await LoadAsync(target.Id);
         updated.IsDeleted.Should().BeFalse();
         updated.DeletedAt.Should().BeNull();
+    }
+
+    // ── Cross-system cache invalidation ─────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_WhenDeactivated_PublishesTheProfileChangeForHub()
+    {
+        var target  = await AddUserAsync("Gone");
+        var handler = CreateHandler(AdminUser());
+
+        await handler.Handle(new ToggleActiveCommand(target.Id), CancellationToken.None);
+
+        // IsDeleted rides on the profile HUB caches for 15 minutes; without this event a deactivated
+        // account keeps looking active over there.
+        var published = _publisher.PublishedOf<DirectoryEntryChangedEvent>();
+        published.Should().ContainSingle();
+        published[0].Kind.Should().Be(DirectoryEntryKind.UserProfile);
+        published[0].EntityId.Should().Be(target.Id);
+    }
+
+    [Fact]
+    public async Task Handle_WhenForbidden_PublishesNothing()
+    {
+        var target = await AddUserAsync("Untouched");
+
+        var act = () => CreateHandler(RequestUserContextMock.ForUser().Object)
+            .Handle(new ToggleActiveCommand(target.Id), CancellationToken.None);
+
+        await act.Should().ThrowAsync<ForbiddenException>();
+        _publisher.Published.Should().BeEmpty("nothing changed, so HUB has nothing to invalidate");
     }
 }
