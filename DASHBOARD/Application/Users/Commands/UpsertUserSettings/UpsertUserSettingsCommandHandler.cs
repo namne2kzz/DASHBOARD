@@ -2,8 +2,10 @@ using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.Users.Commands.UpsertUserSettings;
 
@@ -14,7 +16,8 @@ namespace DASHBOARD.Application.Users.Commands.UpsertUserSettings;
 public sealed class UpsertUserSettingsCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<UpsertUserSettingsCommand, Result>
+    IUnitOfWork           uow,
+    IPublishEndpoint      publisher) : IRequestHandler<UpsertUserSettingsCommand, Result>
 {
     /// <summary>Upserts preference settings for the current user and commits.</summary>
     /// <param name="command">Key-value pairs to persist.</param>
@@ -55,6 +58,12 @@ public sealed class UpsertUserSettingsCommandHandler(
         }
 
         await uow.CommitAsync(ct);
+
+        // HUB renders timestamps with these (date format, timezone), so a stale copy shows the user's
+        // old preferences back at them right after they changed them.
+        await publisher.Publish(
+            new DirectoryEntryChangedEvent(DirectoryEntryKind.UserSettings, user.UserId), ct);
+
         return Result.Ok;
     }
 }

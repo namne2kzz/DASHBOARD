@@ -30,7 +30,9 @@ public sealed class UpdateProfileCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private UpdateProfileCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow);
+        new(_db, user, _database.Uow, _publisher);
+
+    private readonly RecordingPublishEndpoint _publisher = new();
 
     private async Task<User> AddUserAsync(Guid? id = null)
     {

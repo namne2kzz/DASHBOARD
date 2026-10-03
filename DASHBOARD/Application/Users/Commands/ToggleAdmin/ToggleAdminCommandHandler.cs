@@ -3,8 +3,10 @@ using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.Users.Commands.ToggleAdmin
 {
@@ -12,7 +14,8 @@ namespace DASHBOARD.Application.Users.Commands.ToggleAdmin
     public sealed class ToggleAdminCommandHandler(
         IApplicationDbContext db,
         IRequestUserContext   user,
-        IUnitOfWork           uow) : IRequestHandler<ToggleAdminCommand, Result>
+        IUnitOfWork           uow,
+        IPublishEndpoint      publisher) : IRequestHandler<ToggleAdminCommand, Result>
     {
         /// <summary>Validates requester identity, applies the global admin role, and commits.</summary>
         /// <param name="command">The update request.</param>
@@ -32,6 +35,12 @@ namespace DASHBOARD.Application.Users.Commands.ToggleAdmin
             target.Touch();
 
             await uow.CommitAsync(ct);
+
+            // IsGlobalAdmin rides on the cached profile, so a revoked admin would keep the flag in HUB
+            // for up to fifteen minutes — a privilege change, not just a display one.
+            await publisher.Publish(
+                new DirectoryEntryChangedEvent(DirectoryEntryKind.UserProfile, command.TargetUserId), ct);
+
             return Result.Ok;
         }
     }

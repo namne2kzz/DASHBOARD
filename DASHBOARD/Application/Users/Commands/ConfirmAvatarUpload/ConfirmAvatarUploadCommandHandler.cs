@@ -3,8 +3,10 @@ using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.Users.Commands.ConfirmAvatarUpload;
 
@@ -22,7 +24,8 @@ public sealed class ConfirmAvatarUploadCommandHandler(
     IAppSettings          settings,
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<ConfirmAvatarUploadCommand, Result<string>>
+    IUnitOfWork           uow,
+    IPublishEndpoint      publisher) : IRequestHandler<ConfirmAvatarUploadCommand, Result<string>>
 {
     /// <summary>Validates, verifies, and persists the avatar URL after a successful browser upload.</summary>
     /// <param name="command">Contains the object key returned by the initiate step.</param>
@@ -64,6 +67,12 @@ public sealed class ConfirmAvatarUploadCommandHandler(
             db.Set<UserSetting>().Add(UserSetting.Create(userId, UserSettingKeys.AvatarUrl, publicUrl));
 
         await uow.CommitAsync(ct);
+
+        // The avatar URL lives in UserSetting, so this invalidates HUB's settings entry — and the
+        // profile entry too, since AvatarClass is served from there.
+        await publisher.Publish(new DirectoryEntryChangedEvent(DirectoryEntryKind.UserSettings, userId), ct);
+        await publisher.Publish(new DirectoryEntryChangedEvent(DirectoryEntryKind.UserProfile, userId), ct);
+
         return Result<string>.Success(publicUrl);
     }
 

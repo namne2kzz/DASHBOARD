@@ -38,7 +38,9 @@ public sealed class UserListingAndSettingsTests : IDisposable
     private GetUserSettingsQueryHandler SettingsHandler(IRequestUserContext user) => new(_db, user);
 
     private UpsertUserSettingsCommandHandler UpsertHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow);
+        new(_db, user, _database.Uow, _publisher);
+
+    private readonly RecordingPublishEndpoint _publisher = new();
 
     private IRequestUserContext AdminUser() =>
         RequestUserContextMock.ForUser(_userId, _orgId).AsGlobalAdmin().Object;

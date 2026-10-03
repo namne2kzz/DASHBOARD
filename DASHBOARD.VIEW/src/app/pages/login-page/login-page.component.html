@@ -130,9 +130,11 @@
           <label class="block text-xs font-medium text-slate-400" for="orgAlias">Organization</label>
           <input
             id="orgAlias"
+            #orgInput
             type="text"
             [ngModel]="orgAlias()"
             (ngModelChange)="orgAlias.set($event)"
+            (change)="orgAlias.set(orgInput.value)"
             class="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-600 transition focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/15"
             autocomplete="organization"
             placeholder="your-org"
@@ -144,9 +146,11 @@
           <label class="block text-xs font-medium text-slate-400" for="email">Email</label>
           <input
             id="email"
+            #emailInput
             type="email"
             [ngModel]="email()"
             (ngModelChange)="email.set($event)"
+            (change)="email.set(emailInput.value)"
             class="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-600 transition focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/15"
             autocomplete="email"
             placeholder="you@example.com"
@@ -159,9 +163,11 @@
           <div class="relative">
             <input
               id="password"
+              #passwordInput
               [type]="showPassword() ? 'text' : 'password'"
               [ngModel]="password()"
               (ngModelChange)="password.set($event)"
+              (change)="password.set(passwordInput.value)"
               class="w-full rounded-xl border border-slate-800 bg-slate-900/80 py-2.5 pl-3.5 pr-14 text-sm text-slate-100 outline-none placeholder:text-slate-600 transition focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/15"
               autocomplete="current-password"
               placeholder="••••••••"
@@ -189,7 +195,7 @@
         <!-- Submit -->
         <button
           type="button"
-          (click)="login()"
+          (click)="login(orgInput.value, emailInput.value, passwordInput.value)"
           [disabled]="loading()"
           class="w-full rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >

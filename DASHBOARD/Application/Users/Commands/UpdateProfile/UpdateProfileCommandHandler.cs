@@ -3,8 +3,10 @@ using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Interfaces;
+using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.Users.Commands.UpdateProfile;
 
@@ -12,7 +14,8 @@ namespace DASHBOARD.Application.Users.Commands.UpdateProfile;
 public sealed class UpdateProfileCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<UpdateProfileCommand, Result>
+    IUnitOfWork           uow,
+    IPublishEndpoint      publisher) : IRequestHandler<UpdateProfileCommand, Result>
 {
     /// <summary>Validates requester identity, applies the profile change, and commits.</summary>
     /// <param name="command">The update request.</param>
@@ -34,6 +37,12 @@ public sealed class UpdateProfileCommandHandler(
         target.Touch();
 
         await uow.CommitAsync(ct);
+
+        // HUB caches this profile for 15 minutes to render author and mention chips; without the event
+        // the old name and avatar keep showing there long after the change.
+        await publisher.Publish(
+            new DirectoryEntryChangedEvent(DirectoryEntryKind.UserProfile, command.TargetUserId), ct);
+
         return Result.Ok;
     }
 }

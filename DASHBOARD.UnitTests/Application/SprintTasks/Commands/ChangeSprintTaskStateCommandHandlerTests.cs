@@ -28,7 +28,9 @@ public sealed class ChangeSprintTaskStateCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private ChangeSprintTaskStateCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _history.Object, _database.Uow);
+        new(_db, user, _history.Object, _database.Uow, _publisher);
+
+    private readonly RecordingPublishEndpoint _publisher = new();
 
     private IRequestUserContext MemberUser() =>
         RequestUserContextMock.ForUser().AsMember(_repositoryId).Object;
