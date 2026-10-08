@@ -28,14 +28,14 @@
 
   <!-- Title -->
   <div>
-    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+    <label class="mb-1.5 block text-xs font-medium text-slate-400">
       Title <span class="text-rose-400">*</span>
     </label>
     <input
       type="text"
       name="title"
       placeholder="Short, descriptive title"
-      class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      class="field-input w-full"
       [ngModel]="title()"
       (ngModelChange)="title.set($event)"
     />
@@ -43,12 +43,12 @@
 
   <!-- Description -->
   <div>
-    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Description</label>
+    <label class="mb-1.5 block text-xs font-medium text-slate-400">Description</label>
     <textarea
       name="description"
       rows="3"
       placeholder="Optional details…"
-      class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      class="field-textarea w-full resize-y"
       [ngModel]="description()"
       (ngModelChange)="description.set($event)"
     ></textarea>
@@ -57,10 +57,10 @@
   <!-- Priority + Estimate -->
   <div class="grid gap-4 sm:grid-cols-2">
     <div>
-      <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Priority</label>
+      <label class="mb-1.5 block text-xs font-medium text-slate-400">Priority</label>
       <select
         name="priority"
-        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-500"
+        class="field-select w-full"
         [ngModel]="priority()"
         (ngModelChange)="priority.set(+$event)"
       >
@@ -72,7 +72,7 @@
 
     @if (showEstimate()) {
       <div>
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <label class="mb-1.5 block text-xs font-medium text-slate-400">
           Estimate <span class="normal-case text-slate-600">(hours)</span>
         </label>
         <input
@@ -81,7 +81,7 @@
           min="0"
           step="0.5"
           placeholder="e.g. 4"
-          class="w-full rounded-lg border bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors [appearance:textfield]"
+          class="field-input w-full [appearance:textfield]"
           [class]="estimateError()
             ? 'border-rose-600 focus:border-rose-500'
             : 'border-slate-700 focus:border-sky-500'"
@@ -97,11 +97,11 @@
 
   <!-- Assignee -->
   <div>
-    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Assignee</label>
+    <label class="mb-1.5 block text-xs font-medium text-slate-400">Assignee</label>
     @if (board.capacityMembers().length > 0) {
       <select
         name="assignedToId"
-        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-500"
+        class="field-select w-full"
         [ngModel]="assignedToId()"
         (ngModelChange)="assignedToId.set($event || null)"
       >
@@ -119,7 +119,7 @@
 
   <!-- Parent (User Story) picker -->
   <div>
-    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+    <label class="mb-1.5 block text-xs font-medium text-slate-400">
       Parent <span class="normal-case text-slate-600">(optional — must be a User Story)</span>
     </label>
 
@@ -145,14 +145,14 @@
         type="text"
         placeholder="Search Story by ID or title…"
         autocomplete="off"
-        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+        class="field-input w-full"
         [value]="parentSearchTerm()"
         (input)="onParentSearch($any($event.target).value, $any($event.target))"
       />
 
       @if (parentDropdownRect(); as rect) {
         <div
-          class="fixed z-[9990] rounded-xl border border-slate-700 bg-slate-800/95 py-1.5 shadow-2xl shadow-black/60 backdrop-blur-sm"
+          class="fixed z-[9990] rounded-xl border border-slate-700 bg-slate-800/95 py-1.5 shadow-2xl "
           [style.top.px]="rect.top" [style.left.px]="rect.left" [style.width.px]="rect.width"
         >
           @if (parentSearching()) {
@@ -186,63 +186,63 @@
   <!-- Bug-specific fields -->
   @if (isBug()) {
     <div class="space-y-4 rounded-xl border border-rose-800/30 bg-rose-950/10 p-3">
-      <p class="text-xs font-semibold uppercase tracking-wide text-rose-300">Bug details</p>
+      <p class="text-xs font-semibold   text-rose-300">Bug details</p>
 
       <div>
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Steps to reproduce</label>
+        <label class="mb-1.5 block text-xs font-medium text-slate-400">Steps to reproduce</label>
         <textarea
           name="stepsToReproduce"
           rows="3"
           placeholder="1. Go to…&#10;2. Click…&#10;3. Observe…"
-          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          class="field-textarea w-full resize-y"
           [ngModel]="stepsToReproduce()"
           (ngModelChange)="stepsToReproduce.set($event)"
         ></textarea>
       </div>
 
       <div>
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Environment</label>
+        <label class="mb-1.5 block text-xs font-medium text-slate-400">Environment</label>
         <input
           type="text"
           name="environment"
           placeholder="e.g. Chrome 124, Windows 11"
-          class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          class="field-input w-full"
           [ngModel]="environment()"
           (ngModelChange)="environment.set($event)"
         />
       </div>
 
       <div>
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Root cause</label>
+        <label class="mb-1.5 block text-xs font-medium text-slate-400">Root cause</label>
         <textarea
           name="rootCause"
           rows="3"
           placeholder="Optional — fill in once diagnosed"
-          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          class="field-textarea w-full resize-y"
           [ngModel]="rootCause()"
           (ngModelChange)="rootCause.set($event)"
         ></textarea>
       </div>
 
       <div>
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Solution</label>
+        <label class="mb-1.5 block text-xs font-medium text-slate-400">Solution</label>
         <textarea
           name="solution"
           rows="3"
           placeholder="Optional — fill in once resolved"
-          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          class="field-textarea w-full resize-y"
           [ngModel]="solution()"
           (ngModelChange)="solution.set($event)"
         ></textarea>
       </div>
 
       <div>
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Impact</label>
+        <label class="mb-1.5 block text-xs font-medium text-slate-400">Impact</label>
         <textarea
           name="impaction"
           rows="3"
           placeholder="Who/what is affected"
-          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          class="field-textarea w-full resize-y"
           [ngModel]="impaction()"
           (ngModelChange)="impaction.set($event)"
         ></textarea>
@@ -254,23 +254,23 @@
   @if (showDevNotes()) {
     <div class="space-y-4">
       <div>
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Unit test notes</label>
+        <label class="mb-1.5 block text-xs font-medium text-slate-400">Unit test notes</label>
         <textarea
           name="unitTest"
           rows="3"
           placeholder="Optional"
-          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          class="field-textarea w-full resize-y"
           [ngModel]="unitTest()"
           (ngModelChange)="unitTest.set($event)"
         ></textarea>
       </div>
       <div>
-        <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Design review notes</label>
+        <label class="mb-1.5 block text-xs font-medium text-slate-400">Design review notes</label>
         <textarea
           name="designReview"
           rows="3"
           placeholder="Optional"
-          class="w-full resize-y rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+          class="field-textarea w-full resize-y"
           [ngModel]="designReview()"
           (ngModelChange)="designReview.set($event)"
         ></textarea>
@@ -282,7 +282,7 @@
   @if (isTestPlan()) {
     <div class="space-y-3 rounded-xl border border-violet-800/30 bg-violet-950/10 p-3">
       <div class="flex items-center justify-between">
-        <p class="text-xs font-semibold uppercase tracking-wide text-violet-300">Test steps</p>
+        <p class="text-xs font-semibold   text-violet-300">Test steps</p>
         <label class="flex items-center gap-1.5 text-xs text-slate-300">
           <input
             type="checkbox"
@@ -303,7 +303,7 @@
               type="text"
               [name]="'testStep' + i"
               placeholder="Step description"
-              class="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-500"
+              class="field-input flex-1"
               [ngModel]="step"
               (ngModelChange)="updateTestStep(i, $event)"
             />
@@ -323,7 +323,7 @@
 
       <button
         type="button"
-        class="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-700"
+        class="nx-btn nx-btn--sm flex items-center gap-1"
         (click)="addTestStep()"
       >
         <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -338,12 +338,12 @@
   <div class="flex justify-end gap-3 border-t border-slate-800 pt-4">
     <button
       type="button"
-      class="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 ring-1 ring-slate-700 transition hover:ring-slate-600 hover:text-slate-200"
+      class="nx-btn"
       (click)="cancel()"
     >Cancel</button>
     <button
       type="submit"
-      class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+      class="nx-btn nx-btn--primary"
       [disabled]="!canSubmit()"
     >Create</button>
   </div>

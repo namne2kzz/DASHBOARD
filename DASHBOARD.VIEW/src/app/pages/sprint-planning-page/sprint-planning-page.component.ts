@@ -30,6 +30,9 @@ export class SprintPlanningPageComponent implements OnInit {
   readonly taskStateOptions  = SPRINT_TASK_STATE_OPTIONS;
   readonly stateBadge        = SPRINT_TASK_STATE_BADGE;
   readonly stateLabel        = SPRINT_TASK_STATE_LABEL;
+
+  /** Number of capacity members whose workload exceeds their capacity — the only load state that gets colour. */
+  readonly overloadedCount   = computed(() => this.planning.memberLoads().filter(m => m.state === 'overloaded').length);
   private readonly router    = inject(Router);
   private readonly repoCtx   = inject(RepositoryContextService);
   private readonly auth      = inject(AuthService);

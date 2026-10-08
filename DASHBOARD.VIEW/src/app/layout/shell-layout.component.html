@@ -4,32 +4,33 @@
 
 <div class="flex min-h-screen bg-slate-950 text-slate-100">
   <aside
-    class="sticky top-0 z-30 flex h-screen shrink-0 flex-col border-r border-slate-800/90 bg-slate-900/95 backdrop-blur transition-[width] duration-200 ease-out"
+    class="sticky top-0 z-30 flex h-screen shrink-0 flex-col border-r border-slate-800 bg-slate-900 transition-[width] duration-200 ease-out"
     [class.w-[4.25rem]]="collapsed()"
-    [class.w-56]="!collapsed()"
+    [class.w-[216px]]="!collapsed()"
   >
-    <div class="flex h-14 items-center border-b border-slate-800/80 px-3">
+    <div class="flex h-[60px] items-center border-b border-slate-800 px-2">
       @if (!collapsed()) {
         <!-- Repo picker (expanded) -->
         <div class="relative mr-2 min-w-0 flex-1">
           <button
             type="button"
-            class="flex w-full items-center gap-1.5 rounded-lg px-1.5 py-1 text-left transition hover:bg-slate-800/70 disabled:cursor-not-allowed disabled:opacity-50"
+            class="flex h-11 w-full items-center gap-2.5 rounded-md px-1.5 text-left transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             (click)="repoDropdownOpen.set(!repoDropdownOpen())"
             [disabled]="!repoCtx.repositories().length"
             [attr.aria-expanded]="repoDropdownOpen()"
             aria-label="Switch repository"
           >
-            <svg class="h-4 w-4 shrink-0 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <ellipse cx="12" cy="6" rx="8" ry="3" />
-              <path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" />
-              <path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
-            </svg>
-            <span class="min-w-0 flex-1 truncate text-sm font-semibold text-white">
-              @if (repoCtx.loading()) {
-                <span class="text-slate-500">Loading…</span>
-              } @else {
-                {{ repoCtx.selectedRepo()?.name ?? 'Select repo' }}
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 text-xs font-semibold text-slate-950">{{ (repoCtx.selectedRepo()?.name ?? 'N').charAt(0).toUpperCase() }}</span>
+            <span class="flex min-w-0 flex-1 flex-col leading-tight">
+              <span class="truncate text-sm font-semibold text-slate-100">
+                @if (repoCtx.loading()) {
+                  <span class="text-slate-500">Loading…</span>
+                } @else {
+                  {{ repoCtx.selectedRepo()?.name ?? 'Select repo' }}
+                }
+              </span>
+              @if (orgAlias()) {
+                <span class="truncate text-xs text-slate-500">{{ orgAlias() }}</span>
               }
             </span>
             <svg
@@ -46,32 +47,32 @@
               class="fixed inset-0 z-40"
               (click)="repoDropdownOpen.set(false)"
             ></div>
-            <div class="absolute left-0 top-full z-50 mt-1 min-w-[12rem] rounded-xl border border-slate-700 bg-slate-800/95 py-1 shadow-2xl shadow-black/60 backdrop-blur-sm">
+            <div class="absolute left-0 top-full z-50 mt-1 min-w-[12rem] rounded-2xl bg-slate-900 py-1 shadow-xl">
               @if (!repoCtx.repositories().length) {
                 <p class="px-3 py-2 text-xs text-slate-500">No repositories found</p>
               }
               @for (r of repoCtx.repositories(); track r.id) {
                 <button
                   type="button"
-                  class="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition hover:bg-slate-700/60"
-                  [class.text-sky-300]="r.id === repoCtx.selectedRepoId()"
-                  [class.font-semibold]="r.id === repoCtx.selectedRepoId()"
-                  [class.text-slate-300]="r.id !== repoCtx.selectedRepoId()"
+                  class="flex h-8 w-full items-center gap-2.5 px-3 text-sm transition hover:bg-slate-800"
+                  [class.text-slate-100]="r.id === repoCtx.selectedRepoId()"
+                  [class.font-medium]="r.id === repoCtx.selectedRepoId()"
+                  [class.text-slate-400]="r.id !== repoCtx.selectedRepoId()"
                   (click)="selectRepo(r.id)"
                 >
                   <span
                     class="h-1.5 w-1.5 shrink-0 rounded-full"
-                    [class.bg-sky-400]="r.id === repoCtx.selectedRepoId()"
+                    [class.bg-sky-500]="r.id === repoCtx.selectedRepoId()"
                     [class.bg-slate-600]="r.id !== repoCtx.selectedRepoId()"
                   ></span>
                   {{ r.name }}
                 </button>
               }
               @if (privilege.isGlobalAdmin()) {
-                <div class="my-1 border-t border-slate-700/60"></div>
+                <div class="my-1 border-t border-slate-800"></div>
                 <button
                   type="button"
-                  class="flex w-full items-center gap-2 px-3 py-2 text-sm text-sky-400 transition hover:bg-slate-700/60"
+                  class="flex h-8 w-full items-center gap-2 px-3 text-sm text-slate-300 transition hover:bg-slate-800"
                   (click)="openNewRepo()"
                 >
                   <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -86,26 +87,20 @@
       } @else {
         <!-- Repo icon (collapsed) -->
         <div
-          class="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-800/60 text-sky-400 ring-1 ring-white/5"
+          class="mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 text-xs font-semibold text-slate-950"
           [title]="repoCtx.selectedRepo()?.name ?? 'Repository'"
-        >
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <ellipse cx="12" cy="6" rx="8" ry="3" />
-            <path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" />
-            <path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
-          </svg>
-        </div>
+        >{{ (repoCtx.selectedRepo()?.name ?? 'N').charAt(0).toUpperCase() }}</div>
       }
 
       <button
         type="button"
-        class="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 ring-1 ring-slate-700/80 transition hover:bg-slate-800 hover:text-white"
+        class="ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-800 hover:text-slate-100"
         (click)="toggleSidebar()"
         [attr.aria-expanded]="!collapsed()"
         [attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
         title="Thu gọn / mở rộng"
       >
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           @if (collapsed()) {
             <path d="M9 18l6-6-6-6" />
           } @else {
@@ -115,40 +110,40 @@
       </button>
     </div>
 
-    <nav class="custom-scroll flex flex-1 flex-col gap-1 overflow-y-auto p-2">
+    <nav class="custom-scroll flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 py-3">
       @if (repoCtx.repositories().length > 0) {
-      @if (!collapsed()) {
-        <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Repo</p>
-      }
       <!-- Global search trigger -->
       <button
         type="button"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        class="nav-item"
         [class.justify-center]="collapsed()"
         [class.px-2]="collapsed()"
         title="Search (Ctrl/Cmd+K)"
         (click)="search.openPalette()"
       >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+        <span class="nav-icon">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/>
           </svg>
         </span>
         @if (!collapsed()) {
           <span class="flex-1 text-left">Search</span>
-          <kbd class="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">⌘K</kbd>
+          <kbd class="font-mono text-[11px] text-slate-500">⌘K</kbd>
         }
       </button>
 
+      @if (!collapsed()) {
+        <p class="nav-label">Workspace</p>
+      }
       <a
         [routerLink]="repoLink('overview')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        routerLinkActive="is-active"
+        class="nav-item"
         [class.justify-center]="collapsed()"
         [class.px-2]="collapsed()"
         title="Overview"
       >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+        <span class="nav-icon">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <rect x="3" y="3" width="7" height="9" rx="1" />
             <rect x="14" y="3" width="7" height="5" rx="1" />
@@ -163,13 +158,13 @@
 
       <a
         [routerLink]="repoLink('boards')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        routerLinkActive="is-active"
+        class="nav-item"
         [class.justify-center]="collapsed()"
         [class.px-2]="collapsed()"
         title="Boards"
       >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+        <span class="nav-icon">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
           </svg>
@@ -181,13 +176,13 @@
 
       <a
         [routerLink]="repoLink('workflow')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        routerLinkActive="is-active"
+        class="nav-item"
         [class.justify-center]="collapsed()"
         [class.px-2]="collapsed()"
         title="Workflow"
       >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+        <span class="nav-icon">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <rect x="1" y="9" width="5" height="6" rx="1.5"/>
             <rect x="9.5" y="9" width="5" height="6" rx="1.5"/>
@@ -205,13 +200,13 @@
 
       <a
         [routerLink]="repoLink('backlog')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        routerLinkActive="is-active"
+        class="nav-item"
         [class.justify-center]="collapsed()"
         [class.px-2]="collapsed()"
         title="Backlog"
       >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+        <span class="nav-icon">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M5 5h14v4H5zM5 15h14v4H5z" />
             <path d="M7 9v6M17 9v6M10 12h4" />
@@ -224,13 +219,13 @@
 
       <a
         [routerLink]="repoLink('sprint-planning')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        routerLinkActive="is-active"
+        class="nav-item"
         [class.justify-center]="collapsed()"
         [class.px-2]="collapsed()"
         title="Sprint"
       >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+        <span class="nav-icon">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <rect x="4" y="5" width="16" height="15" rx="2" />
             <path d="M8 3v4M16 3v4M4 10h16M8 14h3M13 14h3M8 17h3" />
@@ -243,13 +238,13 @@
 
       <a
         [routerLink]="repoLink('repos')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        routerLinkActive="is-active"
+        class="nav-item"
         [class.justify-center]="collapsed()"
         [class.px-2]="collapsed()"
         title="Repos"
       >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+        <span class="nav-icon">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <ellipse cx="12" cy="6" rx="8" ry="3" />
             <path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" />
@@ -263,13 +258,13 @@
 
       <a
         [routerLink]="repoLink('pipelines')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        routerLinkActive="is-active"
+        class="nav-item"
         [class.justify-center]="collapsed()"
         [class.px-2]="collapsed()"
         title="Pipelines"
       >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+        <span class="nav-icon">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
             <line x1="4" y1="22" x2="4" y2="15" />
@@ -283,13 +278,13 @@
       @if (privilege.canManageMembers()) {
         <a
           [routerLink]="repoLink('audit-log')"
-          routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-          class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+          routerLinkActive="is-active"
+          class="nav-item"
           [class.justify-center]="collapsed()"
           [class.px-2]="collapsed()"
           title="Audit log"
         >
-          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+          <span class="nav-icon">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
               <rect x="9" y="3" width="6" height="4" rx="1"/>
@@ -304,20 +299,20 @@
       } <!-- end @if repositories -->
     </nav>
 
-    <div class="shrink-0 border-t border-slate-800/80 p-2 flex flex-col gap-1">
+    <div class="shrink-0 border-t border-slate-800 p-2 flex flex-col gap-0.5">
       @if (!collapsed()) {
-        <p class="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">General</p>
+        <p class="nav-label !mt-1">Personal</p>
       }
       <!-- My Work (global, cross-repository) -->
       <a
         [routerLink]="globalLink('my-work')"
-        routerLinkActive="bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30"
-        class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
+        routerLinkActive="is-active"
+        class="nav-item"
         [class.justify-center]="collapsed()"
         [class.px-2]="collapsed()"
         title="My Work"
       >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+        <span class="nav-icon">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3L22 4"/>
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
@@ -331,14 +326,13 @@
         <button
           type="button"
           (click)="toggleSettings()"
-          class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition hover:bg-slate-800/80 hover:text-white"
+          class="nav-item w-full"
           [class.justify-center]="collapsed()"
           [class.px-2]="collapsed()"
-          [class.text-sky-300]="settingsOpen()"
-          [class.text-slate-300]="!settingsOpen()"
+          [class.is-open]="settingsOpen()"
           title="Settings"
         >
-          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+          <span class="nav-icon">
             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 0 0 2.572-1.065z"/>
               <circle cx="12" cy="12" r="3"/>
@@ -357,21 +351,21 @@
         </button>
 
         @if (settingsOpen() && !collapsed()) {
-          <div class="ml-[2.375rem] mt-0.5 space-y-0.5 border-l border-slate-800 pl-2.5">
+          <div class="nav-sub">
             <a
               [routerLink]="globalLink('settings/general')"
-              routerLinkActive="text-sky-300 bg-sky-500/10 ring-1 ring-sky-500/20"
+              routerLinkActive="is-active"
               [routerLinkActiveOptions]="{ exact: true }"
-              class="flex items-center rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/60 hover:text-white"
+              class="nav-item nav-item--sub"
             >
               General
             </a>
             @if (privilege.canManageMembers()) {
               <a
                 [routerLink]="globalLink('settings/members')"
-                routerLinkActive="text-sky-300 bg-sky-500/10 ring-1 ring-sky-500/20"
+                routerLinkActive="is-active"
                 [routerLinkActiveOptions]="{ exact: true }"
-                class="flex items-center rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/60 hover:text-white"
+                class="nav-item nav-item--sub"
               >
                 Members
               </a>
@@ -379,9 +373,9 @@
             @if (privilege.canManageMembers()) {
               <a
                 [routerLink]="globalLink('settings/metadata')"
-                routerLinkActive="text-sky-300 bg-sky-500/10 ring-1 ring-sky-500/20"
+                routerLinkActive="is-active"
                 [routerLinkActiveOptions]="{ exact: true }"
-                class="flex items-center rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/60 hover:text-white"
+                class="nav-item nav-item--sub"
               >
                 Metadata
               </a>
@@ -389,9 +383,9 @@
             @if (privilege.isGlobalAdmin()) {
               <a
                 [routerLink]="globalLink('settings/users')"
-                routerLinkActive="text-sky-300 bg-sky-500/10 ring-1 ring-sky-500/20"
+                routerLinkActive="is-active"
                 [routerLinkActiveOptions]="{ exact: true }"
-                class="flex items-center rounded-lg px-2.5 py-1.5 text-xs text-slate-400 transition hover:bg-slate-800/60 hover:text-white"
+                class="nav-item nav-item--sub"
               >
                 Users
               </a>
@@ -400,21 +394,27 @@
         }
       </div>
 
-      <button
-        type="button"
-        class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800/80 hover:text-white"
-        [class.justify-center]="collapsed()"
-        [class.px-2]="collapsed()"
-        title="Logout"
-        (click)="logout()"
-      >
-        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800/80 ring-1 ring-white/5">
+      <!-- Signed-in user · logout -->
+      <div class="mt-1 flex items-center gap-2.5 rounded-md border border-slate-800 p-2" [class.justify-center]="collapsed()" [class.border-transparent]="collapsed()">
+        @if (!collapsed()) {
+          <span class="nx-avatar nx-avatar--me h-8 w-8 text-[11px]">{{ userInitials() }}</span>
+          <span class="flex min-w-0 flex-1 flex-col leading-tight">
+            <span class="truncate text-sm font-medium text-slate-100">{{ auth.currentUser()?.name }}</span>
+            <span class="truncate text-xs text-slate-500">{{ auth.currentUser()?.email }}</span>
+          </span>
+        }
+        <button
+          type="button"
+          class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-800 hover:text-rose-500"
+          title="Logout"
+          aria-label="Logout"
+          (click)="logout()"
+        >
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/>
           </svg>
-        </span>
-        @if (!collapsed()) { <span>Logout</span> }
-      </button>
+        </button>
+      </div>
 
     </div>
   </aside>
@@ -425,50 +425,10 @@
     @if (!repoCtx.loading() && repoCtx.repositories().length === 0 && !isGlobalRoute()) {
       <div class="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-slate-950">
 
-        <!-- Blurred background illustration -->
-        <div class="pointer-events-none absolute inset-0 flex items-center justify-center select-none"
-             style="filter: blur(3px);">
-          <svg class="h-[500px] w-[500px] opacity-[0.13]" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Outer decorative rings -->
-            <circle cx="250" cy="250" r="210" stroke="#38bdf8" stroke-width="1" stroke-dasharray="10 7" opacity="0.45"/>
-            <circle cx="250" cy="250" r="168" stroke="#38bdf8" stroke-width="0.8" opacity="0.25"/>
-            <!-- Floating dots -->
-            <circle cx="105" cy="148" r="4.5" fill="#38bdf8" opacity="0.55"/>
-            <circle cx="395" cy="165" r="3.5" fill="#38bdf8" opacity="0.45"/>
-            <circle cx="95"  cy="335" r="3"   fill="#38bdf8" opacity="0.4"/>
-            <circle cx="406" cy="355" r="4"   fill="#38bdf8" opacity="0.45"/>
-            <circle cx="172" cy="92"  r="2.5" fill="#38bdf8" opacity="0.35"/>
-            <circle cx="340" cy="100" r="2.5" fill="#38bdf8" opacity="0.35"/>
-            <circle cx="148" cy="390" r="3"   fill="#38bdf8" opacity="0.3"/>
-            <circle cx="360" cy="400" r="2.5" fill="#38bdf8" opacity="0.3"/>
-            <!-- Database – top tier -->
-            <ellipse cx="250" cy="182" rx="95" ry="27" fill="#1e293b" stroke="#38bdf8" stroke-width="2.2"/>
-            <rect x="155" y="182" width="190" height="62" fill="#1e293b"/>
-            <line x1="155" y1="182" x2="155" y2="244" stroke="#38bdf8" stroke-width="2.2"/>
-            <line x1="345" y1="182" x2="345" y2="244" stroke="#38bdf8" stroke-width="2.2"/>
-            <ellipse cx="250" cy="244" rx="95" ry="27" fill="#1e293b" stroke="#38bdf8" stroke-width="2.2"/>
-            <line x1="168" y1="213" x2="332" y2="213" stroke="#38bdf8" stroke-width="0.9" opacity="0.5"/>
-            <!-- Database – bottom tier -->
-            <ellipse cx="250" cy="234" rx="95" ry="27" fill="#0f172a" stroke="#38bdf8" stroke-width="2.2"/>
-            <rect x="155" y="234" width="190" height="62" fill="#0f172a"/>
-            <line x1="155" y1="234" x2="155" y2="296" stroke="#38bdf8" stroke-width="2.2"/>
-            <line x1="345" y1="234" x2="345" y2="296" stroke="#38bdf8" stroke-width="2.2"/>
-            <ellipse cx="250" cy="296" rx="95" ry="27" fill="#0f172a" stroke="#38bdf8" stroke-width="2.2"/>
-            <line x1="168" y1="265" x2="332" y2="265" stroke="#38bdf8" stroke-width="0.9" opacity="0.5"/>
-            <!-- Lock body -->
-            <rect x="215" y="318" width="70" height="56" rx="11" fill="#38bdf8"/>
-            <!-- Lock shackle -->
-            <path d="M228 318 L228 300 Q228 280 250 280 Q272 280 272 300 L272 318"
-                  stroke="#38bdf8" stroke-width="7" stroke-linecap="round" fill="none"/>
-            <!-- Lock keyhole -->
-            <circle cx="250" cy="342" r="9" fill="#1e293b"/>
-            <rect x="246" y="342" width="8" height="14" rx="3" fill="#1e293b"/>
-          </svg>
-        </div>
 
         <!-- Foreground message -->
         <div class="relative z-10 flex flex-col items-center gap-5 px-6 text-center">
-          <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800/90 ring-1 ring-slate-700/80">
+          <div class="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900">
             <svg class="h-6 w-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <ellipse cx="12" cy="6" rx="8" ry="3"/>
               <path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/>
@@ -476,8 +436,8 @@
             </svg>
           </div>
           <div>
-            <h2 class="text-[15px] font-semibold text-slate-300">No repository access</h2>
-            <p class="mt-1.5 max-w-[260px] text-sm leading-relaxed text-slate-500">
+            <h2 class="text-lg font-semibold text-slate-100">No repository access</h2>
+            <p class="mt-1.5 max-w-[260px] text-sm text-slate-400">
               You haven't been assigned to any repository yet.<br>
               Contact your administrator to get access.
             </p>

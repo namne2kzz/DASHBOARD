@@ -32,7 +32,7 @@ public sealed class SprintTaskDetailController(ISender mediator) : ControllerBas
     /// <param name="key">Formatted work-item key, e.g. "DASH-10".</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>200 with the task UUID as a JSON string; 404 if not found.</returns>
-    [HttpGet("/api/repositories/{repoId:guid}/sprint-tasks/by-key/{key}")]
+    [HttpGet("/api/v{version:apiVersion}/repositories/{repoId:guid}/sprint-tasks/by-key/{key}")]
     [ProducesResponseType<Guid>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

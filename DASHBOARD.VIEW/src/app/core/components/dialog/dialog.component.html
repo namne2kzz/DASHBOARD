@@ -1,10 +1,10 @@
 @for (entry of svc.dialogs(); track trackById($index, entry)) {
   <div
-    class="fixed inset-0 z-[9980] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
+    class="fixed inset-0 z-[9980] flex items-center justify-center bg-black/40  animate-fade-in"
     (click)="close(entry)"
   >
     <div
-      class="relative flex flex-col border border-slate-700 bg-slate-900 shadow-2xl shadow-black/60 max-h-screen overflow-hidden animate-scale-in"
+      class="relative flex flex-col border border-slate-700 bg-slate-900 shadow-2xl max-h-screen overflow-hidden animate-scale-in"
       [ngClass]="panelClass(entry)"
       [ngStyle]="panelStyle(entry)"
       (click)="$event.stopPropagation()"

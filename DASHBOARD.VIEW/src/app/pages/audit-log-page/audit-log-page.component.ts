@@ -87,8 +87,8 @@ const CATEGORY_LABEL: Record<AuditLogCategory, string> = {
 };
 
 const CATEGORY_BADGE: Record<AuditLogCategory, string> = {
-  created:    'bg-emerald-500/12 text-emerald-300 ring-emerald-500/30',
-  state:      'bg-sky-500/12 text-sky-300 ring-sky-500/30',
-  assignment: 'bg-violet-500/12 text-violet-300 ring-violet-500/30',
+  created:    'bg-emerald-500/12 text-emerald-300 ring-transparent',
+  state:      'bg-sky-500/10 text-sky-500 ring-transparent',
+  assignment: 'bg-violet-500/10 text-violet-500 ring-transparent',
   update:     'bg-slate-500/12 text-slate-400 ring-slate-400/25',
 };

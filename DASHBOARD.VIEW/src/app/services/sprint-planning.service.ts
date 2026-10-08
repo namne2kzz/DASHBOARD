@@ -371,11 +371,11 @@ export class SprintPlanningService {
     return this.memberLoads().find(m => m.userId === userId)?.name ?? 'Unknown';
   }
 
-  /** @param state Load state. @returns Tailwind class for the progress bar. */
+  /** Neutral bar; only an overloaded row gets colour (Nexus UI). @param state Load state. @returns Tailwind class for the progress bar. */
   progressBarClass(state: LoadState): string {
     switch (state) {
-      case 'safe':       return 'bg-emerald-400';
-      case 'warning':    return 'bg-amber-400';
+      case 'safe':       return 'bg-slate-300';
+      case 'warning':    return 'bg-slate-300';
       case 'overloaded': return 'bg-rose-500';
     }
   }

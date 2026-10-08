@@ -1,23 +1,22 @@
-<div class="mx-auto max-w-4xl px-6 py-6">
-  <!-- Header -->
-  <div class="mb-5">
-    <h1 class="text-lg font-bold text-white">Audit log</h1>
-    <p class="mt-0.5 text-sm text-slate-500">Every recorded change across this repository's work items.</p>
-  </div>
+<div class="border-b border-slate-800 bg-slate-900 px-5 py-3.5">
+  <h1 class="text-lg font-semibold text-slate-100">Audit log</h1>
+  <p class="mt-0.5 text-sm text-slate-400">Every recorded change across this repository's work items.</p>
+</div>
+<div class="px-5 py-5">
 
   <!-- Filters -->
   <div class="mb-4 flex flex-wrap items-end gap-2 rounded-xl border border-slate-800 bg-slate-900/50 p-3">
     <!-- Author picker -->
     <div class="relative flex flex-col gap-1">
-      <span class="text-[11px] font-medium uppercase tracking-wide text-slate-500">Author</span>
+      <span class="text-xs font-medium text-slate-400">Author</span>
       <button
         type="button"
-        class="flex min-w-[11rem] items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm transition hover:border-slate-600"
+        class="field-input flex w-auto min-w-[11rem] items-center gap-2 text-left"
         (click)="$event.stopPropagation(); showAuthorPicker.set(!showAuthorPicker())"
       >
         @if (authorId(); as uid) {
           @if (members.getMember(uid); as mem) {
-            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+            <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
               [ngClass]="mem.avatarClass">{{ members.initials(mem.userName) }}</span>
             <span class="flex-1 truncate text-left text-slate-100">{{ mem.userName }}</span>
           }
@@ -56,7 +55,7 @@
               class="flex w-full items-center gap-2.5 px-3 py-2 text-sm transition hover:bg-slate-800"
               [class.bg-slate-800]="authorId() === m.userId"
               (click)="authorId.set(m.userId); showAuthorPicker.set(false); applyFilters()">
-              <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+              <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
                 [ngClass]="m.avatarClass">{{ members.initials(m.userName) }}</span>
               <span class="flex-1 truncate text-slate-200">{{ m.userName }}</span>
               @if (authorId() === m.userId) {
@@ -71,9 +70,9 @@
     </div>
 
     <label class="flex flex-col gap-1">
-      <span class="text-[11px] font-medium uppercase tracking-wide text-slate-500">Action</span>
+      <span class="text-xs font-medium text-slate-400">Action</span>
       <select
-        class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+        class="field-select w-auto"
         [ngModel]="category()"
         (ngModelChange)="category.set($event); applyFilters()"
       >
@@ -84,20 +83,20 @@
     </label>
 
     <label class="flex flex-col gap-1">
-      <span class="text-[11px] font-medium uppercase tracking-wide text-slate-500">From</span>
+      <span class="text-xs font-medium text-slate-400">From</span>
       <input
         type="date"
-        class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+        class="field-input w-auto"
         [ngModel]="from()"
         (ngModelChange)="from.set($event); applyFilters()"
       />
     </label>
 
     <label class="flex flex-col gap-1">
-      <span class="text-[11px] font-medium uppercase tracking-wide text-slate-500">To</span>
+      <span class="text-xs font-medium text-slate-400">To</span>
       <input
         type="date"
-        class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+        class="field-input w-auto"
         [ngModel]="to()"
         (ngModelChange)="to.set($event); applyFilters()"
       />
@@ -106,7 +105,7 @@
     @if (hasActiveFilters()) {
       <button
         type="button"
-        class="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-400 ring-1 ring-slate-700 transition hover:bg-slate-800 hover:text-slate-200"
+        class="nx-btn nx-btn--sm"
         (click)="clearFilters()"
       >Clear</button>
     }
@@ -136,13 +135,13 @@
       @for (entry of audit.entries(); track entry.id) {
         <li class="flex items-center gap-3 px-4 py-2.5">
           <!-- Author avatar -->
-          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
             [ngClass]="entry.authorAvatar"
             [title]="entry.authorName"
           >{{ members.initials(entry.authorName) }}</div>
 
           <!-- Category chip -->
-          <span class="hidden shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 sm:inline-block"
+          <span class="nx-tag hidden shrink-0 sm:inline-block"
             [ngClass]="categoryBadge(entry.category)"
           >{{ categoryLabel(entry.category) }}</span>
 

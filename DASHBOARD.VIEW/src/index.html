@@ -6,6 +6,10 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- Nexus UI Foundation: IBM Plex Sans for UI, IBM Plex Mono for IDs / numbers / hours. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <!--
     Apply the persisted theme synchronously, before Angular bootstraps, to
     avoid a flash of the default theme on load. Key must match
@@ -14,10 +18,12 @@
   <script>
     (function () {
       try {
-        if (localStorage.getItem('nxs.ui.theme') === 'light') {
-          document.documentElement.classList.add('theme-light');
-        }
-      } catch (e) { /* localStorage unavailable — fall back to default theme */ }
+        var theme = localStorage.getItem('nxs.ui.theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        /* localStorage unavailable — fall back to the default theme */
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
     })();
   </script>
   <!-- Google Identity Services — used by GoogleIdentityService for the invite-accept sign-in flow. -->

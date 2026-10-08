@@ -137,28 +137,29 @@ public sealed class RepositoryScopedEndpointTests(SqlServerFixture database) : I
         response.StatusCode.Should().NotBe(HttpStatusCode.Forbidden);
     }
 
-    // ── A route that skips the version segment ──────────────────────────────
+    // ── A route declared with an absolute template ──────────────────────────
 
     [Fact]
-    public async Task TheUnversionedByKeyRouteStillRequiresAToken()
+    public async Task TheByKeyRouteStillRequiresAToken()
     {
-        // SprintTaskDetailController declares this one with a leading slash and no
-        // api/v{version} prefix, so it does not inherit the versioned route template. A route
-        // that sits outside the usual shape is exactly the kind that gets missed.
+        // SprintTaskDetailController declares this one with a leading slash, so it does not
+        // inherit the controller's route template. A route that sits outside the usual shape is
+        // exactly the kind that gets missed — it once lost its api/v{version} segment, which
+        // made every work-item deep link 404 for the v1 frontend.
         using var anonymous = ApiClient.Anonymous(_factory);
 
         var response = await anonymous.GetAsync(
-            $"api/repositories/{_owner.RepositoryId}/sprint-tasks/by-key/{_owner.RepositoryCode}-1");
+            Route(_owner.RepositoryId, $"sprint-tasks/by-key/{_owner.RepositoryCode}-1"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized,
             "skipping the version segment must not skip authentication");
     }
 
     [Fact]
-    public async Task TheUnversionedByKeyRouteIsClosedToAnotherOrganization()
+    public async Task TheByKeyRouteIsClosedToAnotherOrganization()
     {
         var response = await _outsiderClient.GetAsync(
-            $"api/repositories/{_owner.RepositoryId}/sprint-tasks/by-key/{_owner.RepositoryCode}-1");
+            Route(_owner.RepositoryId, $"sprint-tasks/by-key/{_owner.RepositoryCode}-1"));
 
         response.StatusCode.Should().BeOneOf([HttpStatusCode.Forbidden, HttpStatusCode.NotFound]);
     }

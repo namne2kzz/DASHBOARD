@@ -16,7 +16,8 @@ export class ThemeService {
     effect(() => {
       const t = this.theme();
       localStorage.setItem(StorageKeys.theme, t);
-      this.document.documentElement.classList.toggle('theme-light', t === 'light');
+      // Design tokens in styles.css switch on html[data-theme].
+      this.document.documentElement.setAttribute('data-theme', t);
     });
   }
 

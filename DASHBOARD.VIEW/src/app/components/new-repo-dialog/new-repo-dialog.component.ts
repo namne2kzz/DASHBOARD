@@ -69,7 +69,7 @@ export class NewRepoDialogComponent {
     });
   }
 
-  /** Transforms the code field to uppercase and strips non-alphanumeric chars on each keystroke. */
+  /** Transforms the code field to  and strips non-alphanumeric chars on each keystroke. */
   onCodeInput(): void {
     this.code = this.code.toUpperCase().replace(/[^A-Z0-9]/g, '');
     this.codeStatus.set('idle');

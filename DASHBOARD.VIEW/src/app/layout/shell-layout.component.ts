@@ -43,6 +43,13 @@ export class ShellLayoutComponent {
   /** The current tenant's URL alias (constant per session). */
   readonly orgAlias = computed(() => this.auth.currentUser()?.orgAlias ?? '');
 
+  /** Two-letter initials of the signed-in user for the sidebar user card. */
+  readonly userInitials = computed(() => {
+    const parts = (this.auth.currentUser()?.name ?? '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    return (parts.length === 1 ? parts[0].slice(0, 2) : parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  });
+
   /** True when the current route is a global page (profile/settings) that doesn't require repo access. */
   readonly isGlobalRoute = computed(() => {
     // URL shape: /{orgAlias}/{section}/… — inspect the segment after the alias.

@@ -10,10 +10,10 @@ import { SprintTaskApiType, WorkItemApiPriority } from '../../core/enums/system.
 import type { WorkItemPickerApiDto } from '../../models/sprint-planning-api.model';
 
 const TYPE_ICON_CLASS: Record<SprintTaskApiType, string> = {
-  [SprintTaskApiType.UserStory]: 'text-sky-400 ring-sky-500/35 bg-sky-500/10',
-  [SprintTaskApiType.Task]:      'text-amber-300 ring-amber-400/35 bg-amber-400/10',
-  [SprintTaskApiType.Bug]:       'text-rose-400 ring-rose-500/35 bg-rose-500/10',
-  [SprintTaskApiType.TestPlan]:  'text-violet-400 ring-violet-500/35 bg-violet-500/10',
+  [SprintTaskApiType.UserStory]: 'text-type-story ring-slate-800 bg-slate-800',
+  [SprintTaskApiType.Task]:      'text-type-task ring-slate-800 bg-slate-800',
+  [SprintTaskApiType.Bug]:       'text-type-bug ring-slate-800 bg-slate-800',
+  [SprintTaskApiType.TestPlan]:  'text-type-test ring-slate-800 bg-slate-800',
 };
 
 @Component({

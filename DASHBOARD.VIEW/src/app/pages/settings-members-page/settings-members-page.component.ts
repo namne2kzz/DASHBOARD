@@ -426,10 +426,10 @@ export class SettingsMembersPageComponent {
   /** Badge color classes for an invitation status. @param status Numeric InvitationStatus. @returns Tailwind class string. */
   invitationStatusClass(status: InvitationStatus): string {
     switch (status) {
-      case InvitationStatus.Pending:  return 'bg-amber-400/10 text-amber-400 ring-amber-400/30';
-      case InvitationStatus.Accepted: return 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/30';
+      case InvitationStatus.Pending:  return 'bg-amber-500/10 text-amber-500 ring-transparent';
+      case InvitationStatus.Accepted: return 'bg-emerald-500/10 text-emerald-400 ring-transparent';
       case InvitationStatus.Expired:  return 'bg-slate-700/50 text-slate-400 ring-slate-600/50';
-      case InvitationStatus.Revoked:  return 'bg-rose-500/10 text-rose-400 ring-rose-500/30';
+      case InvitationStatus.Revoked:  return 'bg-rose-500/10 text-rose-500 ring-transparent';
     }
   }
 

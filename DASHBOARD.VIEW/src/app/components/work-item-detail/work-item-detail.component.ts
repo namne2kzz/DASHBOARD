@@ -272,11 +272,11 @@ export class WorkItemDetailComponent {
   typeIconClasses(): Record<string, boolean> {
     const t = this.currentType();
     return {
-      'bg-sky-500/10 text-sky-400 ring-sky-500/35':          t === 'user-story',
-      'bg-rose-500/10 text-rose-400 ring-rose-500/35':       t === 'bug',
-      'bg-amber-400/10 text-amber-300 ring-amber-400/35':    t === 'task',
-      'bg-orange-500/10 text-orange-400 ring-orange-400/35': t === 'improvement',
-      'bg-violet-500/10 text-violet-400 ring-violet-500/35': t === 'test-plan',
+      'bg-slate-800 text-type-story ring-slate-800':          t === 'user-story',
+      'bg-slate-800 text-type-bug ring-slate-800':       t === 'bug',
+      'bg-slate-800 text-type-task ring-slate-800':    t === 'task',
+      'bg-slate-800 text-type-improvement ring-slate-800': t === 'improvement',
+      'bg-slate-800 text-type-test ring-slate-800': t === 'test-plan',
     };
   }
 

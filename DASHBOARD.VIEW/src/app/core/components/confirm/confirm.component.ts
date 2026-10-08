@@ -88,10 +88,10 @@ export class ConfirmComponent {
   /** Tailwind classes for the icon circle. @returns CSS class string. */
   protected get iconClass(): string {
     return {
-      danger:  'bg-rose-500/15    ring-rose-500/30    text-rose-400',
-      warning: 'bg-amber-500/15   ring-amber-500/30   text-amber-400',
-      info:    'bg-sky-500/15     ring-sky-500/30     text-sky-400',
-      success: 'bg-emerald-500/15 ring-emerald-500/30 text-emerald-400',
+      danger:  'bg-rose-500/15    ring-transparent    text-rose-400',
+      warning: 'bg-amber-500/15   ring-transparent   text-amber-400',
+      info:    'bg-sky-500/15     ring-transparent     text-sky-400',
+      success: 'bg-emerald-500/15 ring-transparent text-emerald-400',
     }[this.type];
   }
 

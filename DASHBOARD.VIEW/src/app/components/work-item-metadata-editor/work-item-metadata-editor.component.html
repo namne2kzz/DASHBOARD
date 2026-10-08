@@ -2,12 +2,12 @@
   <div class="flex flex-col gap-3">
     @for (group of groups(); track group.key) {
       <div>
-        <p class="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{{ group.label }}</p>
+        <p class="mb-1.5 text-xs font-medium text-slate-400">{{ group.label }}</p>
 
         <!-- Selected values + add button -->
         <div class="flex flex-wrap items-center gap-1.5">
           @for (v of selectedValues(group); track v.id) {
-            <span class="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300 ring-1 ring-sky-500/35">
+            <span class="inline-flex items-center gap-1 rounded-full bg-sky-500/15 px-2.5 py-1 text-xs font-medium text-sky-300 ring-1 ring-transparent">
               {{ v.value }}
               @if (canEdit()) {
                 <button
@@ -48,7 +48,7 @@
           <div class="mt-2 rounded-lg border border-slate-700 bg-slate-950/60 p-2">
             <input
               type="text"
-              class="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 outline-none focus:border-sky-400"
+              class="field-input !h-7 !text-xs w-full"
               [placeholder]="'Search ' + group.label + '…'"
               [ngModel]="addSearch()"
               (ngModelChange)="addSearch.set($event)"
@@ -57,7 +57,7 @@
               @for (v of addMatches(group); track v.id) {
                 <button
                   type="button"
-                  class="rounded-full bg-slate-800/60 px-2.5 py-1 text-xs font-medium text-slate-300 ring-1 ring-slate-700 transition hover:bg-slate-700 hover:text-white disabled:opacity-50"
+                  class="nx-btn nx-btn--sm"
                   [disabled]="saving()"
                   (click)="add(v.id)"
                 >{{ v.value }}</button>

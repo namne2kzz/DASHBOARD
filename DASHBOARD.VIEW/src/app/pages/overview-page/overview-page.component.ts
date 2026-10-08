@@ -12,45 +12,47 @@ const TYPE_LABELS: Record<string, string> = {
   TestPlan: 'Test Plan',
 };
 
+// Chart palettes: ngx-charts writes fills as SVG attributes (no CSS vars), so these are
+// mid-tone values of the Nexus UI type/state colours that read on both themes.
 const TYPE_SCHEME: Color = {
   name: 'type',
   selectable: true,
   group: ScaleType.Ordinal,
-  domain: ['#38bdf8', '#fbbf24', '#fb7185', '#a855f7'],
+  domain: ['#3B6FD4', '#B7791F', '#C33A2E', '#7550C9'], // type-story · type-task · type-bug · type-test
 };
 
 const STATUS_SCHEME: Color = {
   name: 'status',
   selectable: true,
   group: ScaleType.Ordinal,
-  domain: ['#38bdf8', '#f59e0b', '#fb923c', '#22c55e'],
+  domain: ['#7D8490', '#3B6FD4', '#B7791F', '#2E9A63'], // New · Active · In Review · Done
 };
 
 const VELOCITY_SCHEME: Color = {
   name: 'velocity',
   selectable: true,
   group: ScaleType.Ordinal,
-  domain: ['#38bdf8', '#22c55e'],
+  domain: ['#7D8490', '#2E9A63'], // committed (neutral) · completed (accent)
 };
 
 const BURNDOWN_SCHEME: Color = {
   name: 'burndown',
   selectable: true,
   group: ScaleType.Ordinal,
-  domain: ['#64748b', '#38bdf8'],
+  domain: ['#7D8490', '#2E9A63'], // ideal (neutral) · actual (accent)
 };
 
 const WORKLOAD_SCHEME: Color = {
   name: 'workload',
   selectable: true,
   group: ScaleType.Ordinal,
-  domain: ['#38bdf8'],
+  domain: ['#2E9A63'],
 };
 
 const HEALTH_BADGES: Record<string, { label: string; classes: string }> = {
-  OnTrack: { label: 'On track', classes: 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30' },
-  AtRisk: { label: 'At risk', classes: 'bg-amber-500/15 text-amber-300 ring-amber-500/30' },
-  Behind: { label: 'Behind', classes: 'bg-red-500/15 text-red-300 ring-red-500/30' },
+  OnTrack: { label: 'On track', classes: 'bg-emerald-500/10 text-emerald-500 ring-transparent' },
+  AtRisk: { label: 'At risk', classes: 'bg-amber-500/10 text-amber-500 ring-transparent' },
+  Behind: { label: 'Behind', classes: 'bg-rose-500/10 text-rose-500 ring-transparent' },
 };
 
 @Component({

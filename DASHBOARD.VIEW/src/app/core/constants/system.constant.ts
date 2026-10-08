@@ -146,30 +146,31 @@ export const WORK_ITEM_TYPE_LABELS: Record<WorkItemType, string> = {
   'test-plan':  'Test Plan',
 };
 
-/** Accent text color used on cards / icons. */
+/** Type identifier colour (Nexus UI: colour only carries meaning — the type). */
 export const WORK_ITEM_TYPE_COLOR: Record<WorkItemType, string> = {
-  'user-story': 'text-sky-400',
-  bug:          'text-rose-400',
-  task:         'text-amber-300',
-  improvement:  'text-orange-400',
-  'test-plan':  'text-violet-400',
+  'user-story': 'text-type-story',
+  bug:          'text-type-bug',
+  task:         'text-type-task',
+  improvement:  'text-type-improvement',
+  'test-plan':  'text-type-test',
 };
 
+/** Icon tile behind a type icon — neutral; the icon alone carries the type colour. */
 export const WORK_ITEM_TYPE_RING: Record<WorkItemType, string> = {
-  'user-story': 'ring-sky-500/40 bg-sky-500/10',
-  bug:          'ring-rose-500/40 bg-rose-500/10',
-  task:         'ring-amber-400/40 bg-amber-400/10',
-  improvement:  'ring-orange-400/40 bg-orange-500/10',
-  'test-plan':  'ring-violet-500/40 bg-violet-500/10',
+  'user-story': 'ring-slate-800 bg-slate-800',
+  bug:          'ring-slate-800 bg-slate-800',
+  task:         'ring-slate-800 bg-slate-800',
+  improvement:  'ring-slate-800 bg-slate-800',
+  'test-plan':  'ring-slate-800 bg-slate-800',
 };
 
-/** Left accent stripe on board cards (Tailwind border-l-4 + color). */
-export const WORK_ITEM_TYPE_LEFT_BORDER: Record<WorkItemType, string> = {
-  'user-story': 'border-l-sky-500',
-  bug:          'border-l-rose-500',
-  task:         'border-l-amber-400',
-  improvement:  'border-l-orange-500',
-  'test-plan':  'border-l-violet-500',
+/** 8px type square shown next to a work-item ID (see .nx-type in styles.css). */
+export const WORK_ITEM_TYPE_SQUARE: Record<WorkItemType, string> = {
+  'user-story': 'bg-type-story',
+  bug:          'bg-type-bug',
+  task:         'bg-type-task',
+  improvement:  'bg-type-improvement',
+  'test-plan':  'bg-type-test',
 };
 
 // ── Backlog estimation ────────────────────────────────────────────────────────
@@ -210,14 +211,14 @@ export const SPRINT_TASK_STATE_OPTIONS = [
 
 // ── Sprint task state display ─────────────────────────────────────────────────
 
-/** Tailwind badge classes per SprintTaskApiState for kanban cards. */
+/** State indicator per SprintTaskApiState — 6px dot + plain text (Nexus UI: no filled pills). */
 export const SPRINT_TASK_STATE_BADGE: Record<SprintTaskApiState, string> = {
-  [SprintTaskApiState.New]:      'bg-slate-700/80 text-slate-200 ring-slate-600',
-  [SprintTaskApiState.Backlog]:  'bg-indigo-700/80 text-indigo-200 ring-indigo-600',
-  [SprintTaskApiState.Todo]:     'bg-slate-600/80 text-slate-100 ring-slate-500',
-  [SprintTaskApiState.Active]:   'bg-blue-600/90 text-blue-50 ring-blue-500',
-  [SprintTaskApiState.InReview]: 'bg-amber-500/90 text-amber-950 ring-amber-400',
-  [SprintTaskApiState.Done]:     'bg-emerald-600/90 text-emerald-50 ring-emerald-500',
+  [SprintTaskApiState.New]:      'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-500',
+  [SprintTaskApiState.Backlog]:  'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-500',
+  [SprintTaskApiState.Todo]:     'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-500',
+  [SprintTaskApiState.Active]:   'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-blue-500',
+  [SprintTaskApiState.InReview]: 'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-amber-500',
+  [SprintTaskApiState.Done]:     'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
 };
 
 /** Display labels per SprintTaskApiState. */
@@ -250,21 +251,21 @@ export const STATE_LABELS: Record<WorkItemApiState, string> = {
   [WorkItemApiState.Fail]:          'Fail',
 };
 
-/** Tailwind classes for each state badge in the history timeline. */
+/** State indicator per WorkItemApiState — 6px dot + plain text (Nexus UI: no filled pills). */
 export const STATE_BADGE_CLASSES: Record<WorkItemApiState, string> = {
-  [WorkItemApiState.New]:           'bg-slate-700/80 text-slate-200 ring-slate-600',
-  [WorkItemApiState.Active]:        'bg-blue-600/90 text-blue-50 ring-blue-500',
-  [WorkItemApiState.Closed]:        'bg-emerald-700/90 text-emerald-50 ring-emerald-600',
-  [WorkItemApiState.Completed]:     'bg-emerald-600/90 text-emerald-50 ring-emerald-500',
-  [WorkItemApiState.Resolved]:      'bg-green-600/90 text-green-50 ring-green-500',
-  [WorkItemApiState.Reopen]:        'bg-amber-500/90 text-amber-950 ring-amber-400',
-  [WorkItemApiState.InTest]:        'bg-orange-600/90 text-orange-50 ring-orange-500',
-  [WorkItemApiState.DoneTest]:      'bg-teal-600/90 text-teal-50 ring-teal-500',
-  [WorkItemApiState.DevCompleted]:  'bg-violet-600/90 text-violet-50 ring-violet-500',
-  [WorkItemApiState.TestCompleted]: 'bg-indigo-600/90 text-indigo-50 ring-indigo-500',
-  [WorkItemApiState.Design]:        'bg-purple-600/90 text-purple-50 ring-purple-500',
-  [WorkItemApiState.Review]:        'bg-sky-600/90 text-sky-50 ring-sky-500',
-  [WorkItemApiState.Run]:           'bg-cyan-600/90 text-cyan-50 ring-cyan-500',
-  [WorkItemApiState.Pass]:          'bg-green-500/90 text-green-50 ring-green-400',
-  [WorkItemApiState.Fail]:          'bg-red-600/90 text-red-50 ring-red-500',
+  [WorkItemApiState.New]:           'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-500',
+  [WorkItemApiState.Active]:        'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-blue-500',
+  [WorkItemApiState.Closed]:        'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
+  [WorkItemApiState.Completed]:     'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
+  [WorkItemApiState.Resolved]:      'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
+  [WorkItemApiState.Reopen]:        'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-amber-500',
+  [WorkItemApiState.InTest]:        'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-amber-500',
+  [WorkItemApiState.DoneTest]:      'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
+  [WorkItemApiState.DevCompleted]:  'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
+  [WorkItemApiState.TestCompleted]: 'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
+  [WorkItemApiState.Design]:        'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-500',
+  [WorkItemApiState.Review]:        'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-amber-500',
+  [WorkItemApiState.Run]:           'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-blue-500',
+  [WorkItemApiState.Pass]:          'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
+  [WorkItemApiState.Fail]:          'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-rose-500',
 };

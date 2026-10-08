@@ -1,14 +1,16 @@
+/* ngx-charts chrome follows the Nexus UI tokens (both themes). */
 :host ::ng-deep .ngx-charts .tick text {
-  fill: #94a3b8;
+  fill: var(--text-3);
+  font-family: var(--font-mono);
   font-size: 11px;
 }
 
 :host ::ng-deep .ngx-charts .gridline-path {
-  stroke: #1e293b;
+  stroke: var(--border);
 }
 
 :host ::ng-deep .ngx-charts .refline-path {
-  stroke: #334155;
+  stroke: var(--border-strong);
 }
 
 :host ::ng-deep .ngx-charts .legend-labels {
@@ -16,21 +18,23 @@
 }
 
 :host ::ng-deep .ngx-charts .legend-label-text {
-  color: #cbd5e1 !important;
+  color: var(--text-2) !important;
 }
 
 :host ::ng-deep .ngx-charts .advanced-pie-legend .legend-item .value {
-  color: #f8fafc !important;
+  color: var(--text) !important;
+  font-family: var(--font-mono);
 }
 
 :host ::ng-deep .ngx-charts .advanced-pie-legend .legend-item .label {
-  color: #94a3b8 !important;
+  color: var(--text-2) !important;
 }
 
 :host ::ng-deep .ngx-charts .advanced-pie-legend .total-value {
-  color: #f8fafc !important;
+  color: var(--text) !important;
+  font-family: var(--font-mono);
 }
 
 :host ::ng-deep .ngx-charts .advanced-pie-legend .total-label {
-  color: #64748b !important;
+  color: var(--text-3) !important;
 }

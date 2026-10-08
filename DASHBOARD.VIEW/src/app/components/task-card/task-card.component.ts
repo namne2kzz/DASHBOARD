@@ -1,13 +1,11 @@
 import { NgClass } from '@angular/common';
 import { computed, Component, inject, input, output } from '@angular/core';
-import { DragDropModule } from '@angular/cdk/drag-drop';
 import type { BoardItem, BoardItemType } from '../../models/boards.model';
-import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL } from '../../core/constants/system.constant';
 import { MembersService } from '../../services/members.service';
 
 @Component({
   selector: 'app-task-card',
-  imports: [DragDropModule, NgClass],
+  imports: [NgClass],
   templateUrl: './task-card.component.html',
   styleUrl: './task-card.component.css',
 })
@@ -30,27 +28,26 @@ export class TaskCardComponent {
     return limit > 0 && this.agingDays() >= limit;
   });
 
-  readonly stateBadge = SPRINT_TASK_STATE_BADGE;
-  readonly stateLabel = SPRINT_TASK_STATE_LABEL;
-
-  readonly typeIconClass: Record<BoardItemType, string> = {
-    'user-story': 'text-sky-400 ring-sky-500/35 bg-sky-500/10',
-    'bug':        'text-rose-400 ring-rose-500/35 bg-rose-500/10',
-    'task':       'text-amber-300 ring-amber-400/35 bg-amber-400/10',
-    'test-plan':  'text-violet-400 ring-violet-500/35 bg-violet-500/10',
+  /** 8px type square next to the ID. */
+  readonly typeSquareClass: Record<BoardItemType, string> = {
+    'user-story': 'nx-type--story',
+    'bug':        'nx-type--bug',
+    'task':       'nx-type--task',
+    'test-plan':  'nx-type--test',
   };
 
-  readonly leftBorderClass: Record<BoardItemType, string> = {
-    'user-story': 'border-l-sky-500',
-    'bug':        'border-l-rose-500',
-    'task':       'border-l-amber-400',
-    'test-plan':  'border-l-violet-500',
+  readonly typeLabel: Record<BoardItemType, string> = {
+    'user-story': 'User Story',
+    'bug':        'Bug',
+    'task':       'Task',
+    'test-plan':  'Test Plan',
   };
 
-  readonly priorityDotClass: Record<BoardItem['priority'], string> = {
-    critical: 'bg-red-500',
-    high:     'bg-orange-400',
-    medium:   'bg-amber-400',
-    low:      'bg-slate-500',
+  /** Priority dot — shown only when it is out of the ordinary (critical / high). */
+  readonly priorityFlagClass: Record<BoardItem['priority'], string> = {
+    critical: 'bg-rose-500',
+    high:     'bg-amber-500',
+    medium:   '',
+    low:      '',
   };
 }

@@ -1,8 +1,8 @@
-<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-4 py-6">
+<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
   <div class="space-y-6">
-    <header class="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-end lg:justify-between">
+    <header class="sticky top-0 z-20 -mx-5 flex min-h-[52px] flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-5 py-2.5">
       <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400/90">GitHub Integration</p>
+        <h1 class="text-lg font-semibold text-slate-100">Repos</h1>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
@@ -21,7 +21,7 @@
         }
         <button
           type="button"
-          class="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+          class="nx-btn"
           (click)="refresh()"
         >
           Refresh
@@ -56,7 +56,7 @@
       @let overview = repos.overview();
       @if (overview && (overview.status === 'Invalid' || overview.status === 'RateLimited')) {
         <section class="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
-          <p class="font-semibold uppercase tracking-wide">{{ overview.status }}</p>
+          <p class="font-semibold  ">{{ overview.status }}</p>
           @if (overview.lastSyncError) {
             <p class="mt-1 text-amber-100/90">{{ overview.lastSyncError }}</p>
           }
@@ -66,22 +66,22 @@
       @if (overview) {
         <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-            <p class="text-xs uppercase text-slate-500">Repository</p>
+            <p class="text-xs font-medium text-slate-400">Repository</p>
             <p class="mt-2 text-lg font-semibold text-white">{{ overview.fullName }}</p>
             <p class="truncate text-xs text-slate-400">{{ overview.repoUrl }}</p>
           </div>
           <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-            <p class="text-xs uppercase text-slate-500">Default branch</p>
+            <p class="text-xs font-medium text-slate-400">Default branch</p>
             <p class="mt-2 font-mono text-lg font-semibold text-white">{{ overview.defaultBranch }}</p>
             <p class="text-xs text-slate-400">{{ overview.branches.length }} branches tracked</p>
           </div>
           <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-            <p class="text-xs uppercase text-slate-500">Pull requests</p>
+            <p class="text-xs font-medium text-slate-400">Pull requests</p>
             <p class="mt-2 text-lg font-semibold text-white">{{ overview.pullRequests.length }}</p>
             <p class="text-xs text-slate-400">Open, closed and merged</p>
           </div>
           <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-            <p class="text-xs uppercase text-slate-500">API rate limit</p>
+            <p class="text-xs font-medium text-slate-400">API rate limit</p>
             @if (overview.rateLimit) {
               <p class="mt-2 text-lg font-semibold text-white">
                 {{ overview.rateLimit.remaining }} / {{ overview.rateLimit.limit }}
@@ -125,10 +125,10 @@
                     <span class="truncate font-mono text-sm text-slate-100">{{ branch.name }}</span>
                     <div class="flex shrink-0 gap-2">
                       @if (branch.isDefault) {
-                        <span class="text-[10px] font-semibold uppercase text-sky-300">default</span>
+                        <span class="text-[10px] font-semibold  text-sky-300">default</span>
                       }
                       @if (branch.isStale) {
-                        <span class="text-[10px] font-semibold uppercase text-amber-300">stale</span>
+                        <span class="text-[10px] font-semibold  text-amber-300">stale</span>
                       }
                     </div>
                   </div>
@@ -148,7 +148,7 @@
           <div class="mt-3 overflow-x-auto">
             <table class="w-full min-w-[760px] text-left text-sm">
               <thead>
-                <tr class="text-xs uppercase text-slate-500">
+                <tr class="text-xs font-medium text-slate-400">
                   <th class="pb-2 pr-4 font-medium">PR</th>
                   <th class="pb-2 pr-4 font-medium">Source to target</th>
                   <th class="pb-2 pr-4 font-medium">Approval</th>
@@ -170,12 +170,12 @@
                     <td class="py-3 pr-4 text-slate-300">{{ pr.reviewDecision }}</td>
                     <td class="py-3 pr-4">
                       <span
-                        class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase ring-1"
+                        class="nx-tag"
                         [class]="
                           pr.status === 'open'
-                            ? 'bg-sky-500/15 text-sky-200 ring-sky-500/40'
+                            ? 'bg-sky-500/10 text-sky-500 ring-transparent'
                             : pr.status === 'merged'
-                              ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
+                              ? 'bg-emerald-500/15 text-emerald-200 ring-transparent'
                               : 'bg-slate-700/50 text-slate-300 ring-slate-600'
                         "
                       >

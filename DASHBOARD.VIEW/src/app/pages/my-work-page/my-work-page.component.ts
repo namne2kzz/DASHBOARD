@@ -102,17 +102,13 @@ export class MyWorkPageComponent implements OnInit {
     return PRIORITY_BADGE[priority];
   }
 
-  /** @param priority The priority enum value. @returns Tailwind classes for the left accent bar. */
-  priorityBar(priority: WorkItemApiPriority): string {
-    return PRIORITY_BAR[priority];
-  }
 
   /** @param type The work item type. @returns Short type label. */
   typeLabel(type: SprintTaskApiType): string {
     return TYPE_LABEL[type];
   }
 
-  /** @param type The work item type. @returns Accent ring/text classes for the type chip. */
+  /** @param type The work item type. @returns Class for the 8px type square. */
   typeAccent(type: SprintTaskApiType): string {
     return TYPE_ACCENT[type];
   }
@@ -164,18 +160,12 @@ const PRIORITY_LABEL: Record<WorkItemApiPriority, string> = {
 };
 
 const PRIORITY_BADGE: Record<WorkItemApiPriority, string> = {
-  [WorkItemApiPriority.Low]:      'bg-slate-500/10 text-slate-400 ring-slate-400/25',
-  [WorkItemApiPriority.Medium]:   'bg-sky-500/10 text-sky-300 ring-sky-500/25',
-  [WorkItemApiPriority.High]:     'bg-amber-500/15 text-amber-300 ring-amber-500/30',
-  [WorkItemApiPriority.Critical]: 'bg-rose-500/15 text-rose-300 ring-rose-500/35',
+  [WorkItemApiPriority.Low]:      'bg-slate-800 text-slate-400',
+  [WorkItemApiPriority.Medium]:   'bg-slate-800 text-slate-400',
+  [WorkItemApiPriority.High]:     'bg-amber-500/10 text-amber-500 ring-transparent',
+  [WorkItemApiPriority.Critical]: 'bg-rose-500/10 text-rose-500 ring-transparent',
 };
 
-const PRIORITY_BAR: Record<WorkItemApiPriority, string> = {
-  [WorkItemApiPriority.Low]:      'bg-slate-600/60',
-  [WorkItemApiPriority.Medium]:   'bg-sky-500/70',
-  [WorkItemApiPriority.High]:     'bg-amber-500/80',
-  [WorkItemApiPriority.Critical]: 'bg-rose-500',
-};
 
 const TYPE_LABEL: Record<SprintTaskApiType, string> = {
   [SprintTaskApiType.UserStory]: 'User Story',
@@ -185,8 +175,8 @@ const TYPE_LABEL: Record<SprintTaskApiType, string> = {
 };
 
 const TYPE_ACCENT: Record<SprintTaskApiType, string> = {
-  [SprintTaskApiType.UserStory]: 'text-blue-400 ring-blue-500/35 bg-blue-500/10',
-  [SprintTaskApiType.Task]:      'text-amber-300 ring-amber-400/35 bg-amber-400/10',
-  [SprintTaskApiType.Bug]:       'text-rose-400 ring-rose-500/35 bg-rose-500/10',
-  [SprintTaskApiType.TestPlan]:  'text-violet-400 ring-violet-500/35 bg-violet-500/10',
+  [SprintTaskApiType.UserStory]: 'nx-type--story',
+  [SprintTaskApiType.Task]:      'nx-type--task',
+  [SprintTaskApiType.Bug]:       'nx-type--bug',
+  [SprintTaskApiType.TestPlan]:  'nx-type--test',
 };
