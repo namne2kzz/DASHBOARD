@@ -1,4 +1,6 @@
-# TaskDashboard
+# NFlow — web app
+
+Angular frontend of NFlow (`DASHBOARD.VIEW`). UI follows the Nexus UI Foundation design system — tokens in `src/styles.css`, Tailwind palette mapped onto them in `tailwind.config.js`.
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.26.
 
