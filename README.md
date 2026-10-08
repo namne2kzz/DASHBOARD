@@ -1,6 +1,8 @@
-# DASHBOARD
+# NFlow
 
-A full-stack project management platform built with .NET 10 and Angular 19. Covers the complete software development lifecycle — backlog, sprints, kanban boards, repositories, wikis, team management, and analytics — deployable on-premises via Docker.
+A full-stack project management platform built with .NET 10 and Angular 19. Covers the complete software development lifecycle — backlog, sprints, kanban boards, repositories, team management, and analytics — deployable on-premises via Docker.
+
+> Formerly *Nexus Kaban*. The repository, solution and project folders keep the `DASHBOARD` name.
 
 ## Tech Stack
 
@@ -21,12 +23,11 @@ A full-stack project management platform built with .NET 10 and Angular 19. Cove
 - **Smart Board** — freeform card board independent of sprints
 - **Work Items** — rich detail panel, state transitions, labels, components, versions, discussions
 - **Repositories** — link Git repositories, manage metadata, browse linked pipelines
-- **Wiki** — hierarchical pages with a rich-text editor
 - **Members & Roles** — invite members, custom roles with granular permission sets, organisation hierarchy
 - **Search** — global cross-entity search
 - **Analytics** — sprint velocity, burndown, cycle time
 - **My Work** — personal dashboard aggregating assigned items across projects
-- **HUB integration** — optional chat/meeting add-on via shared JWT SSO (see [HUB](../HUB))
+- **NHub integration** — optional chat/meeting add-on via shared JWT SSO (see [NHub](../HUB))
 
 ## Prerequisites
 
@@ -39,25 +40,25 @@ A full-stack project management platform built with .NET 10 and Angular 19. Cove
 # 1. Copy and fill environment variables
 cp .env.example .env
 
-# 2. Start all services
-docker compose up -d --build
+# 2. Start backing services + the API and web containers (profile "app")
+docker compose --profile app up -d --build
 
 # 3. Open the app
-open http://localhost:4200
+open http://localhost:4201
 ```
 
-Default seed credentials: `admin@system.local` / `Admin@123`
+Default seed account: `admin@dashboard.local` (organization alias set at sign-in).
 
 ### Service Endpoints (local)
 
 | Service | URL |
 |---|---|
-| Web (Angular) | http://localhost:4200 |
-| API | http://localhost:5080 |
+| Web (Angular, container) | http://localhost:4201 |
+| API (container) | http://localhost:55432 |
 | SQL Server | localhost:1433 |
 | Redis | localhost:6379 |
 | RabbitMQ UI | http://localhost:15672 |
-| DBGate (DB browser) | http://localhost:8090 |
+| DBGate (DB browser) | http://localhost:8047 |
 | Mailpit (email preview) | http://localhost:8025 |
 
 ## Local Development (without Docker)
@@ -74,7 +75,9 @@ npm install
 ng serve
 ```
 
-The API defaults to `https://localhost:7xxx`; the Angular dev server proxies `/api` accordingly.
+Native dev runs the API at `http://localhost:5152` and the Angular dev server at `http://localhost:4200`. All endpoints are versioned under `/api/v1`.
+
+> On Windows, Hyper-V/WinNAT can reserve port ranges that include `55432`. If the API container fails with "ports are not available", run `net stop winnat` then `net start winnat` in an elevated shell.
 
 ## Project Structure
 
@@ -88,7 +91,6 @@ DASHBOARD/                  # ASP.NET Core 10 backend
 │   ├── SprintTasks/
 │   ├── WorkItems/
 │   ├── Repositories/
-│   ├── Wiki/
 │   ├── Members/
 │   ├── SmartBoard/
 │   └── ...
@@ -112,9 +114,9 @@ See `.env.example` for the full list. Key variables:
 | Variable | Description |
 |---|---|
 | `MSSQL_SA_PASSWORD` | SQL Server SA password |
-| `JWT_SECRET` | JWT signing secret — **must match** `HUB/.env` if HUB is enabled |
-| `INTERNAL_API_TOKEN` | Service-to-service token for HUB → DASHBOARD calls |
-| `HUB_CHAT_INTERNAL_TOKEN` | Service-to-service token for DASHBOARD → HUB calls |
+| `JWT_SECRET` | JWT signing secret — **must match** `HUB/.env` if NHub is enabled |
+| `INTERNAL_API_TOKEN` | Service-to-service token for NHub → NFlow calls |
+| `HUB_CHAT_INTERNAL_TOKEN` | Service-to-service token for NFlow → NHub calls |
 | `RABBITMQ_USER / PASS` | RabbitMQ credentials |
 
 ## Database Migrations
@@ -126,11 +128,11 @@ cd DASHBOARD
 dotnet ef migrations add <MigrationName>
 ```
 
-## HUB Integration
+## NHub Integration
 
-DASHBOARD acts as the identity provider for HUB. Both services share a JWT secret (`JWT_SECRET`) and a pair of internal service tokens. HUB is optional — DASHBOARD runs fully without it.
+NFlow acts as the identity provider for NHub. Both services share a JWT secret (`JWT_SECRET`) and a pair of internal service tokens. NHub is optional — NFlow runs fully without it.
 
-See the [HUB repository](../HUB) for setup instructions.
+See the [NHub repository](../HUB) for setup instructions.
 
 ## License
 
