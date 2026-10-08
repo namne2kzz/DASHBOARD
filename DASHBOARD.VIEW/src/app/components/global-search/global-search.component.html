@@ -1,10 +1,10 @@
 @if (search.open()) {
   <!-- Backdrop -->
-  <div class="fixed inset-0 z-[9995] bg-slate-950/60 backdrop-blur-sm" (click)="search.close()"></div>
+  <div class="fixed inset-0 z-[9995] bg-slate-950/60 " (click)="search.close()"></div>
 
   <!-- Palette -->
   <div class="fixed inset-x-0 top-[12vh] z-[9996] mx-auto w-[92vw] max-w-xl px-2">
-    <div class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl shadow-black/60" (click)="$event.stopPropagation()">
+    <div class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl" (click)="$event.stopPropagation()">
       <!-- Input row -->
       <div class="flex items-center gap-2 border-b border-slate-800 px-4">
         <svg class="h-4 w-4 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -36,14 +36,14 @@
         } @else {
           @for (group of search.groups(); track group.kind) {
             <div class="px-2 py-1.5">
-              <p class="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-slate-600">{{ group.label }}</p>
+              <p class="px-2 py-1 text-xs font-medium text-slate-400">{{ group.label }}</p>
               @for (item of group.items; track item.id) {
                 <button
                   type="button"
                   class="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-slate-800/70"
                   (click)="goTo(item)"
                 >
-                  <span class="shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1"
+                  <span class="nx-tag shrink-0"
                     [ngClass]="kindAccent(item.kind)"
                   >{{ group.label }}</span>
                   <span class="min-w-0 flex-1">

@@ -36,10 +36,10 @@ export class SprintStoryDetailDialogComponent {
   readonly priorityLabel: Record<number, string> = { 0: 'Low', 1: 'Medium', 2: 'High', 3: 'Critical' };
 
   readonly priorityClass: Record<number, string> = {
-    0: 'bg-slate-700/60 text-slate-400 ring-1 ring-slate-600',
-    1: 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/40',
-    2: 'bg-orange-500/15 text-orange-300 ring-1 ring-orange-500/40',
-    3: 'bg-red-500/15 text-red-400 ring-1 ring-red-500/40',
+    0: 'bg-slate-800 text-slate-400',
+    1: 'bg-slate-800 text-slate-400',
+    2: 'bg-amber-500/10 text-amber-500',
+    3: 'bg-rose-500/10 text-rose-500',
   };
 
   readonly stateBadge = SPRINT_TASK_STATE_BADGE;
@@ -56,12 +56,14 @@ export class SprintStoryDetailDialogComponent {
 
   /** Maps string state to its numeric API enum for badge lookup. @param state String state key. */
   stateApi(state: SprintTask['state']): SprintTaskApiState { return this._stateToApi[state]; }
-
-  readonly subTaskTypeClass: Record<string, string> = {
-    'task':      'text-amber-300 ring-amber-400/35 bg-amber-400/10',
-    'bug':       'text-rose-400 ring-rose-500/35 bg-rose-500/10',
-    'test-plan': 'text-violet-400 ring-violet-500/35 bg-violet-500/10',
+  /** 8px type square for each sub-task row. */
+  readonly subTaskSquareClass: Record<string, string> = {
+    'task':      'nx-type--task',
+    'bug':       'nx-type--bug',
+    'test-plan': 'nx-type--test',
   };
+
+
 
   // ── Navigation ───────────────────────────────────────────────────────────────
   /**

@@ -1,86 +1,121 @@
 <div class="flex min-h-screen bg-slate-950 text-slate-100">
 
-  <!-- ─── Left panel ──────────────────────────────────────────── -->
-  <div class="relative hidden overflow-hidden lg:flex lg:w-1/2 lg:flex-col">
-    <div class="absolute inset-0 bg-[#0c1828]"></div>
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_0%_0%,rgba(14,165,233,0.12),transparent)]"></div>
-    <div class="absolute inset-0"
-         style="background-image:radial-gradient(rgba(148,163,184,0.12) 1px,transparent 1px);background-size:28px 28px;">
-    </div>
-
-    <div class="relative flex flex-1 flex-col p-12">
+  <!-- ─── Left panel: product preview ─────────────────────────────
+       A static mini board drawn with the real card language (type square, mono ID,
+       WIP rule) so the first screen already shows what the product looks like. -->
+  <div class="relative hidden overflow-hidden border-r border-slate-800 bg-slate-900 lg:flex lg:w-1/2 lg:flex-col">
+    <div class="relative flex flex-1 flex-col gap-10 p-12">
 
       <!-- Logo -->
       <div class="flex items-center gap-2.5">
-        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 ring-1 ring-sky-500/30">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-sky-400" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M11.644 1.59a.75.75 0 01.712 0l9.75 5.25a.75.75 0 010 1.32l-9.75 5.25a.75.75 0 01-.712 0l-9.75-5.25a.75.75 0 010-1.32l9.75-5.25z" />
-            <path d="M3.265 10.602l7.668 4.129a2.25 2.25 0 002.134 0l7.668-4.13 1.37.739a.75.75 0 010 1.32l-9.75 5.25a.75.75 0 01-.71 0l-9.75-5.25a.75.75 0 010-1.32l1.37-.738z" />
-            <path d="M10.933 19.231l-7.668-4.13-1.37.739a.75.75 0 000 1.32l9.75 5.25c.221.12.489.12.71 0l9.75-5.25a.75.75 0 000-1.32l-1.37-.738-7.668 4.13a2.25 2.25 0 01-2.134-.001z" />
-          </svg>
-        </div>
-        <span class="text-base font-bold tracking-tight text-white">Nexus</span>
+        <span class="flex h-6 w-6 items-center justify-center rounded-[6px] bg-sky-500 text-xs font-semibold text-slate-950">N</span>
+        <span class="text-sm font-semibold text-slate-100">Nexus</span>
       </div>
 
-      <!-- Hero text -->
-      <div class="mt-auto pb-2">
-        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-400/80">
-          <span class="h-1 w-1 rounded-full bg-sky-400"></span>
-          Workspace
-        </span>
-        <h2 class="mt-4 text-[2.4rem] font-extrabold leading-[1.15] tracking-tight text-white">
+      <!-- Hero -->
+      <div>
+        <h2 class="text-[28px] font-semibold leading-9 tracking-[-0.01em] text-slate-100">
           Ship sprints,<br>not status meetings.
         </h2>
-        <p class="mt-4 max-w-xs text-sm leading-relaxed text-slate-400">
+        <p class="mt-3 max-w-sm text-[15px] leading-6 text-slate-400">
           Track work, plan sprints and review burn-down for every project in one focused workspace.
         </p>
+      </div>
 
-        <!-- Feature cards -->
-        <div class="mt-10 grid grid-cols-3 gap-3">
-
-          <!-- Sprint Planning -->
-          <div class="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.06]">
-            <div class="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/15 ring-1 ring-sky-500/20">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-sky-400" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z" clip-rule="evenodd" />
-              </svg>
+      <!-- Mini board preview -->
+      <div class="pointer-events-none select-none overflow-hidden rounded-2xl border border-slate-800 bg-slate-950" aria-hidden="true">
+        <div class="flex h-9 items-center gap-2 border-b border-slate-800 bg-slate-900 px-3">
+          <span class="text-xs font-semibold text-slate-100">Board</span>
+          <span class="rounded-md border border-slate-700 px-1.5 text-[11px] text-slate-400">Sprint 12</span>
+          <span class="flex-1"></span>
+          <span class="font-mono text-[11px] text-slate-500">6 days left</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3 p-3">
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-1.5 border-b-2 border-slate-800 pb-1.5">
+              <span class="text-xs font-semibold text-slate-100">To do</span>
+              <span class="font-mono text-[11px] text-slate-500">3</span>
             </div>
-            <p class="text-xs font-semibold text-slate-200">Sprint Planning</p>
-            <p class="mt-1 text-[11px] leading-snug text-slate-500">Plan & ship iterations fast</p>
-          </div>
-
-          <!-- Kanban Board -->
-          <div class="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/[0.06]">
-            <div class="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/15 ring-1 ring-violet-500/20">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-violet-400" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M15 3.75H9v16.5h6V3.75zM16.5 20.25h3.375c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H16.5v16.5zM4.125 3.75H7.5v16.5H4.125a1.125 1.125 0 01-1.125-1.125V4.875c0-.621.504-1.125 1.125-1.125z" />
-              </svg>
+            <div class="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-2">
+              <div class="flex items-center gap-1.5"><span class="nx-type nx-type--story"></span><span class="font-mono text-[10px] text-slate-500">NX-41</span></div>
+              <p class="mt-1 text-xs text-slate-100">Invite teammates by email</p>
             </div>
-            <p class="text-xs font-semibold text-slate-200">Kanban Board</p>
-            <p class="mt-1 text-[11px] leading-snug text-slate-500">Drag & drop task flow</p>
+            <div class="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-2">
+              <div class="flex items-center gap-1.5"><span class="nx-type nx-type--task"></span><span class="font-mono text-[10px] text-slate-500">NX-44</span></div>
+              <p class="mt-1 text-xs text-slate-100">Capacity per member</p>
+            </div>
           </div>
-
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-1.5 border-b-2 border-rose-500 pb-1.5">
+              <span class="text-xs font-semibold text-slate-100">In progress</span>
+              <span class="font-mono text-[11px] text-rose-500">4 / 3</span>
+            </div>
+            <div class="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-2">
+              <div class="flex items-center gap-1.5"><span class="nx-type nx-type--bug"></span><span class="font-mono text-[10px] text-slate-500">NX-38</span></div>
+              <p class="mt-1 text-xs text-slate-100">Safari login flicker</p>
+              <span class="nx-tag nx-tag--warning mt-1.5 !h-4 !text-[10px]">9d · over 7d</span>
+            </div>
+            <div class="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-2">
+              <div class="flex items-center gap-1.5"><span class="nx-type nx-type--story"></span><span class="font-mono text-[10px] text-slate-500">NX-36</span></div>
+              <p class="mt-1 text-xs text-slate-100">Drag cards between columns</p>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-1.5 border-b-2 border-slate-800 pb-1.5">
+              <span class="text-xs font-semibold text-slate-100">Done</span>
+              <span class="font-mono text-[11px] text-slate-500">12</span>
+            </div>
+            <div class="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-2">
+              <div class="flex items-center gap-1.5"><span class="nx-type nx-type--test"></span><span class="font-mono text-[10px] text-slate-500">NX-30</span></div>
+              <p class="mt-1 text-xs text-slate-100">TC-01 login succeeds</p>
+            </div>
+            <div class="rounded-md border border-slate-800 bg-slate-900 px-2.5 py-2">
+              <div class="flex items-center gap-1.5"><span class="nx-type nx-type--story"></span><span class="font-mono text-[10px] text-slate-500">NX-27</span></div>
+              <p class="mt-1 text-xs text-slate-100">Sprint burn-down chart</p>
+            </div>
+          </div>
         </div>
       </div>
+
+      <!-- Value points -->
+      <ul class="mt-auto grid grid-cols-3 gap-6 text-sm">
+        <li>
+          <p class="font-semibold text-slate-100">Sprint planning</p>
+          <p class="mt-0.5 text-xs text-slate-500">Capacity, days off and load in one table.</p>
+        </li>
+        <li>
+          <p class="font-semibold text-slate-100">Kanban with WIP</p>
+          <p class="mt-0.5 text-xs text-slate-500">Limits and aging flag stuck work early.</p>
+        </li>
+        <li>
+          <p class="font-semibold text-slate-100">One workspace</p>
+          <p class="mt-0.5 text-xs text-slate-500">Backlog, board and sprints per repository.</p>
+        </li>
+      </ul>
     </div>
   </div>
 
   <!-- ─── Right panel ─────────────────────────────────────────── -->
-  <div class="flex w-full items-center justify-center px-8 py-12 lg:w-1/2">
-    <div class="w-full max-w-[360px]">
+  <div class="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
+    <div class="w-full max-w-[400px] rounded-2xl border border-slate-800 bg-slate-900 p-8">
 
-      <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-400/80">Sign in</p>
-      <h1 class="mt-2.5 text-[1.7rem] font-bold tracking-tight text-white">Sign in to continue</h1>
-      <p class="mt-1.5 text-sm text-slate-400">Use your email or other account.</p>
+      <!-- Logo (small screens only — the left panel carries it on desktop) -->
+      <div class="mb-6 flex items-center gap-2.5 lg:hidden">
+        <span class="flex h-6 w-6 items-center justify-center rounded-[6px] bg-sky-500 text-xs font-semibold text-slate-950">N</span>
+        <span class="text-sm font-semibold text-slate-100">Nexus</span>
+      </div>
 
-      <div class="mt-8 space-y-4">
+      <h1 class="text-2xl font-semibold text-slate-100">Welcome back</h1>
+      <p class="mt-1 text-sm text-slate-400">Sign in to your organization workspace.</p>
+
+      <div class="mt-6 space-y-4">
 
         <!-- Social login -->
         <div class="grid grid-cols-3 gap-2.5">
 
           <!-- Google — visible button restores the original design; the real GIS button renders
                invisibly on top of it (same box) so clicks trigger real Google Sign-In. -->
-          <div class="relative flex items-center justify-center gap-2 rounded-xl border border-slate-700/70 bg-slate-800/40 px-3 py-2.5 text-xs font-medium text-slate-200 transition hover:bg-slate-700/50 active:scale-[0.97]">
+          <div class="nx-btn relative w-full">
             <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -88,13 +123,13 @@
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
             Google
-            <div class="absolute inset-0 overflow-hidden rounded-xl opacity-[0.01]" #googleButton></div>
+            <div class="absolute inset-0 overflow-hidden rounded-md opacity-[0.01]" #googleButton></div>
           </div>
 
           <!-- Microsoft -->
           <button
             type="button"
-            class="flex items-center justify-center gap-2 rounded-xl border border-slate-700/70 bg-slate-800/40 px-3 py-2.5 text-xs font-medium text-slate-200 transition hover:bg-slate-700/50 active:scale-[0.97]"
+            class="nx-btn w-full"
           >
             <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path d="M11.4 11.4H0V0h11.4v11.4z" fill="#F25022"/>
@@ -108,7 +143,7 @@
           <!-- GitHub -->
           <button
             type="button"
-            class="flex items-center justify-center gap-2 rounded-xl border border-slate-700/70 bg-slate-800/40 px-3 py-2.5 text-xs font-medium text-slate-200 transition hover:bg-slate-700/50 active:scale-[0.97]"
+            class="nx-btn w-full"
           >
             <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
               <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
@@ -121,13 +156,13 @@
         <!-- Divider -->
         <div class="flex items-center gap-3">
           <div class="h-px flex-1 bg-slate-800"></div>
-          <span class="text-[11px] text-slate-600">OR</span>
+          <span class="text-xs text-slate-500">or continue with email</span>
           <div class="h-px flex-1 bg-slate-800"></div>
         </div>
 
         <!-- Organization -->
         <div>
-          <label class="block text-xs font-medium text-slate-400" for="orgAlias">Organization</label>
+          <label class="field-label" for="orgAlias">Organization</label>
           <input
             id="orgAlias"
             #orgInput
@@ -135,7 +170,7 @@
             [ngModel]="orgAlias()"
             (ngModelChange)="orgAlias.set($event)"
             (change)="orgAlias.set(orgInput.value)"
-            class="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-600 transition focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/15"
+            class="field-input mt-1.5"
             autocomplete="organization"
             placeholder="your-org"
           />
@@ -143,7 +178,7 @@
 
         <!-- Email -->
         <div>
-          <label class="block text-xs font-medium text-slate-400" for="email">Email</label>
+          <label class="field-label" for="email">Email</label>
           <input
             id="email"
             #emailInput
@@ -151,7 +186,7 @@
             [ngModel]="email()"
             (ngModelChange)="email.set($event)"
             (change)="email.set(emailInput.value)"
-            class="mt-1.5 w-full rounded-xl border border-slate-800 bg-slate-900/80 px-3.5 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-600 transition focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/15"
+            class="field-input mt-1.5"
             autocomplete="email"
             placeholder="you@example.com"
           />
@@ -159,7 +194,7 @@
 
         <!-- Password + Forgot -->
         <div class="space-y-1.5">
-          <label class="block text-xs font-medium text-slate-400" for="password">Password</label>
+          <label class="field-label" for="password">Password</label>
           <div class="relative">
             <input
               id="password"
@@ -168,26 +203,26 @@
               [ngModel]="password()"
               (ngModelChange)="password.set($event)"
               (change)="password.set(passwordInput.value)"
-              class="w-full rounded-xl border border-slate-800 bg-slate-900/80 py-2.5 pl-3.5 pr-14 text-sm text-slate-100 outline-none placeholder:text-slate-600 transition focus:border-sky-500/50 focus:ring-2 focus:ring-sky-500/15"
+              class="field-input w-full"
               autocomplete="current-password"
               placeholder="••••••••"
             />
             <button
               type="button"
               (click)="togglePassword()"
-              class="absolute inset-y-0 right-3.5 flex items-center text-xs font-medium text-slate-400 transition hover:text-sky-400"
+              class="absolute inset-y-0 right-3 flex items-center text-xs font-medium text-slate-500 transition hover:text-slate-100"
             >
               {{ showPassword() ? 'Hide' : 'Show' }}
             </button>
           </div>
           <div class="text-right">
-            <a class="cursor-pointer text-xs text-sky-400 transition hover:text-sky-300">Forgot password?</a>
+            <a class="cursor-pointer text-xs text-sky-500 transition hover:underline">Forgot password?</a>
           </div>
         </div>
 
         <!-- Error -->
         @if (error()) {
-          <div class="rounded-xl bg-rose-500/10 px-3.5 py-2.5 text-xs text-rose-300 ring-1 ring-rose-500/20">
+          <div class="nx-alert nx-alert--danger">
             {{ error() }}
           </div>
         }
@@ -197,17 +232,17 @@
           type="button"
           (click)="login(orgInput.value, emailInput.value, passwordInput.value)"
           [disabled]="loading()"
-          class="w-full rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          class="nx-btn nx-btn--primary h-9 w-full"
         >
           {{ loading() ? 'Signing in…' : 'Sign in' }}
         </button>
 
         <!-- Terms -->
-        <p class="text-center text-[11px] text-slate-600">
+        <p class="text-center text-xs text-slate-500">
           By signing in you agree to the
-          <a class="cursor-pointer text-slate-500 transition hover:text-slate-400">Terms</a>
+          <a class="cursor-pointer text-slate-400 underline-offset-2 transition hover:underline">Terms</a>
           and
-          <a class="cursor-pointer text-slate-500 transition hover:text-slate-400">Privacy</a>.
+          <a class="cursor-pointer text-slate-400 underline-offset-2 transition hover:underline">Privacy</a>.
         </p>
 
       </div>

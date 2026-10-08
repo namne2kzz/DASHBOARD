@@ -8,14 +8,14 @@
 
   <!-- Title -->
   <div>
-    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+    <label class="mb-1.5 block text-xs font-medium text-slate-400">
       Title <span class="text-rose-400">*</span>
     </label>
     <input
       type="text"
       name="title"
       placeholder="Short, descriptive task title"
-      class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      class="field-input w-full"
       [ngModel]="title()"
       (ngModelChange)="title.set($event)"
     />
@@ -23,12 +23,12 @@
 
   <!-- Description -->
   <div>
-    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Description</label>
+    <label class="mb-1.5 block text-xs font-medium text-slate-400">Description</label>
     <textarea
       name="description"
       rows="3"
       placeholder="Optional implementation notes, acceptance criteria…"
-      class="w-full resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      class="field-textarea w-full resize-none"
       [ngModel]="description()"
       (ngModelChange)="description.set($event)"
     ></textarea>
@@ -37,10 +37,10 @@
   <!-- Priority + Estimate -->
   <div class="grid gap-4 sm:grid-cols-2">
     <div>
-      <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Priority</label>
+      <label class="mb-1.5 block text-xs font-medium text-slate-400">Priority</label>
       <select
         name="priority"
-        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-500"
+        class="field-select w-full"
         [ngModel]="priority()"
         (ngModelChange)="priority.set(+$event)"
       >
@@ -51,7 +51,7 @@
     </div>
 
     <div>
-      <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <label class="mb-1.5 block text-xs font-medium text-slate-400">
         Estimate <span class="normal-case text-slate-600">(hours)</span>
       </label>
       <input
@@ -60,7 +60,7 @@
         min="0.5"
         step="0.5"
         placeholder="e.g. 4"
-        class="w-full rounded-lg border bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none transition-colors [appearance:textfield]"
+        class="field-input w-full [appearance:textfield]"
         [class]="estimateError()
           ? 'border-rose-600 focus:border-rose-500'
           : 'border-slate-700 focus:border-sky-500'"
@@ -75,11 +75,11 @@
 
   <!-- Assignee -->
   <div>
-    <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-400">Assignee</label>
+    <label class="mb-1.5 block text-xs font-medium text-slate-400">Assignee</label>
     @if (planning.memberLoads().length > 0) {
       <select
         name="assignedToId"
-        class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-500"
+        class="field-select w-full"
         [ngModel]="assignedToId()"
         (ngModelChange)="assignedToId.set($event || null)"
       >
@@ -103,12 +103,12 @@
   <div class="flex justify-end gap-3 border-t border-slate-800 pt-4">
     <button
       type="button"
-      class="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 ring-1 ring-slate-700 transition hover:ring-slate-600 hover:text-slate-200"
+      class="nx-btn"
       (click)="cancel()"
     >Cancel</button>
     <button
       type="submit"
-      class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+      class="nx-btn nx-btn--primary"
       [disabled]="!canSubmit()"
     >Add task</button>
   </div>

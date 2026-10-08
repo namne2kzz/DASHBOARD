@@ -1,25 +1,17 @@
-<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-4 py-6">
+<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
   <div class="space-y-6">
-    <header class="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-end lg:justify-between">
+    <header class="sticky top-0 z-20 -mx-5 flex min-h-[52px] flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-5 py-2.5">
       <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400/90">Workflow</p>
+        <h1 class="text-lg font-semibold text-slate-100">Workflow</h1>
       </div>
     </header>
 
-    <section class="grid gap-3 md:grid-cols-4">
-      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        <p class="text-xs uppercase text-slate-500">Columns</p>
-        <p class="mt-1 text-xl font-bold text-white">{{ board.columns().length }}</p>
-      </div>
-      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        <p class="text-xs uppercase text-slate-500">With WIP limit</p>
-        <p class="mt-1 text-xl font-bold text-white">{{ board.wipColumns().length }}</p>
-      </div>
-      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        <p class="text-xs uppercase text-slate-500">States mapped</p>
-        <p class="mt-1 text-xl font-bold text-white">{{ board.columns().length }} / 6</p>
-      </div>
-    </section>
+    <!-- Summary line (Nexus UI: no KPI tiles) -->
+    <div class="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-slate-400">
+      <span><b class="font-mono font-medium text-slate-100">{{ board.columns().length }}</b> columns</span>
+      <span><b class="font-mono font-medium text-slate-100">{{ board.wipColumns().length }}</b> with WIP limit</span>
+      <span><b class="font-mono font-medium text-slate-100">{{ board.columns().length }} / 6</b> states mapped</span>
+    </div>
 
     <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
       <div class="flex items-start justify-between gap-4">
@@ -63,7 +55,7 @@
       <div class="mt-4 overflow-x-auto">
         <table class="w-full min-w-[900px] text-left text-sm">
           <thead>
-            <tr class="text-xs uppercase text-slate-500">
+            <tr class="text-xs font-medium text-slate-400">
               <th class="pb-2 pr-4 font-medium">Column</th>
               <th class="pb-2 pr-4 font-medium">State</th>
               <th class="pb-2 pr-4 font-medium">WIP limit</th>
@@ -84,7 +76,7 @@
                     <input
                       type="text"
                       maxlength="100"
-                      class="w-36 rounded-lg border border-sky-500/60 bg-slate-900 px-2 py-1 text-sm font-medium text-slate-100 outline-none focus:border-sky-400"
+                      class="field-input !h-7 !text-xs w-36"
                       [ngModel]="editColName()"
                       (ngModelChange)="editColName.set($event)"
                       (keydown.enter)="saveColumnEdit(column.id)"
@@ -99,7 +91,7 @@
                 <td class="py-3 pr-4">
                   @if (editing) {
                     <select
-                      class="rounded-xl border border-sky-500/60 bg-slate-900 py-1 pl-2 pr-8 text-sm text-slate-100 outline-none focus:border-sky-400"
+                      class="field-select !h-7 !text-xs pr-8 w-auto"
                       [ngModel]="editColState()"
                       (ngModelChange)="editColState.set($event)"
                     >
@@ -108,7 +100,7 @@
                       }
                     </select>
                   } @else {
-                    <span class="rounded bg-slate-800 px-2 py-0.5 text-xs font-mono text-sky-300">
+                    <span class="nx-tag !border-transparent bg-slate-800 font-mono text-sky-300">
                       {{ stateLabelFor(column.mappedState) }}
                     </span>
                   }
@@ -119,7 +111,7 @@
                   <input
                     type="number"
                     min="0"
-                    class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    class="field-input !h-7 !text-xs w-20"
                     [ngModel]="column.wipLimit"
                     (ngModelChange)="board.updateWipLimit(column.id, $event)"
                     [disabled]="!board.canManageBoard()"
@@ -129,7 +121,7 @@
                 <!-- Mode -->
                 <td class="py-3 pr-4">
                   <select
-                    class="rounded-xl border border-slate-700 bg-slate-950 py-1 pl-2 pr-8 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    class="field-select !h-7 !text-xs pr-8 w-auto"
                     [ngModel]="column.wipMode"
                     (ngModelChange)="board.setWipMode(column.id, $event)"
                     [disabled]="!board.canManageBoard()"
@@ -141,7 +133,7 @@
 
                 <!-- Current -->
                 <td class="py-3 pr-4">
-                  <span class="rounded-full bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-300 ring-1 ring-slate-700">
+                  <span class="nx-tag !border-transparent bg-slate-800 text-slate-300">
                     — / {{ column.wipLimit || '∞' }}
                   </span>
                 </td>
@@ -152,7 +144,7 @@
                     <input
                       type="number"
                       min="1"
-                      class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50 [appearance:textfield]"
+                      class="field-input !h-7 !text-xs w-20 [appearance:textfield]"
                       [ngModel]="column.agingLimitDays"
                       (change)="board.updateAgingLimit(column.id, $any($event.target).value)"
                       [disabled]="!board.canManageBoard()"
@@ -168,7 +160,7 @@
                       <div class="flex items-center gap-1.5">
                         <button
                           type="button"
-                          class="rounded-lg bg-sky-600 px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-sky-500 disabled:opacity-50"
+                          class="nx-btn nx-btn--primary nx-btn--sm"
                           [disabled]="!editColName().trim()"
                           (click)="saveColumnEdit(column.id)"
                         >Save</button>

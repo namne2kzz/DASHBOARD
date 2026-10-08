@@ -1,19 +1,19 @@
 <div class="flex h-full flex-col">
 
   <!-- Header -->
-  <div class="border-b border-slate-800/80 px-6 py-5">
+  <div class="border-b border-slate-800 bg-slate-900 px-5 py-3.5">
     <h1 class="text-lg font-semibold text-white">General</h1>
     <p class="mt-0.5 text-sm text-slate-400">Manage your profile and personal preferences.</p>
   </div>
 
   <!-- Body -->
-  <div class="custom-scroll flex-1 overflow-y-auto p-6">
-    <div class="mx-auto max-w-5xl space-y-6">
+  <div class="custom-scroll flex-1 overflow-y-auto p-5">
+    <div class="space-y-6">
 
       <!-- ═══ YOUR ACCOUNT ════════════════════════════════════════════════════ -->
       <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
         <div class="border-b border-slate-800/60 px-5 py-3.5">
-          <h2 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Your Account</h2>
+          <h2 class="text-xs font-medium text-slate-400">Your Account</h2>
         </div>
 
         <div class="flex flex-col gap-6 p-5 sm:flex-row">
@@ -41,7 +41,7 @@
                     class="h-full w-full object-cover" />
                 } @else {
                   <!-- Colour-chip fallback -->
-                  <div class="flex h-full w-full items-center justify-center text-2xl font-bold text-white"
+                  <div class="flex h-full w-full items-center justify-center text-2xl font-semibold text-white"
                     [ngClass]="selectedColor()">
                     {{ initials() }}
                   </div>
@@ -123,7 +123,7 @@
 
             <div class="flex justify-end pt-1">
               <button type="submit"
-                class="rounded-lg bg-sky-500 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400 disabled:opacity-50"
+                class="nx-btn nx-btn--primary nx-btn--sm"
                 [disabled]="!profileChanged() || profileForm.invalid || savingProfile()">
                 {{ savingProfile() ? 'Saving…' : 'Save profile' }}
               </button>
@@ -136,7 +136,7 @@
       <!-- ═══ PASSWORD ════════════════════════════════════════════════════════ -->
       <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
         <div class="border-b border-slate-800/60 px-5 py-3.5">
-          <h2 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Password</h2>
+          <h2 class="text-xs font-medium text-slate-400">Password</h2>
         </div>
         <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="p-5">
           <div class="grid gap-4 sm:grid-cols-3">
@@ -201,7 +201,7 @@
           </div>
           <div class="mt-4 flex justify-end">
             <button type="submit"
-              class="rounded-lg bg-sky-500 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-sky-400 disabled:opacity-50"
+              class="nx-btn nx-btn--primary nx-btn--sm"
               [disabled]="passwordForm.invalid || savingPassword()">
               {{ savingPassword() ? 'Saving…' : 'Change password' }}
             </button>
@@ -212,7 +212,7 @@
       <!-- ═══ APPEARANCE ══════════════════════════════════════════════════════ -->
       <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
         <div class="border-b border-slate-800/60 px-5 py-3.5">
-          <h2 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Appearance</h2>
+          <h2 class="text-xs font-medium text-slate-400">Appearance</h2>
         </div>
         <div class="divide-y divide-slate-800/60">
 
@@ -301,7 +301,7 @@
       <!-- ═══ NOTIFICATIONS ═══════════════════════════════════════════════════ -->
       <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
         <div class="border-b border-slate-800/60 px-5 py-3.5">
-          <h2 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Notifications</h2>
+          <h2 class="text-xs font-medium text-slate-400">Notifications</h2>
         </div>
         <div class="divide-y divide-slate-800/60">
 
@@ -407,7 +407,7 @@
       <!-- ═══ REGION ══════════════════════════════════════════════════════════ -->
       <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
         <div class="border-b border-slate-800/60 px-5 py-3.5">
-          <h2 class="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Region</h2>
+          <h2 class="text-xs font-medium text-slate-400">Region</h2>
         </div>
         <div class="divide-y divide-slate-800/60">
 
@@ -425,7 +425,7 @@
               </div>
             </div>
             <select
-              class="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-300 outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
+              class="field-select !h-7 !text-xs w-auto"
               [ngModel]="prefs.language()" (ngModelChange)="onLanguage($event)">
               <option value="en">English</option>
               <option value="vi">Tiếng Việt</option>
@@ -448,7 +448,7 @@
               </div>
             </div>
             <select
-              class="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-300 outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
+              class="field-select !h-7 !text-xs w-auto"
               [ngModel]="prefs.timezone()" (ngModelChange)="onTimezone($event)">
               <option value="">Local (device)</option>
               <option value="utc7">(UTC+7) Ho Chi Minh</option>
@@ -474,7 +474,7 @@
               </div>
             </div>
             <select
-              class="rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-300 outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20"
+              class="field-select !h-7 !text-xs w-auto"
               [ngModel]="prefs.dateFormat()" (ngModelChange)="onDateFormat($event)">
               <option value="dmy">DD/MM/YYYY</option>
               <option value="mdy">MM/DD/YYYY</option>

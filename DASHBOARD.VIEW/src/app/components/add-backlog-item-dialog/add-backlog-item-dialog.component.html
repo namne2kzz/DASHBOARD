@@ -2,14 +2,14 @@
 
   <!-- Type selector -->
   <div>
-    <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Type</p>
+    <p class="mb-2 text-xs font-medium text-slate-400">Type</p>
     <div class="flex gap-2">
       @for (t of types; track t) {
         <button
           type="button"
           class="flex-1 rounded-lg px-3 py-2 text-sm font-semibold ring-1 transition"
           [class]="type() === t
-            ? 'bg-sky-500/15 text-sky-200 ring-sky-500/40'
+            ? 'bg-sky-500/10 text-sky-500 ring-transparent'
             : 'bg-slate-950/60 text-slate-400 ring-slate-700 hover:bg-slate-800 hover:text-slate-200'"
           (click)="type.set(t)"
         >{{ typeLabel(t) }}</button>
@@ -20,7 +20,7 @@
   <!-- Parent selector — shown for Feature and User Story -->
   @if (type() !== 'epic') {
     <div>
-      <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <label class="mb-2 block text-xs font-medium text-slate-400">
         {{ parentLabel() }} <span class="text-rose-400">*</span>
       </label>
 
@@ -52,7 +52,7 @@
                   type="text"
                   name="parentSearch"
                   placeholder="Search…"
-                  class="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+                  class="field-input w-full"
                   [ngModel]="parentSearch()"
                   (ngModelChange)="parentSearch.set($event)"
                   (click)="$event.stopPropagation()"
@@ -105,14 +105,14 @@
 
   <!-- Title -->
   <div>
-    <label class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+    <label class="mb-2 block text-xs font-medium text-slate-400">
       Title <span class="text-rose-400">*</span>
     </label>
     <textarea
       name="title"
       rows="3"
       placeholder="Short, descriptive title"
-      class="w-full resize-none rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-colors focus:border-sky-500"
+      class="field-textarea w-full resize-none"
       [ngModel]="title()"
       (ngModelChange)="title.set($event)"
     ></textarea>
@@ -122,12 +122,12 @@
   <div class="flex justify-end gap-3 border-t border-slate-800 pt-4">
     <button
       type="button"
-      class="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 ring-1 ring-slate-700 transition hover:ring-slate-600 hover:text-slate-200"
+      class="nx-btn"
       (click)="cancel()"
     >Cancel</button>
     <button
       type="submit"
-      class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+      class="nx-btn nx-btn--primary"
       [disabled]="!canSubmit()"
     >Create {{ typeLabel(type()) }}</button>
   </div>

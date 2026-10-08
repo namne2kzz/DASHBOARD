@@ -1,9 +1,9 @@
 <div class="relative">
   <!-- Trigger -->
   <button type="button" (click)="toggle(); $event.stopPropagation()"
-    class="flex w-full items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-left text-sm text-slate-100 outline-none transition hover:border-slate-600 focus:border-sky-500/60">
+    class="field-input flex w-full items-center gap-2 text-left">
     @if (selectedUser(); as u) {
-      <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" [ngClass]="u.avatarClass">{{ initials(u.name) }}</span>
+      <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white" [ngClass]="u.avatarClass">{{ initials(u.name) }}</span>
       <span class="min-w-0 flex-1 truncate">{{ u.name }}</span>
     } @else {
       <span class="min-w-0 flex-1 truncate text-slate-500">{{ placeholder() }}</span>
@@ -15,11 +15,11 @@
 
   <!-- Dropdown -->
   @if (open()) {
-    <div appFlipDrop class="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-700 bg-slate-800 shadow-2xl shadow-black/40"
+    <div appFlipDrop class="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-slate-700 bg-slate-800 shadow-2xl"
       (click)="$event.stopPropagation()">
       <div class="border-b border-slate-700/60 p-2">
         <input type="text" placeholder="Search users…"
-          class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-100 outline-none focus:border-sky-400"
+          class="field-input !h-7 !text-xs w-full"
           [ngModel]="search()" (ngModelChange)="search.set($event)" />
       </div>
 
@@ -37,7 +37,7 @@
         @for (u of filtered(); track u.id) {
           <button type="button" (click)="pick(u.id)"
             class="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-slate-700/60">
-            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white" [ngClass]="u.avatarClass">{{ initials(u.name) }}</span>
+            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white" [ngClass]="u.avatarClass">{{ initials(u.name) }}</span>
             <span class="min-w-0 flex-1">
               <span class="block truncate text-xs font-medium"
                 [class.text-sky-300]="u.id === selectedId()"

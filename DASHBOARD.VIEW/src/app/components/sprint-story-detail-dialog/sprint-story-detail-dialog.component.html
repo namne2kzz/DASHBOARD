@@ -2,61 +2,50 @@
 
   <!-- Header: type badge + number + priority + state -->
   <div class="flex flex-wrap items-center gap-2">
-    <!-- User Story icon -->
-    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1 text-blue-400 ring-blue-500/35 bg-blue-500/10">
-      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-        <path d="M8 7h8M8 11h8"/>
-      </svg>
-    </div>
+    <span class="nx-type nx-type--story" title="User Story"></span>
     <span class="font-mono text-xs text-slate-500">{{ data.story.workItemNumber }}</span>
-    <span class="rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="priorityClass[data.story.priority]">
+    <span class="nx-tag !border-transparent" [ngClass]="priorityClass[data.story.priority]">
       {{ priorityLabel[data.story.priority] }}
     </span>
-    <span class="ml-auto rounded px-2.5 py-0.5 text-xs font-semibold ring-1" [ngClass]="stateBadge[stateApi(data.story.state)]">
+    <span class="ml-auto inline-flex items-center text-sm" [ngClass]="stateBadge[stateApi(data.story.state)]">
       {{ stateLabel[stateApi(data.story.state)] }}
     </span>
   </div>
 
   <!-- Title (clickable → work-item detail page) -->
   <h2
-    class="cursor-pointer text-lg font-semibold leading-snug text-slate-100 underline-offset-2 hover:text-sky-300 hover:underline"
+    class="cursor-pointer text-lg font-semibold text-slate-100 underline-offset-2 hover:underline"
     (click)="navigateTo(data.story.workItemNumber)"
     [title]="'Open ' + data.story.workItemNumber"
   >{{ data.story.title }}</h2>
 
   <!-- Meta row: story points + estimate + remaining -->
-  <div class="flex flex-wrap gap-4 rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3">
-    <div class="text-center">
-      <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Story points</p>
-      <p class="mt-0.5 text-sm font-bold text-slate-100">{{ data.story.storyPoints || '—' }}</p>
+  <div class="flex flex-wrap gap-x-8 gap-y-3 rounded-2xl border border-slate-800 px-4 py-3">
+    <div>
+      <p class="text-xs font-medium text-slate-400">Story points</p>
+      <p class="mt-0.5 font-mono text-sm font-medium text-slate-100">{{ data.story.storyPoints || '—' }}</p>
     </div>
-    <div class="w-px bg-slate-800"></div>
-    <div class="text-center">
-      <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Original est.</p>
-      <p class="mt-0.5 text-sm font-bold text-slate-100">{{ data.story.originalEstimate }}h</p>
+    <div>
+      <p class="text-xs font-medium text-slate-400">Original est.</p>
+      <p class="mt-0.5 font-mono text-sm font-medium text-slate-100">{{ data.story.originalEstimate }}h</p>
     </div>
-    <div class="w-px bg-slate-800"></div>
-    <div class="text-center">
-      <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Remaining</p>
-      <p class="mt-0.5 text-sm font-bold text-slate-100">{{ data.story.remainingWork }}h</p>
+    <div>
+      <p class="text-xs font-medium text-slate-400">Remaining</p>
+      <p class="mt-0.5 font-mono text-sm font-medium text-slate-100">{{ data.story.remainingWork }}h</p>
     </div>
-    <div class="w-px bg-slate-800"></div>
-    <div class="text-center">
-      <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Completed</p>
-      <p class="mt-0.5 text-sm font-bold text-slate-100">{{ data.story.completedWork }}h</p>
+    <div>
+      <p class="text-xs font-medium text-slate-400">Completed</p>
+      <p class="mt-0.5 font-mono text-sm font-medium text-slate-100">{{ data.story.completedWork }}h</p>
     </div>
-    <div class="w-px bg-slate-800"></div>
     <div class="relative">
-      <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Assignee</p>
+      <p class="text-xs font-medium text-slate-400">Assignee</p>
       <button
         type="button"
-        class="mt-1 flex items-center gap-1.5 rounded-lg px-2 py-1 transition hover:bg-slate-800"
+        class="-ml-1.5 mt-0.5 flex items-center gap-1.5 rounded-md px-1.5 py-0.5 transition hover:bg-slate-800"
         (click)="toggleAssigneePicker($event)"
       >
         @if (members.getMember(assigneeId()); as m) {
-          <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white" [ngClass]="m.avatarClass">
+          <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white" [ngClass]="m.avatarClass">
             {{ members.initials(m.userName) }}
           </div>
           <span class="text-xs text-slate-200">{{ m.userName }}</span>
@@ -71,14 +60,14 @@
 
       @if (showAssigneePicker()) {
         <div
-          class="absolute left-0 top-full z-50 mt-1 w-52 rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl max-h-64 overflow-y-auto" appFlipDrop
+          class="absolute left-0 top-full z-50 mt-1 w-52 rounded-2xl bg-slate-900 py-1 shadow-xl max-h-64 overflow-y-auto" appFlipDrop
           (click)="$event.stopPropagation()"
         >
           <div class="px-2 pb-1">
             <input
               type="text"
               placeholder="Search member…"
-              class="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 outline-none placeholder-slate-600 focus:border-sky-500"
+              class="field-input !h-7 !text-xs w-full"
               [ngModel]="assigneeSearch()"
               (ngModelChange)="assigneeSearch.set($event)"
               autofocus
@@ -99,12 +88,12 @@
               [class.bg-slate-800]="m.userId === assigneeId()"
               (click)="selectAssignee(m.userId)"
             >
-              <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white" [ngClass]="m.avatarClass">
+              <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white" [ngClass]="m.avatarClass">
                 {{ members.initials(m.userName) }}
               </div>
               <span class="truncate text-slate-200">{{ m.userName }}</span>
               @if (m.userId === assigneeId()) {
-                <svg class="ml-auto h-3 w-3 shrink-0 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg class="ml-auto h-3 w-3 shrink-0 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                 </svg>
               }
@@ -118,16 +107,16 @@
   <!-- Description / Story text -->
   @if (data.story.description) {
     <div>
-      <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Description</h3>
-      <p class="whitespace-pre-wrap rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3 text-sm leading-relaxed text-slate-300">{{ data.story.description }}</p>
+      <h3 class="mb-2 text-sm font-semibold text-slate-100">Description</h3>
+      <p class="whitespace-pre-wrap rounded-2xl border border-slate-800 px-4 py-3 text-sm leading-relaxed text-slate-300">{{ data.story.description }}</p>
     </div>
   }
 
   <!-- Acceptance Criteria -->
   @if (data.story.acceptanceCriteria) {
     <div>
-      <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Acceptance Criteria</h3>
-      <ul class="space-y-1.5 rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3">
+      <h3 class="mb-2 text-sm font-semibold text-slate-100">Acceptance Criteria</h3>
+      <ul class="space-y-1.5 rounded-2xl border border-slate-800 px-4 py-3">
         @for (line of acLines(); track $index) {
           @if (line.trim()) {
             <li class="flex items-start gap-2.5 text-sm text-slate-300">
@@ -145,8 +134,8 @@
   <!-- Documents -->
   @if (data.story.documents.length > 0) {
     <div>
-      <h3 class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Documents</h3>
-      <ul class="space-y-1.5 rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3">
+      <h3 class="mb-2 text-sm font-semibold text-slate-100">Documents</h3>
+      <ul class="space-y-1.5 rounded-2xl border border-slate-800 px-4 py-3">
         @for (doc of data.story.documents; track $index) {
           <li class="flex items-center gap-2">
             <svg class="h-3.5 w-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -164,61 +153,41 @@
   <!-- Sub-tasks -->
   <div>
     <div class="mb-2 flex items-center justify-between">
-      <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <h3 class="text-sm font-semibold text-slate-100">
         Tasks
         @if (data.subTasks.length) {
-          <span class="ml-1 rounded-full bg-slate-800 px-1.5 py-0.5 text-slate-400">{{ data.subTasks.length }}</span>
+          <span class="ml-1 font-mono text-xs font-normal text-slate-500">{{ data.subTasks.length }}</span>
         }
       </h3>
       <button
         type="button"
-        class="rounded-lg bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+        class="nx-btn nx-btn--sm"
         (click)="openAddTask()"
       >+ Task</button>
     </div>
 
     @if (data.subTasks.length === 0) {
-      <p class="rounded-lg border border-dashed border-slate-700 px-4 py-3 text-sm text-slate-500">No tasks yet. Click "+ Task" to add one.</p>
+      <p class="rounded-2xl border border-dashed border-slate-700 px-4 py-3 text-sm text-slate-500">No tasks yet. Click "+ Task" to add one.</p>
     } @else {
-      <ul class="divide-y divide-slate-800 rounded-lg border border-slate-800">
+      <ul class="divide-y divide-slate-800 rounded-2xl border border-slate-800">
         @for (sub of data.subTasks; track sub.id) {
-          <li class="flex items-center gap-3 px-3 py-2.5">
-            <!-- type icon -->
-            <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded ring-1" [ngClass]="subTaskTypeClass[sub.type]">
-              @switch (sub.type) {
-                @case ('task') {
-                  <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                  </svg>
-                }
-                @case ('bug') {
-                  <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path d="M8 2h8l1 6H7L8 2z"/><path d="M7 8h10v2a5 5 0 0 1-10 0V8z"/><path d="M12 15v3M9 22h6"/>
-                  </svg>
-                }
-                @case ('test-plan') {
-                  <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-                    <rect x="9" y="3" width="6" height="4" rx="1" ry="1"/>
-                    <path stroke-linecap="round" d="M9 12h6M9 16h4"/>
-                  </svg>
-                }
-              }
-            </div>
+          <li class="flex h-11 items-center gap-3 px-3">
+            <!-- type -->
+            <span class="nx-type" [ngClass]="subTaskSquareClass[sub.type]"></span>
 
             <!-- title (clickable → work-item detail) -->
             <span
-              class="min-w-0 flex-1 cursor-pointer truncate text-sm text-slate-200 underline-offset-2 hover:text-sky-300 hover:underline"
+              class="min-w-0 flex-1 cursor-pointer truncate text-sm text-slate-100 underline-offset-2 hover:underline"
               [title]="sub.title + ' — open detail'"
               (click)="navigateTo(sub.workItemNumber)"
             >{{ sub.title }}</span>
 
             <!-- remaining -->
-            <span class="shrink-0 text-xs text-slate-500">{{ sub.remainingWork }}h</span>
+            <span class="shrink-0 font-mono text-xs text-slate-500">{{ sub.remainingWork }}h</span>
 
             <!-- state -->
             <select
-              class="shrink-0 rounded border border-slate-700 bg-slate-950 px-1.5 py-0.5 text-xs text-slate-300 outline-none focus:border-sky-400"
+              class="field-select !h-7 !w-28 shrink-0 !text-xs"
               [value]="sub.state"
               (change)="changeSubTaskState(sub.id, $event)"
             >
@@ -234,12 +203,12 @@
             <div class="relative shrink-0">
               <button
                 type="button"
-                class="flex h-6 w-6 items-center justify-center rounded-full transition hover:ring-2 hover:ring-sky-500/60"
+                class="flex h-6 w-6 items-center justify-center rounded-full transition hover:ring-2 hover:ring-slate-700"
                 [title]="members.getMember(subTaskAssignees()[sub.id])?.userName ?? 'Unassigned — click to assign'"
                 (click)="toggleSubTaskPicker(sub.id, $event)"
               >
                 @if (members.getMember(subTaskAssignees()[sub.id]); as m) {
-                  <div class="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold text-white" [ngClass]="m.avatarClass">
+                  <div class="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-semibold text-white" [ngClass]="m.avatarClass">
                     {{ members.initials(m.userName) }}
                   </div>
                 } @else {
@@ -249,14 +218,14 @@
 
               @if (openSubTaskPickerId() === sub.id) {
                 <div
-                  class="absolute right-0 top-full z-50 mt-1 w-52 max-h-64 overflow-y-auto rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl" appFlipDrop
+                  class="absolute right-0 top-full z-50 mt-1 w-52 max-h-64 overflow-y-auto rounded-2xl bg-slate-900 py-1 shadow-xl" appFlipDrop
                   (click)="$event.stopPropagation()"
                 >
                   <div class="px-2 pb-1">
                     <input
                       type="text"
                       placeholder="Search member…"
-                      class="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 outline-none placeholder-slate-600 focus:border-sky-500"
+                      class="field-input !h-7 !text-xs w-full"
                       [ngModel]="subTaskSearch()"
                       (ngModelChange)="subTaskSearch.set($event)"
                     />
@@ -276,12 +245,12 @@
                       [class.bg-slate-800]="m.userId === subTaskAssignees()[sub.id]"
                       (click)="selectSubTaskAssignee(sub.id, m.userId)"
                     >
-                      <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white" [ngClass]="m.avatarClass">
+                      <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white" [ngClass]="m.avatarClass">
                         {{ members.initials(m.userName) }}
                       </div>
                       <span class="truncate text-slate-200">{{ m.userName }}</span>
                       @if (m.userId === subTaskAssignees()[sub.id]) {
-                        <svg class="ml-auto h-3 w-3 shrink-0 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <svg class="ml-auto h-3 w-3 shrink-0 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                         </svg>
                       }
@@ -300,12 +269,12 @@
   <div class="flex items-center justify-between border-t border-slate-800 pt-4">
     <button
       type="button"
-      class="rounded-lg bg-rose-500/10 px-3 py-1.5 text-xs font-semibold text-rose-300 ring-1 ring-rose-500/40 transition hover:bg-rose-500/20"
+      class="nx-btn nx-btn--danger nx-btn--sm"
       (click)="descopeStory()"
     >De-scope story</button>
     <button
       type="button"
-      class="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 ring-1 ring-slate-700 transition hover:ring-slate-600 hover:text-slate-200"
+      class="nx-btn nx-btn--sm"
       (click)="close()"
     >Close</button>
   </div>

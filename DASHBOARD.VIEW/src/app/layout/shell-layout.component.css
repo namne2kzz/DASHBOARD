@@ -1,3 +1,91 @@
 :host {
   display: block;
 }
+
+/* ── Sidebar navigation (Nexus UI) ───────────────────────────────
+   30px rows, 16px line icons. Active = surface-2 + a 3px accent bar
+   + accent icon, so the current page reads at a glance without
+   colouring the whole row. */
+.nav-label {
+  margin: 10px 8px 4px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--text-3);
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-2);
+  transition: background-color .12s ease, color .12s ease;
+}
+
+.nav-item:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.nav-item.is-active,
+.nav-item.is-open {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.nav-item.is-active {
+  background: var(--surface-2);
+}
+
+.nav-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
+}
+
+.nav-icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  transition: color .12s ease;
+}
+
+.nav-item:hover .nav-icon {
+  color: var(--text-2);
+}
+
+.nav-item.is-active .nav-icon {
+  color: var(--accent);
+}
+
+/* Settings sub-pages: indented under the parent with a thin guide line. */
+.nav-sub {
+  margin: 2px 0 4px 15px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item--sub {
+  height: 28px;
+}
+
+.nav-item--sub.is-active::before {
+  left: -11px;
+}

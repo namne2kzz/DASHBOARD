@@ -4,67 +4,428 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ════════════════════════════════════════════════════════════════
+   Nexus UI Foundation v1 — design tokens
+   Neutral grey chrome, one accent (green — user choice over the foundation's blue), semantic colour only when it means
+   something. 1px borders instead of shadows. Dark mode only swaps token
+   values via html[data-theme="dark"] — structure stays identical.
+
+   Each colour exists twice:
+     --x      hex, for plain CSS (component stylesheets, inline styles)
+     --c-x    RGB channels, consumed by tailwind.config.js so opacity
+              modifiers (bg-sky-500/10) keep working.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --radius-sm: 4px; --radius: 6px; --radius-lg: 8px;
+  --control-h: 32px; --control-h-sm: 28px;
+
+  --bg: #F5F6F8;        --surface: #FFFFFF;     --surface-2: #F0F1F4;  --surface-3: #E6E8EC;
+  --border: #E2E4E9;    --border-strong: #C9CDD4;
+  --text: #171A1F;      --text-2: #4B5260;      --text-3: #6B7280;
+  --accent: #15803D;    --accent-hover: #116A32; --accent-soft: #E7F5EC; --on-accent: #FFFFFF;
+  --success: #1A7F4B;   --success-soft: #E7F4EC;
+  --warning: #9A5B00;   --warning-soft: #FBF1E0;
+  --danger: #C33A2E;    --danger-soft: #FBEAE8;
+  --type-story: #3B6FD4; --type-task: #B7791F; --type-bug: #C33A2E; --type-test: #7550C9;
+  --type-improvement: #0E8A8A; /* not in the foundation — teal, kept apart from the green accent */
+  --shadow-pop: 0 0 0 1px var(--border), 0 8px 24px rgba(16,24,40,.10);
+
+  --c-bg: 245 246 248;          --c-surface: 255 255 255;    --c-surface-2: 240 241 244; --c-surface-3: 230 232 236;
+  --c-border: 226 228 233;      --c-border-strong: 201 205 212;
+  --c-text: 23 26 31;           --c-text-2: 75 82 96;        --c-text-3: 107 114 128;
+  --c-accent: 21 128 61;        --c-accent-hover: 17 106 50; --c-accent-soft: 231 245 236; --c-on-accent: 255 255 255;
+  --c-success: 26 127 75;       --c-success-soft: 231 244 236;
+  --c-warning: 154 91 0;        --c-warning-soft: 251 241 224;
+  --c-danger: 195 58 46;        --c-danger-soft: 251 234 232;
+  --c-type-story: 59 111 212;   --c-type-task: 183 121 31;   --c-type-bug: 195 58 46;    --c-type-test: 117 80 201;
+  --c-type-improvement: 14 138 138;
+
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #0E1013;        --surface: #15181D;     --surface-2: #1C2027;  --surface-3: #252A32;
+  --border: #262B33;    --border-strong: #363C46;
+  --text: #E7E9EC;      --text-2: #A5ACB7;      --text-3: #7D8490;
+  --accent: #3FB97A;    --accent-hover: #5BC98F; --accent-soft: #12261B; --on-accent: #06120B;
+  --success: #4CB782;   --success-soft: #14271E;
+  --warning: #D9A045;   --warning-soft: #2A2114;
+  --danger: #E8695D;    --danger-soft: #2D1916;
+  --shadow-pop: 0 0 0 1px var(--border), 0 8px 24px rgba(0,0,0,.45);
+
+  --c-bg: 14 16 19;             --c-surface: 21 24 29;       --c-surface-2: 28 32 39;    --c-surface-3: 37 42 50;
+  --c-border: 38 43 51;         --c-border-strong: 54 60 70;
+  --c-text: 231 233 236;        --c-text-2: 165 172 183;     --c-text-3: 125 132 144;
+  --c-accent: 63 185 122;       --c-accent-hover: 91 201 143; --c-accent-soft: 18 38 27; --c-on-accent: 6 18 11;
+  --c-success: 76 183 130;      --c-success-soft: 20 39 30;
+  --c-warning: 217 160 69;      --c-warning-soft: 42 33 20;
+  --c-danger: 232 105 93;       --c-danger-soft: 45 25 22;
+
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237D8490' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  color-scheme: dark;
+}
+
 html,
 body {
   height: 100%;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.6);
-  cursor: pointer;
-  opacity: 0.7;
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* IDs, numbers, hours and story points use the mono face. */
+code, kbd, samp, .nx-mono {
+  font-family: var(--font-mono);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}
 input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
 
-body {
-  @apply m-0 bg-slate-950 text-slate-100 antialiased;
+/* Text on solid filled buttons — `text-white` maps to --text for headings,
+   so solid accent/semantic fills switch it back to the on-accent colour. */
+.text-white:is(.bg-sky-400, .bg-sky-500, .bg-sky-600, .bg-sky-700, .bg-indigo-500, .bg-indigo-600,
+               .bg-emerald-500, .bg-emerald-600, .bg-green-500, .bg-green-600,
+               .bg-rose-500, .bg-rose-600, .bg-red-500, .bg-red-600,
+               .bg-amber-500, .bg-orange-500, .bg-violet-500, .bg-violet-600, .bg-blue-500, .bg-blue-600) {
+  color: var(--on-accent);
 }
 
-/* ── Work-item detail shared field styles ──────────────────── */
-.field-label {
-  @apply text-xs font-semibold uppercase tracking-wide text-slate-400;
+/* ════════════════════════════════════════════════════════════════
+   Shared component classes
+   ════════════════════════════════════════════════════════════════ */
+
+/* Inside @layer components so Tailwind utilities (w-20, mt-2, …) can still override them. */
+@layer components {
+  /* Field label — sentence case 12px above the control (no UPPERCASE tracking). */
+  .field-label {
+    display: block;
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 500;
+    color: var(--text-2);
+  }
+
+  /* Input · 32px, 1px border-strong, 6px radius, accent ring on focus. */
+  .field-input,
+  .field-textarea,
+  .field-select {
+    width: 100%;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background-color: var(--surface);
+    color: var(--text);
+    font: 400 13px/20px var(--font-sans);
+    outline: none;
+    transition: border-color .12s ease, box-shadow .12s ease;
+  }
+  .field-input,
+  .field-select {
+    height: var(--control-h);
+    padding: 0 10px;
+  }
+  .field-select {
+    padding-right: 30px;
+  }
+  .field-textarea {
+    resize: none;
+    padding: 6px 10px;
+  }
+  .field-input::placeholder,
+  .field-textarea::placeholder {
+    color: var(--text-3);
+  }
+  .field-input:focus,
+  .field-textarea:focus,
+  .field-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .field-input:read-only:not(select),
+  .field-input:disabled,
+  .field-textarea:disabled,
+  .field-select:disabled {
+    background-color: var(--surface-2);
+    border-color: var(--border);
+    color: var(--text-2);
+  }
+  .type-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    padding: 16px;
+  }
+
+  .type-section-title {
+    font-size: 13px;
+    line-height: 20px;
+    font-weight: 600;
+  }
+
+  /* Buttons — Primary · Secondary · Ghost · Destructive. Max one Primary per screen. */
+  .nx-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: var(--control-h);
+    padding: 0 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font: 500 13px var(--font-sans);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .12s ease, border-color .12s ease, color .12s ease;
+  }
+  .nx-btn:hover { background: var(--surface-2); }
+  .nx-btn--sm { height: var(--control-h-sm); padding: 0 10px; font-size: 12px; }
+  .nx-btn--primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+  .nx-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .nx-btn--ghost { border-color: transparent; background: transparent; color: var(--text-2); }
+  .nx-btn--ghost:hover { background: var(--surface-2); color: var(--text); }
+  .nx-btn--danger { color: var(--danger); }
+  .nx-btn--danger:hover { background: var(--danger-soft); }
+  .nx-btn:disabled,
+  .nx-btn[disabled] {
+    border-color: var(--border);
+    background: var(--surface-2);
+    color: var(--text-3);
+    cursor: not-allowed;
+  }
+
+  /* Tag (4px radius, 20px) and alert-tinted variants. */
+  .nx-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 20px;
+    padding: 0 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--text-2);
+    white-space: nowrap;
+    flex: none;
+  }
+  .nx-tag--warning { border-color: transparent; background: var(--warning-soft); color: var(--warning); }
+  .nx-tag--danger  { border-color: transparent; background: var(--danger-soft); color: var(--danger); }
+
+  /* Avatar — neutral; only "you" uses the accent. */
+  .nx-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .nx-avatar--sm { width: 20px; height: 20px; font-size: 9px; }
+  .nx-avatar--me { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
+
+  /* State — 6px dot + plain text. */
+  .nx-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    flex: none;
+  }
+
+  /* Work-item type — 8px square next to the ID. */
+  .nx-type {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex: none;
+  }
+  .nx-type--story { background: var(--type-story); }
+  .nx-type--task  { background: var(--type-task); }
+  .nx-type--bug   { background: var(--type-bug); }
+  .nx-type--test  { background: var(--type-test); }
+
+  /* Segmented control (Sprint | Priority | State). */
+  .nx-segmented {
+    display: inline-flex;
+    padding: 2px;
+    gap: 2px;
+    background: var(--surface-2);
+    border-radius: var(--radius);
+  }
+  .nx-segmented > button {
+    height: 28px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-2);
+    font: 400 13px var(--font-sans);
+    cursor: pointer;
+  }
+  .nx-segmented > button.is-active {
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--border);
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* Filter chip — dashed when empty, filled when applied. */
+  .nx-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 8px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-2);
+    font: 400 12px var(--font-sans);
+    cursor: pointer;
+  }
+  .nx-chip.is-active {
+    border-style: solid;
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  /* Underline tabs (Details · Discussion · History). */
+  .nx-tabs {
+    display: flex;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .nx-tabs > * {
+    padding: 8px 0;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    background: none;
+  }
+  .nx-tabs > .is-active {
+    border-bottom-color: var(--text);
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* Inline alert — tinted surface + 6px dot. */
+  .nx-alert {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    line-height: 19px;
+    color: var(--text);
+  }
+  .nx-alert::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-top: 7px;
+    border-radius: 9999px;
+    flex: none;
+    background: currentColor;
+  }
+  .nx-alert--danger  { background: var(--danger-soft); }
+  .nx-alert--danger::before  { background: var(--danger); }
+  .nx-alert--warning { background: var(--warning-soft); }
+  .nx-alert--warning::before { background: var(--warning); }
+
+  /* Thin progress bar (4px). */
+  .nx-meter {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+  .nx-meter > span {
+    display: block;
+    height: 100%;
+    background: var(--text-2);
+  }
+  .nx-meter > span.is-over { background: var(--danger); }
+
+  /* In-table input — transparent, border only on hover/focus. */
+  .nx-cell-input {
+    height: var(--control-h-sm);
+    width: 100%;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text);
+    font: 400 13px var(--font-mono);
+    text-align: right;
+    outline: none;
+  }
+  .nx-cell-input:hover { border-color: var(--border-strong); }
+  .nx-cell-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 }
 
-.field-input {
-  @apply w-full rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 outline-none transition hover:border-slate-600 placeholder:text-slate-600 focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/20;
+/* Runtime-only classes (Angular form state, server-stored avatar colours) live
+   outside @layer so Tailwind never purges them. */
+.field-input.ng-invalid.ng-touched,
+.field-textarea.ng-invalid.ng-touched,
+.field-select.ng-invalid.ng-touched {
+  border-color: var(--danger);
 }
 
-.field-textarea {
-  @apply w-full resize-none rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-100 outline-none transition hover:border-slate-600 placeholder:text-slate-600 focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/20;
+/* User avatars carry a server-stored colour class (avatarClass = bg-*-600).
+   Nexus UI keeps avatars neutral, so any initials chip (round + centred
+   content) using one of those classes renders as the neutral avatar instead.
+   Plain status dots aren't flex-centred, so they're unaffected. */
+.rounded-full.items-center:is(
+  .bg-sky-600, .bg-blue-600, .bg-violet-600, .bg-purple-600, .bg-pink-600, .bg-rose-600,
+  .bg-red-600, .bg-orange-600, .bg-amber-500, .bg-amber-600, .bg-yellow-500, .bg-lime-600,
+  .bg-green-600, .bg-emerald-600, .bg-teal-600, .bg-cyan-600, .bg-indigo-600, .bg-fuchsia-600,
+  .bg-slate-600, .bg-slate-700) {
+  background-color: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--text-2);
 }
 
-.field-select {
-  @apply w-full rounded-xl border border-slate-700 bg-slate-900/60 py-2 pl-3 pr-9 text-sm text-slate-100 outline-none transition hover:border-slate-600 focus:border-sky-500/60 focus:ring-2 focus:ring-sky-500/20;
-}
-
-.type-section {
-  @apply flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-900/40 p-4;
-}
-
-.type-section-title {
-  @apply text-xs font-semibold uppercase tracking-widest;
-}
-
-/* ── Native <select> — unified soft control (all selects, both themes) ──────
-   appearance reset + custom chevron so every dropdown matches the rounded,
-   soft design language without editing each template. Box geometry (radius,
-   bg, padding) still comes from .field-select / per-instance utilities; this
-   only supplies the arrow + interaction polish shared by every select.
-   NOTE: the floating option list itself is rendered by the OS/browser and can
-   only be colour-tuned (see `select option` below) — it cannot be rounded via
-   CSS. A custom listbox component would be needed for a fully styled popup. */
+/* ── Native <select> — one chevron for every select, both themes ──────────
+   The floating option list is rendered by the OS and can only be colour-tuned. */
 select {
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: var(--select-chevron);
   background-repeat: no-repeat;
   background-position: right 0.6rem center;
-  background-size: 1rem;
-  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+  background-size: 14px;
+  transition: border-color .12s ease, box-shadow .12s ease, background-color .12s ease;
 }
 
 /* Reserve room for the chevron on selects that don't use .field-select. */
@@ -72,27 +433,25 @@ select:not(.field-select) {
   padding-right: 2rem;
 }
 
-/* Native select — option list colours (Chrome/Edge on Windows) */
 select option {
-  background-color: #0f172a; /* slate-950 */
-  color: #e2e8f0;            /* slate-200 */
+  background-color: var(--surface);
+  color: var(--text);
 }
 
-select option:hover,
 select option:checked {
-  background-color: #0ea5e9; /* sky-500 */
-  color: #020617;            /* slate-950 */
+  background-color: var(--accent-soft);
+  color: var(--text);
 }
 
-/* ── Global thin scrollbar (theme-matched) ─────────────────── */
+/* ── Thin scrollbar ────────────────────────────────────────── */
 .custom-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 .custom-scroll::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 .custom-scroll::-webkit-scrollbar-track {
@@ -100,389 +459,25 @@ select option:checked {
 }
 
 .custom-scroll::-webkit-scrollbar-thumb {
-  background-color: #334155;
+  background-color: var(--border-strong);
   border-radius: 9999px;
 }
 
 .custom-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: #475569;
+  background-color: var(--text-3);
 }
 
-/* Light theme — soft sky-tinted thumb (brand sky→indigo) so it adds a touch
-   of colour instead of plain gray; the dark slate thumb is jarring on a
-   light page (e.g. the board's horizontal scrollbar). */
-html.theme-light .custom-scroll {
-  scrollbar-color: #a3c9ef transparent;
+/* ── Third-party surfaces follow the tokens ────────────────── */
+.ql-toolbar.ql-snow,
+.ql-container.ql-snow {
+  border-color: var(--border);
 }
-html.theme-light .custom-scroll::-webkit-scrollbar-thumb {
-  background-color: #a3c9ef;
+.ql-snow .ql-stroke { stroke: var(--text-2); }
+.ql-snow .ql-fill { fill: var(--text-2); }
+.ql-snow .ql-picker { color: var(--text-2); }
+.ql-snow .ql-picker-options {
+  background: var(--surface);
+  border-color: var(--border) !important;
+  box-shadow: var(--shadow-pop);
 }
-html.theme-light .custom-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: #7fb0e6;
-}
-
-/* ── Light theme ───────────────────────────────────────────── */
-/*
-  Elevation goes TOWARD white (matching how the dark theme raises
-  surfaces toward lighter slate). Layered, readable, easy on the eyes:
-
-    page  (slate-950) #e4e9f2   soft cool gray — recedes, never glaring
-    card  (slate-900) #ffffff   clean white panels that float above page
-    well  (slate-800) #eef2f7   inset chips / icon tiles / wells on cards
-    fill  (slate-700) #dbe2ec   stronger fills (secondary buttons)
-    line  (border)    #d4dce7 / #b9c4d3   visible card + input borders
-*/
-html.theme-light {
-  color-scheme: light;
-}
-
-html.theme-light body {
-  background-color: #e4e9f2;
-  color: #1f2937;
-}
-
-/* ── Backgrounds ───────────────────────────────────────────── */
-/* slate-950 = page background. A pair of faint, viewport-anchored colour
-   glows (sky top-left, indigo top-right) give the page depth and warmth
-   instead of a flat grey. background-attachment:fixed keeps the gradient
-   pinned to the viewport, so small bg-slate-950 inputs sample a near-flat
-   colour and never look smeared. */
-html.theme-light .bg-slate-950 {
-  background-color: #e4e9f2 !important;
-  background-image:
-    radial-gradient(1150px 640px at 8% -10%, rgba(56, 189, 248, 0.20), transparent 56%),
-    radial-gradient(1050px 700px at 104% 0%, rgba(167, 139, 250, 0.18), transparent 55%),
-    radial-gradient(900px 600px at 50% 118%, rgba(99, 102, 241, 0.10), transparent 60%) !important;
-  background-attachment: fixed !important;
-  background-repeat: no-repeat !important;
-}
-html.theme-light .bg-slate-950\/90       { background-color: rgba(228,233,242,0.92) !important; }
-html.theme-light .bg-slate-950\/80       { background-color: rgba(228,233,242,0.8) !important; }
-html.theme-light .bg-slate-950\/70       { background-color: rgba(228,233,242,0.7) !important; }
-html.theme-light .bg-slate-950\/30       { background-color: rgba(228,233,242,0.3) !important; }
-
-/* slate-900 = card / panel surface → FROSTED GLASS.
-   Slightly translucent + backdrop blur + saturate, so the page's sky→violet
-   glow bleeds through and tints each card by its position (cyan top-left,
-   violet top-right) instead of flat white. A diagonal sheen adds dimension;
-   the inset top highlight (in the shadow rule below) finishes the glass look.
-   Prominent overlays (modals/menus = shadow-xl/2xl) opt back out to solid
-   white just after this, so they never pick up the dark modal scrim. */
-html.theme-light .bg-slate-900,
-html.theme-light .bg-slate-900\/90,
-html.theme-light .bg-slate-900\/80,
-html.theme-light .bg-slate-900\/70,
-html.theme-light .bg-slate-900\/60,
-html.theme-light .bg-slate-900\/50,
-html.theme-light .bg-slate-900\/40 {
-  background-color: rgba(255, 255, 255, 0.76) !important;
-  background-image: linear-gradient(152deg, rgba(255, 255, 255, 0.55) 0%, rgba(236, 242, 253, 0.12) 100%) !important;
-  -webkit-backdrop-filter: blur(13px) saturate(1.4) !important;
-  backdrop-filter: blur(13px) saturate(1.4) !important;
-}
-html.theme-light .bg-slate-900\/95       { background-color: rgba(255,255,255,0.95) !important; }
-html.theme-light .bg-slate-900\/30       { background-color: rgba(255,255,255,0.5) !important; }
-
-/* Modals & floating menus stay crisp solid white (no glass, no scrim bleed). */
-html.theme-light .bg-slate-900.shadow-2xl,
-html.theme-light .bg-slate-900.shadow-xl {
-  background-color: #ffffff !important;
-  background-image: none !important;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
-
-/* slate-800 = inset wells / chips / icon tiles → light gray on white */
-html.theme-light .bg-slate-800           { background-color: #e9edf4 !important; }
-html.theme-light .bg-slate-800\/95       { background-color: rgba(233,237,244,0.95) !important; }
-html.theme-light .bg-slate-800\/80       { background-color: #edf1f7 !important; }
-html.theme-light .bg-slate-800\/70       { background-color: #eef2f7 !important; }
-html.theme-light .bg-slate-800\/60       { background-color: #f0f3f8 !important; }
-html.theme-light .bg-slate-800\/50       { background-color: #f1f4f9 !important; }
-html.theme-light .bg-slate-800\/40       { background-color: #f2f5f9 !important; }
-html.theme-light .bg-slate-800\/20       { background-color: #f5f7fb !important; }
-
-/* slate-700 = stronger fills (secondary buttons, scrollbars) */
-html.theme-light .bg-slate-700           { background-color: #dbe2ec !important; }
-html.theme-light .bg-slate-700\/80       { background-color: rgba(219,226,236,0.85) !important; }
-html.theme-light .bg-slate-700\/70       { background-color: rgba(219,226,236,0.75) !important; }
-html.theme-light .bg-slate-700\/60       { background-color: rgba(219,226,236,0.65) !important; }
-
-html.theme-light .bg-\[\#0c1828\]        { background-color: #ffffff !important; }
-html.theme-light .bg-\[\#0d1b2a\]        { background-color: #ffffff !important; }
-html.theme-light .bg-white\/\[0\.03\]    { background-color: rgba(15,23,42,0.035) !important; }
-html.theme-light .bg-white\/\[0\.05\]    { background-color: rgba(15,23,42,0.05) !important; }
-
-/* ── Hover backgrounds ─────────────────────────────────────── */
-html.theme-light .hover\:bg-slate-800:hover      { background-color: #e3e9f1 !important; }
-html.theme-light .hover\:bg-slate-800\/80:hover  { background-color: #e7ecf3 !important; }
-html.theme-light .hover\:bg-slate-800\/70:hover  { background-color: #e9eef4 !important; }
-html.theme-light .hover\:bg-slate-800\/60:hover  { background-color: #ebeff5 !important; }
-html.theme-light .hover\:bg-slate-700\/60:hover  { background-color: #dde4ee !important; }
-html.theme-light .hover\:bg-slate-700\/50:hover  { background-color: #e1e7f0 !important; }
-html.theme-light .hover\:bg-slate-700:hover      { background-color: #d3dbe7 !important; }
-
-/* ── Text ──────────────────────────────────────────────────── */
-html.theme-light .text-white             { color: #0f172a !important; }
-html.theme-light .text-slate-50          { color: #0f172a !important; }
-html.theme-light .text-slate-100         { color: #111827 !important; }
-html.theme-light .text-slate-200         { color: #1f2937 !important; }
-html.theme-light .text-slate-300         { color: #334155 !important; }
-html.theme-light .text-slate-400         { color: #52617a !important; }
-html.theme-light .text-slate-500         { color: #64748b !important; }
-html.theme-light .text-slate-600         { color: #76859a !important; }
-
-html.theme-light .hover\:text-white:hover      { color: #0f172a !important; }
-html.theme-light .hover\:text-slate-100:hover  { color: #111827 !important; }
-html.theme-light .hover\:text-slate-300:hover  { color: #334155 !important; }
-
-/* ── Borders — crisp hairlines (elevation carried by shadow, not heavy lines) */
-html.theme-light .border-slate-800       { border-color: #e5e9f0 !important; }
-html.theme-light .border-slate-800\/90   { border-color: rgba(229,233,240,0.9) !important; }
-html.theme-light .border-slate-800\/80   { border-color: rgba(229,233,240,0.85) !important; }
-html.theme-light .border-slate-800\/70   { border-color: rgba(229,233,240,0.75) !important; }
-html.theme-light .border-slate-700       { border-color: #cdd6e2 !important; }
-html.theme-light .border-slate-700\/70   { border-color: rgba(205,214,226,0.7) !important; }
-
-/* ── Rings ─────────────────────────────────────────────────── */
-html.theme-light .ring-white\/5          { --tw-ring-color: rgba(15,23,42,0.06) !important; }
-html.theme-light .ring-white\/\[0\.05\]  { --tw-ring-color: rgba(15,23,42,0.06) !important; }
-html.theme-light .ring-white\/\[0\.06\]  { --tw-ring-color: rgba(15,23,42,0.07) !important; }
-html.theme-light .ring-white\/10         { --tw-ring-color: rgba(15,23,42,0.1) !important; }
-html.theme-light .ring-slate-950         { --tw-ring-color: #e4e9f2 !important; }
-html.theme-light .ring-slate-900         { --tw-ring-color: #ffffff !important; }
-html.theme-light .ring-slate-600         { --tw-ring-color: #b9c4d3 !important; }
-/* slate ring used as a hairline border on chips / inputs → soft light line */
-html.theme-light .ring-slate-700         { --tw-ring-color: #c2cdda !important; }
-html.theme-light .ring-slate-700\/80     { --tw-ring-color: rgba(194,205,218,0.8) !important; }
-html.theme-light .ring-slate-700\/50     { --tw-ring-color: rgba(194,205,218,0.55) !important; }
-html.theme-light .ring-slate-800         { --tw-ring-color: #d4dce7 !important; }
-html.theme-light .ring-slate-800\/60     { --tw-ring-color: rgba(212,220,231,0.6) !important; }
-
-/* ── Gaps: remaining opacity variants in use ───────────────── */
-html.theme-light .bg-slate-950\/60       { background-color: rgba(228,233,242,0.6) !important; }
-html.theme-light .bg-slate-950\/50       { background-color: rgba(228,233,242,0.5) !important; }
-html.theme-light .bg-slate-950\/40       { background-color: rgba(228,233,242,0.4) !important; }
-html.theme-light .bg-slate-800\/90       { background-color: rgba(233,237,244,0.92) !important; }
-html.theme-light .bg-slate-700\/50       { background-color: rgba(219,226,236,0.55) !important; }
-html.theme-light .hover\:bg-slate-800\/50:hover { background-color: #f1f4f9 !important; }
-html.theme-light .hover\:border-slate-700:hover { border-color: #b9c4d3 !important; }
-html.theme-light .border-slate-800\/60   { border-color: rgba(229,233,240,0.6) !important; }
-html.theme-light .border-slate-800\/40   { border-color: rgba(229,233,240,0.4) !important; }
-html.theme-light .border-slate-700\/60   { border-color: rgba(205,214,226,0.6) !important; }
-
-/* ── Card elevation ────────────────────────────────────────────
-   White panels need a real, layered shadow to float above the page —
-   this is what makes the light theme feel crafted instead of flat.
-   Applies to every card-level surface (solid + translucent slate-900). */
-html.theme-light .bg-slate-900,
-html.theme-light .bg-slate-900\/90,
-html.theme-light .bg-slate-900\/80,
-html.theme-light .bg-slate-900\/70,
-html.theme-light .bg-slate-900\/60,
-html.theme-light .bg-slate-900\/50,
-html.theme-light .bg-slate-900\/40 {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75),
-              0 1px 2px rgba(16, 24, 40, 0.05),
-              0 6px 18px -6px rgba(30, 41, 99, 0.16) !important;
-}
-
-/* Sidebar / sticky blur panels (slate-900/95) — slim edge shadow plus a
-   faint top-to-bottom tint so the rail reads as its own surface, not a
-   flat white slab. */
-html.theme-light .bg-slate-900\/95 {
-  background-image: linear-gradient(180deg, #ffffff 0%, #f3f6fc 100%) !important;
-  box-shadow: 1px 0 0 rgba(16, 24, 40, 0.04),
-              4px 0 16px -8px rgba(16, 24, 40, 0.08) !important;
-}
-
-/* ── Select / native dropdown ──────────────────────────────── */
-/* Darker chevron so it stays visible on light select backgrounds. */
-html.theme-light select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-}
-html.theme-light select option {
-  background-color: #ffffff;
-  color: #0f172a;
-}
-html.theme-light select option:hover,
-html.theme-light select option:checked {
-  background-color: #0ea5e9;
-  color: #ffffff;
-}
-
-/* ── Shared field utilities ────────────────────────────────── */
-html.theme-light .field-input,
-html.theme-light .field-textarea,
-html.theme-light .field-select {
-  background-color: #ffffff;
-  border-color: #c2cdda;
-  color: #0f172a;
-}
-html.theme-light .field-input::placeholder,
-html.theme-light .field-textarea::placeholder { color: #94a3b8; }
-
-html.theme-light .type-section {
-  background-color: #f5f8fb;
-  border-color: #d4dce7;
-}
-
-/* ── Gradient stops (board bg-gradient-to-b) ───────────────── */
-html.theme-light .from-slate-950 {
-  --tw-gradient-from: #e4e9f2 !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(228,233,242,0)) !important;
-}
-html.theme-light .via-slate-950 {
-  --tw-gradient-stops: var(--tw-gradient-from), #e4e9f2, var(--tw-gradient-to, rgba(228,233,242,0)) !important;
-}
-html.theme-light .to-slate-900 {
-  --tw-gradient-to: #ffffff !important;
-}
-
-/* ── Accent text — dark theme uses light -200/300/400 tints that wash
-      out on a light background; deepen them so badges, status pills and
-      coloured icons stay legible. ──────────────────────────────── */
-html.theme-light .text-sky-200       { color: #0284c7 !important; }
-html.theme-light .text-sky-300       { color: #0284c7 !important; }
-html.theme-light .text-sky-300\/90   { color: rgba(2,132,199,0.9) !important; }
-html.theme-light .text-sky-400       { color: #0284c7 !important; }
-html.theme-light .text-sky-400\/90   { color: #0284c7 !important; }
-html.theme-light .text-sky-400\/80   { color: #0369a1 !important; }
-html.theme-light .text-sky-500\/70   { color: #0369a1 !important; }
-
-html.theme-light .text-emerald-200   { color: #047857 !important; }
-html.theme-light .text-emerald-300   { color: #059669 !important; }
-html.theme-light .text-emerald-400   { color: #059669 !important; }
-
-html.theme-light .text-amber-200     { color: #b45309 !important; }
-html.theme-light .text-amber-300     { color: #b45309 !important; }
-html.theme-light .text-amber-400     { color: #b45309 !important; }
-
-html.theme-light .text-rose-200      { color: #be123c !important; }
-html.theme-light .text-rose-300      { color: #e11d48 !important; }
-html.theme-light .text-rose-400      { color: #e11d48 !important; }
-
-html.theme-light .text-red-300       { color: #dc2626 !important; }
-html.theme-light .text-red-400       { color: #dc2626 !important; }
-
-html.theme-light .text-violet-300    { color: #7c3aed !important; }
-html.theme-light .text-violet-400    { color: #7c3aed !important; }
-
-html.theme-light .text-orange-300    { color: #ea580c !important; }
-html.theme-light .text-yellow-400    { color: #ca8a04 !important; }
-
-/* Aging / "stale" badge (task card): the dark-orange pill
-   (bg-orange-900/50 + text-orange-300) turns muddy and illegible on the
-   light board. Repaint it as a soft amber chip with a deep-orange label and
-   ring. Scoped to the badge so plain text-orange-300 elsewhere is untouched. */
-html.theme-light .bg-orange-900\/50                  { background-color: #ffedd5 !important; }
-html.theme-light .bg-orange-900\/50.text-orange-300  { color: #9a3412 !important; }
-html.theme-light .ring-orange-600\/60                { --tw-ring-color: rgba(234,88,12,0.5) !important; }
-
-/* ════════════════════════════════════════════════════════════════
-   BRAND ACCENTS (light) — inject colour & life so the UI feels
-   designed, not just "not-dark". Sky→indigo is the primary brand duo.
-   ════════════════════════════════════════════════════════════════ */
-
-/* Primary CTAs → vivid sky→indigo gradient with a coloured glow.
-   (.bg-sky-500 only — translucent /10 /15 /20 tints are untouched.) */
-html.theme-light .bg-sky-500 {
-  background-image: linear-gradient(135deg, #0ea5e9 0%, #4f46e5 100%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18),
-              0 8px 20px -6px rgba(37, 99, 235, 0.45) !important;
-}
-html.theme-light .hover\:bg-sky-400:hover {
-  background-image: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%) !important;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.22),
-              0 12px 26px -6px rgba(37, 99, 235, 0.55) !important;
-}
-
-/* Same recipe (diagonal gradient + matching coloured glow) applied to every
-   solid action-button colour, each kept in its own semantic hue. Translucent
-   tints (.bg-*-500/10 etc.) and neutral secondary buttons stay untouched, so
-   the primary/secondary hierarchy stays clear. */
-
-/* sky-600 (deeper primary) */
-html.theme-light .bg-sky-600 {
-  background-image: linear-gradient(135deg, #0284c7 0%, #4338ca 100%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.18), 0 8px 20px -6px rgba(37, 99, 235, 0.45) !important;
-}
-html.theme-light .hover\:bg-sky-500:hover {
-  background-image: linear-gradient(135deg, #0ea5e9 0%, #4f46e5 100%) !important;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.22), 0 12px 26px -6px rgba(37, 99, 235, 0.55) !important;
-}
-
-/* emerald — save / promote / confirm */
-html.theme-light .bg-emerald-500,
-html.theme-light .bg-emerald-600 {
-  background-image: linear-gradient(135deg, #10b981 0%, #0d9488 100%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2), 0 8px 20px -6px rgba(13, 148, 136, 0.45) !important;
-}
-html.theme-light .hover\:bg-emerald-500:hover,
-html.theme-light .hover\:bg-emerald-400:hover {
-  background-image: linear-gradient(135deg, #34d399 0%, #14b8a6 100%) !important;
-  box-shadow: 0 2px 4px rgba(13, 148, 136, 0.24), 0 12px 26px -6px rgba(13, 148, 136, 0.55) !important;
-}
-
-/* rose / red — delete / de-scope / danger */
-html.theme-light .bg-rose-500,
-html.theme-light .bg-rose-600,
-html.theme-light .bg-red-500 {
-  background-image: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 1px 2px rgba(225, 29, 72, 0.2), 0 8px 20px -6px rgba(225, 29, 72, 0.45) !important;
-}
-html.theme-light .hover\:bg-rose-500:hover {
-  background-image: linear-gradient(135deg, #fb7185 0%, #f43f5e 100%) !important;
-  box-shadow: 0 2px 4px rgba(225, 29, 72, 0.24), 0 12px 26px -6px rgba(225, 29, 72, 0.55) !important;
-}
-
-/* amber / orange — warning / secondary action */
-html.theme-light .bg-amber-500,
-html.theme-light .bg-orange-500 {
-  background-image: linear-gradient(135deg, #f59e0b 0%, #f97316 100%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 1px 2px rgba(217, 119, 6, 0.2), 0 8px 20px -6px rgba(217, 119, 6, 0.42) !important;
-}
-html.theme-light .hover\:bg-amber-500:hover,
-html.theme-light .hover\:bg-amber-400:hover {
-  background-image: linear-gradient(135deg, #fbbf24 0%, #fb923c 100%) !important;
-  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.24), 0 12px 26px -6px rgba(217, 119, 6, 0.52) !important;
-}
-
-/* violet — special / test-plan accents */
-html.theme-light .bg-violet-500 {
-  background-image: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
-  border-color: transparent !important;
-  box-shadow: 0 1px 2px rgba(124, 58, 237, 0.2), 0 8px 20px -6px rgba(124, 58, 237, 0.45) !important;
-}
-html.theme-light .hover\:bg-violet-500:hover {
-  background-image: linear-gradient(135deg, #a78bfa 0%, #818cf8 100%) !important;
-  box-shadow: 0 2px 4px rgba(124, 58, 237, 0.24), 0 12px 26px -6px rgba(124, 58, 237, 0.55) !important;
-}
-
-/* Active nav pill / selected chips (bg-sky-500/15) → soft duo-tone wash */
-html.theme-light .bg-sky-500\/15 {
-  background-image: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(99, 102, 241, 0.16)) !important;
-}
-html.theme-light .bg-sky-500\/10 {
-  background-image: linear-gradient(135deg, rgba(14, 165, 233, 0.11), rgba(99, 102, 241, 0.11)) !important;
-}
-
-/* Sky accent ring on active items → indigo-leaning for richer colour */
-html.theme-light .ring-sky-500\/30   { --tw-ring-color: rgba(79, 70, 229, 0.34) !important; }
-html.theme-light .ring-sky-500\/20   { --tw-ring-color: rgba(79, 70, 229, 0.24) !important; }
-
-/* Uppercase eyebrow page-titles (always <p>) → gradient brand text.
-   Scoped to <p> so SVG icons sharing text-sky-400 keep a solid fill. */
-html.theme-light p.text-sky-400\/90,
-html.theme-light p.text-sky-400\/80 {
-  background-image: linear-gradient(90deg, #0284c7 0%, #6366f1 70%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent !important;
-}
+.ql-editor.ql-blank::before { color: var(--text-3); }

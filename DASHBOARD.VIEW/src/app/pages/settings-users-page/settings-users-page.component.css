@@ -6,7 +6,7 @@
    with the li ::before/::after top borders. The line colour reads on
    both the dark (slate-900) and light (white) modal surfaces. */
 .org-scroll {
-  --org-line: rgba(100, 116, 139, 0.45); /* slate-500 @ 45% */
+  --org-line: var(--border-strong);
   overflow-x: auto;
   padding: 4px 2px;
 }

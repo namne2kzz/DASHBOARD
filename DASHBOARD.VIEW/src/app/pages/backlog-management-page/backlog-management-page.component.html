@@ -1,16 +1,16 @@
-<div class="custom-scroll min-h-0 flex-1 overflow-auto bg-slate-950 px-4 py-6">
+<div class="custom-scroll min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
   <div class="space-y-6">
 
     <!-- ── Header ─────────────────────────────────────────────────────────── -->
-    <header class="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-end lg:justify-between">
+    <header class="sticky top-0 z-20 -mx-5 flex min-h-[52px] flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-5 py-2.5">
       <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400/90">Backlog Management</p>
+        <h1 class="text-lg font-semibold text-slate-100">Backlog</h1>
       </div>
 
       <div class="flex flex-wrap gap-2">
         <button
           type="button"
-          class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+          class="nx-btn nx-btn--primary"
           [disabled]="backlog.loading()"
           (click)="openAddDialog()"
         >
@@ -32,20 +32,20 @@
     } @else {
       <section class="grid gap-3 md:grid-cols-4">
         <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <p class="text-xs uppercase text-slate-500">Epics</p>
-          <p class="mt-1 text-xl font-bold text-white">{{ backlog.epics().length }}</p>
+          <p class="text-xs font-medium text-slate-400">Epics</p>
+          <p class="mt-1 text-xl font-semibold text-white">{{ backlog.epics().length }}</p>
         </div>
         <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <p class="text-xs uppercase text-slate-500">Features</p>
-          <p class="mt-1 text-xl font-bold text-white">{{ backlog.features().length }}</p>
+          <p class="text-xs font-medium text-slate-400">Features</p>
+          <p class="mt-1 text-xl font-semibold text-white">{{ backlog.features().length }}</p>
         </div>
         <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <p class="text-xs uppercase text-slate-500">User stories</p>
-          <p class="mt-1 text-xl font-bold text-white">{{ backlog.stories().length }}</p>
+          <p class="text-xs font-medium text-slate-400">User stories</p>
+          <p class="mt-1 text-xl font-semibold text-white">{{ backlog.stories().length }}</p>
         </div>
         <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <p class="text-xs uppercase text-slate-500">Ready</p>
-          <p class="mt-1 text-xl font-bold text-white">{{ backlog.readyStories() }}</p>
+          <p class="text-xs font-medium text-slate-400">Ready</p>
+          <p class="mt-1 text-xl font-semibold text-white">{{ backlog.readyStories() }}</p>
         </div>
       </section>
     }
@@ -60,7 +60,7 @@
               class="rounded-lg px-3 py-2 text-sm font-semibold ring-1 transition"
               [class]="
                 backlog.activeLevel() === level
-                  ? 'bg-sky-500/15 text-sky-200 ring-sky-500/40'
+                  ? 'bg-sky-500/10 text-sky-500 ring-transparent'
                   : 'bg-slate-950/60 text-slate-300 ring-slate-700 hover:bg-slate-800'
               "
               (click)="backlog.setLevel(level)"
@@ -99,7 +99,7 @@
                     <input
                       type="text"
                       placeholder="Search epics..."
-                      class="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-sky-400"
+                      class="field-input !h-7 !text-xs w-full"
                       [ngModel]="epicSearch()"
                       (ngModelChange)="epicSearch.set($event)"
                       (click)="$event.stopPropagation()"
@@ -138,13 +138,13 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-xs font-semibold uppercase text-slate-500">Estimate mode</span>
+          <span class="text-xs font-medium text-slate-400">Estimate mode</span>
           <button
             type="button"
             class="rounded-lg px-3 py-2 text-xs font-semibold ring-1 transition"
             [class]="
               backlog.estimateMode() === 'fibonacci'
-                ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
+                ? 'bg-emerald-500/15 text-emerald-200 ring-transparent'
                 : 'bg-slate-950/60 text-slate-300 ring-slate-700 hover:bg-slate-800'
             "
             (click)="backlog.setEstimateMode('fibonacci')"
@@ -156,7 +156,7 @@
             class="rounded-lg px-3 py-2 text-xs font-semibold ring-1 transition"
             [class]="
               backlog.estimateMode() === 'tshirt'
-                ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
+                ? 'bg-emerald-500/15 text-emerald-200 ring-transparent'
                 : 'bg-slate-950/60 text-slate-300 ring-slate-700 hover:bg-slate-800'
             "
             (click)="backlog.setEstimateMode('tshirt')"
@@ -184,7 +184,7 @@
             @if (!selectionMode()) {
               <button
                 type="button"
-                class="mb-3 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-300 ring-1 ring-slate-700 transition hover:bg-slate-800 hover:text-white"
+                class="nx-btn nx-btn--sm mb-3 inline-flex items-center gap-1.5"
                 (click)="enterSelectionMode()"
               >
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -195,13 +195,13 @@
             } @else {
               <div class="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-2">
                 <span class="text-xs font-semibold text-sky-200">{{ selectedIds().size }} selected</span>
-                <button type="button" class="rounded px-2 py-1 text-xs text-slate-300 ring-1 ring-slate-600 transition hover:bg-slate-800 hover:text-white" (click)="selectAllVisible()">Select all ({{ backlog.visibleItems().length }})</button>
+                <button type="button" class="nx-btn nx-btn--sm" (click)="selectAllVisible()">Select all ({{ backlog.visibleItems().length }})</button>
                 <button type="button" class="rounded px-2 py-1 text-xs text-slate-400 transition hover:text-slate-200" (click)="clearSelection()">Clear</button>
 
                 <span class="mx-1 h-4 w-px bg-slate-600"></span>
 
                 <select
-                  class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 outline-none focus:border-sky-400 disabled:opacity-50"
+                  class="field-select !h-7 !text-xs w-auto"
                   [disabled]="selectedIds().size === 0"
                   [ngModel]="''"
                   (ngModelChange)="applyBulkState($event)"
@@ -214,7 +214,7 @@
 
                 <button
                   type="button"
-                  class="rounded px-2 py-1 text-xs font-semibold text-rose-300 ring-1 ring-rose-500/40 transition hover:bg-rose-600/20 disabled:opacity-40"
+                  class="rounded px-2 py-1 text-xs font-semibold text-rose-300 ring-1 ring-transparent transition hover:bg-rose-600/20 disabled:opacity-40"
                   [disabled]="selectedIds().size === 0"
                   (click)="requestBulkDelete()"
                 >Delete</button>
@@ -228,7 +228,7 @@
                   <span class="text-xs text-rose-200">Delete {{ selectedIds().size }} selected item{{ selectedIds().size === 1 ? '' : 's' }}? This cannot be undone. Parents with unselected children are skipped.</span>
                   <span class="ml-auto"></span>
                   <button type="button" class="rounded px-2 py-1 text-xs text-slate-400 transition hover:text-slate-200" (click)="cancelBulkDelete()">Cancel</button>
-                  <button type="button" class="rounded bg-rose-600 px-2 py-1 text-xs font-semibold text-white transition hover:bg-rose-500" (click)="confirmBulkDelete()">Delete</button>
+                  <button type="button" class="nx-btn nx-btn--danger nx-btn--sm" (click)="confirmBulkDelete()">Delete</button>
                 </div>
               }
             }
@@ -239,12 +239,12 @@
               <input
                 type="text"
                 placeholder="Search title..."
-                class="min-w-[10rem] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-sky-400"
+                class="field-input !h-7 !text-xs min-w-[10rem] flex-1"
                 [ngModel]="backlog.filterKeyword()"
                 (ngModelChange)="backlog.setFilterKeyword($event)"
               />
               <select
-                class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-sky-400"
+                class="field-select !h-7 !text-xs w-auto"
                 [ngModel]="backlog.filterState()"
                 (ngModelChange)="backlog.setFilterState($event)"
               >
@@ -255,7 +255,7 @@
                 <option value="committed">Promoted</option>
               </select>
               <select
-                class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-sky-400"
+                class="field-select !h-7 !text-xs w-auto"
                 [ngModel]="backlog.filterSprintId()"
                 (ngModelChange)="backlog.setFilterSprintId($event)"
               >
@@ -268,7 +268,7 @@
               @if (backlog.activeFilterCount() > 0) {
                 <button
                   type="button"
-                  class="rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-400 ring-1 ring-slate-700 transition hover:bg-slate-800 hover:text-slate-200"
+                  class="nx-btn nx-btn--sm"
                   (click)="backlog.clearFilters()"
                 >
                   Clear filters ({{ backlog.activeFilterCount() }})
@@ -363,12 +363,12 @@
                           {{ item.rank | number: '1.0-4' }}
                         </span>
                         <span
-                          class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase ring-1"
+                          class="nx-tag"
                           [class]="
                             item.state === 'ready'
-                              ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
+                              ? 'bg-emerald-500/15 text-emerald-200 ring-transparent'
                               : item.state === 'committed'
-                                ? 'bg-sky-500/15 text-sky-200 ring-sky-500/40'
+                                ? 'bg-sky-500/10 text-sky-500 ring-transparent'
                                 : 'bg-slate-700/50 text-slate-300 ring-slate-600'
                           "
                         >
@@ -379,7 +379,7 @@
                       @if (editingId() === item.id) {
                         <textarea
                           rows="2"
-                          class="mt-2 w-full resize-none rounded-lg border border-sky-500 bg-slate-950 px-3 py-1.5 text-base font-semibold text-slate-100 outline-none"
+                          class="field-textarea mt-2 w-full resize-none"
                           [ngModel]="editTitle()"
                           (ngModelChange)="editTitle.set($event)"
                           (keydown.enter)="$event.preventDefault(); confirmEdit(item.id)"
@@ -399,7 +399,7 @@
                         <!-- Row 1: Move top | Promote to sprint -->
                         <button
                           type="button"
-                          class="rounded-lg bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+                          class="nx-btn nx-btn--sm"
                           (click)="backlog.moveToTop(item.id)"
                         >
                           Move top
@@ -408,7 +408,7 @@
                           type="button"
                           class="rounded-lg px-3 py-2 text-xs font-semibold ring-1 transition"
                           [class]="item.type === 'user-story' && item.state === 'ready'
-                            ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40 hover:bg-emerald-500/25'
+                            ? 'bg-emerald-500/15 text-emerald-200 ring-transparent hover:bg-emerald-500/25'
                             : 'cursor-not-allowed bg-slate-800/40 text-slate-500 ring-slate-700/50'"
                           [disabled]="item.type !== 'user-story' || item.state !== 'ready'"
                           [title]="item.type !== 'user-story' ? 'Only user stories can be promoted' : item.state !== 'ready' ? 'Item must be in Ready state' : 'Promote to sprint'"
@@ -419,7 +419,7 @@
 
                         <!-- Row 2: Sprint assignment | Move to position -->
                         <select
-                          class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+                          class="field-select !h-7 !text-xs w-auto"
                           [ngModel]="item.sprintId ?? ''"
                           [disabled]="item.state === 'committed'"
                           [title]="item.state === 'committed' ? 'Sprint is locked after promotion' : 'Assign to sprint'"
@@ -436,7 +436,7 @@
                             type="number"
                             min="1"
                             placeholder="Move to position"
-                            class="peer w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-2 text-xs text-slate-100 outline-none transition-colors focus:border-sky-400 invalid:border-rose-600 [appearance:textfield] [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden"
+                            class="field-input !h-7 !text-xs w-full [appearance:textfield]"
                             (invalid)="$event.preventDefault()"
                             (change)="backlog.moveToPosition(item.id, $any($event.target).value)"
                           />
@@ -448,7 +448,7 @@
                           <div class="col-span-2 rounded-lg border border-emerald-700/50 bg-emerald-950/30 p-2">
                             <p class="mb-1.5 text-xs font-semibold text-emerald-300">Select sprint</p>
                             <select
-                              class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-emerald-500"
+                              class="field-select !h-7 !text-xs w-full"
                               [ngModel]="selectedSprintId()"
                               (ngModelChange)="selectedSprintId.set($event)"
                             >
@@ -461,7 +461,7 @@
                             <div class="mt-2 flex gap-2">
                               <button
                                 type="button"
-                                class="flex-1 rounded-lg bg-emerald-600 px-2 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+                                class="nx-btn nx-btn--sm flex-1"
                                 [disabled]="!selectedSprintId()"
                                 (click)="confirmPromote()"
                               >
@@ -512,7 +512,7 @@
                             <!-- State transitions -->
                             @if (stateOptions(item).length > 0) {
                               <div class="border-t border-slate-800 px-3 py-1">
-                                <p class="text-xs font-semibold uppercase text-slate-600">Set state</p>
+                                <p class="text-xs font-medium text-slate-400">Set state</p>
                               </div>
                               @for (state of stateOptions(item); track state) {
                                 <button
@@ -564,7 +564,7 @@
                         >Cancel</button>
                         <button
                           type="button"
-                          class="rounded bg-rose-600 px-2 py-1 text-xs font-semibold text-white hover:bg-rose-500 transition"
+                          class="nx-btn nx-btn--danger nx-btn--sm"
                           (click)="confirmDelete()"
                         >Delete</button>
                       </div>

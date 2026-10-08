@@ -1,99 +1,41 @@
-<section
-  class="flex min-h-[420px] w-full min-w-[260px] flex-1 basis-0 flex-col rounded-2xl border p-3 shadow-inner ring-1 transition-colors"
-  [class]="wipExceeded()
-    ? (wipMode() === 'hard'
-        ? 'border-rose-700/50 bg-rose-950/10 ring-rose-800/20'
-        : 'border-amber-700/40 bg-amber-950/10 ring-amber-800/15')
-    : 'border-slate-800/80 bg-slate-900/40 ring-white/5'"
->
-  <header class="mb-3 flex items-center justify-between gap-2 px-1">
-    <div class="flex min-w-0 items-center gap-1.5">
-      @if (wipExceeded()) {
-        <!-- warning icon with tooltip -->
-        <div class="group/wip relative shrink-0">
-          <svg
-            class="h-3.5 w-3.5 cursor-default"
-            [class]="wipMode() === 'hard' ? 'text-rose-400' : 'text-amber-400'"
-            fill="currentColor" viewBox="0 0 20 20"
-          >
-            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-          </svg>
-          <div class="pointer-events-none absolute top-full left-0 z-50 mt-2 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs shadow-lg ring-1 opacity-0 transition-opacity group-hover/wip:opacity-100"
-            [class]="wipMode() === 'hard'
-              ? 'bg-rose-950 text-rose-200 ring-rose-700/60'
-              : 'bg-amber-950 text-amber-200 ring-amber-700/60'"
-          >
-            @if (wipMode() === 'hard') {
-              Hard stop — WIP limit of {{ wipLimit() }} reached. Drops blocked.
-            } @else {
-              Soft warning — WIP limit of {{ wipLimit() }} exceeded.
-            }
-            <!-- arrow -->
-            <span
-              class="absolute bottom-full left-1.5 border-4 border-transparent"
-              [class]="wipMode() === 'hard' ? 'border-b-rose-950' : 'border-b-amber-950'"
-            ></span>
-          </div>
-        </div>
-      }
-      <h2
-        class="truncate text-sm font-semibold tracking-wide transition-colors"
-        [class]="wipExceeded()
-          ? (wipMode() === 'hard' ? 'text-rose-300' : 'text-amber-300')
-          : 'text-slate-200'"
-      >{{ title() }}</h2>
+<!--
+  Nexus UI column: no tinted panel. Header = name + mono count over a 2px rule;
+  over WIP turns only the rule + count + one line of text red (hard) / amber (soft).
+-->
+<section class="flex w-[300px] shrink-0 flex-col gap-2">
+  <header
+    class="flex flex-col gap-1 border-b-2 px-0.5 pb-2"
+    [class.border-rose-500]="wipExceeded() && wipMode() === 'hard'"
+    [class.border-amber-500]="wipExceeded() && wipMode() !== 'hard'"
+    [class.border-slate-800]="!wipExceeded()"
+  >
+    <div class="flex items-center gap-2">
+      <h2 class="truncate text-sm font-semibold text-slate-100">{{ title() }}</h2>
+      <span
+        class="font-mono text-xs"
+        [class.text-rose-500]="wipExceeded() && wipMode() === 'hard'"
+        [class.text-amber-500]="wipExceeded() && wipMode() !== 'hard'"
+        [class.text-slate-500]="!wipExceeded()"
+        [title]="wipLimit() > 0
+          ? tasks().length + ' item' + (tasks().length === 1 ? '' : 's') + ' · WIP limit ' + wipLimit()
+          : tasks().length + ' item' + (tasks().length === 1 ? '' : 's')"
+      >{{ tasks().length }}{{ wipLimit() > 0 ? ' / ' + wipLimit() : '' }}</span>
     </div>
-
-    @if (wipLimit() > 0) {
-      <!-- count/limit badge with tooltip -->
-      <div class="group/badge relative shrink-0">
-        <span
-          class="block rounded-full px-2 py-0.5 text-xs font-medium ring-1 transition-colors cursor-default"
-          [class]="wipExceeded()
-            ? (wipMode() === 'hard'
-                ? 'bg-rose-900/40 text-rose-300 ring-rose-700/60'
-                : 'bg-amber-900/40 text-amber-300 ring-amber-700/60')
-            : 'bg-slate-800/80 text-slate-300 ring-white/10'"
-        >
-          {{ tasks().length }}/{{ wipLimit() }}
-        </span>
-        <div class="pointer-events-none absolute top-full right-0 z-50 mt-2 whitespace-nowrap rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs text-slate-200 shadow-lg ring-1 ring-white/10 opacity-0 transition-opacity group-hover/badge:opacity-100">
-          {{ tasks().length }} item{{ tasks().length === 1 ? '' : 's' }} · WIP limit {{ wipLimit() }}
-          @if (wipExceeded()) {
-            <span
-              class="ml-1 font-semibold"
-              [class]="wipMode() === 'hard' ? 'text-rose-300' : 'text-amber-300'"
-            >(exceeded)</span>
-          }
-          <!-- arrow -->
-          <span class="absolute bottom-full right-3 border-4 border-transparent border-b-slate-800"></span>
-        </div>
-      </div>
-    } @else {
-      <span class="shrink-0 rounded-full bg-slate-800/80 px-2 py-0.5 text-xs font-medium text-slate-300 ring-1 ring-white/10">
-        {{ tasks().length }}
-      </span>
+    @if (wipExceeded()) {
+      @if (wipMode() === 'hard') {
+        <span class="text-xs text-rose-500">Over WIP — not accepting items</span>
+      } @else {
+        <span class="text-xs text-amber-500">Over WIP limit of {{ wipLimit() }}</span>
+      }
     }
   </header>
-
-  @if (wipExceeded() && wipMode() === 'hard') {
-    <div class="mb-2 flex items-center gap-1.5 rounded-lg border border-rose-700/50 bg-rose-900/20 px-2.5 py-1.5 text-xs text-rose-300">
-      <svg class="h-3.5 w-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
-      </svg>
-      WIP limit reached — items cannot be moved here.
-    </div>
-  }
 
   <div
     cdkDropList
     [id]="listId()"
     [cdkDropListData]="tasks()"
     [cdkDropListEnterPredicate]="enterPredicate()"
-    class="custom-scroll flex flex-1 flex-col gap-2 overflow-y-auto rounded-xl border border-dashed p-2 min-h-[320px] transition-colors"
-    [class]="wipExceeded() && wipMode() === 'hard'
-      ? 'border-rose-800/50 bg-rose-950/20'
-      : 'border-slate-800/70 bg-slate-950/30'"
+    class="flex min-h-[320px] flex-1 flex-col gap-2 rounded-2xl transition-colors"
     (cdkDropListDropped)="onDrop($event)"
   >
     @for (t of tasks(); track t.id) {

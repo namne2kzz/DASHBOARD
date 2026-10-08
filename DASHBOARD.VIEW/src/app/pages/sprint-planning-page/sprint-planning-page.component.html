@@ -1,316 +1,235 @@
-<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-4 py-6">
-  <div class="space-y-6">
-    <header class="flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-end lg:justify-between">
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-400/90">Sprint Planning</p>
-      </div>
+<div class="min-h-0 flex-1 overflow-auto bg-slate-950">
+  <!-- Nexus UI page header: 52px bar — sprint · dates · secondary · one Primary -->
+  <header class="sticky top-0 z-20 flex h-[52px] items-center gap-3 border-b border-slate-800 bg-slate-900 px-5">
+    <select
+      class="h-8 rounded-md border border-transparent bg-transparent pl-1 text-lg font-semibold text-slate-100 outline-none transition hover:border-slate-700 focus:border-sky-500"
+      aria-label="Sprint"
+      [ngModel]="planning.selectedSprintId()"
+      (ngModelChange)="planning.selectSprint($event)"
+    >
+      @for (sprint of planning.sprints(); track sprint.id) {
+        <option [ngValue]="sprint.id">{{ sprint.name }}{{ sprint.isActive ? ' (active)' : '' }}</option>
+      }
+    </select>
+    @if (planning.selectedSprint(); as s) {
+      <span class="font-mono text-xs text-slate-500">{{ s.startDate }} – {{ s.endDate }}</span>
+    }
 
-      <div class="flex flex-wrap items-center gap-2">
-        <select
-          class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-sky-400"
-          [ngModel]="planning.selectedSprintId()"
-          (ngModelChange)="planning.selectSprint($event)"
-        >
-          @for (sprint of planning.sprints(); track sprint.id) {
-            <option [ngValue]="sprint.id">{{ sprint.name }}{{ sprint.isActive ? ' ✦' : '' }}</option>
-          }
-        </select>
-        @if (planning.selectedSprint()?.hubChannelUrl) {
-          <a
-            [href]="planning.selectedSprint()!.hubChannelUrl!"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Open sprint channel in HUB"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-sky-700/60 bg-sky-950/60 px-3 py-2 text-xs font-medium text-sky-300 transition hover:border-sky-500 hover:text-sky-200"
-          >
-            <span>🔗</span>
-            Open in HUB
-            <svg class="h-3 w-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-            </svg>
-          </a>
-        }
-        <button
-          type="button"
-          class="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400"
-          (click)="openNewSprint()"
-        >
-          New sprint
-        </button>
-        @if (planning.error()) {
-          <p class="rounded-lg border border-rose-800 bg-rose-950/50 px-3 py-2 text-xs text-rose-300">{{ planning.error() }}</p>
-        }
-      </div>
-    </header>
+    <span class="flex-1"></span>
 
-    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+    @if (planning.selectedSprint()?.hubChannelUrl) {
+      <a
+        [href]="planning.selectedSprint()!.hubChannelUrl!"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Open sprint channel in HUB"
+        class="nx-btn nx-btn--ghost nx-btn--sm"
+      >
+        Open in HUB
+        <svg class="h-3 w-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+      </a>
+    }
+    <button type="button" class="nx-btn nx-btn--sm" (click)="openAddCapacityMember()">Add member</button>
+    <button type="button" class="nx-btn nx-btn--primary nx-btn--sm" (click)="openNewSprint()">New sprint</button>
+  </header>
 
-        <!-- Header row -->
-        <div class="flex items-center justify-between gap-2">
-          <h2 class="text-sm font-semibold text-slate-100">Sprint backlog setup</h2>
+  <div class="space-y-6 p-5">
+    @if (planning.error()) {
+      <p class="nx-alert nx-alert--danger">{{ planning.error() }}</p>
+    }
 
-          <div class="flex items-center gap-1">
-          @if (planning.selectedSprint()?.hubChannelUrl) {
-            <a
-              [href]="planning.selectedSprint()!.hubChannelUrl!"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Go to sprint channel in HUB"
-              class="rounded-lg p-1.5 text-sky-400 transition hover:bg-slate-800 hover:text-sky-300"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-              </svg>
-            </a>
-          }
-          @if (editMode()) {
-            <!-- Save / Cancel -->
-            <div class="flex items-center gap-1">
-              <button
-                type="button"
-                class="rounded-lg p-1.5 text-emerald-400 transition hover:bg-slate-800 hover:text-emerald-300 disabled:opacity-40"
-                title="Save"
-                [disabled]="!editName().trim() || !editStart() || !editEnd() || editStart() >= editEnd()"
-                (click)="saveEdit()"
-              >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                </svg>
-              </button>
-              <button
-                type="button"
-                class="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
-                title="Cancel"
-                (click)="cancelEdit()"
-              >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-          } @else if (canEditSelectedSprint() || canDeleteSelectedSprint()) {
-            <!-- Kebab menu -->
-            <div class="relative" (click)="$event.stopPropagation()">
-              <button
-                type="button"
-                class="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
-                title="More actions"
-                (click)="setupMenuOpen.set(!setupMenuOpen())"
-              >
-                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z"/>
-                </svg>
-              </button>
-              @if (setupMenuOpen()) {
-                <div class="absolute right-0 top-8 z-20 min-w-[9rem] overflow-hidden rounded-lg border border-slate-700 bg-slate-900 shadow-2xl">
-                  @if (canEditSelectedSprint()) {
-                    <button
-                      type="button"
-                      class="flex w-full items-center gap-2 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
-                      (click)="startEdit()"
-                    >
-                      <svg class="h-3.5 w-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                      </svg>
-                      Edit
-                    </button>
-                  }
-                  @if (canDeleteSelectedSprint()) {
-                    <button
-                      type="button"
-                      class="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-300 transition hover:bg-slate-800 hover:text-rose-200"
-                      (click)="deleteSprint()"
-                    >
-                      <svg class="h-3.5 w-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                      </svg>
-                      Delete
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-          }
-          </div>
-        </div>
+    <!-- Sprint setup: name + dates (edit in place via the ⋯ menu) -->
+    <section class="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+      <div class="flex items-center justify-between gap-2">
+        <h2 class="text-sm font-semibold text-slate-100">Sprint setup</h2>
 
-        <!-- Edit mode: name + dates -->
+        <div class="flex items-center gap-1">
         @if (editMode()) {
-          <div class="mt-3 space-y-3">
+          <button
+            type="button"
+            class="nx-btn nx-btn--ghost nx-btn--sm"
+            (click)="cancelEdit()"
+          >Cancel</button>
+          <button
+            type="button"
+            class="nx-btn nx-btn--sm"
+            [disabled]="!editName().trim() || !editStart() || !editEnd() || editStart() >= editEnd()"
+            (click)="saveEdit()"
+          >Save</button>
+        } @else if (canEditSelectedSprint() || canDeleteSelectedSprint()) {
+          <div class="relative" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-800 hover:text-slate-100"
+              title="More actions"
+              (click)="setupMenuOpen.set(!setupMenuOpen())"
+            >
+              <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M4 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm4.5 0a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm4.5 0a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"/>
+              </svg>
+            </button>
+            @if (setupMenuOpen()) {
+              <div class="absolute right-0 top-8 z-20 min-w-[9rem] overflow-hidden rounded-2xl bg-slate-900 py-1 shadow-xl">
+                @if (canEditSelectedSprint()) {
+                  <button
+                    type="button"
+                    class="flex h-8 w-full items-center px-3 text-sm text-slate-100 transition hover:bg-slate-800"
+                    (click)="startEdit()"
+                  >Edit</button>
+                }
+                @if (canDeleteSelectedSprint()) {
+                  <button
+                    type="button"
+                    class="flex h-8 w-full items-center px-3 text-sm text-rose-500 transition hover:bg-rose-50"
+                    (click)="deleteSprint()"
+                  >Delete</button>
+                }
+              </div>
+            }
+          </div>
+        }
+        </div>
+      </div>
+
+      @if (editMode()) {
+        <div class="mt-3 grid gap-3 sm:grid-cols-3">
+          <label class="flex flex-col gap-1.5">
+            <span class="field-label">Name</span>
             <input
               type="text"
               placeholder="Sprint name"
-              class="w-full rounded-lg border border-sky-500 bg-slate-950 px-3 py-2 text-sm font-semibold text-slate-100 outline-none"
+              class="field-input"
               [ngModel]="editName()"
               (ngModelChange)="editName.set($event)"
             />
-            <div class="grid gap-3 sm:grid-cols-2">
-              <label class="space-y-1">
-                <span class="text-xs font-medium text-slate-400">Start date</span>
-                <input
-                  type="date"
-                  class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400"
-                  [ngModel]="editStart()"
-                  (ngModelChange)="editStart.set($event)"
-                />
-              </label>
-              <label class="space-y-1">
-                <span class="text-xs font-medium text-slate-400">End date</span>
-                <input
-                  type="date"
-                  class="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none focus:border-sky-400"
-                  [ngModel]="editEnd()"
-                  (ngModelChange)="editEnd.set($event)"
-                />
-              </label>
-            </div>
-            @if (editStart() && editEnd() && editStart() >= editEnd()) {
-              <p class="text-xs text-rose-400">End date must be after start date.</p>
-            }
-          </div>
-        } @else {
-          <!-- View mode: read-only dates -->
-          <div class="mt-3 grid gap-3 sm:grid-cols-2">
-            <div class="space-y-1">
-              <span class="text-xs font-medium text-slate-400">Start date</span>
-              <p class="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100">
-                {{ planning.selectedSprint()?.startDate ?? '—' }}
-              </p>
-            </div>
-            <div class="space-y-1">
-              <span class="text-xs font-medium text-slate-400">End date</span>
-              <p class="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-100">
-                {{ planning.selectedSprint()?.endDate ?? '—' }}
-              </p>
-            </div>
-          </div>
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="field-label">Start date</span>
+            <input
+              type="date"
+              class="field-input"
+              [ngModel]="editStart()"
+              (ngModelChange)="editStart.set($event)"
+            />
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="field-label">End date</span>
+            <input
+              type="date"
+              class="field-input"
+              [ngModel]="editEnd()"
+              (ngModelChange)="editEnd.set($event)"
+            />
+          </label>
+        </div>
+        @if (editStart() && editEnd() && editStart() >= editEnd()) {
+          <p class="mt-1.5 text-xs text-rose-500">End date must be after start date.</p>
         }
+      }
 
-        <!-- Stats -->
-        <div class="mt-4 grid gap-3 sm:grid-cols-3">
-          <div class="rounded-lg bg-slate-950/50 p-3 ring-1 ring-slate-800">
-            <p class="text-xs uppercase text-slate-500">Working days</p>
-            <p class="mt-1 text-xl font-bold text-white">{{ planning.workingDays() }}</p>
-          </div>
-          <div class="rounded-lg bg-slate-950/50 p-3 ring-1 ring-slate-800">
-            <p class="text-xs uppercase text-slate-500">Team days off</p>
-            <p class="mt-1 text-xl font-bold text-white">{{ planning.teamDaysOff().length }}</p>
-          </div>
-          <div class="rounded-lg bg-slate-950/50 p-3 ring-1 ring-slate-800">
-            <p class="text-xs uppercase text-slate-500">Effective days</p>
-            <p class="mt-1 text-xl font-bold text-white">{{ planning.effectiveWorkingDays() }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        <div class="flex items-center justify-between gap-3">
-          <h2 class="text-sm font-semibold text-slate-100">Team load</h2>
-          <span
-            class="rounded-full px-2 py-0.5 text-xs font-semibold uppercase ring-1"
-            [class]="
-              planning.teamLoadState() === 'safe'
-                ? 'bg-emerald-500/15 text-emerald-200 ring-emerald-500/40'
-                : planning.teamLoadState() === 'warning'
-                  ? 'bg-amber-500/15 text-amber-200 ring-amber-500/40'
-                  : 'bg-rose-500/15 text-rose-200 ring-rose-500/40'
-            "
-          >
-            {{ planning.teamLoadState() }}
-          </span>
-        </div>
-
-        <div class="mt-4">
-          <div class="flex items-end justify-between text-sm">
-            <span class="text-slate-400">Remaining work / capacity</span>
-            <span class="font-semibold text-white">
-              {{ planning.totalWorkload() }}h / {{ planning.totalCapacity() }}h
-            </span>
-          </div>
-          <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-800">
-            <div
-              class="h-full rounded-full transition-all"
-              [class]="planning.progressBarClass(planning.teamLoadState())"
+      <!-- Inline summary replaces the KPI tiles: days · hours · load · overload -->
+      <div class="mt-3 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-slate-400">
+        <span>
+          <b class="font-mono font-medium text-slate-100">{{ planning.effectiveWorkingDays() }}</b> effective days
+          <span class="text-slate-500">({{ planning.workingDays() }} − {{ planning.teamDaysOff().length }} off)</span>
+        </span>
+        <span>
+          <b class="font-mono font-medium text-slate-100">{{ planning.totalWorkload() }}h</b> / {{ planning.totalCapacity() }}h remaining work
+        </span>
+        <div class="flex items-center gap-2" title="Load based on active task Remaining Work">
+          <div class="nx-meter w-40">
+            <span
+              [class.is-over]="planning.teamLoadState() === 'overloaded'"
               [style.width.%]="planning.cappedPercent(planning.teamLoadPercent())"
-            ></div>
+            ></span>
           </div>
-          <p class="mt-2 text-xs text-slate-500">{{ planning.teamLoadPercent() }}% load based on active task Remaining Work.</p>
+          <span class="font-mono text-xs" [class.text-rose-500]="planning.teamLoadState() === 'overloaded'">{{ planning.teamLoadPercent() }}%</span>
         </div>
+        @if (overloadedCount() > 0) {
+          <span class="flex items-center gap-1.5 text-rose-500">
+            <span class="nx-dot bg-rose-500"></span>
+            {{ overloadedCount() }} overloaded
+          </span>
+        }
       </div>
     </section>
 
-    <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-      <div class="flex items-center justify-between gap-3">
-        <h2 class="text-sm font-semibold text-slate-100">Capacity planning</h2>
-        <button
-          type="button"
-          class="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
-          (click)="openAddCapacityMember()"
-        >+ Add member</button>
-      </div>
-      <div class="mt-4 overflow-x-auto">
-        <table class="w-full min-w-[760px] text-left text-sm">
+    <!-- Capacity: hairline rows, right-aligned mono numbers, in-cell inputs show a border only on interaction -->
+    <section class="space-y-3">
+      <h2 class="text-sm font-semibold text-slate-100">Capacity planning</h2>
+      <div class="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900">
+        <table class="w-full min-w-[860px] text-left text-sm">
           <thead>
-            <tr class="text-xs uppercase text-slate-500">
-              <th class="pb-2 pr-4 font-medium">Member</th>
-              <th class="pb-2 pr-4 font-medium">Role</th>
-              <th class="pb-2 pr-4 font-medium">Hours/day</th>
-              <th class="pb-2 pr-4 font-medium">OT/day</th>
-              <th class="pb-2 pr-4 font-medium">Days off</th>
-              <th class="pb-2 pr-4 font-medium">Capacity</th>
-              <th class="pb-2 pr-4 font-medium">Workload</th>
-              <th class="pb-2 pr-4 font-medium">Load</th>
-              <th class="pb-2 font-medium"></th>
+            <tr class="h-9 border-b border-slate-800 bg-slate-800 text-xs font-medium text-slate-400">
+              <th class="px-4 font-medium">Member</th>
+              <th class="w-24 px-2 text-right font-medium">Hours/day</th>
+              <th class="w-24 px-2 text-right font-medium">OT/day</th>
+              <th class="w-24 px-2 text-right font-medium">Days off</th>
+              <th class="w-24 px-2 text-right font-medium">Capacity</th>
+              <th class="w-24 px-2 text-right font-medium">Workload</th>
+              <th class="w-56 px-4 font-medium">Load</th>
+              <th class="w-10"></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800">
             @for (member of planning.memberLoads(); track member.userId) {
-              <tr>
-                <td class="py-3 pr-4 font-medium text-slate-100">{{ member.name }}</td>
-                <td class="py-3 pr-4 text-slate-400">{{ member.role }}</td>
-                <td class="py-3 pr-4">
+              <tr class="group h-11 transition-colors hover:bg-slate-800">
+                <td class="px-4">
+                  <div class="flex min-w-0 items-center gap-2.5">
+                    <span class="nx-avatar">{{ members.initials(member.name) }}</span>
+                    <span class="truncate font-medium text-slate-100">{{ member.name }}</span>
+                    <span class="truncate text-xs text-slate-500">{{ member.role }}</span>
+                  </div>
+                </td>
+                <td class="px-2">
                   <input
                     type="number"
                     min="0"
                     max="12"
                     step="0.5"
-                    class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 [appearance:textfield]"
+                    class="nx-cell-input [appearance:textfield]"
+                    aria-label="Hours per day"
                     [ngModel]="member.hoursPerDay"
                     (change)="planning.updateHours(member.userId, +$any($event.target).value)"
                   />
                 </td>
-                <td class="py-3 pr-4">
+                <td class="px-2">
                   <input
                     type="number"
                     min="0"
                     max="6"
                     step="0.5"
-                    class="w-20 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 [appearance:textfield]"
+                    class="nx-cell-input [appearance:textfield]"
+                    aria-label="Overtime hours per day"
                     [ngModel]="member.overtimeHoursPerDay"
                     (change)="planning.updateOvertime(member.userId, +$any($event.target).value)"
                   />
                 </td>
-                <td class="py-3 pr-4 text-slate-400">{{ member.personalDaysOff }}h</td>
-                <td class="py-3 pr-4 text-slate-100">{{ member.capacity }}h</td>
-                <td class="py-3 pr-4 text-slate-100">{{ member.workload }}h</td>
-                <td class="py-3 pr-4">
-                  <div class="flex min-w-48 items-center gap-3">
-                    <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
-                      <div
-                        class="h-full rounded-full transition-all"
-                        [class]="planning.progressBarClass(member.state)"
+                <td class="px-2 text-right font-mono text-slate-400">{{ member.personalDaysOff }}h</td>
+                <td class="px-2 text-right font-mono text-slate-100">{{ member.capacity }}h</td>
+                <td class="px-2 text-right font-mono text-slate-100">{{ member.workload }}h</td>
+                <td class="px-4">
+                  <div class="flex items-center gap-2.5">
+                    <div class="nx-meter flex-1">
+                      <span
+                        [class.is-over]="member.state === 'overloaded'"
                         [style.width.%]="planning.cappedPercent(member.loadPercent)"
-                      ></div>
+                      ></span>
                     </div>
-                    <span class="w-12 text-right text-xs text-slate-300">{{ member.loadPercent }}%</span>
+                    <span
+                      class="w-10 text-right font-mono text-xs"
+                      [class.text-rose-500]="member.state === 'overloaded'"
+                      [class.text-slate-400]="member.state !== 'overloaded'"
+                    >{{ member.loadPercent }}%</span>
                   </div>
                 </td>
-                <td class="py-3">
+                <td class="pr-2">
                   <button
                     type="button"
                     title="Remove member"
-                    class="rounded-lg p-1.5 text-slate-600 transition hover:bg-slate-800 hover:text-rose-400"
+                    class="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 opacity-0 transition hover:bg-rose-50 hover:text-rose-500 focus:opacity-100 group-hover:opacity-100"
                     (click)="removeCapacityMember(member.userId)"
                   >
                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -318,6 +237,10 @@
                     </svg>
                   </button>
                 </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="px-4 py-6 text-center text-sm text-slate-500">No members yet — use Add member.</td>
               </tr>
             }
           </tbody>
@@ -332,7 +255,7 @@
         @if (!showDayOffForm()) {
           <button
             type="button"
-            class="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-700"
+            class="nx-btn nx-btn--sm"
             (click)="openDayOffForm()"
           >+ Add day off</button>
         }
@@ -340,13 +263,13 @@
 
       @if (showDayOffForm()) {
         <div class="mt-4 rounded-lg border border-slate-700 bg-slate-950/60 p-4">
-          <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">New day off</p>
+          <p class="mb-3 text-xs font-medium text-slate-400">New day off</p>
           <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label class="mb-1 block text-xs text-slate-500">Date <span class="text-rose-400">*</span></label>
               <input
                 type="date"
-                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+                class="field-input w-full"
                 [attr.min]="planning.selectedSprint()?.startDate"
                 [attr.max]="planning.selectedSprint()?.endDate"
                 [ngModel]="dayOffDate()"
@@ -360,7 +283,7 @@
                 min="1"
                 max="24"
                 step="0.5"
-                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400 [appearance:textfield]"
+                class="field-input w-full [appearance:textfield]"
                 [ngModel]="dayOffHours()"
                 (ngModelChange)="dayOffHours.set(+$event)"
               />
@@ -370,12 +293,12 @@
               <label class="mb-1 block text-xs text-slate-500">Member</label>
               <button
                 type="button"
-                class="flex w-full items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm transition hover:border-slate-600"
+                class="nx-btn nx-btn--sm flex w-full items-center gap-2"
                 (click)="$event.stopPropagation(); showDayOffMemberPicker.set(!showDayOffMemberPicker())"
               >
                 @if (dayOffUserId(); as uid) {
                   @if (members.getMember(uid); as mem) {
-                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
                       [ngClass]="mem.avatarClass">{{ members.initials(mem.userName) }}</span>
                     <span class="flex-1 truncate text-left text-slate-100">{{ mem.userName }}</span>
                   }
@@ -415,7 +338,7 @@
                       [class.bg-slate-800]="dayOffUserId() === m.userId"
                       (click)="dayOffUserId.set(m.userId); showDayOffMemberPicker.set(false)">
                       @if (members.getMember(m.userId); as mem) {
-                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
                           [ngClass]="mem.avatarClass">{{ members.initials(mem.userName) }}</span>
                       } @else {
                         <span class="h-5 w-5 shrink-0 rounded-full bg-slate-700"></span>
@@ -436,7 +359,7 @@
               <input
                 type="text"
                 placeholder="e.g. Public holiday"
-                class="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-sky-400"
+                class="field-input w-full"
                 [ngModel]="dayOffReason()"
                 (ngModelChange)="dayOffReason.set($event)"
               />
@@ -445,12 +368,12 @@
           <div class="mt-3 flex justify-end gap-2">
             <button
               type="button"
-              class="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-400 ring-1 ring-slate-700 transition hover:text-slate-200"
+              class="nx-btn nx-btn--sm"
               (click)="cancelDayOff()"
             >Cancel</button>
             <button
               type="button"
-              class="rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-40"
+              class="nx-btn nx-btn--primary nx-btn--sm"
               [disabled]="!canAddDayOff()"
               (click)="submitDayOff()"
             >Add</button>
@@ -462,7 +385,7 @@
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[520px] text-left text-sm">
             <thead>
-              <tr class="text-xs uppercase text-slate-500">
+              <tr class="text-xs font-medium text-slate-400">
                 <th class="pb-2 pr-4 font-medium">Date</th>
                 <th class="pb-2 pr-4 font-medium">Member</th>
                 <th class="pb-2 pr-4 font-medium">Hours</th>
@@ -506,12 +429,12 @@
         <input
           type="text"
           placeholder="Search stories..."
-          class="min-w-[10rem] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          class="field-input min-w-[10rem] flex-1"
           [ngModel]="storySearch()"
           (ngModelChange)="storySearch.set($event)"
         />
         <select
-          class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          class="field-select w-auto"
           [ngModel]="storyStateFilter()"
           (ngModelChange)="storyStateFilter.set($event)"
         >
@@ -530,7 +453,7 @@
           >
             <div class="flex items-center gap-3">
               <!-- User Story icon -->
-              <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-blue-400 ring-blue-500/35 bg-blue-500/10">
+              <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-story ring-slate-800 bg-slate-800">
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -546,7 +469,7 @@
 
               <!-- sub-task count -->
               @if (storySubTaskCount(story.id); as count) {
-                <span class="flex shrink-0 items-center gap-1 rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+                <span class="nx-tag !border-transparent flex shrink-0 items-center gap-1 bg-slate-800 text-slate-400">
                   <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                   </svg>
@@ -555,10 +478,10 @@
               }
 
               <!-- story points -->
-              <span class="shrink-0 rounded-full bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-300">{{ story.storyPoints }} sp</span>
+              <span class="nx-tag !border-transparent shrink-0 bg-slate-800 text-slate-300">{{ story.storyPoints }} sp</span>
 
               <!-- state badge — same as board -->
-              <span class="shrink-0 rounded px-2 py-0.5 text-xs font-semibold ring-1"
+              <span class="inline-flex items-center whitespace-nowrap shrink-0"
                 [ngClass]="stateBadge[stateApi(story.state)]"
               >{{ stateLabel[stateApi(story.state)] }}</span>
 
@@ -587,12 +510,12 @@
         <input
           type="text"
           placeholder="Search tasks..."
-          class="min-w-[10rem] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          class="field-input min-w-[10rem] flex-1"
           [ngModel]="taskSearch()"
           (ngModelChange)="taskSearch.set($event)"
         />
         <select
-          class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          class="field-select w-auto"
           [ngModel]="taskStateFilter()"
           (ngModelChange)="taskStateFilter.set($event)"
         >
@@ -602,7 +525,7 @@
           }
         </select>
         <select
-          class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-sm text-slate-100 outline-none focus:border-sky-400"
+          class="field-select w-auto"
           [ngModel]="taskAssigneeFilter()"
           (ngModelChange)="taskAssigneeFilter.set($event)"
         >
@@ -617,7 +540,7 @@
       <div class="mt-4 overflow-x-auto">
         <table class="w-full min-w-[900px] text-left text-sm">
           <thead>
-            <tr class="text-xs uppercase text-slate-500">
+            <tr class="text-xs font-medium text-slate-400">
               <th class="pb-2 pr-2 font-medium w-6"></th>
               <th class="pb-2 pr-4 font-medium">Task</th>
               <th class="pb-2 pr-4 font-medium">State</th>
@@ -633,28 +556,28 @@
                 <td class="py-3 pr-2 align-middle">
                   @switch (task.type) {
                     @case ('user-story') {
-                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-blue-400 ring-blue-500/35 bg-blue-500/10" title="User Story">
+                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-story ring-slate-800 bg-slate-800" title="User Story">
                         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h8"/>
                         </svg>
                       </div>
                     }
                     @case ('bug') {
-                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-rose-400 ring-rose-500/35 bg-rose-500/10" title="Bug">
+                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-bug ring-slate-800 bg-slate-800" title="Bug">
                         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                           <path d="M8 2h8l1 6H7L8 2z"/><path d="M7 8h10v2a5 5 0 0 1-10 0V8z"/><path d="M12 15v3M9 22h6"/>
                         </svg>
                       </div>
                     }
                     @case ('task') {
-                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-amber-300 ring-amber-400/35 bg-amber-400/10" title="Task">
+                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-task ring-slate-800 bg-slate-800" title="Task">
                         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                           <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                         </svg>
                       </div>
                     }
                     @case ('test-plan') {
-                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-violet-400 ring-violet-500/35 bg-violet-500/10" title="Test Plan">
+                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-test ring-slate-800 bg-slate-800" title="Test Plan">
                         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><path stroke-linecap="round" d="M9 12h6M9 16h4"/>
                         </svg>
@@ -672,7 +595,7 @@
                 </td>
                 <td class="py-3 pr-4">
                   <select
-                    class="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    class="field-select !h-7 !text-xs w-auto"
                     [ngModel]="task.state"
                     (ngModelChange)="planning.changeTaskState(task.id, $event)"
                     [disabled]="!planning.canEditWorkItem()"
@@ -688,7 +611,7 @@
                     type="number"
                     min="0"
                     step="0.5"
-                    class="w-24 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-sm text-slate-100 outline-none focus:border-sky-400 [appearance:textfield]"
+                    class="field-input !h-7 !text-xs w-24 [appearance:textfield]"
                     [ngModel]="task.remainingWork"
                     (change)="planning.updateRemainingWork(task.id, +$any($event.target).value)"
                   />
@@ -698,11 +621,11 @@
                 <td class="py-3">
                   <button
                     type="button"
-                    class="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5 text-xs text-slate-300 transition hover:border-slate-600 hover:text-white"
+                    class="nx-btn nx-btn--sm flex items-center gap-1.5"
                     (click)="openReassign(task.id, $any($event.currentTarget), $event)"
                   >
                     @if (members.getMember(task.assignedToId); as m) {
-                      <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                      <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
                         [ngClass]="m.avatarClass">{{ members.initials(m.userName) }}</div>
                       <span class="max-w-[6rem] truncate">{{ m.userName }}</span>
                     } @else {
@@ -741,7 +664,7 @@
     @if (reassignOpenTaskId() === task.id) {
       <div
         #reassignPanel
-        class="fixed z-[9990] overflow-hidden rounded-xl border border-slate-700 bg-slate-800/95 shadow-2xl backdrop-blur-sm"
+        class="fixed z-[9990] overflow-hidden rounded-xl border border-slate-700 bg-slate-800/95 shadow-2xl "
         [style.top.px]="reassignRect()!.top"
         [style.left.px]="reassignRect()!.left"
         [style.width.px]="reassignRect()!.width"
@@ -751,7 +674,7 @@
           <input
             type="text"
             placeholder="Search…"
-            class="w-full rounded-md border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-100 outline-none focus:border-sky-400"
+            class="field-input !h-7 !text-xs w-full"
             [ngModel]="reassignSearch()"
             (ngModelChange)="reassignSearch.set($event)"
           />
@@ -772,7 +695,7 @@
               (click)="doReassign(task.id, m.userId, $event)"
             >
               @if (members.getMember(m.userId); as mem) {
-                <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
                   [ngClass]="mem.avatarClass">{{ members.initials(mem.userName) }}</div>
               }
               <span class="truncate">{{ m.name }}</span>

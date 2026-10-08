@@ -82,6 +82,6 @@ export class GlobalSearchComponent implements AfterViewChecked {
 }
 
 const KIND_ACCENT: Record<SearchResultKind, string> = {
-  task:    'text-sky-400 ring-sky-500/35 bg-sky-500/10',
-  backlog: 'text-amber-300 ring-amber-400/35 bg-amber-400/10',
+  task:    'text-type-story ring-slate-800 bg-slate-800',
+  backlog: 'text-type-task ring-slate-800 bg-slate-800',
 };
