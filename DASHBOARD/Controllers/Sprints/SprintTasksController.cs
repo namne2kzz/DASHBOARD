@@ -120,7 +120,7 @@ public sealed class SprintTasksController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> ChangeState(Guid repoId, Guid sprintId, Guid taskId, [FromQuery] SprintTaskState newState, CancellationToken ct)
+    public async Task<IActionResult> ChangeState(Guid repoId, Guid sprintId, Guid taskId, [FromQuery] WorkItemState newState, CancellationToken ct)
     {
         var result = await mediator.Send(new ChangeSprintTaskStateCommand(repoId, taskId, newState), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });

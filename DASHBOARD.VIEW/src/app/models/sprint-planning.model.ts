@@ -2,16 +2,26 @@ import type { SprintTaskApiType, WorkItemApiPriority } from '../core/enums/syste
 
 export type LoadState = 'safe' | 'warning' | 'overloaded';
 
+export type SprintStatus = 'Planning' | 'Active' | 'Closed';
+
 export interface Sprint {
   id:             string;
   name:           string;
   startDate:      string;
   endDate:        string;
   isActive:       boolean;
+  status:         SprintStatus;
+  closedAt?:      string | null;
   /** HUB Chat channel linked to this sprint, or null if none. */
   hubChannelId?:  string | null;
   /** Full URL to open the linked HUB channel in the browser. */
   hubChannelUrl?: string | null;
+}
+
+export interface CloseSprintResult {
+  closed:             boolean;
+  incompleteItemCount: number;
+  warning?:           string | null;
 }
 
 export interface SprintTask {
@@ -24,7 +34,7 @@ export interface SprintTask {
   priority:         WorkItemApiPriority;
   assignedToId:     string | null;
   assignedToName:   string | null;
-  state:            'new' | 'backlog' | 'todo' | 'active' | 'in-review' | 'done';
+  state:            'open' | 'todo' | 'in-progress' | 'in-review' | 'verified' | 'running' | 'done' | 'passed' | 'failed' | 'closed';
   storyPoints:        number;
   originalEstimate:   number;
   remainingWork:      number;

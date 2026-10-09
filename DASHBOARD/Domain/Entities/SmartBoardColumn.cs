@@ -11,8 +11,8 @@ public sealed class SmartBoardColumn : Common.BaseEntity
     /// <summary>Gets or sets the column display name.</summary>
     public string Name { get; set; } = default!;
 
-    /// <summary>Gets or sets the sprint-task state whose items appear in this column.</summary>
-    public SprintTaskState MappedState { get; set; }
+    /// <summary>Gets or sets the work item state whose items appear in this column.</summary>
+    public WorkItemState MappedState { get; set; }
 
     /// <summary>Gets or sets the maximum number of items allowed in this column simultaneously (0 = unlimited).</summary>
     public int WipLimit { get; set; }

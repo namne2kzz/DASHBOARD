@@ -34,6 +34,7 @@ Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/u
 ├── my-work.dod.md          # dashboard cá nhân xuyên repository
 ├── overview.dod.md
 ├── hub-integration.dod.md  # kênh chat HUB theo sprint + internal API
+├── nmate.dod.md            # trợ lý AI NMate (proxy sang service SUPPORT, knowledge ở Knowledge/)
 └── wiki.dod.md             # ⚠️ DEPRECATED — Wiki đã chuyển sang HUB, giữ để tra cứu lịch sử
 ```
 

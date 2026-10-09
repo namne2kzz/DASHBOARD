@@ -104,6 +104,7 @@ public sealed class CreateSprintCommandHandler(
         return Result<SprintDto>.Success(new SprintDto(
             sprint.Id, sprint.RepositoryId, sprint.Name,
             sprint.StartDate, sprint.EndDate, isActive, sprint.CreatedAt,
+            sprint.Status, sprint.ClosedAt,
             hubChannelId, hubChannelUrl));
     }
 }

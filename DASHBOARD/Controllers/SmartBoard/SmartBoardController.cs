@@ -51,11 +51,11 @@ public sealed class SmartBoardController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> CreateColumn(
         Guid repoId,
-        [FromQuery] string          name,
-        [FromQuery] SprintTaskState mappedState,
-        [FromQuery] int             wipLimit       = 0,
-        [FromQuery] WipMode         wipMode        = WipMode.Soft,
-        [FromQuery] int             agingLimitDays = 5,
+        [FromQuery] string        name,
+        [FromQuery] WorkItemState mappedState,
+        [FromQuery] int           wipLimit       = 0,
+        [FromQuery] WipMode       wipMode        = WipMode.Soft,
+        [FromQuery] int           agingLimitDays = 5,
         CancellationToken ct = default)
     {
         var result = await mediator.Send(
@@ -80,11 +80,11 @@ public sealed class SmartBoardController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateColumn(
         Guid repoId, Guid columnId,
-        [FromQuery] string          name,
-        [FromQuery] SprintTaskState mappedState,
-        [FromQuery] int             wipLimit,
-        [FromQuery] WipMode         wipMode,
-        [FromQuery] int             agingLimitDays,
+        [FromQuery] string        name,
+        [FromQuery] WorkItemState mappedState,
+        [FromQuery] int           wipLimit,
+        [FromQuery] WipMode       wipMode,
+        [FromQuery] int           agingLimitDays,
         CancellationToken ct = default)
     {
         var result = await mediator.Send(

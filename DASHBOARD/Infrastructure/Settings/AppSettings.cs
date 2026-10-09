@@ -96,6 +96,24 @@ public sealed class AppSettings : IAppSettings
     /// <inheritdoc/>
     public string HubFrontendBaseUrl => _config["HubChat:FrontendBaseUrl"] ?? string.Empty;
 
+    // ── NMate (AI support assistant) ─────────────────────────────────────────
+    /// <inheritdoc/>
+    public string NMateBaseUrl => _config["NMate:BaseUrl"] ?? string.Empty;
+
+    /// <inheritdoc/>
+    public string NMateInternalToken => _config["NMate:InternalToken"] ?? string.Empty;
+
+    /// <inheritdoc/>
+    public TimeSpan NMateTimeout =>
+        TimeSpan.FromSeconds(_config.GetValue("NMate:TimeoutSeconds", 120));
+
+    /// <inheritdoc/>
+    public int NMateChatRateLimitPermitLimit => _config.GetValue("NMate:RateLimit:PermitLimit", 5);
+
+    /// <inheritdoc/>
+    public TimeSpan NMateChatRateLimitWindow =>
+        TimeSpan.FromMinutes(_config.GetValue("NMate:RateLimit:WindowMinutes", 1));
+
     /// <summary>Returns the config value for <paramref name="key"/> or throws if missing/empty.</summary>
     /// <param name="key">The configuration key path (e.g. "EmailSettings:SmtpHost").</param>
     /// <returns>The non-null, non-empty configuration value.</returns>

@@ -52,12 +52,12 @@ public sealed class GetOverviewStatsQueryHandler(
             tasks.Count(t => t.Type == SprintTaskType.TestPlan));
 
         var statusDist = new StatusDistributionDto(
-            tasks.Count(t => t.State == SprintTaskState.Todo),
-            tasks.Count(t => t.State == SprintTaskState.Active),
-            tasks.Count(t => t.State == SprintTaskState.InReview),
-            tasks.Count(t => t.State == SprintTaskState.Done),
-            tasks.Count(t => t.State == SprintTaskState.New),
-            tasks.Count(t => t.State == SprintTaskState.Backlog));
+            tasks.Count(t => t.State == WorkItemState.ToDo),
+            tasks.Count(t => t.State == WorkItemState.InProgress),
+            tasks.Count(t => t.State == WorkItemState.InReview),
+            tasks.Count(t => t.Category == StateCategory.Done),
+            tasks.Count(t => t.State == WorkItemState.Open),
+            tasks.Count(t => t.State == WorkItemState.Open));
 
         var typeDist = Enum.GetValues<SprintTaskType>()
             .Select(type => new TypeDistributionItemDto(
@@ -67,7 +67,7 @@ public sealed class GetOverviewStatsQueryHandler(
 
         var storyPoints = new StoryPointsDto(
             tasks.Sum(t => t.StoryPoints),
-            tasks.Where(t => t.State == SprintTaskState.Done).Sum(t => t.StoryPoints));
+            tasks.Where(t => t.Category == StateCategory.Done).Sum(t => t.StoryPoints));
 
         var burndown = selectedSprint is null
             ? new BurndownDataDto([], [])
@@ -82,7 +82,9 @@ public sealed class GetOverviewStatsQueryHandler(
             {
                 SprintId  = g.Key,
                 Committed = g.Sum(t => t.StoryPoints),
-                Completed = g.Sum(t => t.State == SprintTaskState.Done ? t.StoryPoints : 0),
+                // Category is computed — compare underlying int values EF Core can translate.
+                // Done=6, Passed=7, Failed=8, Closed=9 are all terminal (StateCategory.Done).
+                Completed = g.Sum(t => (int)t.State >= 6 ? t.StoryPoints : 0),
             })
             .ToListAsync(ct);
 
@@ -202,7 +204,7 @@ public sealed class GetOverviewStatsQueryHandler(
     /// <returns>Average days to close and the sample size it is based on.</returns>
     private static CycleTimeDto ComputeCycleTime(List<SprintTask> tasks)
     {
-        var closed = tasks.Where(t => t.State == SprintTaskState.Done && t.ClosedAt.HasValue).ToList();
+        var closed = tasks.Where(t => t.Category == StateCategory.Done && t.ClosedAt.HasValue).ToList();
         if (closed.Count == 0) return new CycleTimeDto(0, 0);
 
         var averageDays = closed.Average(t => (t.ClosedAt!.Value - t.CreatedAt).TotalDays);

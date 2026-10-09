@@ -2,7 +2,7 @@ import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angul
 import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { RepositoryContextService } from './repository-context.service';
 import { SprintSelectionService } from './sprint-selection.service';
 import { PrivilegeService } from '../core/services/privilege.service';
@@ -15,8 +15,22 @@ import {
   SprintTaskApiDto,
   SprintTaskApiType,
 } from '../models/sprint-planning-api.model';
-import { SPRINT_TASK_STATE_OPTIONS } from '../core/constants/system.constant';
-import { LoadState, MemberLoad, Sprint, SprintTask } from '../models/sprint-planning.model';
+import { SprintTaskApiState } from '../core/enums/system.enum';
+import { CloseSprintResult, LoadState, MemberLoad, Sprint, SprintTask } from '../models/sprint-planning.model';
+
+/** Maps SprintTask state string keys → numeric WorkItemState API values. */
+const SPRINT_TASK_STATE_KEY_TO_INT: Record<SprintTask['state'], number> = {
+  'open':        SprintTaskApiState.Open,
+  'todo':        SprintTaskApiState.ToDo,
+  'in-progress': SprintTaskApiState.InProgress,
+  'in-review':   SprintTaskApiState.InReview,
+  'verified':    SprintTaskApiState.Verified,
+  'running':     SprintTaskApiState.Running,
+  'done':        SprintTaskApiState.Done,
+  'passed':      SprintTaskApiState.Passed,
+  'failed':      SprintTaskApiState.Failed,
+  'closed':      SprintTaskApiState.Closed,
+};
 
 @Injectable({ providedIn: 'root' })
 export class SprintPlanningService {
@@ -43,6 +57,8 @@ export class SprintPlanningService {
     this.sprintSelection.sprints().map(s => ({
       id: s.id, name: s.name,
       startDate: s.startDate, endDate: s.endDate, isActive: s.isActive,
+      status:        s.status    ?? 'Planning',
+      closedAt:      s.closedAt  ?? null,
       hubChannelId:  s.hubChannelId  ?? null,
       hubChannelUrl: s.hubChannelUrl ?? null,
     })),
@@ -178,6 +194,37 @@ export class SprintPlanningService {
       });
   }
 
+  /** Activates a Planning sprint (only one Active sprint per repo allowed).
+   * @param sprintId Sprint to activate.
+   * @returns Observable; caller handles errors. */
+  activateSprint(sprintId: string): Observable<void> {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId) return EMPTY;
+    return this.http
+      .post<void>(`${this.sprintsUrl(repoId)}/${sprintId}/activate`, {})
+      .pipe(tap(() => this.sprintSelection.patchSprint(sprintId, { status: 'Active' })));
+  }
+
+  /** Closes an Active sprint.
+   * - Emits warning payload (closed=false) when incomplete items remain and force=false.
+   * - Emits null when sprint was closed cleanly (HTTP 204).
+   * @param sprintId Sprint to close.
+   * @param force When true, close even with incomplete items.
+   * @returns Observable emitting CloseSprintResult (warning) or null (closed). */
+  closeSprint(sprintId: string, force = false): Observable<CloseSprintResult | null> {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId) return EMPTY;
+    return this.http
+      .post<CloseSprintResult>(`${this.sprintsUrl(repoId)}/${sprintId}/close`, { force }, { observe: 'response' })
+      .pipe(
+        tap(resp => {
+          if (resp.status === 204)
+            this.sprintSelection.patchSprint(sprintId, { status: 'Closed', closedAt: new Date().toISOString() });
+        }),
+        map(resp => resp.status === 204 ? null : resp.body),
+      );
+  }
+
   /** @deprecated Use updateSprint instead. */
   updateSprintDates(startDate: string, endDate: string): void {
     const sprint = this.selectedSprint();
@@ -303,12 +350,12 @@ export class SprintPlanningService {
     const sprintId = this.selectedSprintId();
     if (!repoId || !sprintId) return;
 
-    const opt = SPRINT_TASK_STATE_OPTIONS.find(o => o.value === state);
-    if (!opt) return;
+    const apiValue = SPRINT_TASK_STATE_KEY_TO_INT[state as SprintTask['state']];
+    if (apiValue === undefined) return;
 
     this.http
       .patch(`${this.tasksUrl(repoId, sprintId)}/${taskId}/state`, null,
-        { params: { newState: opt.api.toString() } })
+        { params: { newState: apiValue.toString() } })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  () => this.reloadDetail(),
@@ -451,7 +498,7 @@ export class SprintPlanningService {
       priority:         t.priority,
       assignedToId:     t.assignedToId,
       assignedToName:   t.assignedToName,
-      state:            (['new', 'backlog', 'todo', 'active', 'in-review', 'done'] as const)[t.state],
+      state:            (['open', 'todo', 'in-progress', 'in-review', 'verified', 'running', 'done', 'passed', 'failed', 'closed'] as const)[t.state] ?? 'open',
       storyPoints:        t.storyPoints,
       originalEstimate:   t.originalEstimate,
       remainingWork:      t.remainingWork,

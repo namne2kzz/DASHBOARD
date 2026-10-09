@@ -41,9 +41,9 @@ public sealed class LogWorkCommandHandler(
         task.CompletedWork  += command.HoursWorked;
         task.RemainingWork   = command.RemainingWork;
 
-        if (task.RemainingWork == 0 && task.State != Domain.Enums.SprintTaskState.Done)
+        if (task.RemainingWork == 0 && task.Category != Domain.Enums.StateCategory.Done)
         {
-            task.State    = Domain.Enums.SprintTaskState.Done;
+            task.State    = Domain.Enums.WorkItemState.Done;
             task.ClosedAt = DateTime.UtcNow;
         }
 

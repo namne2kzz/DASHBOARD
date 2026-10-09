@@ -27,6 +27,6 @@ public sealed record MyWorkItemDto(
     SprintTaskType   Type,
     string           Title,
     WorkItemPriority Priority,
-    SprintTaskState  State,
+    WorkItemState    State,
     int              StoryPoints,
     decimal          RemainingWork);

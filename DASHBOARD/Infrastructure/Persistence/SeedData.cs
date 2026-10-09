@@ -332,7 +332,7 @@ public static class SeedData
                 Description = "Unhandled exception when submitting wrong password.\n\n**Actual:** NullReferenceException on blank page.\n**Expected:** Error message 'Invalid credentials' shown.",
                 Priority = WorkItemPriority.High,
                 AssignedToId = (Guid?)DevUserId,
-                State = SprintTaskState.Active,
+                State = WorkItemState.InProgress,
                 StoryPoints = 0,
                 OriginalEstimate = 0m,
                 RemainingWork = 0m,
@@ -366,7 +366,7 @@ public static class SeedData
                 Description = "Validate the full authentication flow across Chrome, Firefox, and Edge.",
                 Priority = WorkItemPriority.Medium,
                 AssignedToId = (Guid?)AdminUserId,
-                State = SprintTaskState.New,
+                State = WorkItemState.Open,
                 StoryPoints = 0,
                 OriginalEstimate = 0m,
                 RemainingWork = 0m,
@@ -473,9 +473,9 @@ public static class SeedData
         var col4 = new Guid("00000000-0000-0000-000A-000000000004");
 
         mb.Entity<SmartBoardColumn>().HasData(
-            new { Id = col1, RepositoryId = DashRepoId, Name = "New",       MappedState = SprintTaskState.New,      WipLimit = 0,  WipMode = WipMode.Soft, AgingLimitDays = 5,  Order = 0, CreatedAt = SeedDate, UpdatedAt = (DateTime?)null },
-            new { Id = col2, RepositoryId = DashRepoId, Name = "Dev",       MappedState = SprintTaskState.Active,   WipLimit = 3,  WipMode = WipMode.Hard, AgingLimitDays = 3,  Order = 1, CreatedAt = SeedDate, UpdatedAt = (DateTime?)null },
-            new { Id = col3, RepositoryId = DashRepoId, Name = "In Review", MappedState = SprintTaskState.InReview, WipLimit = 2,  WipMode = WipMode.Soft, AgingLimitDays = 2,  Order = 2, CreatedAt = SeedDate, UpdatedAt = (DateTime?)null },
-            new { Id = col4, RepositoryId = DashRepoId, Name = "Done",      MappedState = SprintTaskState.Done,     WipLimit = 0,  WipMode = WipMode.Soft, AgingLimitDays = 30, Order = 3, CreatedAt = SeedDate, UpdatedAt = (DateTime?)null });
+            new { Id = col1, RepositoryId = DashRepoId, Name = "New",       MappedState = WorkItemState.Open,       WipLimit = 0,  WipMode = WipMode.Soft, AgingLimitDays = 5,  Order = 0, CreatedAt = SeedDate, UpdatedAt = (DateTime?)null },
+            new { Id = col2, RepositoryId = DashRepoId, Name = "Dev",       MappedState = WorkItemState.InProgress, WipLimit = 3,  WipMode = WipMode.Hard, AgingLimitDays = 3,  Order = 1, CreatedAt = SeedDate, UpdatedAt = (DateTime?)null },
+            new { Id = col3, RepositoryId = DashRepoId, Name = "In Review", MappedState = WorkItemState.InReview,   WipLimit = 2,  WipMode = WipMode.Soft, AgingLimitDays = 2,  Order = 2, CreatedAt = SeedDate, UpdatedAt = (DateTime?)null },
+            new { Id = col4, RepositoryId = DashRepoId, Name = "Done",      MappedState = WorkItemState.Done,       WipLimit = 0,  WipMode = WipMode.Soft, AgingLimitDays = 30, Order = 3, CreatedAt = SeedDate, UpdatedAt = (DateTime?)null });
     }
 }

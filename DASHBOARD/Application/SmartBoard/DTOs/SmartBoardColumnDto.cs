@@ -7,7 +7,7 @@ public sealed record SmartBoardColumnDto(
     Guid            Id,
     Guid            RepositoryId,
     string          Name,
-    SprintTaskState MappedState,
+    WorkItemState   MappedState,
     int             WipLimit,
     WipMode         WipMode,
     int             AgingLimitDays,

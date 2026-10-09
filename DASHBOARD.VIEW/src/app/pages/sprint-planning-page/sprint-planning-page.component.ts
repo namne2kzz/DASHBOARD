@@ -14,10 +14,11 @@ import { AddCapacityMemberDialogComponent } from '../../components/add-capacity-
 import { SprintStoryDetailDialogComponent } from '../../components/sprint-story-detail-dialog/sprint-story-detail-dialog.component';
 import type { SprintTask } from '../../models/sprint-planning.model';
 import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant';
-import { SprintTaskApiState } from '../../core/enums/system.enum';
+import { getStateCategory, SprintTaskApiState, StateCategory } from '../../core/enums/system.enum';
 import { ConfirmService } from '../../core/components/confirm/confirm.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../core/components/toast/toast.service';
 
 @Component({
   selector: 'app-sprint-planning-page',
@@ -38,16 +39,25 @@ export class SprintPlanningPageComponent implements OnInit {
   private readonly auth      = inject(AuthService);
 
   private readonly _stateToApi: Record<SprintTask['state'], SprintTaskApiState> = {
-    'new':       SprintTaskApiState.New,
-    'backlog':   SprintTaskApiState.Backlog,
-    'todo':      SprintTaskApiState.Todo,
-    'active':    SprintTaskApiState.Active,
-    'in-review': SprintTaskApiState.InReview,
-    'done':      SprintTaskApiState.Done,
+    'open':        SprintTaskApiState.Open,
+    'todo':        SprintTaskApiState.ToDo,
+    'in-progress': SprintTaskApiState.InProgress,
+    'in-review':   SprintTaskApiState.InReview,
+    'verified':    SprintTaskApiState.Verified,
+    'running':     SprintTaskApiState.Running,
+    'done':        SprintTaskApiState.Done,
+    'passed':      SprintTaskApiState.Passed,
+    'failed':      SprintTaskApiState.Failed,
+    'closed':      SprintTaskApiState.Closed,
   };
 
   /** Maps a string state to its numeric SprintTaskApiState for use with SPRINT_TASK_STATE_BADGE. @param state String state. */
   stateApi(state: SprintTask['state']): SprintTaskApiState { return this._stateToApi[state]; }
+
+  /** Returns true when a task is not in a terminal/done category. @param state String state key. */
+  isOpenState(state: SprintTask['state']): boolean {
+    return getStateCategory(this._stateToApi[state]) !== StateCategory.Done;
+  }
 
   /** Reloads sprint detail on every navigation to this page to pick up state changes made on the Board. */
   ngOnInit(): void { this.planning.refresh(); }
@@ -62,9 +72,10 @@ export class SprintPlanningPageComponent implements OnInit {
     if (!orgAlias || !repoCode) return;
     this.router.navigate(['/', orgAlias, repoCode, 'boards', workItemNumber]);
   }
-  readonly members        = inject(MembersService);
+  readonly members         = inject(MembersService);
   private readonly dialog  = inject(DialogService);
   private readonly confirm = inject(ConfirmService);
+  private readonly toast   = inject(ToastService);
 
   // ── Sprint setup edit mode ───────────────────────────────────
   readonly setupMenuOpen = signal(false);
@@ -366,4 +377,63 @@ export class SprintPlanningPageComponent implements OnInit {
 
   /** Cancels the day-off add form. */
   cancelDayOff(): void { this.showDayOffForm.set(false); }
+
+  // ── Sprint lifecycle ──────────────────────────────────────────
+
+  /** Whether the selected sprint can be activated (status = Planning). */
+  canActivateSelectedSprint(): boolean {
+    return this.planning.selectedSprint()?.status === 'Planning';
+  }
+
+  /** Whether the selected sprint can be closed (status = Active). */
+  canCloseSelectedSprint(): boolean {
+    return this.planning.selectedSprint()?.status === 'Active';
+  }
+
+  /** Activates the selected sprint after confirmation. */
+  async activateSprint(): Promise<void> {
+    const s = this.planning.selectedSprint();
+    if (!s) return;
+    const ok = await this.confirm.ask(
+      `Activate sprint "${s.name}"?`,
+      'This will mark the sprint as Active. Only one sprint can be active at a time.',
+      'info',
+    );
+    if (!ok) return;
+    this.setupMenuOpen.set(false);
+    this.planning.activateSprint(s.id).subscribe({
+      next:  () => this.toast.success('Sprint activated.'),
+      error: (err) => this.toast.error(err?.error?.error ?? 'Failed to activate sprint.'),
+    });
+  }
+
+  /** Closes the selected sprint. Shows a warning if incomplete items remain and prompts for confirmation. */
+  async closeSprint(): Promise<void> {
+    const s = this.planning.selectedSprint();
+    if (!s) return;
+    this.setupMenuOpen.set(false);
+    this.planning.closeSprint(s.id).subscribe({
+      next: async (result) => {
+        if (!result) {
+          // HTTP 204 — closed cleanly
+          this.toast.success('Sprint closed.');
+          return;
+        }
+        if (!result.closed && result.warning) {
+          // Server returned a warning — prompt user to confirm force close
+          const force = await this.confirm.ask(
+            'Incomplete items remaining',
+            result.warning,
+            'warning',
+          );
+          if (!force) return;
+          this.planning.closeSprint(s.id, true).subscribe({
+            next: () => this.toast.success('Sprint closed.'),
+            error: (err) => this.toast.error(err?.error?.error ?? 'Failed to close sprint.'),
+          });
+        }
+      },
+      error: (err) => this.toast.error(err?.error?.error ?? 'Failed to close sprint.'),
+    });
+  }
 }

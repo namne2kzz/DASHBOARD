@@ -42,8 +42,9 @@ export class MyWorkPageComponent implements OnInit {
     WorkItemApiPriority.Critical, WorkItemApiPriority.High, WorkItemApiPriority.Medium, WorkItemApiPriority.Low,
   ];
   private readonly _stateOrder: SprintTaskApiState[] = [
-    SprintTaskApiState.New, SprintTaskApiState.Backlog, SprintTaskApiState.Todo,
-    SprintTaskApiState.Active, SprintTaskApiState.InReview,
+    SprintTaskApiState.Open, SprintTaskApiState.ToDo,
+    SprintTaskApiState.InProgress, SprintTaskApiState.InReview,
+    SprintTaskApiState.Verified, SprintTaskApiState.Running,
   ];
 
   /** Items matching the free-text search (title / work item number / repository). */

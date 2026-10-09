@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-09 | 21:40 | Thêm trợ lý AI NMate | Thêm [nmate.dod.md](nmate.dod.md): widget hỏi đáp cách dùng hệ thống, trả lời chỉ dựa trên tài liệu end-user ở `Knowledge/` (gốc repo). Logic AI ở service riêng SUPPORT; DASHBOARD chỉ proxy `/api/v1/nmate/*` (đăng nhập + rate limit theo user). Không thêm entity nào vào DASHBOARD |
 | 2026-09-26 | 14:02 | Multi-tenancy + tích hợp HUB, bỏ Wiki | Thêm `Organization` làm tenant cấp cao nhất (User/Repository đều thuộc 1 org; email/code chỉ unique trong org; login cần org alias). Tích hợp HUB Chat (kênh chat theo sprint, internal API). Thêm `UserSetting` (preference + avatar MinIO). **Feature Wiki đã bỏ khỏi DASHBOARD** (chuyển sang HUB) — `WikiPage` không còn tồn tại. Cập nhật lại danh sách document cho khớp thực tế |
 | 2026-06-28 | 13:58 | Gộp Role default + custom | `CustomRole` đổi thành `Role` (1 bảng, cờ `IsDefault`); 5 default role global seed từ TeamRole; member dùng `RoleId`. Xem [roles.dod.md](roles.dod.md) |
 | 2026-06-23 | 23:10 | Thêm feature Boards | Bổ sung [boards.dod.md](boards.dod.md) — feature Kanban Board (operational view), trước đó bị thiếu trong danh sách |
@@ -136,5 +137,6 @@ Xem từng file `.dod.md` tương ứng trong cùng thư mục để biết rule
 **Tích hợp**
 
 - [hub-integration.dod.md](hub-integration.dod.md) — kênh chat HUB theo sprint, internal API cho HUB
+- [nmate.dod.md](nmate.dod.md) — trợ lý AI NMate: proxy sang service SUPPORT, trả lời dựa trên `Knowledge/`
 
 > **Đã bỏ**: Wiki (`wiki.dod.md`) — feature chuyển sang HUB từ 2026-09-05, DASHBOARD không còn code Wiki.

@@ -6,10 +6,10 @@ namespace DASHBOARD.Application.SmartBoard.Commands.UpdateColumn;
 
 /// <summary>Updates the configuration and state mapping of an existing board column.</summary>
 public sealed record UpdateColumnCommand(
-    Guid            RepositoryId,
-    Guid            ColumnId,
-    string          Name,
-    SprintTaskState MappedState,
-    int             WipLimit,
-    WipMode         WipMode,
-    int             AgingLimitDays) : IRequest<Result>;
+    Guid          RepositoryId,
+    Guid          ColumnId,
+    string        Name,
+    WorkItemState MappedState,
+    int           WipLimit,
+    WipMode       WipMode,
+    int           AgingLimitDays) : IRequest<Result>;

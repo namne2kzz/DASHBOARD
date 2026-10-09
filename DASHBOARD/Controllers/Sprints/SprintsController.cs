@@ -1,4 +1,6 @@
 ﻿using DASHBOARD.Application.Common.Models;
+using DASHBOARD.Application.Sprints.Commands.ActivateSprint;
+using DASHBOARD.Application.Sprints.Commands.CloseSprint;
 using DASHBOARD.Application.Sprints.Commands.CreateSprint;
 using DASHBOARD.Application.Sprints.Commands.DeleteSprint;
 using DASHBOARD.Application.Sprints.Commands.UpdateSprint;
@@ -106,6 +108,52 @@ public sealed class SprintsController(ISender mediator) : ControllerBase
         return NoContent();
     }
 
+
+    /// <summary>Transitions a Planning sprint to Active. Only one sprint may be Active per repository.</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="sprintId">The sprint to activate.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 on success; 400 if another sprint is already active or the sprint is already closed.</returns>
+    [HttpPost("{sprintId:guid}/activate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Activate(Guid repoId, Guid sprintId, CancellationToken ct)
+    {
+        var result = await mediator.Send(new ActivateSprintCommand(repoId, sprintId), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Closes a sprint. Returns a 200 warning payload when incomplete items exist and Force is false;
+    /// call again with Force=true to confirm.
+    /// </summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="sprintId">The sprint to close.</param>
+    /// <param name="request">Close options (Force flag).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 when closed; 200 with warning payload when incomplete items require confirmation.</returns>
+    [HttpPost("{sprintId:guid}/close")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<CloseSprintResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Close(Guid repoId, Guid sprintId, [FromBody] CloseSprintRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new CloseSprintCommand(repoId, sprintId, request.Force), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+
+        // Warn-before-confirm pattern: closed=false means client should show confirmation dialog.
+        if (!result.Value!.Closed)
+            return Ok(result.Value);
+
+        return NoContent();
+    }
 
     /// <summary>Deletes a sprint. Blocked if tasks are committed.</summary>
     /// <param name="repoId">The repository ID.</param>

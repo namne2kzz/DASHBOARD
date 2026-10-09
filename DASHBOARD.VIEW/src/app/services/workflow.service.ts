@@ -5,22 +5,49 @@ import { PrivilegeService } from '../core/services/privilege.service';
 import { RepositoryContextService } from './repository-context.service';
 import { environment } from '../../environments/environment';
 import { WorkflowColumnApiDto } from '../models/workflow-api.model';
-import { SPRINT_TASK_STATE_OPTIONS } from '../core/constants/system.constant';
 import type { BoardColumn, SprintTaskStateKey, WipMode } from '../models/workflow.model';
 
 export type { BoardColumn, SprintTaskStateKey, WipMode } from '../models/workflow.model';
 
 // ── Mapping helpers ───────────────────────────────────────────────────────────
 
+/** Maps SprintTaskStateKey → numeric API value (WorkItemState). */
+const STATE_KEY_TO_INT: Record<SprintTaskStateKey, number> = {
+  'open':        0,
+  'todo':        1,
+  'in-progress': 2,
+  'in-review':   3,
+  'verified':    4,
+  'running':     5,
+  'done':        6,
+  'passed':      7,
+  'failed':      8,
+  'closed':      9,
+};
+
+/** Maps numeric WorkItemState int → SprintTaskStateKey. */
+const INT_TO_STATE_KEY: Record<number, SprintTaskStateKey> = {
+  0: 'open',
+  1: 'todo',
+  2: 'in-progress',
+  3: 'in-review',
+  4: 'verified',
+  5: 'running',
+  6: 'done',
+  7: 'passed',
+  8: 'failed',
+  9: 'closed',
+};
+
 function stateToApi(state: SprintTaskStateKey): string {
-  return (SPRINT_TASK_STATE_OPTIONS.find(o => o.value === state)?.api ?? 0).toString();
+  return (STATE_KEY_TO_INT[state] ?? 0).toString();
 }
 
 function mapColumn(dto: WorkflowColumnApiDto): BoardColumn {
   return {
     id:             dto.id,
     name:           dto.name,
-    mappedState:    SPRINT_TASK_STATE_OPTIONS[dto.mappedState]?.value ?? 'new',
+    mappedState:    INT_TO_STATE_KEY[dto.mappedState] ?? 'open',
     wipLimit:       dto.wipLimit,
     wipMode:        dto.wipMode === 1 ? 'hard' : 'soft',
     agingLimitDays: dto.agingLimitDays,

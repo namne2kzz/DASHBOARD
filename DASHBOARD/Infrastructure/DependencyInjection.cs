@@ -125,6 +125,21 @@ public static class DependencyInjection
         services.AddTransient<CorrelationIdForwardingHandler>();
         services.AddScoped<IHubChannelService, HubChannelService>();
 
+        // ── NMate (AI support assistant, repo SUPPORT) ────────────────────────
+        // Same shape as HubChat: named client with base URL + internal token, correlation id forwarded.
+        // Deliberately NO retry/resilience handler: /chat is a non-idempotent streamed POST — retrying
+        // mid-stream would show the user a second answer and spend the free-tier quota twice.
+        services.AddHttpClient(NMateGateway.ClientName, (sp, client) =>
+        {
+            var s = sp.GetRequiredService<IAppSettings>();
+            if (!string.IsNullOrWhiteSpace(s.NMateBaseUrl))
+                client.BaseAddress = new Uri(s.NMateBaseUrl.TrimEnd('/') + "/");
+            client.DefaultRequestHeaders.Add("X-Internal-Token", s.NMateInternalToken);
+            client.Timeout = s.NMateTimeout;
+        })
+        .AddHttpMessageHandler<CorrelationIdForwardingHandler>();
+        services.AddScoped<INMateGateway, NMateGateway>();
+
         // ── Messaging (MassTransit + RabbitMQ) ───────────────────────────────
         services.AddMassTransit(bus =>
         {

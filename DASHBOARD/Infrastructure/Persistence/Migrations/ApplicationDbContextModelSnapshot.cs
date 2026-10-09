@@ -829,7 +829,7 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                             Id = new Guid("00000000-0000-0000-000a-000000000002"),
                             AgingLimitDays = 3,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MappedState = 3,
+                            MappedState = 2,
                             Name = "Dev",
                             Order = 1,
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001"),
@@ -841,7 +841,7 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                             Id = new Guid("00000000-0000-0000-000a-000000000003"),
                             AgingLimitDays = 2,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MappedState = 4,
+                            MappedState = 3,
                             Name = "In Review",
                             Order = 2,
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001"),
@@ -853,7 +853,7 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                             Id = new Guid("00000000-0000-0000-000a-000000000004"),
                             AgingLimitDays = 30,
                             CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MappedState = 5,
+                            MappedState = 6,
                             Name = "Done",
                             Order = 3,
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001"),
@@ -867,6 +867,9 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -885,12 +888,24 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Planning");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
                     b.HasIndex("RepositoryId");
+
+                    b.HasIndex("RepositoryId", "Status")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Sprints_Repository_OneActive")
+                        .HasFilter("\"Status\" = 'Active'");
 
                     b.ToTable("Sprints", (string)null);
 
@@ -1103,7 +1118,7 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                             RepositoryId = new Guid("00000000-0000-0000-0002-000000000001"),
                             RootCause = "Missing null-check on auth response before accessing token property.",
                             Solution = "",
-                            State = 3,
+                            State = 2,
                             StepsToReproduce = "1. Open /login\n2. Enter wrong password\n3. Click Submit",
                             StoryPoints = 0,
                             Title = "Login page crashes on invalid credentials",

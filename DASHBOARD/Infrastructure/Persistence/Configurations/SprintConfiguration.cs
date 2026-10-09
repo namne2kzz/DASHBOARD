@@ -1,4 +1,5 @@
 using DASHBOARD.Domain.Entities;
+using DASHBOARD.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,6 +16,17 @@ internal sealed class SprintConfiguration : IEntityTypeConfiguration<Sprint>
         builder.HasKey(s => s.Id);
 
         builder.Property(s => s.Name).IsRequired().HasMaxLength(200);
+        builder.Property(s => s.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(SprintStatus.Planning);
+        builder.Property(s => s.ClosedAt);
+
+        // Partial index: enforces at most one Active sprint per repository at the DB level.
+        builder.HasIndex(s => new { s.RepositoryId, s.Status })
+            .HasFilter($"\"Status\" = '{SprintStatus.Active}'")
+            .IsUnique()
+            .HasDatabaseName("IX_Sprints_Repository_OneActive");
 
         builder.HasMany(s => s.CapacityMembers)
             .WithOne(c => c.Sprint)

@@ -5,6 +5,20 @@ import type { BoardColumn, NewColumnForm, SprintTaskStateKey } from '../../model
 import { SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant';
 import { AddColumnModalComponent } from '../../components/add-column-modal/add-column-modal.component';
 
+/** Human-readable labels for each sprint-task state key. */
+const STATE_KEY_LABELS: Record<SprintTaskStateKey, string> = {
+  'open':        'Open',
+  'todo':        'To Do',
+  'in-progress': 'In Progress',
+  'in-review':   'In Review',
+  'verified':    'Verified',
+  'running':     'Running',
+  'done':        'Done',
+  'passed':      'Passed',
+  'failed':      'Failed',
+  'closed':      'Closed',
+};
+
 @Component({
   selector: 'app-workflow-page',
   imports: [FormsModule, AddColumnModalComponent],
@@ -24,7 +38,7 @@ export class WorkflowPageComponent {
   // ── Inline column edit ────────────────────────────────────────────────────
   readonly editColId    = signal<string | null>(null);
   readonly editColName  = signal('');
-  readonly editColState = signal<SprintTaskStateKey>('new');
+  readonly editColState = signal<SprintTaskStateKey>('open');
 
   @HostListener('document:click')
   onDocumentClick(): void {
@@ -77,6 +91,6 @@ export class WorkflowPageComponent {
 
   /** @param state Sprint-task state key. @returns Display label for the state badge. */
   stateLabelFor(state: SprintTaskStateKey): string {
-    return this.stateOptions.find(o => o.value === state)?.label ?? state;
+    return STATE_KEY_LABELS[state] ?? state;
   }
 }

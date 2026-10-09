@@ -26,7 +26,7 @@ public sealed record BoardTaskDto(
     Guid?            AssignedToId,
     string?          AssignedToName,
     string?          AssignedToAvatar,
-    SprintTaskState  State,
+    WorkItemState    State,
     decimal          OriginalEstimate,
     decimal          RemainingWork,
     decimal          CompletedWork,

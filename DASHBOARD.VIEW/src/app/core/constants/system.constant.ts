@@ -1,4 +1,4 @@
-import { WorkItemApiState, Permission, SprintTaskApiState } from '../enums/system.enum';
+import { WorkItemApiState, Permission, SprintTaskApiState, StateCategory } from '../enums/system.enum';
 import { WorkItemPriority, WorkItemStatus, WorkItemType } from '../../models/work-item.model';
 import type { BacklogLevel, TshirtSize } from '../../models/backlog.model';
 import type { DateFormat, TimezoneId } from '../../models/preferences.model';
@@ -199,36 +199,48 @@ export const SMART_BOARD_PRIORITIES = ['Low', 'Medium', 'High', 'Critical'] as c
 
 // ── Sprint tasks ──────────────────────────────────────────────────────────────
 
-/** Sprint task state options ordered by workflow progression (index = API int value). */
-export const SPRINT_TASK_STATE_OPTIONS = [
-  { value: 'new'       as const, label: 'New',       api: 0 },
-  { value: 'backlog'   as const, label: 'Backlog',   api: 1 },
-  { value: 'todo'      as const, label: 'To Do',     api: 2 },
-  { value: 'active'    as const, label: 'Active',    api: 3 },
-  { value: 'in-review' as const, label: 'In Review', api: 4 },
-  { value: 'done'      as const, label: 'Done',      api: 5 },
-] as const;
+/** Sprint task state options ordered by workflow progression. */
+export const SPRINT_TASK_STATE_OPTIONS: { value: SprintTaskApiState; label: string; category: StateCategory }[] = [
+  { value: SprintTaskApiState.Open,       label: 'Open',        category: StateCategory.ToDo       },
+  { value: SprintTaskApiState.ToDo,       label: 'To Do',       category: StateCategory.ToDo       },
+  { value: SprintTaskApiState.InProgress, label: 'In Progress', category: StateCategory.InProgress },
+  { value: SprintTaskApiState.InReview,   label: 'In Review',   category: StateCategory.InProgress },
+  { value: SprintTaskApiState.Verified,   label: 'Verified',    category: StateCategory.InProgress },
+  { value: SprintTaskApiState.Running,    label: 'Running',     category: StateCategory.InProgress },
+  { value: SprintTaskApiState.Done,       label: 'Done',        category: StateCategory.Done       },
+  { value: SprintTaskApiState.Passed,     label: 'Passed',      category: StateCategory.Done       },
+  { value: SprintTaskApiState.Failed,     label: 'Failed',      category: StateCategory.Done       },
+  { value: SprintTaskApiState.Closed,     label: 'Closed',      category: StateCategory.Done       },
+];
 
 // ── Sprint task state display ─────────────────────────────────────────────────
 
 /** State indicator per SprintTaskApiState — 6px dot + plain text (Nexus UI: no filled pills). */
 export const SPRINT_TASK_STATE_BADGE: Record<SprintTaskApiState, string> = {
-  [SprintTaskApiState.New]:      'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-500',
-  [SprintTaskApiState.Backlog]:  'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-500',
-  [SprintTaskApiState.Todo]:     'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-500',
-  [SprintTaskApiState.Active]:   'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-blue-500',
-  [SprintTaskApiState.InReview]: 'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-amber-500',
-  [SprintTaskApiState.Done]:     'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
+  [SprintTaskApiState.Open]:       'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-500',
+  [SprintTaskApiState.ToDo]:       'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-400',
+  [SprintTaskApiState.InProgress]: 'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-blue-500',
+  [SprintTaskApiState.InReview]:   'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-amber-500',
+  [SprintTaskApiState.Verified]:   'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-teal-500',
+  [SprintTaskApiState.Running]:    'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-violet-500',
+  [SprintTaskApiState.Done]:       'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-500',
+  [SprintTaskApiState.Passed]:     'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-emerald-400',
+  [SprintTaskApiState.Failed]:     'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-rose-500',
+  [SprintTaskApiState.Closed]:     'bg-transparent text-slate-200 ring-transparent before:mr-1.5 before:inline-block before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-[""] before:bg-slate-600',
 };
 
 /** Display labels per SprintTaskApiState. */
 export const SPRINT_TASK_STATE_LABEL: Record<SprintTaskApiState, string> = {
-  [SprintTaskApiState.New]:      'New',
-  [SprintTaskApiState.Backlog]:  'Backlog',
-  [SprintTaskApiState.Todo]:     'To Do',
-  [SprintTaskApiState.Active]:   'Active',
-  [SprintTaskApiState.InReview]: 'In Review',
-  [SprintTaskApiState.Done]:     'Done',
+  [SprintTaskApiState.Open]:       'Open',
+  [SprintTaskApiState.ToDo]:       'To Do',
+  [SprintTaskApiState.InProgress]: 'In Progress',
+  [SprintTaskApiState.InReview]:   'In Review',
+  [SprintTaskApiState.Verified]:   'Verified',
+  [SprintTaskApiState.Running]:    'Running',
+  [SprintTaskApiState.Done]:       'Done',
+  [SprintTaskApiState.Passed]:     'Passed',
+  [SprintTaskApiState.Failed]:     'Failed',
+  [SprintTaskApiState.Closed]:     'Closed',
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────

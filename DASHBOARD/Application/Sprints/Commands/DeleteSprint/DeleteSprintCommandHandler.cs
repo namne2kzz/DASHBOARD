@@ -28,9 +28,8 @@ public sealed class DeleteSprintCommandHandler(
             .FirstOrDefaultAsync(s => s.Id == command.SprintId && s.RepositoryId == command.RepositoryId, ct)
             ?? throw new NotFoundException(nameof(Sprint), command.SprintId);
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        if (sprint.StartDate <= today && sprint.EndDate >= today)
-            return Result.Failure("Cannot delete an active sprint.");
+        if (sprint.Status == SprintStatus.Active)
+            return Result.Failure("Cannot delete an active sprint. Close it first.");
 
         var taskCount = await db.Set<SprintTask>()
             .CountAsync(t => t.SprintId == command.SprintId, ct);

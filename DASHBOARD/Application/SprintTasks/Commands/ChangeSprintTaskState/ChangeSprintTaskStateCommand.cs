@@ -9,6 +9,6 @@ namespace DASHBOARD.Application.SprintTasks.Commands.ChangeSprintTaskState;
 /// <param name="TaskId">The work item to transition.</param>
 /// <param name="NewState">The target state.</param>
 public sealed record ChangeSprintTaskStateCommand(
-    Guid            RepositoryId,
-    Guid            TaskId,
-    SprintTaskState NewState) : IRequest<Result>;
+    Guid          RepositoryId,
+    Guid          TaskId,
+    WorkItemState NewState) : IRequest<Result>;

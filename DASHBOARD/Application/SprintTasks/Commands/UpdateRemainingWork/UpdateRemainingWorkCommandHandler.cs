@@ -33,8 +33,8 @@ public sealed class UpdateRemainingWorkCommandHandler(
 
         task.RemainingWork = command.RemainingWork;
 
-        if (task.RemainingWork == 0 && task.State != Domain.Enums.SprintTaskState.Done)
-            task.State = Domain.Enums.SprintTaskState.Done;
+        if (task.RemainingWork == 0 && task.Category != Domain.Enums.StateCategory.Done)
+            task.State = Domain.Enums.WorkItemState.Done;
 
         task.Touch();
         await uow.CommitAsync(ct);

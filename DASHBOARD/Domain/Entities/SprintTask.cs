@@ -43,7 +43,30 @@ public sealed class SprintTask : Common.BaseEntity, ISoftDelete
     public Guid? AssignedToId { get; set; }
 
     /// <summary>Gets or sets the current state.</summary>
-    public SprintTaskState State { get; set; } = SprintTaskState.New;
+    public WorkItemState State { get; set; } = WorkItemState.Open;
+
+    /// <summary>Macro category of the current state — used by sprint close checks and board grouping.</summary>
+    public StateCategory Category => State switch
+    {
+        WorkItemState.Open or WorkItemState.ToDo                              => StateCategory.ToDo,
+        WorkItemState.InProgress or WorkItemState.InReview
+            or WorkItemState.Verified or WorkItemState.Running                => StateCategory.InProgress,
+        WorkItemState.Done or WorkItemState.Passed
+            or WorkItemState.Failed or WorkItemState.Closed                   => StateCategory.Done,
+        _                                                                     => StateCategory.ToDo,
+    };
+
+    /// <summary>Returns the valid states for the given work item type.</summary>
+    /// <param name="type">The work item type to query allowed states for.</param>
+    /// <returns>A read-only list of <see cref="WorkItemState"/> values valid for <paramref name="type"/>.</returns>
+    public static IReadOnlyList<WorkItemState> AllowedStates(SprintTaskType type) => type switch
+    {
+        SprintTaskType.UserStory => [WorkItemState.Open, WorkItemState.InProgress, WorkItemState.Done, WorkItemState.Closed],
+        SprintTaskType.Task      => [WorkItemState.ToDo, WorkItemState.InProgress, WorkItemState.InReview, WorkItemState.Done, WorkItemState.Closed],
+        SprintTaskType.Bug       => [WorkItemState.Open, WorkItemState.InProgress, WorkItemState.InReview, WorkItemState.Verified, WorkItemState.Done, WorkItemState.Closed],
+        SprintTaskType.TestPlan  => [WorkItemState.Open, WorkItemState.Running, WorkItemState.Passed, WorkItemState.Failed, WorkItemState.Closed],
+        _                        => [WorkItemState.Open, WorkItemState.Done, WorkItemState.Closed],
+    };
 
     /// <summary>Gets or sets the story-point estimate (UserStory only).</summary>
     public int StoryPoints { get; set; }
