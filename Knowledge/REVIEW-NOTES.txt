@@ -1,0 +1,31 @@
+REVIEW NOTES — bản nháp Knowledge do Claude viết (2026-10-09), owner cần duyệt
+=============================================================================
+File .txt này KHÔNG được NMate index (chỉ *.md có front-matter mới được index).
+Xoá file này khi đã trả lời hết.
+
+Nguồn: .claude/business/{sprints,backlog,members,roles}.dod.md + nhãn nút trong template Angular.
+Nguyên tắc: chỗ nào business doc không nói rõ thì KHÔNG viết vào tài liệu, ghi câu hỏi ở đây.
+
+Câu hỏi cần owner trả lời
+-------------------------
+1. [sprints] Đóng sprint: user bấm nút gì? Task chưa Done đi đâu (về backlog, sang sprint sau, giữ nguyên)?
+   → business doc chỉ nói "đóng sprint → archive kênh NHub", không nói gì về task. Đây là câu hỏi
+     người dùng hay hỏi nhất, nên viết thêm mục "## Đóng sprint" khi đã rõ.
+2. [sprints] Quyền ActivateSprint / ManageSprint dùng để làm gì trên UI? Có nút "kích hoạt sprint" không, hay
+   sprint tự active theo ngày (business doc nói IsActive tính theo ngày)?
+3. [sprints] Toggle tạo kênh NHub trên form New sprint tên chính xác là gì? (template create-sprint-dialog
+   không có nhãn text để lấy.)
+4. [sprints] Xoá sprint: task/capacity KHÔNG bị xoá theo (orphan). Có muốn nói với user không? Hiện mình bỏ qua
+   vì đây là chi tiết kỹ thuật, nhưng user có thể thấy task "mất sprint".
+5. [backlog] Promote to Sprint: nút/hành động trên UI tên chính xác là gì, nằm ở đâu? (không tìm thấy nhãn text
+   "Promote" trong template backlog — có thể là icon/tooltip.)
+6. [backlog] Bật "chế độ chọn" (Select mode) bằng nút nào? Template chỉ có câu hướng dẫn "Tick rows to select".
+7. [members] Invite by Email: link mời hết hạn sau bao lâu, người được mời vào với role nào? (invitations.dod.md
+   nói "auto join với role Dev" — cần xác nhận còn đúng không trước khi viết.)
+8. [members] Đường dẫn Settings → Members là cấp tổ chức hay cấp project? Route hiện là /:org/settings/members.
+9. [faq] Đăng nhập cần nhập alias tổ chức — có muốn thêm mục hướng dẫn đăng nhập / quên mật khẩu không?
+
+Module chưa có tài liệu (theo .claude/business/)
+-------------------------------------------------
+overview, my-work, sprint-tasks, boards, capacity (chi tiết), discussions, invitations, repositories,
+git-repositories, search, user-settings, workflow, metadata, history/audit-log, hub-integration.
