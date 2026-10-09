@@ -110,6 +110,23 @@ try
                     QueueLimit           = 0,
                 }));
 
+        // NMate questions spend the free-tier Gemini quota (counted per minute), so each user gets a small
+        // allowance. Partitioned by user, not IP: users behind one office NAT must not share a budget.
+        // Applied on NMateController.Chat via [EnableRateLimiting(NMateController.ChatRateLimitPolicy)].
+        opt.AddPolicy(DASHBOARD.Controllers.NMate.NMateController.ChatRateLimitPolicy, httpContext =>
+            RateLimitPartition.GetSlidingWindowLimiter(
+                partitionKey: httpContext.User.FindFirst("sub")?.Value
+                              ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                              ?? "unknown",
+                factory: _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit          = rl.NMateChatRateLimitPermitLimit,
+                    Window               = rl.NMateChatRateLimitWindow,
+                    SegmentsPerWindow    = 4,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit           = 0,
+                }));
+
         opt.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     });
 

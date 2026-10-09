@@ -44,6 +44,8 @@ public sealed class ListSprintsQueryHandler(
                 r.Sprint.StartDate, r.Sprint.EndDate,
                 r.Sprint.StartDate <= today && r.Sprint.EndDate >= today,
                 r.Sprint.CreatedAt,
+                r.Sprint.Status,
+                r.Sprint.ClosedAt,
                 r.Link == null ? null : r.Link.HubChannelId,
                 r.Link == null ? null : r.Link.HubChannelUrl))
             .ToList();

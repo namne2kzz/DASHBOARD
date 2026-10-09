@@ -33,8 +33,8 @@ public sealed class ItemsController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> List(
         Guid repoId,
-        [FromQuery] SprintTaskType?  type  = null,
-        [FromQuery] SprintTaskState? state = null,
+        [FromQuery] SprintTaskType? type  = null,
+        [FromQuery] WorkItemState?  state = null,
         CancellationToken ct = default)
     {
         var result = await mediator.Send(new ListStandaloneItemsQuery(repoId, type, state), ct);
@@ -110,7 +110,7 @@ public sealed class ItemsController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ChangeState(Guid repoId, Guid taskId, [FromQuery] SprintTaskState newState, CancellationToken ct)
+    public async Task<IActionResult> ChangeState(Guid repoId, Guid taskId, [FromQuery] WorkItemState newState, CancellationToken ct)
     {
         var result = await mediator.Send(new ChangeSprintTaskStateCommand(repoId, taskId, newState), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });

@@ -58,8 +58,55 @@ export enum BacklogTshirtSize {
 /** Matches C# SprintTaskType enum — numeric payload from the API. */
 export enum SprintTaskApiType  { UserStory = 0, Task = 1, Bug = 2, TestPlan = 3 }
 
-/** Matches C# SprintTaskState enum — numeric payload from the API. */
-export enum SprintTaskApiState { New = 0, Backlog = 1, Todo = 2, Active = 3, InReview = 4, Done = 5 }
+/** Matches C# WorkItemState enum — numeric payload from the API. */
+export enum SprintTaskApiState {
+  Open       = 0,
+  ToDo       = 1,
+  InProgress = 2,
+  InReview   = 3,
+  Verified   = 4,  // Bug only
+  Running    = 5,  // TestPlan only
+  Done       = 6,
+  Passed     = 7,  // TestPlan only
+  Failed     = 8,  // TestPlan only
+  Closed     = 9,
+}
+
+/** Macro category — maps multiple states to ToDo/InProgress/Done for system logic. */
+export enum StateCategory { ToDo = 'todo', InProgress = 'in-progress', Done = 'done' }
+
+/** Returns the StateCategory for a given state. @param state The API state value. @returns The macro category for system logic. */
+export function getStateCategory(state: SprintTaskApiState): StateCategory {
+  switch (state) {
+    case SprintTaskApiState.Open:
+    case SprintTaskApiState.ToDo:
+      return StateCategory.ToDo;
+    case SprintTaskApiState.InProgress:
+    case SprintTaskApiState.InReview:
+    case SprintTaskApiState.Verified:
+    case SprintTaskApiState.Running:
+      return StateCategory.InProgress;
+    case SprintTaskApiState.Done:
+    case SprintTaskApiState.Passed:
+    case SprintTaskApiState.Failed:
+    case SprintTaskApiState.Closed:
+      return StateCategory.Done;
+  }
+}
+
+/** Returns allowed states for a given work item type. @param type The work item type. @returns Array of allowed SprintTaskApiState values for that type. */
+export function getAllowedStates(type: SprintTaskApiType): SprintTaskApiState[] {
+  switch (type) {
+    case SprintTaskApiType.UserStory:
+      return [SprintTaskApiState.Open, SprintTaskApiState.InProgress, SprintTaskApiState.Done, SprintTaskApiState.Closed];
+    case SprintTaskApiType.Task:
+      return [SprintTaskApiState.ToDo, SprintTaskApiState.InProgress, SprintTaskApiState.InReview, SprintTaskApiState.Done, SprintTaskApiState.Closed];
+    case SprintTaskApiType.Bug:
+      return [SprintTaskApiState.Open, SprintTaskApiState.InProgress, SprintTaskApiState.InReview, SprintTaskApiState.Verified, SprintTaskApiState.Done, SprintTaskApiState.Closed];
+    case SprintTaskApiType.TestPlan:
+      return [SprintTaskApiState.Open, SprintTaskApiState.Running, SprintTaskApiState.Passed, SprintTaskApiState.Failed, SprintTaskApiState.Closed];
+  }
+}
 
 /** Matches C# WorkItemPriority enum — numeric payload from the API. */
 export enum WorkItemApiPriority { Low = 0, Medium = 1, High = 2, Critical = 3 }

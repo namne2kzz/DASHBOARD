@@ -116,7 +116,9 @@ public sealed class GetSprintDetailQueryHandler(
             var capacity = Math.Max(0, gross - personalOffHours - teamOffHours);
 
             var workload = allTasks
-                .Where(t => t.AssignedToId == m.UserId && t.State != SprintTaskState.Done)
+                .Where(t => t.AssignedToId == m.UserId
+                         && t.State is not (WorkItemState.Done or WorkItemState.Passed
+                                         or WorkItemState.Failed or WorkItemState.Closed))
                 .Sum(t => t.RemainingWork);
 
             var loadPercent = capacity == 0

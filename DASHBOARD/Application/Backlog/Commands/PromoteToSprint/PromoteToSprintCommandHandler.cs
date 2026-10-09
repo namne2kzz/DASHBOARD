@@ -51,7 +51,7 @@ public sealed class PromoteToSprintCommandHandler(
             WorkItemNumber      = maxNumber + 1,
             Type                = SprintTaskType.UserStory,
             Title               = item.Title,
-            State               = SprintTaskState.New,
+            State               = WorkItemState.Open,
             StoryPoints         = item.StoryPoints ?? 0,
             AcceptanceCriteria  = string.IsNullOrWhiteSpace(item.AcceptanceCriteria) ? null : item.AcceptanceCriteria,
             Documents           = [.. item.Documents],

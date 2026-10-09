@@ -44,7 +44,10 @@ public sealed class GetMyWorkQueryHandler(
             where t.AssignedToId == userId
                && repoIds.Contains(t.RepositoryId)
                && !r.IsArchived
-               && t.State != SprintTaskState.Done
+               && t.State != WorkItemState.Done
+               && t.State != WorkItemState.Passed
+               && t.State != WorkItemState.Failed
+               && t.State != WorkItemState.Closed
             orderby t.Priority descending, r.Code, t.State
             select new
             {

@@ -33,12 +33,16 @@ public sealed class ChangeSprintTaskStateCommandHandler(
             .FirstOrDefaultAsync(t => t.Id == command.TaskId && t.RepositoryId == command.RepositoryId, ct)
             ?? throw new NotFoundException(nameof(SprintTask), command.TaskId);
 
+        // Validate transition is allowed for this work item type.
+        if (!SprintTask.AllowedStates(task.Type).Contains(command.NewState))
+            return Result.Failure($"State '{command.NewState}' is not valid for {task.Type}.");
+
         var oldState = task.State;
 
         task.State          = command.NewState;
         task.StateChangedAt = DateTime.UtcNow;
 
-        if (command.NewState == SprintTaskState.Done)
+        if (task.Category == StateCategory.Done)
         {
             task.RemainingWork = 0;
             task.ClosedAt      = DateTime.UtcNow;

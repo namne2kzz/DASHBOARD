@@ -95,12 +95,16 @@ function matchQuery(item: BoardItem, rows: QueryRow[]): boolean {
 
 /** Maps SprintTaskStateKey string → SprintTaskApiState numeric value. */
 const STATE_KEY_TO_API: Record<SprintTaskStateKey, SprintTaskApiState> = {
-  'new':       SprintTaskApiState.New,
-  'backlog':   SprintTaskApiState.Backlog,
-  'todo':      SprintTaskApiState.Todo,
-  'active':    SprintTaskApiState.Active,
-  'in-review': SprintTaskApiState.InReview,
-  'done':      SprintTaskApiState.Done,
+  'open':        SprintTaskApiState.Open,
+  'todo':        SprintTaskApiState.ToDo,
+  'in-progress': SprintTaskApiState.InProgress,
+  'in-review':   SprintTaskApiState.InReview,
+  'verified':    SprintTaskApiState.Verified,
+  'running':     SprintTaskApiState.Running,
+  'done':        SprintTaskApiState.Done,
+  'passed':      SprintTaskApiState.Passed,
+  'failed':      SprintTaskApiState.Failed,
+  'closed':      SprintTaskApiState.Closed,
 };
 
 const TYPE_MAP: Record<SprintTaskApiType, BoardItemType> = {

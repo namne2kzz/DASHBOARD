@@ -1,3 +1,5 @@
+using DASHBOARD.Domain.Enums;
+
 namespace DASHBOARD.Domain.Entities;
 
 /// <summary>A time-boxed iteration within a repository. Follows Azure DevOps / Scrum terminology.</summary>
@@ -14,6 +16,12 @@ public sealed class Sprint : Common.BaseEntity
 
     /// <summary>Gets or sets the sprint end date (inclusive).</summary>
     public DateOnly EndDate { get; set; }
+
+    /// <summary>Gets or sets the explicit lifecycle status of this sprint.</summary>
+    public SprintStatus Status { get; set; } = SprintStatus.Planning;
+
+    /// <summary>Gets or sets the UTC timestamp when the sprint was closed; null until closed.</summary>
+    public DateTime? ClosedAt { get; set; }
 
     // ── Navigation ──────────────────────────────────────────────────────────
     /// <summary>Capacity rows for team members in this sprint.</summary>

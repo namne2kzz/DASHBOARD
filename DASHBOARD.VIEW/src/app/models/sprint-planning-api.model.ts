@@ -11,6 +11,8 @@ export interface SprintApiDto {
   endDate:        string;
   isActive:       boolean;
   createdAt:      string;
+  status:         'Planning' | 'Active' | 'Closed';
+  closedAt?:      string | null;
   /** HUB Chat channel linked to this sprint, or null if none. */
   hubChannelId?:  string | null;
   /** Full URL to the linked HUB channel, e.g. http://localhost:4202/channels/{id}. */

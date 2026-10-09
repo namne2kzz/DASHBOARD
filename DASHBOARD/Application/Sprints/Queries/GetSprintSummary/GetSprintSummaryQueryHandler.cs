@@ -67,8 +67,8 @@ public sealed class GetSprintSummaryQueryHandler(
             .ToListAsync(ct);
 
         var committedPoints  = tasks.Sum(t => t.StoryPoints);
-        var completedPoints  = tasks.Where(t => t.State == SprintTaskState.Done).Sum(t => t.StoryPoints);
-        var completedTasks   = tasks.Count(t => t.State == SprintTaskState.Done);
+        var completedPoints  = tasks.Where(t => t.Category == StateCategory.Done).Sum(t => t.StoryPoints);
+        var completedTasks   = tasks.Count(t => t.Category == StateCategory.Done);
 
         return new SprintSummaryDto(
             sprint.Id, sprint.Name,

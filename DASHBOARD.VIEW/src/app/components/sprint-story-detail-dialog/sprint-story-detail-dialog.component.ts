@@ -46,12 +46,16 @@ export class SprintStoryDetailDialogComponent {
   readonly stateLabel = SPRINT_TASK_STATE_LABEL;
 
   private readonly _stateToApi: Record<SprintTask['state'], SprintTaskApiState> = {
-    'new':       SprintTaskApiState.New,
-    'backlog':   SprintTaskApiState.Backlog,
-    'todo':      SprintTaskApiState.Todo,
-    'active':    SprintTaskApiState.Active,
-    'in-review': SprintTaskApiState.InReview,
-    'done':      SprintTaskApiState.Done,
+    'open':        SprintTaskApiState.Open,
+    'todo':        SprintTaskApiState.ToDo,
+    'in-progress': SprintTaskApiState.InProgress,
+    'in-review':   SprintTaskApiState.InReview,
+    'verified':    SprintTaskApiState.Verified,
+    'running':     SprintTaskApiState.Running,
+    'done':        SprintTaskApiState.Done,
+    'passed':      SprintTaskApiState.Passed,
+    'failed':      SprintTaskApiState.Failed,
+    'closed':      SprintTaskApiState.Closed,
   };
 
   /** Maps string state to its numeric API enum for badge lookup. @param state String state key. */

@@ -3,7 +3,7 @@ export interface WorkflowColumnApiDto {
   id: string;
   repositoryId: string;
   name: string;
-  /** SprintTaskState: 0=New, 1=Backlog, 2=Todo, 3=Active, 4=InReview, 5=Done */
+  /** WorkItemState: 0=Open, 1=ToDo, 2=InProgress, 3=InReview, 4=Verified, 5=Running, 6=Done, 7=Passed, 8=Failed, 9=Closed */
   mappedState: number;
   wipLimit: number;
   /** WipMode: 0=Soft, 1=Hard */

@@ -94,4 +94,23 @@ public interface IAppSettings
     /// (e.g. <c>http://localhost:4202</c>). Empty string means HUB integration is disabled.
     /// </summary>
     string HubFrontendBaseUrl { get; }
+
+    // ── NMate (AI support assistant) ─────────────────────────────────────────
+    /// <summary>
+    /// Gets the base URL of the NMate internal API (e.g. <c>http://localhost:5160</c>).
+    /// Empty string means NMate is disabled and <c>/api/v1/nmate/*</c> returns 404.
+    /// </summary>
+    string NMateBaseUrl { get; }
+
+    /// <summary>Gets the shared secret sent in <c>X-Internal-Token</c> when calling NMate's /internal/* endpoints.</summary>
+    string NMateInternalToken { get; }
+
+    /// <summary>Gets the upper bound for one NMate call, including a whole streamed answer.</summary>
+    TimeSpan NMateTimeout { get; }
+
+    /// <summary>Gets how many questions one user may ask NMate per <see cref="NMateChatRateLimitWindow"/>.</summary>
+    int NMateChatRateLimitPermitLimit { get; }
+
+    /// <summary>Gets the sliding window for <see cref="NMateChatRateLimitPermitLimit"/>.</summary>
+    TimeSpan NMateChatRateLimitWindow { get; }
 }

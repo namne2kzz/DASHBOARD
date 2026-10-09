@@ -1,7 +1,7 @@
 export type WipMode = 'soft' | 'hard';
 
 /** Sprint-task state key — matches the string values used in SprintTask.state. */
-export type SprintTaskStateKey = 'new' | 'backlog' | 'todo' | 'active' | 'in-review' | 'done';
+export type SprintTaskStateKey = 'open' | 'todo' | 'in-progress' | 'in-review' | 'verified' | 'running' | 'done' | 'passed' | 'failed' | 'closed';
 
 export interface BoardColumn {
   id: string;

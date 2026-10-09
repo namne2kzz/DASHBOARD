@@ -28,12 +28,21 @@ const TYPE_ICON_CLASS: Record<SprintTaskApiType, string> = {
 
 /** Maps the C# enum member name embedded in history messages (e.g. "InReview") back to its numeric value. */
 const STATE_NAME_TO_API: Record<string, SprintTaskApiState> = {
-  New:      SprintTaskApiState.New,
-  Backlog:  SprintTaskApiState.Backlog,
-  Todo:     SprintTaskApiState.Todo,
-  Active:   SprintTaskApiState.Active,
-  InReview: SprintTaskApiState.InReview,
-  Done:     SprintTaskApiState.Done,
+  Open:       SprintTaskApiState.Open,
+  ToDo:       SprintTaskApiState.ToDo,
+  InProgress: SprintTaskApiState.InProgress,
+  InReview:   SprintTaskApiState.InReview,
+  Verified:   SprintTaskApiState.Verified,
+  Running:    SprintTaskApiState.Running,
+  Done:       SprintTaskApiState.Done,
+  Passed:     SprintTaskApiState.Passed,
+  Failed:     SprintTaskApiState.Failed,
+  Closed:     SprintTaskApiState.Closed,
+  // Legacy names (may appear in old history records)
+  New:        SprintTaskApiState.Open,
+  Backlog:    SprintTaskApiState.ToDo,
+  Todo:       SprintTaskApiState.ToDo,
+  Active:     SprintTaskApiState.InProgress,
 };
 
 const STATE_CHANGE_RE   = /^State changed from '(\w+)' to '(\w+)'\.$/;
@@ -212,7 +221,7 @@ export class WorkItemDetailPageComponent implements OnInit {
     const nodes: ProgressNode[] = [];
     for (const e of [...this.historyTimeline()].reverse()) {
       if (e.kind === 'created') {
-        nodes.push({ label: this.stateLabel[SprintTaskApiState.New], badgeClass: this.stateBadgeClass[SprintTaskApiState.New], date: e.createdAt });
+        nodes.push({ label: this.stateLabel[SprintTaskApiState.Open], badgeClass: this.stateBadgeClass[SprintTaskApiState.Open], date: e.createdAt });
       } else if (e.kind === 'state' && e.toState !== undefined) {
         nodes.push({ label: this.stateLabel[e.toState], badgeClass: this.stateBadgeClass[e.toState], date: e.createdAt });
       }

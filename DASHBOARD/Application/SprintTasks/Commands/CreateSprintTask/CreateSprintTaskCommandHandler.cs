@@ -74,7 +74,9 @@ public sealed class CreateSprintTaskCommandHandler(
             .Where(t => t.RepositoryId == command.RepositoryId)
             .MaxAsync(t => (int?)t.WorkItemNumber, ct) ?? 0;
 
-        var initialState = command.SprintId.HasValue ? SprintTaskState.New : SprintTaskState.Backlog;
+        var initialState = command.SprintId.HasValue
+            ? (command.Type == SprintTaskType.Task ? WorkItemState.ToDo : WorkItemState.Open)
+            : WorkItemState.Open;
 
         var task = new SprintTask
         {

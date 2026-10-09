@@ -16,7 +16,7 @@ export class AddColumnModalComponent {
   readonly cancelled = output<void>();
 
   readonly name        = signal('');
-  readonly mappedState = signal<SprintTaskStateKey>('new');
+  readonly mappedState = signal<SprintTaskStateKey>('open');
   readonly wipLimit    = signal(0);
   readonly wipMode     = signal<WipMode>('soft');
   readonly agingDays   = signal(5);
