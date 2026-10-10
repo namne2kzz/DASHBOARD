@@ -51,7 +51,7 @@ public sealed class QueryTranslationTests(SqlServerFixture database) : IAsyncLif
             Type           = SprintTaskType.UserStory,
             Title          = "Checkout flow",
             WorkItemNumber = 1,
-            State          = SprintTaskState.Active,
+            State          = WorkItemState.InProgress,
             StoryPoints    = 8,
         };
         db.SprintTasks.Add(story);
@@ -64,7 +64,7 @@ public sealed class QueryTranslationTests(SqlServerFixture database) : IAsyncLif
             Type           = SprintTaskType.Task,
             Title          = "Wire up the login form",
             WorkItemNumber = 2,
-            State          = SprintTaskState.Todo,
+            State          = WorkItemState.ToDo,
             AssignedToId   = _tenant.UserId,
             RemainingWork  = 4m,
         });
@@ -77,7 +77,7 @@ public sealed class QueryTranslationTests(SqlServerFixture database) : IAsyncLif
             Type           = SprintTaskType.Bug,
             Title          = "Unscheduled login bug",
             WorkItemNumber = 3,
-            State          = SprintTaskState.Backlog,
+            State          = WorkItemState.ToDo,
             AssignedToId   = _tenant.UserId,
         });
 

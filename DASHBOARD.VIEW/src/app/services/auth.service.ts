@@ -8,14 +8,16 @@ import { StorageService } from '../core/services/storage.service';
 import { StorageKeys } from '../core/constants/storage-keys.constant';
 import { PreferencesService } from '../core/services/preferences.service';
 import { HttpCacheService } from './http-cache.service';
+import { NotificationService } from './notification.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly http        = inject(HttpClient);
-  private readonly storage     = inject(StorageService);
-  private readonly preferences = inject(PreferencesService);
-  private readonly httpCache   = inject(HttpCacheService);
-  private readonly apiUrl      = `${environment.apiBaseUrl}/auth`;
+  private readonly http          = inject(HttpClient);
+  private readonly storage       = inject(StorageService);
+  private readonly preferences   = inject(PreferencesService);
+  private readonly httpCache     = inject(HttpCacheService);
+  private readonly notiSvc       = inject(NotificationService);
+  private readonly apiUrl        = `${environment.apiBaseUrl}/auth`;
 
   readonly isAuthenticated = signal<boolean>(this.storage.has(StorageKeys.accessToken));
   readonly currentUser     = signal<UserProfile | null>(this.storage.get<UserProfile>(StorageKeys.userProfile));
@@ -49,6 +51,7 @@ export class AuthService {
 
   /** Clears session from storage and resets signals. */
   logout(): void {
+    this.notiSvc.disconnect();
     this.storage.remove(StorageKeys.accessToken);
     this.storage.remove(StorageKeys.refreshToken);
     this.storage.remove(StorageKeys.userProfile);
@@ -111,5 +114,6 @@ export class AuthService {
     this.preferences.syncFromServer().subscribe(avatarUrl => {
       if (avatarUrl) this.patchProfile({ avatarUrl });
     });
+    this.notiSvc.connect();
   }
 }

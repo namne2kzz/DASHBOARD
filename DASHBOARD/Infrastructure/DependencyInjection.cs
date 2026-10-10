@@ -106,6 +106,11 @@ public static class DependencyInjection
         // ── Email ─────────────────────────────────────────────────────────────
         services.AddScoped<IEmailService, EmailService>();
 
+        // ── Real-time notifications ───────────────────────────────────────────
+        // Hub is singleton: connection channels must outlive individual HTTP requests.
+        services.AddSingleton<INotificationHub, NotificationHub>();
+        services.AddScoped<INotificationService, NotificationService>();
+
         // ── Object storage (MinIO / S3-compatible) ────────────────────────────
         services.AddScoped<IStorageService, MinioStorageService>();
 

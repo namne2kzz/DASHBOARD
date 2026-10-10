@@ -12,12 +12,14 @@ import { DialogComponent } from '../core/components/dialog/dialog.component';
 import { NewRepoDialogComponent } from '../components/new-repo-dialog/new-repo-dialog.component';
 import { GlobalSearchComponent } from '../components/global-search/global-search.component';
 import { NMateWidgetComponent } from '../components/nmate-widget/nmate-widget.component';
+import { NotificationPanelComponent } from '../components/notification-panel/notification-panel.component';
+import { NotificationService } from '../services/notification.service';
 import { SearchService } from '../services/search.service';
 import { RepositoryApiDto } from '../models/repository.model';
 
 @Component({
   selector: 'app-shell-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LoadingOverlayComponent, DialogComponent, GlobalSearchComponent, NMateWidgetComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LoadingOverlayComponent, DialogComponent, GlobalSearchComponent, NMateWidgetComponent, NotificationPanelComponent],
   templateUrl: './shell-layout.component.html',
   styleUrl: './shell-layout.component.css',
 })
@@ -25,10 +27,12 @@ export class ShellLayoutComponent {
   readonly collapsed        = signal(false);
   readonly repoDropdownOpen = signal(false);
   readonly settingsOpen     = signal(false);
+  readonly notiPanelOpen    = signal(false);
   readonly auth      = inject(AuthService);
   readonly repoCtx   = inject(RepositoryContextService);
   readonly privilege = inject(PrivilegeService);
   readonly search    = inject(SearchService);
+  readonly notiSvc   = inject(NotificationService);
   private readonly dialog  = inject(DialogService);
   private readonly confirm = inject(ConfirmService);
   private readonly router  = inject(Router);
@@ -70,6 +74,10 @@ export class ShellLayoutComponent {
   /** Toggle the Settings sub-nav group open/closed. */
   toggleSettings(): void {
     this.settingsOpen.update(v => !v);
+  }
+
+  toggleNotiPanel(): void {
+    this.notiPanelOpen.update(v => !v);
   }
 
   toggleSidebar(): void {

@@ -88,6 +88,18 @@ try
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero,
             };
+            // EventSource (SSE) cannot send custom headers — accept the token from ?access_token=
+            // for SSE stream endpoints only.
+            opt.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnMessageReceived = ctx =>
+                {
+                    var token = ctx.Request.Query["access_token"].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(token) && ctx.Request.Path.StartsWithSegments("/api"))
+                        ctx.Token = token;
+                    return Task.CompletedTask;
+                }
+            };
         });
 
     builder.Services.AddAuthorization();

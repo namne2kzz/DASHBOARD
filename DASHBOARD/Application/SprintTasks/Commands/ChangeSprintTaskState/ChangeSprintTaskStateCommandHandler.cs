@@ -21,6 +21,7 @@ public sealed class ChangeSprintTaskStateCommandHandler(
     IPublishEndpoint      publisher,
     IEmailService         email,
     IAppSettings          settings,
+    INotificationService  notifications,
     ILogger<ChangeSprintTaskStateCommandHandler> logger) : IRequestHandler<ChangeSprintTaskStateCommand, Result>
 {
     private static readonly Dictionary<WorkItemState, string> StateLabels = new()
@@ -86,7 +87,7 @@ public sealed class ChangeSprintTaskStateCommandHandler(
         await publisher.Publish(
             new DirectoryEntryChangedEvent(DirectoryEntryKind.WorkItem, command.TaskId), ct);
 
-        // ── Email notification (best-effort — never fail the command) ──────────
+        // ── Email + in-app notification (best-effort — never fail the command) ──
         if (notifyUserId.HasValue && notifyUserId != changedById && oldState != command.NewState)
         {
             try
@@ -103,18 +104,26 @@ public sealed class ChangeSprintTaskStateCommandHandler(
                 {
                     var itemNumber = SprintTask.BuildWorkItemNumber(notifyData.RepoCode, task.WorkItemNumber);
                     var itemUrl    = $"{settings.InvitationFrontendBaseUrl.TrimEnd('/')}/boards/{itemNumber}";
+                    var oldLabel   = StateLabels.GetValueOrDefault(oldState, oldState.ToString());
+                    var newLabel   = StateLabels.GetValueOrDefault(command.NewState, command.NewState.ToString());
 
                     await email.SendStateChangedAsync(
                         notifyData.Email, notifyData.Name,
                         itemNumber, task.Title,
-                        StateLabels.GetValueOrDefault(oldState, oldState.ToString()),
-                        StateLabels.GetValueOrDefault(command.NewState, command.NewState.ToString()),
+                        oldLabel, newLabel,
                         notifyData.ChangerName, notifyData.RepoName, itemUrl, ct);
+
+                    await notifications.NotifyAsync(
+                        notifyUserId.Value,
+                        NotificationType.WorkItemStateChanged,
+                        $"{itemNumber} state changed: {oldLabel} → {newLabel}",
+                        task.Title,
+                        itemUrl, ct);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "State-change email failed for task {TaskId}; notification skipped.", command.TaskId);
+                logger.LogWarning(ex, "State-change notification failed for task {TaskId}; skipped.", command.TaskId);
             }
         }
 

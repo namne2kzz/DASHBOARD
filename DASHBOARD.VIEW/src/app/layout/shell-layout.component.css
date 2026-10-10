@@ -89,3 +89,35 @@
 .nav-item--sub.is-active::before {
   left: -11px;
 }
+
+/* Notification unread badge — dot on icon (collapsed sidebar) */
+.noti-badge-dot {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--danger, #f43f5e);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* Notification unread badge — pill in expanded row */
+.noti-badge-pill {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--danger, #f43f5e);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
