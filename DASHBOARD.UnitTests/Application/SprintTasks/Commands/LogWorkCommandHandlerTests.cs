@@ -34,10 +34,10 @@ public sealed class LogWorkCommandHandlerTests : IDisposable
             .WithPrivilege(SystemFunction.EditWorkItem, _repositoryId).Object;
 
     private async Task<SprintTask> AddTaskAsync(
-        decimal         completedWork = 0m,
-        decimal         remainingWork = 8m,
-        SprintTaskState state         = SprintTaskState.Active,
-        Guid?           sprintId      = null)
+        decimal       completedWork = 0m,
+        decimal       remainingWork = 8m,
+        WorkItemState state         = WorkItemState.InProgress,
+        Guid?         sprintId      = null)
     {
         var task = new SprintTask
         {
@@ -77,7 +77,7 @@ public sealed class LogWorkCommandHandlerTests : IDisposable
     {
         // Logging work down to zero auto-closes the item, so membership alone must not be enough —
         // otherwise this is a back door around the EditWorkItem check on UpdateSprintTask.
-        var task    = await AddTaskAsync(remainingWork: 3m, state: SprintTaskState.Active);
+        var task    = await AddTaskAsync(remainingWork: 3m, state: WorkItemState.InProgress);
         var handler = CreateHandler(
             RequestUserContextMock.ForUser().AsMember(_repositoryId).Object);
 
@@ -87,7 +87,7 @@ public sealed class LogWorkCommandHandlerTests : IDisposable
         await act.Should().ThrowAsync<ForbiddenException>();
 
         var untouched = await LoadAsync(task.Id);
-        untouched.State.Should().Be(SprintTaskState.Active);
+        untouched.State.Should().Be(WorkItemState.InProgress);
         untouched.ClosedAt.Should().BeNull();
     }
 
@@ -213,28 +213,28 @@ public sealed class LogWorkCommandHandlerTests : IDisposable
     [Fact]
     public async Task Handle_WhenRemainingReachesZero_AutoClosesTheTask()
     {
-        var task    = await AddTaskAsync(remainingWork: 3m, state: SprintTaskState.Active);
+        var task    = await AddTaskAsync(remainingWork: 3m, state: WorkItemState.InProgress);
         var handler = CreateHandler(AuthorizedUser());
 
         await handler.Handle(
             new LogWorkCommand(_repositoryId, _sprintId, task.Id, 3m, 0m), CancellationToken.None);
 
         var updated = await LoadAsync(task.Id);
-        updated.State.Should().Be(SprintTaskState.Done);
+        updated.State.Should().Be(WorkItemState.Done);
         updated.ClosedAt.Should().NotBeNull();
     }
 
     [Fact]
     public async Task Handle_WhenRemainingIsAboveZero_LeavesTheStateAlone()
     {
-        var task    = await AddTaskAsync(remainingWork: 8m, state: SprintTaskState.Active);
+        var task    = await AddTaskAsync(remainingWork: 8m, state: WorkItemState.InProgress);
         var handler = CreateHandler(AuthorizedUser());
 
         await handler.Handle(
             new LogWorkCommand(_repositoryId, _sprintId, task.Id, 3m, 5m), CancellationToken.None);
 
         var updated = await LoadAsync(task.Id);
-        updated.State.Should().Be(SprintTaskState.Active);
+        updated.State.Should().Be(WorkItemState.InProgress);
         updated.ClosedAt.Should().BeNull();
     }
 
@@ -242,7 +242,7 @@ public sealed class LogWorkCommandHandlerTests : IDisposable
     public async Task Handle_WhenTheTaskIsAlreadyDone_DoesNotRestampClosedAt()
     {
         var originalClosedAt = DateTime.UtcNow.AddDays(-3);
-        var task = await AddTaskAsync(remainingWork: 0m, state: SprintTaskState.Done);
+        var task = await AddTaskAsync(remainingWork: 0m, state: WorkItemState.Done);
         task.ClosedAt = originalClosedAt;
         await _db.SaveChangesAsync();
 

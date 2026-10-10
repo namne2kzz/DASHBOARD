@@ -95,7 +95,7 @@ public sealed class RepositoryReadAndMetadataUpdateTests : IDisposable
         {
             RepositoryId   = repositoryId ?? _repositoryId,
             Name           = name,
-            MappedState    = SprintTaskState.Todo,
+            MappedState    = WorkItemState.ToDo,
             WipLimit       = 5,
             WipMode        = WipMode.Soft,
             AgingLimitDays = 3,
@@ -399,7 +399,7 @@ public sealed class RepositoryReadAndMetadataUpdateTests : IDisposable
 
         var column = result.Single();
         column.RepositoryId.Should().Be(_repositoryId);
-        column.MappedState.Should().Be(SprintTaskState.Todo);
+        column.MappedState.Should().Be(WorkItemState.ToDo);
         column.WipLimit.Should().Be(5);
         column.WipMode.Should().Be(WipMode.Soft);
         column.AgingLimitDays.Should().Be(3);

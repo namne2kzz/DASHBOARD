@@ -182,7 +182,7 @@ public sealed class PromoteToSprintCommandHandlerTests : IDisposable
         task.BacklogItemId.Should().Be(item.Id);
         task.Title.Should().Be("Checkout flow");
         task.Type.Should().Be(SprintTaskType.UserStory);
-        task.State.Should().Be(SprintTaskState.New);
+        task.State.Should().Be(WorkItemState.Open);
         task.StoryPoints.Should().Be(8);
         task.AcceptanceCriteria.Should().Be("Given…When…Then…");
         task.Documents.Should().BeEquivalentTo(["spec.md"]);

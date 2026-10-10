@@ -90,7 +90,7 @@ public sealed class GetSprintDetailQueryHandlerTests : IDisposable
     }
 
     private async Task AddTaskAsync(
-        Guid sprintId, Guid? assignedToId, decimal remainingWork, SprintTaskState state)
+        Guid sprintId, Guid? assignedToId, decimal remainingWork, WorkItemState state)
     {
         _db.Set<SprintTask>().Add(new SprintTask
         {
@@ -230,8 +230,8 @@ public sealed class GetSprintDetailQueryHandlerTests : IDisposable
         var sprint = await SeedSprintAsync();
         var alice  = await AddUserAsync("Alice");
         await AddCapacityAsync(sprint.Id, alice.Id, hoursPerDay: 8m);
-        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 10m, state: SprintTaskState.Active);
-        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 5m,  state: SprintTaskState.Todo);
+        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 10m, state: WorkItemState.InProgress);
+        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 5m,  state: WorkItemState.ToDo);
 
         var handler = CreateHandler(MemberUser());
 
@@ -247,8 +247,8 @@ public sealed class GetSprintDetailQueryHandlerTests : IDisposable
         var sprint = await SeedSprintAsync();
         var alice  = await AddUserAsync("Alice");
         await AddCapacityAsync(sprint.Id, alice.Id, hoursPerDay: 8m);
-        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 10m, state: SprintTaskState.Active);
-        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 99m, state: SprintTaskState.Done);
+        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 10m, state: WorkItemState.InProgress);
+        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 99m, state: WorkItemState.Done);
 
         var handler = CreateHandler(MemberUser());
 
@@ -265,9 +265,9 @@ public sealed class GetSprintDetailQueryHandlerTests : IDisposable
         var alice  = await AddUserAsync("Alice");
         var bob    = await AddUserAsync("Bob");
         await AddCapacityAsync(sprint.Id, alice.Id, hoursPerDay: 8m);
-        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 10m, state: SprintTaskState.Active);
-        await AddTaskAsync(sprint.Id, bob.Id,   remainingWork: 99m, state: SprintTaskState.Active);
-        await AddTaskAsync(sprint.Id, null,     remainingWork: 77m, state: SprintTaskState.Active);
+        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 10m, state: WorkItemState.InProgress);
+        await AddTaskAsync(sprint.Id, bob.Id,   remainingWork: 99m, state: WorkItemState.InProgress);
+        await AddTaskAsync(sprint.Id, null,     remainingWork: 77m, state: WorkItemState.InProgress);
 
         var handler = CreateHandler(MemberUser());
 
@@ -294,7 +294,7 @@ public sealed class GetSprintDetailQueryHandlerTests : IDisposable
         var alice  = await AddUserAsync("Alice");
         await AddCapacityAsync(sprint.Id, alice.Id, hoursPerDay: 8m);
         if (remainingWork > 0)
-            await AddTaskAsync(sprint.Id, alice.Id, remainingWork, SprintTaskState.Active);
+            await AddTaskAsync(sprint.Id, alice.Id, remainingWork, WorkItemState.InProgress);
 
         var handler = CreateHandler(MemberUser());
 
@@ -311,7 +311,7 @@ public sealed class GetSprintDetailQueryHandlerTests : IDisposable
         var sprint = await SeedSprintAsync();
         var alice  = await AddUserAsync("Alice");
         await AddCapacityAsync(sprint.Id, alice.Id, hoursPerDay: 0m);
-        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 5m, state: SprintTaskState.Active);
+        await AddTaskAsync(sprint.Id, alice.Id, remainingWork: 5m, state: WorkItemState.InProgress);
 
         var handler = CreateHandler(MemberUser());
 
