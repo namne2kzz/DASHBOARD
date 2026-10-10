@@ -11,7 +11,8 @@ export interface SprintApiDto {
   endDate:        string;
   isActive:       boolean;
   createdAt:      string;
-  status:         'Planning' | 'Active' | 'Closed';
+  /** 0=Planning, 1=Active, 2=Closed — backend serializes enum as int */
+  status:         0 | 1 | 2;
   closedAt?:      string | null;
   /** HUB Chat channel linked to this sprint, or null if none. */
   hubChannelId?:  string | null;

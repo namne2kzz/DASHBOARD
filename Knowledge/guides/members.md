@@ -22,7 +22,9 @@ Mỗi project có danh sách thành viên riêng. Quyền của mỗi người t
 3. Chọn **Discipline** (chức danh, ví dụ Developer, Tester).
 4. Chọn **Role**. Hệ thống tự gợi ý role khớp với chức danh, bạn có thể đổi.
 
-Muốn mời người chưa có tài khoản thì dùng **Invite by Email**.
+Muốn mời người chưa có tài khoản thì dùng **Invite by Email** (xem "Mời người mới qua email").
+
+Mục **Settings → Members** chỉ hiện với người có quyền **Manage Members**. Danh sách thành viên kèm **Discipline**, **Role**, **Managed by** và ngày tham gia (**Joined**).
 
 Lưu ý:
 
@@ -48,21 +50,55 @@ Mỗi project tự có 5 role mặc định:
 | **Tester** | Xem project; tạo, sửa, giao work item; quản lý backlog; xem analytics |
 | **Business Analyst** | Xem project; tạo, sửa, xoá, giao work item; quản lý backlog; promote vào sprint; quản lý và kích hoạt sprint; xem analytics |
 
-Người tạo project trở thành **Scrum Master** của project đó.
+Khi Global Admin tạo project, người được chọn làm **Scrum Master** trở thành thành viên đầu tiên với toàn quyền. **Global Admin** luôn có mọi quyền trong mọi project, không phụ thuộc role.
+
+Lưu ý: role **Developer** và **Tester** mặc định **không** có quyền Manage Sprint, Manage Capacity, Manage Members hay Invite Members. Vì vậy Developer không tạo, kích hoạt hay đóng sprint được và không khai báo được capacity.
+
+## Danh sách quyền
+
+Khi tạo hoặc sửa role, quyền được chia theo nhóm:
+
+| Nhóm | Quyền | Cho phép |
+|---|---|---|
+| Repository | **View Repository** | Xem project |
+| | **Edit Repository** | Sửa tên, mô tả, code project |
+| | **Manage Repo** | Quản lý phần Repos của project |
+| Members & Access | **Manage Members** | Thêm/sửa/xoá thành viên; thấy Settings → Members, Settings → Metadata và Audit log |
+| | **Manage Roles** | Tạo/sửa/xoá/clone role |
+| | **Invite Members** | Mời người mới qua email, xem và thu hồi lời mời |
+| | **Manage Metadata** | Quản lý giá trị metadata riêng của project |
+| Work Items | **Create Work Item** | Tạo work item |
+| | **Edit Work Item** | Sửa work item, log giờ làm, gắn metadata |
+| | **Delete Work Item** | Xoá work item |
+| | **Assign Work Item** | Giao việc |
+| Backlog | **Manage Backlog** | Quản lý backlog, thao tác hàng loạt |
+| | **Promote to Sprint** | Đưa User Story vào sprint, De-scope story |
+| Sprint | **Manage Sprint** | Tạo/sửa sprint, Activate, Close sprint |
+| | **Activate Sprint** | Quyền dành cho việc kích hoạt sprint |
+| | **Manage Capacity** | Khai báo capacity và ngày nghỉ |
+| Board & Analytics | **Manage Board** | Quản lý cấu hình board |
+| | **View Analytics** | Xem số liệu phân tích |
+| | **Manage Pipeline** | Quản lý pipeline |
+| Collaboration | **Manage Channels** | Quản lý kênh chat NHub |
+
+Đổi trạng thái work item (kéo card trên board) chỉ cần là **thành viên** của project.
 
 ## Vì sao tôi không thấy một nút hay menu nào đó?
 
 Các nút và menu chỉ hiện khi role của bạn có quyền tương ứng. Ví dụ:
 
-- Không thấy nút tạo sprint: role chưa có quyền **quản lý sprint**.
-- Không đưa được User Story vào sprint: role chưa có quyền **promote vào sprint**.
-- Không thêm được thành viên: role chưa có quyền **quản lý thành viên**.
+- Không tạo, kích hoạt hay đóng được sprint: role chưa có quyền **Manage Sprint**.
+- Không khai báo được capacity hay ngày nghỉ: chưa có quyền **Manage Capacity**.
+- Không đưa được User Story vào sprint: chưa có quyền **Promote to Sprint**.
+- Không thấy **Settings → Members**, **Settings → Metadata** hay **Audit log**: chưa có quyền **Manage Members**.
+- Không thấy **Settings → Users**: mục này chỉ dành cho **Global Admin**.
+- Không sửa được work item hay log giờ: chưa có quyền **Edit Work Item**.
 
 Hãy nhờ Scrum Master (hoặc người có quyền quản lý thành viên) đổi role cho bạn.
 
 ## Role tự tạo (custom role)
 
-Nếu 5 role mặc định không phù hợp, người có quyền **quản lý role** có thể tạo role riêng:
+Nếu 5 role mặc định không phù hợp, người có quyền **Manage Roles** có thể tạo role riêng ở tab **Roles** trong **Settings → Members**:
 
 - **Tạo mới**: đặt tên (**Role name**), mô tả và chọn danh sách quyền (**Permissions**).
 - **Clone**: sao chép một role có sẵn (kể cả role mặc định) thành role mới cùng quyền, rồi chỉnh tiếp.

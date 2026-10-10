@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{AssignmentVerb}} to work item — {{WorkItemNumber}}</title>
+  <style>
+    body  { margin:0; padding:0; background:#f3f4f6; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+    .wrap { max-width:560px; margin:40px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    .top  { background:#8b5cf6; padding:28px 40px; text-align:center; }
+    .top h1 { margin:0; color:#fff; font-size:20px; font-weight:700; letter-spacing:-.3px; }
+    .top p  { margin:6px 0 0; color:#ede9fe; font-size:13px; }
+    .body { padding:36px 40px; }
+    .body p { margin:0 0 16px; color:#374151; font-size:15px; line-height:1.65; }
+    .item-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:16px 20px; margin:20px 0; }
+    .item-title { font-size:15px; font-weight:600; color:#1e293b; margin:0 0 4px; }
+    .item-num   { font-size:12px; color:#94a3b8; font-family:monospace; margin:0; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:13px; font-weight:600; }
+    .badge--assigned   { background:#dcfce7; color:#16a34a; }
+    .badge--unassigned { background:#fef3c7; color:#d97706; }
+    .btn-wrap { text-align:center; margin:28px 0 20px; }
+    .btn  { display:inline-block; padding:13px 36px; background:#8b5cf6; color:#fff !important;
+            border-radius:8px; text-decoration:none; font-size:15px; font-weight:600; }
+    .foot { background:#f9fafb; border-top:1px solid #e5e7eb; padding:18px 40px; text-align:center; }
+    .foot p { margin:0; font-size:12px; color:#9ca3af; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1>{{AssignmentVerb}} to a work item</h1>
+      <p>{{RepositoryName}}</p>
+    </div>
+    <div class="body">
+      <p>Hi {{RecipientName}},</p>
+      <p><strong>{{ChangedByName}}</strong> has <span class="badge {{AssignmentBadgeClass}}">{{AssignmentVerb}}</span> you {{AssignmentPreposition}} this work item:</p>
+
+      <div class="item-card">
+        <p class="item-title">{{WorkItemTitle}}</p>
+        <p class="item-num">{{WorkItemNumber}}</p>
+      </div>
+
+      <div class="btn-wrap">
+        <a href="{{ItemUrl}}" class="btn">View work item</a>
+      </div>
+    </div>
+    <div class="foot">
+      <p>This notification was sent from <strong>{{RepositoryName}}</strong> on NFlow.</p>
+    </div>
+  </div>
+</body>
+</html>

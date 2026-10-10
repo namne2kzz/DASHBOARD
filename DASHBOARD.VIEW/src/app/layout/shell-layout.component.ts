@@ -11,12 +11,13 @@ import { LoadingOverlayComponent } from '../core/components/loading/loading-over
 import { DialogComponent } from '../core/components/dialog/dialog.component';
 import { NewRepoDialogComponent } from '../components/new-repo-dialog/new-repo-dialog.component';
 import { GlobalSearchComponent } from '../components/global-search/global-search.component';
+import { NMateWidgetComponent } from '../components/nmate-widget/nmate-widget.component';
 import { SearchService } from '../services/search.service';
 import { RepositoryApiDto } from '../models/repository.model';
 
 @Component({
   selector: 'app-shell-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LoadingOverlayComponent, DialogComponent, GlobalSearchComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LoadingOverlayComponent, DialogComponent, GlobalSearchComponent, NMateWidgetComponent],
   templateUrl: './shell-layout.component.html',
   styleUrl: './shell-layout.component.css',
 })

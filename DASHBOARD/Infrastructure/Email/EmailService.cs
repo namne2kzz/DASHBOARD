@@ -35,27 +35,92 @@ internal sealed class EmailService(IAppSettings settings) : IEmailService
             .Replace("{{RepositoryName}}", repositoryName)
             .Replace("{{ExpiryMinutes}}", expiryMinutes.ToString());
 
+        await SendAsync(toEmail, toEmail, $"You've been invited to join {repositoryName}", body, ct);
+    }
+
+    /// <summary>Constructs and sends an HTML email over SMTP.</summary>
+    private async Task SendAsync(string toEmail, string toName, string subject, string htmlBody, CancellationToken ct)
+    {
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(repositoryName, settings.EmailFromAddress));
-        message.To.Add(MailboxAddress.Parse(toEmail));
-        message.Subject = $"You've been invited to join {repositoryName}";
-        message.Body    = new TextPart("html") { Text = body };
+        message.From.Add(new MailboxAddress("NFlow", settings.EmailFromAddress));
+        message.To.Add(new MailboxAddress(toName, toEmail));
+        message.Subject = subject;
+        message.Body    = new TextPart("html") { Text = htmlBody };
 
         using var client = new SmtpClient();
         // StartTlsWhenAvailable upgrades to TLS when the server offers it (e.g. Gmail on 587) and
-        // falls back to plaintext when it doesn't (local dev relays like Mailpit don't terminate TLS)
-        // — StartTls alone would hard-fail against a relay that never advertises STARTTLS.
+        // falls back to plaintext when it doesn't (local dev relays like Mailpit don't terminate TLS).
         await client.ConnectAsync(settings.SmtpHost, settings.SmtpPort, SecureSocketOptions.StartTlsWhenAvailable, ct);
 
-        // Local dev relays like Mailpit advertise no SASL mechanism at all, so an unconditional
-        // AuthenticateAsync throws NotSupportedException — only authenticate when the server
-        // actually offers a mechanism (real providers like Gmail always do).
+        // Local dev relays like Mailpit advertise no SASL mechanism; only authenticate when offered.
         if (client.AuthenticationMechanisms.Count > 0)
-        {
             await client.AuthenticateAsync(settings.SmtpUsername, settings.SmtpPassword, ct);
-        }
+
         await client.SendAsync(message, ct);
         await client.DisconnectAsync(quit: true, ct);
+    }
+
+    /// <summary>Sends a state-change notification to the work item's assignee.</summary>
+    /// <param name="toEmail">Recipient email address.</param>
+    /// <param name="recipientName">Recipient display name.</param>
+    /// <param name="workItemNumber">Formatted work item number.</param>
+    /// <param name="workItemTitle">Work item title.</param>
+    /// <param name="oldState">Previous state label.</param>
+    /// <param name="newState">New state label.</param>
+    /// <param name="changedByName">Display name of who made the change.</param>
+    /// <param name="repositoryName">Repository display name.</param>
+    /// <param name="itemUrl">Deep-link URL to the work item.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task SendStateChangedAsync(
+        string toEmail, string recipientName, string workItemNumber, string workItemTitle,
+        string oldState, string newState, string changedByName, string repositoryName,
+        string itemUrl, CancellationToken ct)
+    {
+        var body = await LoadTemplateAsync("StateChangedEmail.html", ct);
+        body = body
+            .Replace("{{RecipientName}}",  recipientName)
+            .Replace("{{WorkItemNumber}}", workItemNumber)
+            .Replace("{{WorkItemTitle}}",  workItemTitle)
+            .Replace("{{OldState}}",       oldState)
+            .Replace("{{NewState}}",       newState)
+            .Replace("{{ChangedByName}}", changedByName)
+            .Replace("{{RepositoryName}}", repositoryName)
+            .Replace("{{ItemUrl}}",        itemUrl);
+
+        await SendAsync(toEmail, recipientName, $"[{workItemNumber}] State changed: {oldState} → {newState}", body, ct);
+    }
+
+    /// <summary>Notifies a user they have been assigned to or unassigned from a work item.</summary>
+    /// <param name="toEmail">Recipient email address.</param>
+    /// <param name="recipientName">Recipient display name.</param>
+    /// <param name="workItemNumber">Formatted work item number.</param>
+    /// <param name="workItemTitle">Work item title.</param>
+    /// <param name="assigned">True = assigned; false = unassigned.</param>
+    /// <param name="changedByName">Display name of who made the change.</param>
+    /// <param name="repositoryName">Repository display name.</param>
+    /// <param name="itemUrl">Deep-link URL to the work item.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task SendAssigneeChangedAsync(
+        string toEmail, string recipientName, string workItemNumber, string workItemTitle,
+        bool assigned, string changedByName, string repositoryName, string itemUrl, CancellationToken ct)
+    {
+        var verb        = assigned ? "Assigned"   : "Unassigned";
+        var preposition = assigned ? "to"         : "from";
+        var badgeClass  = assigned ? "badge--assigned" : "badge--unassigned";
+
+        var body = await LoadTemplateAsync("AssigneeChangedEmail.html", ct);
+        body = body
+            .Replace("{{RecipientName}}",      recipientName)
+            .Replace("{{WorkItemNumber}}",     workItemNumber)
+            .Replace("{{WorkItemTitle}}",      workItemTitle)
+            .Replace("{{AssignmentVerb}}",     verb)
+            .Replace("{{AssignmentPreposition}}", preposition)
+            .Replace("{{AssignmentBadgeClass}}", badgeClass)
+            .Replace("{{ChangedByName}}",      changedByName)
+            .Replace("{{RepositoryName}}",     repositoryName)
+            .Replace("{{ItemUrl}}",            itemUrl);
+
+        await SendAsync(toEmail, recipientName, $"[{workItemNumber}] {verb}: {workItemTitle}", body, ct);
     }
 
     /// <summary>

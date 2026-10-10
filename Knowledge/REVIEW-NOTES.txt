@@ -1,31 +1,58 @@
-REVIEW NOTES — bản nháp Knowledge do Claude viết (2026-10-09), owner cần duyệt
-=============================================================================
+REVIEW NOTES — tài liệu Knowledge do Claude viết, owner cần duyệt
+=================================================================
 File .txt này KHÔNG được NMate index (chỉ *.md có front-matter mới được index).
-Xoá file này khi đã trả lời hết.
+Xoá file này khi đã xử lý hết.
 
-Nguồn: .claude/business/{sprints,backlog,members,roles}.dod.md + nhãn nút trong template Angular.
-Nguyên tắc: chỗ nào business doc không nói rõ thì KHÔNG viết vào tài liệu, ghi câu hỏi ở đây.
+Nguồn khi viết: .claude/business/*.dod.md + CODE thực tế (handler, enum, guard) + nhãn trong template Angular
++ app.routes.ts. Chỗ nào business doc mâu thuẫn với code thì đã viết theo CODE và ghi lại dưới đây.
 
-Câu hỏi cần owner trả lời
--------------------------
-1. [sprints] Đóng sprint: user bấm nút gì? Task chưa Done đi đâu (về backlog, sang sprint sau, giữ nguyên)?
-   → business doc chỉ nói "đóng sprint → archive kênh NHub", không nói gì về task. Đây là câu hỏi
-     người dùng hay hỏi nhất, nên viết thêm mục "## Đóng sprint" khi đã rõ.
-2. [sprints] Quyền ActivateSprint / ManageSprint dùng để làm gì trên UI? Có nút "kích hoạt sprint" không, hay
-   sprint tự active theo ngày (business doc nói IsActive tính theo ngày)?
-3. [sprints] Toggle tạo kênh NHub trên form New sprint tên chính xác là gì? (template create-sprint-dialog
-   không có nhãn text để lấy.)
-4. [sprints] Xoá sprint: task/capacity KHÔNG bị xoá theo (orphan). Có muốn nói với user không? Hiện mình bỏ qua
-   vì đây là chi tiết kỹ thuật, nhưng user có thể thấy task "mất sprint".
-5. [backlog] Promote to Sprint: nút/hành động trên UI tên chính xác là gì, nằm ở đâu? (không tìm thấy nhãn text
-   "Promote" trong template backlog — có thể là icon/tooltip.)
-6. [backlog] Bật "chế độ chọn" (Select mode) bằng nút nào? Template chỉ có câu hướng dẫn "Tick rows to select".
-7. [members] Invite by Email: link mời hết hạn sau bao lâu, người được mời vào với role nào? (invitations.dod.md
-   nói "auto join với role Dev" — cần xác nhận còn đúng không trước khi viết.)
-8. [members] Đường dẫn Settings → Members là cấp tổ chức hay cấp project? Route hiện là /:org/settings/members.
-9. [faq] Đăng nhập cần nhập alias tổ chức — có muốn thêm mục hướng dẫn đăng nhập / quên mật khẩu không?
+Cập nhật 2026-10-09: 17 file .md (product/, guides/, glossary, faq).
 
-Module chưa có tài liệu (theo .claude/business/)
--------------------------------------------------
-overview, my-work, sprint-tasks, boards, capacity (chi tiết), discussions, invitations, repositories,
-git-repositories, search, user-settings, workflow, metadata, history/audit-log, hub-integration.
+-----------------------------------------------------------------
+A. ĐÃ TRẢ LỜI ĐƯỢC TỪ CODE (đã đưa vào tài liệu)
+-----------------------------------------------------------------
+1. Đóng sprint: menu ⋯ → "Close sprint". Còn item chưa kết thúc → confirm "Incomplete items remaining";
+   xác nhận thì đóng, item chưa xong ở lại sprint đã đóng với nguyên trạng thái (KHÔNG về backlog).
+   → guides/sprints.md
+2. Kích hoạt sprint: menu ⋯ → "Activate". Chỉ 1 sprint Active mỗi project. → guides/sprints.md
+3. Toggle NHub: "Create NHub channel for this sprint". → guides/sprints.md, guides/nhub-chat.md
+4. De-scope: nút "De-scope story" trong chi tiết story ở Sprint → story về backlog Ready, task con bị xoá.
+5. State theo loại work item lấy từ SprintTask.AllowedStates. → guides/work-items.md
+6. Quên mật khẩu: link "Forgot password?" trên trang login KHÔNG có handler → tài liệu ghi
+   "chưa có chức năng tự đặt lại mật khẩu, liên hệ admin".
+
+-----------------------------------------------------------------
+B. CODE ↔ BUSINESS DOC LỆCH NHAU (cần cập nhật .claude/business/)
+-----------------------------------------------------------------
+1. sprints.dod.md: chưa có SprintStatus (Planning/Active/Closed), Activate/Close, De-scope; vẫn nói
+   "IsActive tính theo ngày" — code đã đổi sang Status.
+2. sprint-tasks.dod.md + workflow.dod.md: vẫn dùng state cũ New/Backlog/Todo/Active/InReview/Done — code đã
+   chuyển sang WorkItemState (Open/ToDo/InProgress/InReview/Verified/Running/Done/Passed/Failed/Closed) theo loại.
+3. hub-integration.dod.md + sprints.dod.md nói "đóng sprint → archive kênh NHub", nhưng CloseSprintCommandHandler
+   KHÔNG gọi archive. Tài liệu user KHÔNG nhắc việc archive kênh.
+4. auth.dod.md nói "Đổi password: chính chủ hoặc Global Admin"; users.dod.md + code (ChangePassword: IsSelf)
+   = chỉ chính chủ. Tài liệu viết theo code: admin không đổi hộ được.
+5. Quyền "Activate Sprint" có trong danh sách quyền nhưng ActivateSprintCommandHandler kiểm tra ManageSprint.
+   Tài liệu ghi: Activate/Close cần Manage Sprint.
+
+-----------------------------------------------------------------
+C. UI ↔ CONFIG LỆCH NHAU
+-----------------------------------------------------------------
+1. Settings → Members ghi "Send an invitation link — expires after 7 days." nhưng Invitation:TokenTtlMinutes
+   hiện = 5 phút. Tài liệu chỉ ghi "link có thời hạn giới hạn", không ghi con số. Chọn 1 giá trị rồi sửa
+   UI hoặc config.
+
+-----------------------------------------------------------------
+D. CÒN CẦN OWNER XÁC NHẬN
+-----------------------------------------------------------------
+1. [backlog] Nút/hành động "Promote to Sprint" trên UI tên chính xác & nằm ở đâu? (chưa tìm thấy nhãn text.)
+2. [backlog] Bật chế độ chọn hàng loạt bằng nút nào? (template chỉ có câu "Tick rows to select. Dragging is paused.")
+3. [boards] Kéo thả card: business doc nói cần Edit Work Item, nhưng ChangeSprintTaskState chỉ cần là member.
+   UI có chặn theo Edit Work Item không? Tài liệu hiện ghi cả hai (đổi state chỉ cần member; không kéo được có
+   thể do thiếu Edit Work Item).
+4. [account] Trang Profile (profile-page) có nút "Sign out all devices" nhưng route 'profile' redirect sang
+   settings/general → trang này có còn dùng không? Tài liệu chưa nhắc.
+5. [notifications] Các tuỳ chọn Notifications trong Settings → General đã thực sự gửi thông báo chưa
+   (profile-page có chữ "Email notifications — coming soon")? Tài liệu hiện chỉ liệt kê tên tuỳ chọn.
+6. [projects] UI tạo project (new-repo-dialog) mở từ đâu — nút nào? Tài liệu chưa ghi đường đi.
+7. [pipelines] Trang Pipelines hiện chỉ có empty state — đúng ý đồ hay sắp có dữ liệu?

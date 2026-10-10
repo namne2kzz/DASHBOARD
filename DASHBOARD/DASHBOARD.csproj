@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Infrastructure\Email\Templates\InvitationEmail.html" />
+    <EmbeddedResource Include="Infrastructure\Email\Templates\StateChangedEmail.html" />
+    <EmbeddedResource Include="Infrastructure\Email\Templates\AssigneeChangedEmail.html" />
   </ItemGroup>
 
   <ItemGroup>

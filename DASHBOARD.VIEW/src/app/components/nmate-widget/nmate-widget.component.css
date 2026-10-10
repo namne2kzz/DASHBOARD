@@ -1,0 +1,170 @@
+/* Sits above the app shell but below dialogs/overlays (z 9980+), so a confirm dialog always wins. */
+:host {
+  --nm-z: 9000;
+}
+
+.nm-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: var(--nm-z);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-pop);
+  cursor: pointer;
+}
+
+.nm-fab:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.nm-fab.is-open {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  color: var(--text-2);
+}
+
+.nm-panel {
+  position: fixed;
+  right: 20px;
+  bottom: 76px;
+  z-index: var(--nm-z);
+  display: flex;
+  flex-direction: column;
+  width: 380px;
+  height: min(560px, calc(100vh - 100px));
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+}
+
+.nm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 8px 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.nm-header__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nm-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.nm-header__name {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.nm-header__sub {
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.nm-header__actions {
+  display: flex;
+  gap: 2px;
+}
+
+.nm-icon-btn {
+  width: var(--control-h-sm);
+  padding: 0;
+  justify-content: center;
+}
+
+.nm-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.nm-maintenance {
+  margin-bottom: 12px;
+}
+
+.nm-empty__lead {
+  margin: 4px 0 12px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.nm-suggestions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.nm-suggestion {
+  max-width: 100%;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.nm-footer {
+  padding: 10px 12px 8px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.nm-compose {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.nm-input {
+  flex: 1;
+  min-height: var(--control-h);
+  max-height: 120px;
+  resize: none;
+  field-sizing: content;
+}
+
+.nm-disclaimer {
+  margin: 6px 0 0;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+/* Phones: the panel takes the whole screen. */
+@media (max-width: 640px) {
+  .nm-panel {
+    inset: 0;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+  }
+
+  .nm-fab.is-open {
+    display: none;
+  }
+}

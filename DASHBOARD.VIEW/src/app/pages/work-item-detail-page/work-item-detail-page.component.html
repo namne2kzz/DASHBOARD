@@ -315,7 +315,7 @@
             <div>
               <label class="field-label mb-1.5 block">State</label>
               <select class="field-select" [ngModel]="t.state" (ngModelChange)="onStateChange($event)">
-                @for (s of stateOptions; track s.api) { <option [ngValue]="s.api">{{ s.label }}</option> }
+                @for (s of stateOptions; track s.value) { <option [ngValue]="s.value">{{ s.label }}</option> }
               </select>
             </div>
 
