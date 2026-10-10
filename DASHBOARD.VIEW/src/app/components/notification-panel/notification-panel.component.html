@@ -1,0 +1,65 @@
+<!-- Backdrop -->
+@if (visible()) {
+  <div class="panel-backdrop" (click)="close()"></div>
+}
+
+<!-- Slide-in panel -->
+<div class="panel" [class.panel--open]="visible()">
+  <!-- Header -->
+  <div class="panel-header">
+    <span class="panel-title">Notifications</span>
+    <div class="panel-header-actions">
+      @if (notiSvc.unreadCount() > 0) {
+        <button type="button" class="action-link" (click)="markAllRead()">
+          Mark all read
+        </button>
+      }
+      <button type="button" class="close-btn" (click)="close()" title="Close">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div class="panel-body custom-scroll">
+    @if (notiSvc.notifications().length === 0) {
+      <div class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6.002 6.002 0 0 0-4-5.659V5a2 2 0 1 0-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9"/>
+        </svg>
+        <span>No notifications yet</span>
+      </div>
+    }
+
+    @for (n of notiSvc.notifications(); track n.id) {
+      <button
+        type="button"
+        class="noti-row"
+        [class.noti-row--read]="n.isRead"
+        (click)="openNotification(n)"
+      >
+        <!-- Type icon -->
+        <span class="noti-icon-wrap">
+          <svg [class]="'noti-type-icon ' + iconColor(n.type)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="iconPath(n.type)" />
+          </svg>
+        </span>
+
+        <!-- Content -->
+        <span class="noti-content">
+          <span class="noti-title">{{ n.title }}</span>
+          <span class="noti-body">{{ n.body }}</span>
+          <span class="noti-time">{{ relativeTime(n.createdAt) }}</span>
+        </span>
+
+        <!-- Unread dot -->
+        @if (!n.isRead) {
+          <span class="unread-dot"></span>
+        }
+      </button>
+    }
+  </div>
+</div>

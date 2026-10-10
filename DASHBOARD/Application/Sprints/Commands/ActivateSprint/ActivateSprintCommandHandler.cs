@@ -13,7 +13,8 @@ namespace DASHBOARD.Application.Sprints.Commands.ActivateSprint;
 public sealed class ActivateSprintCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<ActivateSprintCommand, Result>
+    IUnitOfWork           uow,
+    INotificationService  notifications) : IRequestHandler<ActivateSprintCommand, Result>
 {
     /// <summary>Validates permission, checks no other sprint is active, then activates the target sprint.</summary>
     /// <param name="command">The activate command.</param>
@@ -47,6 +48,26 @@ public sealed class ActivateSprintCommandHandler(
         sprint.Touch();
 
         await uow.CommitAsync(ct);
+
+        // Notify members who have at least one task in this sprint.
+        var memberIds = await db.Set<SprintTask>()
+            .AsNoTracking()
+            .Where(t => t.SprintId == command.SprintId
+                     && t.RepositoryId == command.RepositoryId
+                     && t.AssignedToId != null
+                     && !t.IsDeleted)
+            .Select(t => t.AssignedToId!.Value)
+            .Distinct()
+            .ToListAsync(ct);
+
+        foreach (var memberId in memberIds)
+            await notifications.NotifyAsync(
+                memberId,
+                NotificationType.SprintActivated,
+                $"Sprint \"{sprint.Name}\" activated",
+                "The sprint is now active. Start working!",
+                url: null, ct);
+
         return Result.Ok;
     }
 }

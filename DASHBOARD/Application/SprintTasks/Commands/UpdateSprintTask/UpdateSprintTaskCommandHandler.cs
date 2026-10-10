@@ -21,6 +21,7 @@ public sealed class UpdateSprintTaskCommandHandler(
     IPublishEndpoint      publisher,
     IEmailService         email,
     IAppSettings          settings,
+    INotificationService  notifications,
     ILogger<UpdateSprintTaskCommandHandler> logger) : IRequestHandler<UpdateSprintTaskCommand, Result>
 {
     private static readonly Dictionary<WorkItemPriority, string> PriorityLabels = new()
@@ -198,6 +199,12 @@ public sealed class UpdateSprintTaskCommandHandler(
                 await email.SendAssigneeChangedAsync(
                     oldUser.Email, oldUser.Name, itemNumber, taskTitle,
                     assigned: false, changerName, repo.Name, itemUrl, ct);
+
+                await notifications.NotifyAsync(
+                    oldAssigneeId.Value,
+                    NotificationType.WorkItemUnassigned,
+                    $"Unassigned from {itemNumber}",
+                    taskTitle, itemUrl, ct);
             }
 
             // Notify new assignee that they were assigned (skip if they made the change themselves).
@@ -207,6 +214,12 @@ public sealed class UpdateSprintTaskCommandHandler(
                 await email.SendAssigneeChangedAsync(
                     newUser.Email, newUser.Name, itemNumber, taskTitle,
                     assigned: true, changerName, repo.Name, itemUrl, ct);
+
+                await notifications.NotifyAsync(
+                    newAssigneeId.Value,
+                    NotificationType.WorkItemAssigned,
+                    $"Assigned to {itemNumber}",
+                    taskTitle, itemUrl, ct);
             }
         }
         catch (Exception ex)

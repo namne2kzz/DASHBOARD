@@ -16,7 +16,8 @@ namespace DASHBOARD.Application.Sprints.Commands.CloseSprint;
 public sealed class CloseSprintCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
-    IUnitOfWork           uow) : IRequestHandler<CloseSprintCommand, Result<CloseSprintResult>>
+    IUnitOfWork           uow,
+    INotificationService  notifications) : IRequestHandler<CloseSprintCommand, Result<CloseSprintResult>>
 {
     /// <summary>
     /// Validates permission, counts non-Done root items, returns a warning result when incomplete items exist
@@ -68,6 +69,27 @@ public sealed class CloseSprintCommandHandler(
         sprint.Touch();
 
         await uow.CommitAsync(ct);
+
+        // Notify members who have at least one task in this sprint.
+        var memberIds = await db.Set<SprintTask>()
+            .AsNoTracking()
+            .Where(t => t.SprintId == command.SprintId
+                     && t.RepositoryId == command.RepositoryId
+                     && t.AssignedToId != null
+                     && !t.IsDeleted)
+            .Select(t => t.AssignedToId!.Value)
+            .Distinct()
+            .ToListAsync(ct);
+
+        foreach (var memberId in memberIds)
+            await notifications.NotifyAsync(
+                memberId,
+                NotificationType.SprintClosed,
+                $"Sprint \"{sprint.Name}\" closed",
+                incompleteCount > 0
+                    ? $"{incompleteCount} item{(incompleteCount == 1 ? "" : "s")} left incomplete."
+                    : "All items completed.",
+                url: null, ct);
 
         return Result<CloseSprintResult>.Success(new CloseSprintResult(
             Closed:             true,

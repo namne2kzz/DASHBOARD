@@ -56,17 +56,17 @@ public sealed class OverviewQueryTests(SqlServerFixture database) : IAsyncLifeti
         var number = 1;
 
         // Sprint 1: 5 points committed, all of it completed.
-        db.SprintTasks.Add(NewTask(oldest.Id, SprintTaskType.UserStory, SprintTaskState.Done, 5, number++, closed: true));
+        db.SprintTasks.Add(NewTask(oldest.Id, SprintTaskType.UserStory, WorkItemState.Done, 5, number++, closed: true));
 
         // Sprint 2: 8 points committed, 3 completed.
-        db.SprintTasks.Add(NewTask(middle.Id, SprintTaskType.UserStory, SprintTaskState.Done, 3, number++, closed: true));
-        db.SprintTasks.Add(NewTask(middle.Id, SprintTaskType.UserStory, SprintTaskState.Active, 5, number++));
+        db.SprintTasks.Add(NewTask(middle.Id, SprintTaskType.UserStory, WorkItemState.Done,       3, number++, closed: true));
+        db.SprintTasks.Add(NewTask(middle.Id, SprintTaskType.UserStory, WorkItemState.InProgress, 5, number++));
 
         // Sprint 3: a mix of types so the type distribution and trend have something to separate.
-        db.SprintTasks.Add(NewTask(current.Id, SprintTaskType.UserStory, SprintTaskState.Done,   2, number++, closed: true));
-        db.SprintTasks.Add(NewTask(current.Id, SprintTaskType.Task,      SprintTaskState.Active, 3, number++));
-        db.SprintTasks.Add(NewTask(current.Id, SprintTaskType.Bug,       SprintTaskState.Todo,   1, number++));
-        db.SprintTasks.Add(NewTask(current.Id, SprintTaskType.Bug,       SprintTaskState.Todo,   1, number++));
+        db.SprintTasks.Add(NewTask(current.Id, SprintTaskType.UserStory, WorkItemState.Done,       2, number++, closed: true));
+        db.SprintTasks.Add(NewTask(current.Id, SprintTaskType.Task,      WorkItemState.InProgress, 3, number++));
+        db.SprintTasks.Add(NewTask(current.Id, SprintTaskType.Bug,       WorkItemState.ToDo,       1, number++));
+        db.SprintTasks.Add(NewTask(current.Id, SprintTaskType.Bug,       WorkItemState.ToDo,       1, number++));
 
         await db.SaveChangesAsync();
 
@@ -85,7 +85,7 @@ public sealed class OverviewQueryTests(SqlServerFixture database) : IAsyncLifeti
         SprintTask NewTask(
             Guid            sprintId,
             SprintTaskType  type,
-            SprintTaskState state,
+            WorkItemState state,
             int             points,
             int             workItemNumber,
             bool            closed = false) => new()

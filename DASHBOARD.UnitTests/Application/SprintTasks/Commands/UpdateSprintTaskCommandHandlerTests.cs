@@ -24,8 +24,9 @@ public sealed class UpdateSprintTaskCommandHandlerTests : IDisposable
     private readonly TestDatabase             _database;
     private readonly TestApplicationDbContext _db;
     private readonly Mock<IHistoryService>    _history  = new();
-    private readonly Mock<IEmailService>      _email    = new();
-    private readonly Mock<IAppSettings>       _settings = new();
+    private readonly Mock<IEmailService>         _email         = new();
+    private readonly Mock<IAppSettings>          _settings      = new();
+    private readonly Mock<INotificationService>  _notifications = new();
     private readonly Guid                     _repositoryId = Guid.NewGuid();
 
     /// <summary>Sets up an isolated database holding the owning repository.</summary>
@@ -46,7 +47,7 @@ public sealed class UpdateSprintTaskCommandHandlerTests : IDisposable
 
     private UpdateSprintTaskCommandHandler CreateHandler(IRequestUserContext user) =>
         new(_db, user, _history.Object, _database.Uow, _publisher,
-            _email.Object, _settings.Object,
+            _email.Object, _settings.Object, _notifications.Object,
             NullLogger<UpdateSprintTaskCommandHandler>.Instance);
 
     private readonly RecordingPublishEndpoint _publisher = new();

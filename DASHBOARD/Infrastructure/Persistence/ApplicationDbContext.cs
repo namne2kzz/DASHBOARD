@@ -68,6 +68,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     /// <summary>WIP-limited kanban board columns.</summary>
     public DbSet<SmartBoardColumn> SmartBoardColumns => Set<SmartBoardColumn>();
 
+    // ── Notifications ─────────────────────────────────────────────────────────
+    /// <summary>In-app notifications delivered to users.</summary>
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     // ─────────────────────────────────────────────────────────────────────────
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
