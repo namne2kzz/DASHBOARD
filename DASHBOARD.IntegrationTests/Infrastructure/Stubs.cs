@@ -168,4 +168,23 @@ public sealed class StubEmailService : IEmailService
         _sentTo.Add(toEmail);
         return Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public Task SendStateChangedAsync(
+        string toEmail, string recipientName, string workItemNumber, string workItemTitle,
+        string oldState, string newState, string changedByName, string repositoryName,
+        string itemUrl, CancellationToken ct)
+    {
+        _sentTo.Add(toEmail);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task SendAssigneeChangedAsync(
+        string toEmail, string recipientName, string workItemNumber, string workItemTitle,
+        bool assigned, string changedByName, string repositoryName, string itemUrl, CancellationToken ct)
+    {
+        _sentTo.Add(toEmail);
+        return Task.CompletedTask;
+    }
 }

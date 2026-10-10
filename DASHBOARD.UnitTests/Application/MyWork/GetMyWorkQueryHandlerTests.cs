@@ -56,7 +56,7 @@ public sealed class GetMyWorkQueryHandlerTests : IDisposable
 
     private async Task<SprintTask> AddTaskAsync(
         Guid?            assignedToId   = null,
-        SprintTaskState  state          = SprintTaskState.Active,
+        WorkItemState    state          = WorkItemState.InProgress,
         WorkItemPriority priority       = WorkItemPriority.Medium,
         Guid?            repositoryId   = null,
         Guid?            sprintId       = null,
@@ -148,7 +148,7 @@ public sealed class GetMyWorkQueryHandlerTests : IDisposable
     public async Task Handle_ExcludesFinishedWork()
     {
         await AddMembershipAsync();
-        await AddTaskAsync(state: SprintTaskState.Done);
+        await AddTaskAsync(state: WorkItemState.Done);
 
         var result = await CreateHandler().Handle(new GetMyWorkQuery(), CancellationToken.None);
 
@@ -156,12 +156,11 @@ public sealed class GetMyWorkQueryHandlerTests : IDisposable
     }
 
     [Theory]
-    [InlineData(SprintTaskState.New)]
-    [InlineData(SprintTaskState.Backlog)]
-    [InlineData(SprintTaskState.Todo)]
-    [InlineData(SprintTaskState.Active)]
-    [InlineData(SprintTaskState.InReview)]
-    public async Task Handle_IncludesEveryUnfinishedState(SprintTaskState state)
+    [InlineData(WorkItemState.Open)]
+    [InlineData(WorkItemState.ToDo)]
+    [InlineData(WorkItemState.InProgress)]
+    [InlineData(WorkItemState.InReview)]
+    public async Task Handle_IncludesEveryUnfinishedState(WorkItemState state)
     {
         await AddMembershipAsync();
         await AddTaskAsync(state: state);

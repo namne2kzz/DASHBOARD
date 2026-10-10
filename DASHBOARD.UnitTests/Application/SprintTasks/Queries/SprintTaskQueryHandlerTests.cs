@@ -40,14 +40,14 @@ public sealed class SprintTaskQueryHandlerTests : IDisposable
         RequestUserContextMock.ForUser().AsMember(_repositoryId).Object;
 
     private async Task<SprintTask> AddTaskAsync(
-        string          title          = "Standalone",
-        SprintTaskType  type           = SprintTaskType.Task,
-        SprintTaskState state          = SprintTaskState.Backlog,
-        Guid?           sprintId       = null,
-        Guid?           parentId       = null,
-        int             workItemNumber = 1,
-        Guid?           repositoryId   = null,
-        DateTime?       createdAt      = null)
+        string         title          = "Standalone",
+        SprintTaskType type           = SprintTaskType.Task,
+        WorkItemState  state          = WorkItemState.ToDo,
+        Guid?          sprintId       = null,
+        Guid?          parentId       = null,
+        int            workItemNumber = 1,
+        Guid?          repositoryId   = null,
+        DateTime?      createdAt      = null)
     {
         var task = new SprintTask
         {
@@ -143,11 +143,11 @@ public sealed class SprintTaskQueryHandlerTests : IDisposable
     [Fact]
     public async Task List_WithAStateFilter_ReturnsOnlyThatState()
     {
-        await AddTaskAsync("Backlog item", state: SprintTaskState.Backlog, workItemNumber: 1);
-        await AddTaskAsync("Active item",  state: SprintTaskState.Active,  workItemNumber: 2);
+        await AddTaskAsync("Backlog item", state: WorkItemState.ToDo,       workItemNumber: 1);
+        await AddTaskAsync("Active item",  state: WorkItemState.InProgress, workItemNumber: 2);
 
         var result = await ListHandler(MemberUser()).Handle(
-            new ListStandaloneItemsQuery(_repositoryId, State: SprintTaskState.Active),
+            new ListStandaloneItemsQuery(_repositoryId, State: WorkItemState.InProgress),
             CancellationToken.None);
 
         result.Should().ContainSingle().Which.Title.Should().Be("Active item");

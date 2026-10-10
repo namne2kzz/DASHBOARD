@@ -5,6 +5,7 @@ using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.UnitTests.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace DASHBOARD.UnitTests.Application.SprintTasks.Commands;
@@ -22,7 +23,9 @@ public sealed class UpdateSprintTaskCommandHandlerTests : IDisposable
 {
     private readonly TestDatabase             _database;
     private readonly TestApplicationDbContext _db;
-    private readonly Mock<IHistoryService>    _history = new();
+    private readonly Mock<IHistoryService>    _history  = new();
+    private readonly Mock<IEmailService>      _email    = new();
+    private readonly Mock<IAppSettings>       _settings = new();
     private readonly Guid                     _repositoryId = Guid.NewGuid();
 
     /// <summary>Sets up an isolated database holding the owning repository.</summary>
@@ -30,6 +33,8 @@ public sealed class UpdateSprintTaskCommandHandlerTests : IDisposable
     {
         _database = TestDbContextFactory.Create();
         _db       = _database.Db;
+
+        _settings.SetupGet(s => s.InvitationFrontendBaseUrl).Returns("https://localhost");
 
         _db.Set<Repository>().Add(
             new Repository { Name = "Dashboard", Code = "DASH" }.WithId(_repositoryId));
@@ -40,7 +45,9 @@ public sealed class UpdateSprintTaskCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private UpdateSprintTaskCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _history.Object, _database.Uow, _publisher);
+        new(_db, user, _history.Object, _database.Uow, _publisher,
+            _email.Object, _settings.Object,
+            NullLogger<UpdateSprintTaskCommandHandler>.Instance);
 
     private readonly RecordingPublishEndpoint _publisher = new();
 

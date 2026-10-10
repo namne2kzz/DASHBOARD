@@ -52,7 +52,7 @@ public sealed class GetBoardTasksQueryHandlerTests : IDisposable
     private async Task<SprintTask> AddTaskAsync(
         string           title          = "Card",
         SprintTaskType   type           = SprintTaskType.Task,
-        SprintTaskState  state          = SprintTaskState.Todo,
+        WorkItemState    state          = WorkItemState.ToDo,
         WorkItemPriority priority       = WorkItemPriority.Medium,
         Guid?            assignedToId   = null,
         Guid?            sprintId       = null,
@@ -160,8 +160,8 @@ public sealed class GetBoardTasksQueryHandlerTests : IDisposable
     [Fact]
     public async Task Handle_OrdersByTypeThenState()
     {
-        await AddTaskAsync("Task card",  SprintTaskType.Task,      SprintTaskState.Todo,   workItemNumber: 2);
-        await AddTaskAsync("Story card", SprintTaskType.UserStory, SprintTaskState.Active, workItemNumber: 1);
+        await AddTaskAsync("Task card",  SprintTaskType.Task,      WorkItemState.ToDo,       workItemNumber: 2);
+        await AddTaskAsync("Story card", SprintTaskType.UserStory, WorkItemState.InProgress, workItemNumber: 1);
 
         var result = await CreateHandler(MemberUser()).Handle(
             new GetBoardTasksQuery(_repositoryId, _sprintId), CancellationToken.None);

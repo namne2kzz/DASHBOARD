@@ -37,11 +37,11 @@ public sealed class ColumnCommandHandlerTests : IDisposable
             .WithPrivilege(SystemFunction.ManageBoard, _repositoryId).Object;
 
     private CreateColumnCommand CreateCommand(
-        string          name           = "In Progress",
-        SprintTaskState mappedState    = SprintTaskState.Active,
-        int             wipLimit       = 5,
-        WipMode         wipMode        = WipMode.Soft,
-        int             agingLimitDays = 3) =>
+        string        name           = "In Progress",
+        WorkItemState mappedState    = WorkItemState.InProgress,
+        int           wipLimit       = 5,
+        WipMode       wipMode        = WipMode.Soft,
+        int           agingLimitDays = 3) =>
         new(_repositoryId, name, mappedState, wipLimit, wipMode, agingLimitDays);
 
     private async Task<SmartBoardColumn> AddColumnAsync(
@@ -51,7 +51,7 @@ public sealed class ColumnCommandHandlerTests : IDisposable
         {
             RepositoryId   = repositoryId ?? _repositoryId,
             Name           = name,
-            MappedState    = SprintTaskState.Todo,
+            MappedState    = WorkItemState.ToDo,
             WipLimit       = 5,
             WipMode        = WipMode.Soft,
             AgingLimitDays = 3,
@@ -120,7 +120,7 @@ public sealed class ColumnCommandHandlerTests : IDisposable
         var handler = CreateHandler(AuthorizedUser());
 
         var result = await handler.Handle(
-            CreateCommand("Review", SprintTaskState.InReview, wipLimit: 2,
+            CreateCommand("Review", WorkItemState.InReview, wipLimit: 2,
                 wipMode: WipMode.Hard, agingLimitDays: 7),
             CancellationToken.None);
 
@@ -128,7 +128,7 @@ public sealed class ColumnCommandHandlerTests : IDisposable
         persisted.Id.Should().Be(result.Id);
         persisted.RepositoryId.Should().Be(_repositoryId);
         persisted.Name.Should().Be("Review");
-        persisted.MappedState.Should().Be(SprintTaskState.InReview);
+        persisted.MappedState.Should().Be(WorkItemState.InReview);
         persisted.WipLimit.Should().Be(2);
         persisted.WipMode.Should().Be(WipMode.Hard);
         persisted.AgingLimitDays.Should().Be(7);
@@ -139,9 +139,9 @@ public sealed class ColumnCommandHandlerTests : IDisposable
     {
         var handler = CreateHandler(AuthorizedUser());
 
-        await handler.Handle(CreateCommand("Dev Active", SprintTaskState.Active), CancellationToken.None);
+        await handler.Handle(CreateCommand("Dev Active", WorkItemState.InProgress), CancellationToken.None);
         var second = await handler.Handle(
-            CreateCommand("QA Active", SprintTaskState.Active), CancellationToken.None);
+            CreateCommand("QA Active", WorkItemState.InProgress), CancellationToken.None);
 
         second.Order.Should().Be(1,
             "splitting one state across lanes is a normal board layout");
@@ -158,7 +158,7 @@ public sealed class ColumnCommandHandlerTests : IDisposable
 
         var act = () => handler.Handle(
             new UpdateColumnCommand(_repositoryId, column.Id, "Renamed",
-                SprintTaskState.Done, 99, WipMode.Hard, 30),
+                WorkItemState.Done, 99, WipMode.Hard, 30),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>();
@@ -174,7 +174,7 @@ public sealed class ColumnCommandHandlerTests : IDisposable
 
         var act = () => handler.Handle(
             new UpdateColumnCommand(_repositoryId, Guid.NewGuid(), "Renamed",
-                SprintTaskState.Done, 5, WipMode.Soft, 3),
+                WorkItemState.Done, 5, WipMode.Soft, 3),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();
@@ -188,7 +188,7 @@ public sealed class ColumnCommandHandlerTests : IDisposable
 
         var act = () => handler.Handle(
             new UpdateColumnCommand(_repositoryId, foreign.Id, "Renamed",
-                SprintTaskState.Done, 5, WipMode.Soft, 3),
+                WorkItemState.Done, 5, WipMode.Soft, 3),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<NotFoundException>();
@@ -204,14 +204,14 @@ public sealed class ColumnCommandHandlerTests : IDisposable
 
         var result = await handler.Handle(
             new UpdateColumnCommand(_repositoryId, column.Id, "In Review",
-                SprintTaskState.InReview, 2, WipMode.Hard, 7),
+                WorkItemState.InReview, 2, WipMode.Hard, 7),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
 
         var updated = await _db.Set<SmartBoardColumn>().AsNoTracking().SingleAsync();
         updated.Name.Should().Be("In Review");
-        updated.MappedState.Should().Be(SprintTaskState.InReview);
+        updated.MappedState.Should().Be(WorkItemState.InReview);
         updated.WipLimit.Should().Be(2);
         updated.WipMode.Should().Be(WipMode.Hard);
         updated.AgingLimitDays.Should().Be(7);
@@ -226,7 +226,7 @@ public sealed class ColumnCommandHandlerTests : IDisposable
 
         await handler.Handle(
             new UpdateColumnCommand(_repositoryId, column.Id, "Renamed",
-                SprintTaskState.Done, 5, WipMode.Soft, 3),
+                WorkItemState.Done, 5, WipMode.Soft, 3),
             CancellationToken.None);
 
         var updated = await _db.Set<SmartBoardColumn>().AsNoTracking().SingleAsync();

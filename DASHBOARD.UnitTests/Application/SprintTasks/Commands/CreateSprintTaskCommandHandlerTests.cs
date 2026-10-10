@@ -174,7 +174,7 @@ public sealed class CreateSprintTaskCommandHandlerTests : IDisposable
 
         var created = await _db.Set<SprintTask>().AsNoTracking()
             .SingleAsync(t => t.Id == result.Value!.Id);
-        created.State.Should().Be(SprintTaskState.New);
+        created.State.Should().Be(WorkItemState.Open);
         created.StateChangedAt.Should().NotBeNull();
     }
 
@@ -187,7 +187,7 @@ public sealed class CreateSprintTaskCommandHandlerTests : IDisposable
 
         var created = await _db.Set<SprintTask>().AsNoTracking()
             .SingleAsync(t => t.Id == result.Value!.Id);
-        created.State.Should().Be(SprintTaskState.Backlog,
+        created.State.Should().Be(WorkItemState.ToDo,
             "unscheduled work waits in the backlog rather than appearing on a board");
     }
 

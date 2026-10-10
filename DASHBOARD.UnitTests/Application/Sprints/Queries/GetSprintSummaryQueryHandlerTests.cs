@@ -70,7 +70,7 @@ public sealed class GetSprintSummaryQueryHandlerTests : IDisposable
         await _db.SaveChangesAsync();
     }
 
-    private async Task AddTaskAsync(Guid sprintId, int storyPoints, SprintTaskState state)
+    private async Task AddTaskAsync(Guid sprintId, int storyPoints, WorkItemState state)
     {
         _db.Set<SprintTask>().Add(new SprintTask
         {
@@ -331,9 +331,9 @@ public sealed class GetSprintSummaryQueryHandlerTests : IDisposable
     public async Task Handle_CountsOnlyDoneTasksAsCompleted()
     {
         var sprint = await SeedSprintAsync();
-        await AddTaskAsync(sprint.Id, storyPoints: 3, state: SprintTaskState.Done);
-        await AddTaskAsync(sprint.Id, storyPoints: 5, state: SprintTaskState.Active);
-        await AddTaskAsync(sprint.Id, storyPoints: 2, state: SprintTaskState.New);
+        await AddTaskAsync(sprint.Id, storyPoints: 3, state: WorkItemState.Done);
+        await AddTaskAsync(sprint.Id, storyPoints: 5, state: WorkItemState.InProgress);
+        await AddTaskAsync(sprint.Id, storyPoints: 2, state: WorkItemState.Open);
 
         var handler = CreateHandler(MemberUser());
 
@@ -351,8 +351,8 @@ public sealed class GetSprintSummaryQueryHandlerTests : IDisposable
     {
         var sprint      = await SeedSprintAsync();
         var otherSprint = await SeedSprintAsync(new DateOnly(2026, 6, 1), new DateOnly(2026, 6, 12));
-        await AddTaskAsync(sprint.Id,      storyPoints: 3, state: SprintTaskState.Done);
-        await AddTaskAsync(otherSprint.Id, storyPoints: 8, state: SprintTaskState.Done);
+        await AddTaskAsync(sprint.Id,      storyPoints: 3, state: WorkItemState.Done);
+        await AddTaskAsync(otherSprint.Id, storyPoints: 8, state: WorkItemState.Done);
 
         var handler = CreateHandler(MemberUser());
 

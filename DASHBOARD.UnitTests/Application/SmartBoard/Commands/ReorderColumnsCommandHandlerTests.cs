@@ -39,7 +39,7 @@ public sealed class ReorderColumnsCommandHandlerTests : IDisposable
         {
             RepositoryId   = repositoryId ?? _repositoryId,
             Name           = name,
-            MappedState    = SprintTaskState.Todo,
+            MappedState    = WorkItemState.ToDo,
             WipLimit       = 5,
             WipMode        = WipMode.Soft,
             AgingLimitDays = 3,

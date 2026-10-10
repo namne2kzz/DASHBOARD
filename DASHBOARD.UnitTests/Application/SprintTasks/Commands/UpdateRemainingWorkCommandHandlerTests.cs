@@ -40,10 +40,10 @@ public sealed class UpdateRemainingWorkCommandHandlerTests : IDisposable
         RequestUserContextMock.ForUser().AsMember(_repositoryId).Object;
 
     private async Task<SprintTask> AddTaskAsync(
-        decimal         remainingWork = 8m,
-        SprintTaskState state         = SprintTaskState.Active,
-        DateTime?       closedAt      = null,
-        Guid?           sprintId      = null)
+        decimal       remainingWork = 8m,
+        WorkItemState state         = WorkItemState.InProgress,
+        DateTime?     closedAt      = null,
+        Guid?         sprintId      = null)
     {
         var task = new SprintTask
         {
@@ -180,14 +180,14 @@ public sealed class UpdateRemainingWorkCommandHandlerTests : IDisposable
     [Fact]
     public async Task Handle_WhenHoursReachZero_ClosesTheTask()
     {
-        var task    = await AddTaskAsync(remainingWork: 3m, state: SprintTaskState.Active);
+        var task    = await AddTaskAsync(remainingWork: 3m, state: WorkItemState.InProgress);
         var handler = CreateHandler(MemberUser());
 
         await handler.Handle(
             new UpdateRemainingWorkCommand(_repositoryId, _sprintId, task.Id, 0m),
             CancellationToken.None);
 
-        (await LoadAsync(task.Id)).State.Should().Be(SprintTaskState.Done);
+        (await LoadAsync(task.Id)).State.Should().Be(WorkItemState.Done);
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public sealed class UpdateRemainingWorkCommandHandlerTests : IDisposable
     {
         // Unlike LogWork and ChangeSprintTaskState, this path sets State without touching
         // ClosedAt — worth pinning so the difference is deliberate rather than forgotten.
-        var task    = await AddTaskAsync(remainingWork: 3m, state: SprintTaskState.Active);
+        var task    = await AddTaskAsync(remainingWork: 3m, state: WorkItemState.InProgress);
         var handler = CreateHandler(MemberUser());
 
         await handler.Handle(
@@ -208,20 +208,20 @@ public sealed class UpdateRemainingWorkCommandHandlerTests : IDisposable
     [Fact]
     public async Task Handle_WhenHoursStayAboveZero_LeavesTheStateAlone()
     {
-        var task    = await AddTaskAsync(remainingWork: 8m, state: SprintTaskState.Active);
+        var task    = await AddTaskAsync(remainingWork: 8m, state: WorkItemState.InProgress);
         var handler = CreateHandler(MemberUser());
 
         await handler.Handle(
             new UpdateRemainingWorkCommand(_repositoryId, _sprintId, task.Id, 5m),
             CancellationToken.None);
 
-        (await LoadAsync(task.Id)).State.Should().Be(SprintTaskState.Active);
+        (await LoadAsync(task.Id)).State.Should().Be(WorkItemState.InProgress);
     }
 
     [Fact]
     public async Task Handle_SettingZeroOnAnAlreadyDoneTaskKeepsItDone()
     {
-        var task    = await AddTaskAsync(remainingWork: 0m, state: SprintTaskState.Done);
+        var task    = await AddTaskAsync(remainingWork: 0m, state: WorkItemState.Done);
         var handler = CreateHandler(MemberUser());
 
         var result = await handler.Handle(
@@ -229,13 +229,13 @@ public sealed class UpdateRemainingWorkCommandHandlerTests : IDisposable
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        (await LoadAsync(task.Id)).State.Should().Be(SprintTaskState.Done);
+        (await LoadAsync(task.Id)).State.Should().Be(WorkItemState.Done);
     }
 
     [Fact]
     public async Task Handle_RaisingHoursOnADoneTaskDoesNotReopenIt()
     {
-        var task    = await AddTaskAsync(remainingWork: 0m, state: SprintTaskState.Done);
+        var task    = await AddTaskAsync(remainingWork: 0m, state: WorkItemState.Done);
         var handler = CreateHandler(MemberUser());
 
         await handler.Handle(
@@ -244,7 +244,7 @@ public sealed class UpdateRemainingWorkCommandHandlerTests : IDisposable
 
         var updated = await LoadAsync(task.Id);
         updated.RemainingWork.Should().Be(5m);
-        updated.State.Should().Be(SprintTaskState.Done,
+        updated.State.Should().Be(WorkItemState.Done,
             "reopening is an explicit state change, not a side effect of editing hours");
     }
 }
