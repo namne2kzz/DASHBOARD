@@ -7,6 +7,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-09 | 22:20 | Thêm widget chat NMate | Nút nổi góc phải dưới trên mọi màn hình trong app (Ctrl+/ mở/đóng), gợi ý câu hỏi theo màn hình, stream câu trả lời, nút Dừng, nguồn bấm được, 👍/👎; hội thoại tiếp tục sau khi reload trong cùng tab |
 | 2026-10-09 | 21:40 | Khởi tạo document | Tạo document business ban đầu cho feature NMate (proxy `/api/v1/nmate/*` sang service SUPPORT, rate limit theo user, knowledge từ `Knowledge/`) |
 
 ---
@@ -52,6 +53,15 @@ Cho người dùng hỏi cách dùng hệ thống ngay trong app (widget chat n�
 - [ ] NMate tắt → 404; NMate lỗi/timeout → 503 `NMATE_UNAVAILABLE`; không request nào của DASHBOARD fail vì NMate.
 - [ ] Không retry tự động khi gọi `/chat` (tránh trả lời 2 lần và tốn quota 2 lần).
 - [ ] Thay đổi business của feature X → cập nhật cả `.claude/business/X.dod.md` lẫn `Knowledge/` tương ứng.
+
+### Widget (DASHBOARD.VIEW)
+
+- Nút nổi góc phải dưới trên mọi màn hình sau đăng nhập (`shell-layout`). Bấm nút hoặc **Ctrl/Cmd + /** để mở/đóng, **Esc** để đóng. Trên điện thoại panel chiếm toàn màn hình.
+- Panel trống thì hiện **gợi ý câu hỏi** của màn hình đang đứng, bấm là hỏi luôn.
+- **Enter** để gửi, **Shift+Enter** để xuống dòng. Trong lúc đang trả lời thì nút Gửi đổi thành **Dừng**.
+- Nguồn hiển thị dưới câu trả lời (gộp các đoạn cùng mục). Bấm để mở đúng màn hình trong org/project hiện tại.
+- **Mới**: bắt đầu hội thoại mới. Hội thoại hiện tại được giữ theo tab (sessionStorage): reload trang vẫn xem tiếp được, đóng tab thì bắt đầu lại.
+- Backend tắt NMate thì nút nổi không hiện. NMate bảo trì thì panel báo "đang bảo trì" và khoá ô gửi.
 
 ## 6. Edge Cases & Notes
 

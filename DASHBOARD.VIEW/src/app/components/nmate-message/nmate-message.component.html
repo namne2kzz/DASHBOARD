@@ -1,0 +1,52 @@
+@let m = message();
+
+@if (m.role === 'user') {
+  <div class="nm-row nm-row--user">
+    <div class="nm-bubble nm-bubble--user">{{ m.content }}</div>
+  </div>
+} @else {
+  <div class="nm-row">
+    <div class="nm-bubble nm-bubble--assistant" [attr.aria-busy]="m.status === 'streaming'">
+      @if (html()) {
+        <div class="nmate-md" [innerHTML]="html()"></div>
+      } @else if (m.status === 'streaming') {
+        <span class="nm-typing" aria-label="NMate đang trả lời"><i></i><i></i><i></i></span>
+      }
+
+      @if (errorText(); as error) {
+        <p class="nm-error" [class.nm-error--muted]="m.errorCode === 'INTERRUPTED'">{{ error }}</p>
+      }
+
+      @if (sources().length > 0) {
+        <div class="nm-sources">
+          <span class="nm-sources__label">Nguồn</span>
+          @for (source of sources(); track source.chunkId) {
+            @if (linkFor(source); as link) {
+              <a class="nx-chip nm-source" [routerLink]="link" (click)="navigated.emit()"
+                 [title]="source.title + ' › ' + source.headingPath">
+                {{ source.title }} › {{ source.headingPath }}
+              </a>
+            } @else {
+              <span class="nx-chip nm-source" [title]="source.title + ' › ' + source.headingPath">
+                {{ source.title }} › {{ source.headingPath }}
+              </span>
+            }
+          }
+        </div>
+      }
+
+      @if (canRate()) {
+        <div class="nm-rate" role="group" aria-label="Câu trả lời có hữu ích không?">
+          <button type="button" class="nm-rate__btn" [class.is-active]="m.rating === 1"
+                  (click)="rate.emit(1)" aria-label="Hữu ích" title="Hữu ích">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11H4V10h3zm0 0l4-7a2 2 0 012 2v4h5.5a2 2 0 012 2.3l-1.4 8A2 2 0 0117.1 21H7"/></svg>
+          </button>
+          <button type="button" class="nm-rate__btn" [class.is-active]="m.rating === -1"
+                  (click)="rate.emit(-1)" aria-label="Chưa hữu ích" title="Chưa hữu ích">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 14V3h3v11h-3zm0 0l-4 7a2 2 0 01-2-2v-4H5.5a2 2 0 01-2-2.3l1.4-8A2 2 0 016.9 3H17"/></svg>
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

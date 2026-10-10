@@ -481,3 +481,24 @@ select option:checked {
   box-shadow: var(--shadow-pop);
 }
 .ql-editor.ql-blank::before { color: var(--text-3); }
+
+/* ── NMate answers (rendered markdown) ────────────────────────────────────────
+   Global on purpose: the bubble body is bound with [innerHTML], which never receives the
+   component's scoped attribute, so these rules would not match from nmate-message.component.css. */
+.nmate-md { color: var(--text); font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.nmate-md > :first-child { margin-top: 0; }
+.nmate-md > :last-child { margin-bottom: 0; }
+.nmate-md p { margin: 0 0 8px; }
+.nmate-md ol, .nmate-md ul { margin: 0 0 8px; padding-left: 20px; }
+.nmate-md ol { list-style: decimal; }
+.nmate-md ul { list-style: disc; }
+.nmate-md li { margin: 2px 0; }
+.nmate-md strong { font-weight: 600; color: var(--text); }
+.nmate-md h1, .nmate-md h2, .nmate-md h3, .nmate-md h4 { margin: 10px 0 6px; font-size: 13px; font-weight: 600; }
+.nmate-md code { padding: 1px 4px; border-radius: var(--radius-sm); background: var(--surface-2); font-family: var(--font-mono); font-size: 12px; }
+.nmate-md pre { max-width: 100%; margin: 0 0 8px; padding: 8px 10px; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); }
+.nmate-md pre code { padding: 0; background: transparent; }
+.nmate-md a { color: var(--accent); text-decoration: underline; }
+.nmate-md table { display: block; max-width: 100%; margin: 0 0 8px; overflow-x: auto; border-collapse: collapse; font-size: 12px; }
+.nmate-md th, .nmate-md td { padding: 4px 8px; border: 1px solid var(--border); text-align: left; }
+.nmate-md blockquote { margin: 0 0 8px; padding-left: 10px; border-left: 2px solid var(--border-strong); color: var(--text-2); }

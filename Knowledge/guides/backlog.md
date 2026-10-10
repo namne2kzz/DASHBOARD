@@ -57,13 +57,17 @@ Promote to Sprint biến một User Story thành task thực sự trong sprint �
 
 - **Chỉ User Story** mới promote được, Epic và Feature thì không.
 - User Story phải ở trạng thái **Ready**.
-- Sau khi promote, hệ thống tạo **đúng một task** (trạng thái New) trong sprint, và item trong backlog chuyển sang **Promoted**.
+- Sau khi promote, User Story xuất hiện trong sprint (kế thừa story point), và item trong backlog chuyển sang **Promoted**. Team tiếp tục chia story thành Task trong sprint.
 
 ### Vì sao không đưa được item vào sprint?
 
 - Item không phải User Story.
 - Item chưa ở trạng thái **Ready**. Hãy chuyển sang **Ready** trước.
-- Role của bạn chưa có quyền promote. Hãy nhờ Scrum Master cấp quyền.
+- Role của bạn chưa có quyền **Promote to Sprint**. Hãy nhờ Scrum Master cấp quyền.
+
+### Đưa User Story ra khỏi sprint
+
+Nếu đã promote nhầm hoặc không kịp làm, mở story trong màn hình **Sprint** và bấm **De-scope story**. Story quay lại backlog ở trạng thái **Ready**, còn các task con của nó bị xoá. Xem thêm phần "Quản lý Sprint".
 
 ## Thao tác hàng loạt
 

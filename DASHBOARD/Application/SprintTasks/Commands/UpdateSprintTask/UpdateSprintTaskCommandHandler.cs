@@ -7,6 +7,7 @@ using DASHBOARD.Domain.Interfaces;
 using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Shared.IntegrationEvents;
 
 namespace DASHBOARD.Application.SprintTasks.Commands.UpdateSprintTask;
@@ -17,7 +18,10 @@ public sealed class UpdateSprintTaskCommandHandler(
     IRequestUserContext   user,
     IHistoryService       historyService,
     IUnitOfWork           uow,
-    IPublishEndpoint      publisher) : IRequestHandler<UpdateSprintTaskCommand, Result>
+    IPublishEndpoint      publisher,
+    IEmailService         email,
+    IAppSettings          settings,
+    ILogger<UpdateSprintTaskCommandHandler> logger) : IRequestHandler<UpdateSprintTaskCommand, Result>
 {
     private static readonly Dictionary<WorkItemPriority, string> PriorityLabels = new()
     {
@@ -42,6 +46,11 @@ public sealed class UpdateSprintTaskCommandHandler(
 
         var newAssignedToId = task.Type == SprintTaskType.UserStory ? null : command.AssignedToId;
         var changeMessages   = new List<string>();
+
+        // Capture assignee change before mutation so we can email after commit.
+        var oldAssignedToId = task.AssignedToId;
+        var assigneeChanged = oldAssignedToId != newAssignedToId;
+        var changedById     = user.UserId;
 
         SprintTask? newParent = null;
         if (command.ParentId.HasValue)
@@ -145,6 +154,64 @@ public sealed class UpdateSprintTaskCommandHandler(
         await publisher.Publish(
             new DirectoryEntryChangedEvent(DirectoryEntryKind.WorkItem, command.TaskId), ct);
 
+        // ── Assignee-change email notifications (best-effort — never fail the command) ──
+        if (assigneeChanged)
+            await SendAssigneeEmailsAsync(
+                command.RepositoryId, command.TaskId, task.WorkItemNumber, task.Title,
+                oldAssignedToId, newAssignedToId, changedById, ct);
+
         return Result.Ok;
+    }
+
+    /// <summary>Sends assignment notifications to the old assignee (unassigned) and/or the new assignee (assigned).</summary>
+    private async Task SendAssigneeEmailsAsync(
+        Guid repositoryId, Guid taskId, int workItemNumber, string taskTitle,
+        Guid? oldAssigneeId, Guid? newAssigneeId, Guid changedById, CancellationToken ct)
+    {
+        try
+        {
+            // Collect all user ids we need in a single round-trip.
+            var userIds = new HashSet<Guid> { changedById };
+            if (oldAssigneeId.HasValue) userIds.Add(oldAssigneeId.Value);
+            if (newAssigneeId.HasValue) userIds.Add(newAssigneeId.Value);
+
+            var users = await db.Set<User>().AsNoTracking()
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.Email, u.Name })
+                .ToDictionaryAsync(u => u.Id, ct);
+
+            var repo = await db.Set<Repository>().AsNoTracking()
+                .Where(r => r.Id == repositoryId)
+                .Select(r => new { r.Name, r.Code })
+                .FirstOrDefaultAsync(ct);
+
+            if (repo is null) return;
+
+            var itemNumber   = SprintTask.BuildWorkItemNumber(repo.Code, workItemNumber);
+            var itemUrl      = $"{settings.InvitationFrontendBaseUrl.TrimEnd('/')}/boards/{itemNumber}";
+            var changerName  = users.TryGetValue(changedById, out var changer) ? changer.Name : "Someone";
+
+            // Notify old assignee that they were unassigned (skip if they made the change themselves).
+            if (oldAssigneeId.HasValue && oldAssigneeId != changedById &&
+                users.TryGetValue(oldAssigneeId.Value, out var oldUser))
+            {
+                await email.SendAssigneeChangedAsync(
+                    oldUser.Email, oldUser.Name, itemNumber, taskTitle,
+                    assigned: false, changerName, repo.Name, itemUrl, ct);
+            }
+
+            // Notify new assignee that they were assigned (skip if they made the change themselves).
+            if (newAssigneeId.HasValue && newAssigneeId != changedById &&
+                users.TryGetValue(newAssigneeId.Value, out var newUser))
+            {
+                await email.SendAssigneeChangedAsync(
+                    newUser.Email, newUser.Name, itemNumber, taskTitle,
+                    assigned: true, changerName, repo.Name, itemUrl, ct);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Assignee-change email failed for task {TaskId}; notification skipped.", taskId);
+        }
     }
 }

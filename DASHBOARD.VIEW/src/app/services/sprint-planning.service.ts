@@ -57,12 +57,18 @@ export class SprintPlanningService {
     this.sprintSelection.sprints().map(s => ({
       id: s.id, name: s.name,
       startDate: s.startDate, endDate: s.endDate, isActive: s.isActive,
-      status:        s.status    ?? 'Planning',
+      status:        SprintPlanningService._mapStatus(s.status),
       closedAt:      s.closedAt  ?? null,
       hubChannelId:  s.hubChannelId  ?? null,
       hubChannelUrl: s.hubChannelUrl ?? null,
     })),
   );
+
+  private static _mapStatus(raw: 0 | 1 | 2 | undefined | null): import('../models/sprint-planning.model').SprintStatus {
+    if (raw === 1) return 'Active';
+    if (raw === 2) return 'Closed';
+    return 'Planning';
+  }
 
   readonly selectedSprintId = this.sprintSelection.selectedSprintId;
 
@@ -202,7 +208,7 @@ export class SprintPlanningService {
     if (!repoId) return EMPTY;
     return this.http
       .post<void>(`${this.sprintsUrl(repoId)}/${sprintId}/activate`, {})
-      .pipe(tap(() => this.sprintSelection.patchSprint(sprintId, { status: 'Active' })));
+      .pipe(tap(() => this.sprintSelection.patchSprint(sprintId, { status: 1 })));
   }
 
   /** Closes an Active sprint.
@@ -219,7 +225,7 @@ export class SprintPlanningService {
       .pipe(
         tap(resp => {
           if (resp.status === 204)
-            this.sprintSelection.patchSprint(sprintId, { status: 'Closed', closedAt: new Date().toISOString() });
+            this.sprintSelection.patchSprint(sprintId, { status: 2, closedAt: new Date().toISOString() });
         }),
         map(resp => resp.status === 204 ? null : resp.body),
       );
