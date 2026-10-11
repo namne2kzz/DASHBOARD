@@ -30,8 +30,8 @@ public static class UserSettingKeys
     /// <summary>Whether to send an email digest of unread activity: <c>"true"</c> | <c>"false"</c>.</summary>
     public const string NotifyDigest = "notify.digest";
 
-    /// <summary>Whether to receive notifications only for items assigned to the user: <c>"true"</c> | <c>"false"</c>.</summary>
-    public const string NotifyMentionsOnly = "notify.mentions-only";
+    /// <summary>Whether to notify the user when they are @mentioned in a discussion: <c>"true"</c> | <c>"false"</c>. Independent of the push toggle.</summary>
+    public const string NotifyMentions = "notify.mentions";
 
     // ── Profile ───────────────────────────────────────────────────────────────
     /// <summary>Public URL of the user's uploaded avatar image. Empty/absent means use avatar colour class.</summary>
@@ -43,4 +43,7 @@ public static class UserSettingKeys
 
     /// <summary>Compact density — tighter row spacing: <c>"true"</c> | <c>"false"</c>.</summary>
     public const string CompactMode = "ui.compact-mode";
+
+    /// <summary>Whether the floating NMate assistant button is shown: <c>"true"</c> / <c>"false"</c>; unset = shown.</summary>
+    public const string ShowNMate = "ui.nmate-widget";
 }

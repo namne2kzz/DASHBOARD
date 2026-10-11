@@ -168,12 +168,14 @@ export class SettingsGeneralPageComponent implements OnInit {
   onLanguage(v: string): void      { this.prefs.setLanguage(v as AppLanguage); }
   /** Toggles email notification preference and persists. */
   toggleNotifyEmail(): void        { this.prefs.setNotifyEmail(!this.prefs.notifyEmail()); }
+  /** Shows or hides the floating NMate assistant. */
+  toggleShowNMate(): void          { this.prefs.setShowNMate(!this.prefs.showNMate()); }
   /** Toggles push notification preference and persists. */
   toggleNotifyPush(): void         { this.prefs.setNotifyPush(!this.prefs.notifyPush()); }
   /** Toggles digest email preference and persists. */
   toggleNotifyDigest(): void       { this.prefs.setNotifyDigest(!this.prefs.notifyDigest()); }
-  /** Toggles mentions-only filter and persists. */
-  toggleMentionsOnly(): void       { this.prefs.setMentionsOnly(!this.prefs.mentionsOnly()); }
+  /** Toggles mention notifications and persists. */
+  toggleNotifyMentions(): void     { this.prefs.setNotifyMentions(!this.prefs.notifyMentions()); }
   /** Toggles reduce-motion accessibility setting and persists. */
   toggleReduceMotion(): void       { this.prefs.setReduceMotion(!this.prefs.reduceMotion()); }
   /** Toggles compact density mode and persists. */

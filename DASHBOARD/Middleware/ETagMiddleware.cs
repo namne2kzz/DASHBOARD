@@ -76,9 +76,13 @@ public sealed class ETagMiddleware(RequestDelegate next)
 
     /// <summary>Determines whether a request is a JSON API read worth buffering and tagging.</summary>
     /// <param name="request">Incoming request.</param>
-    /// <returns><see langword="true"/> when the request is a GET under <c>/api</c>.</returns>
+    /// <returns><see langword="true"/> when the request is a GET under <c>/api</c> that is not an SSE stream.</returns>
     private static bool IsTaggable(HttpRequest request) =>
-        HttpMethods.IsGet(request.Method) && request.Path.StartsWithSegments("/api");
+        HttpMethods.IsGet(request.Method)
+        && request.Path.StartsWithSegments("/api")
+        // Never buffer a Server-Sent Events stream: its body never completes, so holding it in a
+        // MemoryStream to hash would keep the response open forever and the client would see nothing.
+        && !request.Headers.Accept.Any(v => v is not null && v.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Builds a weak ETag from the response bytes.</summary>
     /// <param name="body">Buffered response body.</param>

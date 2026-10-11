@@ -17,6 +17,7 @@ import {
 } from '../models/sprint-planning-api.model';
 import { SprintTaskApiState } from '../core/enums/system.enum';
 import { CloseSprintResult, LoadState, MemberLoad, Sprint, SprintTask } from '../models/sprint-planning.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 /** Maps SprintTask state string keys → numeric WorkItemState API values. */
 const SPRINT_TASK_STATE_KEY_TO_INT: Record<SprintTask['state'], number> = {
@@ -453,7 +454,7 @@ export class SprintPlanningService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  d => { this._detail.set(d); this._loading.set(false); },
-        error: () => { this._error.set('Failed to load sprint detail.'); this._loading.set(false); },
+        error: (err: unknown) => { this._error.set(describeLoadError(err, 'Failed to load sprint detail.')); this._loading.set(false); },
       });
   }
 

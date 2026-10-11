@@ -1,4 +1,5 @@
 using DASHBOARD.Application.Common.Exceptions;
+using DASHBOARD.Application.Common.Helpers;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
@@ -81,15 +82,18 @@ public sealed class CloseSprintCommandHandler(
             .Distinct()
             .ToListAsync(ct);
 
+        var prefs = await NotifyPrefsHelper.GetBatchAsync(db, memberIds, ct);
+
         foreach (var memberId in memberIds)
-            await notifications.NotifyAsync(
-                memberId,
-                NotificationType.SprintClosed,
-                $"Sprint \"{sprint.Name}\" closed",
-                incompleteCount > 0
-                    ? $"{incompleteCount} item{(incompleteCount == 1 ? "" : "s")} left incomplete."
-                    : "All items completed.",
-                url: null, ct);
+            if (prefs.TryGetValue(memberId, out var p) && p.Push)
+                await notifications.NotifyAsync(
+                    memberId,
+                    NotificationType.SprintClosed,
+                    $"Sprint \"{sprint.Name}\" closed",
+                    incompleteCount > 0
+                        ? $"{incompleteCount} item{(incompleteCount == 1 ? "" : "s")} left incomplete."
+                        : "All items completed.",
+                    url: null, ct);
 
         return Result<CloseSprintResult>.Success(new CloseSprintResult(
             Closed:             true,

@@ -1,6 +1,7 @@
 using DASHBOARD.Application.Common.Caching;
 using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Guards;
+using DASHBOARD.Application.Common.Helpers;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
@@ -19,7 +20,8 @@ public sealed class RemoveMemberCommandHandler(
     IRequestUserContext   user,
     IUnitOfWork           uow,
     IQueryCache           cache,
-    IPublishEndpoint      publisher) : IRequestHandler<RemoveMemberCommand, Result>
+    IPublishEndpoint      publisher,
+    INotificationService  notifications) : IRequestHandler<RemoveMemberCommand, Result>
 {
     /// <summary>Checks permission and the ManageMembers guard, then deletes the membership.</summary>
     /// <param name="command">The remove command.</param>
@@ -38,6 +40,8 @@ public sealed class RemoveMemberCommandHandler(
         if (await ManageSettingsGuard.WouldOrphanManageSettingsAsync(db, command.RepositoryId, command.MemberId, overrideRoleId: null, ct))
             return Result.Failure("Cannot remove the last member with ManageMembers permission from a repository.");
 
+        var removedUserId = member.UserId;
+
         db.Set<RepositoryMember>().Remove(member);
         await uow.CommitAsync(ct);
 
@@ -47,7 +51,20 @@ public sealed class RemoveMemberCommandHandler(
 
         // Matters most on removal: until HUB drops its cached memberships, a user who just lost access
         // still passes HUB's membership check for up to three minutes.
-        await publisher.Publish(new MemberDirectoryChangedEvent(command.RepositoryId, member.UserId), ct);
+        await publisher.Publish(new MemberDirectoryChangedEvent(command.RepositoryId, removedUserId), ct);
+
+        var repoName = await db.Set<Repository>().AsNoTracking()
+            .Where(r => r.Id == command.RepositoryId)
+            .Select(r => r.Name)
+            .FirstOrDefaultAsync(ct);
+
+        if (await NotifyPrefsHelper.PushEnabledAsync(db, removedUserId, ct))
+            await notifications.NotifyAsync(
+                removedUserId,
+                NotificationType.RemovedFromRepository,
+                $"Removed from \"{repoName}\"",
+                "You have been removed from this repository.",
+                url: null, ct);
 
         return Result.Ok;
     }

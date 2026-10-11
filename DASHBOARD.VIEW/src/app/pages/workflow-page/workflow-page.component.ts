@@ -4,6 +4,8 @@ import { WorkflowService } from '../../services/workflow.service';
 import type { BoardColumn, NewColumnForm, SprintTaskStateKey } from '../../models/workflow.model';
 import { SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant';
 import { AddColumnModalComponent } from '../../components/add-column-modal/add-column-modal.component';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
+import { ConfirmService } from '../../core/components/confirm/confirm.service';
 
 /** Human-readable labels for each sprint-task state key. */
 const STATE_KEY_LABELS: Record<SprintTaskStateKey, string> = {
@@ -21,13 +23,14 @@ const STATE_KEY_LABELS: Record<SprintTaskStateKey, string> = {
 
 @Component({
   selector: 'app-workflow-page',
-  imports: [FormsModule, AddColumnModalComponent],
+  imports: [LoadErrorComponent, FormsModule, AddColumnModalComponent],
   templateUrl: './workflow-page.component.html',
   styleUrl: './workflow-page.component.css',
 })
 export class WorkflowPageComponent {
   readonly board        = inject(WorkflowService);
   readonly stateOptions = SPRINT_TASK_STATE_OPTIONS;
+  private readonly confirm = inject(ConfirmService);
 
   // ── Section menu ──────────────────────────────────────────────────────────
   readonly sectionMenuOpen = signal(false);
@@ -83,6 +86,18 @@ export class WorkflowPageComponent {
 
   /** Closes the inline edit row without saving. */
   closeColumnEdit(): void { this.editColId.set(null); }
+
+  /** Asks for confirmation then deletes the column. @param col The column to delete. @param e Mouse event. */
+  async deleteColumn(col: BoardColumn, e: MouseEvent): Promise<void> {
+    e.stopPropagation();
+    const ok = await this.confirm.ask(
+      'Delete column?',
+      `"${col.name}" will be removed from the board. Work items are not affected.`,
+      'danger',
+    );
+    if (!ok) return;
+    this.board.deleteColumn(col.id);
+  }
 
   /** Prevents document:click from closing the edit row when clicking inside it. @param e Mouse event. @param columnId The row's column id. */
   stopIfEditing(e: MouseEvent, columnId: string): void {

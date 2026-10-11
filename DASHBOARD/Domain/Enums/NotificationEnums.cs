@@ -20,4 +20,16 @@ public enum NotificationType
 
     /// <summary>User was @mentioned in a discussion.</summary>
     MentionedInDiscussion = 5,
+
+    /// <summary>User was added as a member of a repository.</summary>
+    AddedToRepository = 6,
+
+    /// <summary>User was removed from a repository.</summary>
+    RemovedFromRepository = 7,
+
+    /// <summary>User was added to a sprint's capacity.</summary>
+    AddedToSprint = 8,
+
+    /// <summary>User was removed from a sprint's capacity.</summary>
+    RemovedFromSprint = 9,
 }

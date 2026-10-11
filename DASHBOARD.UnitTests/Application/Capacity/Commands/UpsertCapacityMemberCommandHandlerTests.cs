@@ -14,9 +14,10 @@ public sealed class UpsertCapacityMemberCommandHandlerTests : IDisposable
 {
     private readonly TestDatabase              _database;
     private readonly TestApplicationDbContext  _db;
-    private readonly Mock<IHubChannelService>  _hub = new();
-    private readonly Guid                      _repositoryId = Guid.NewGuid();
-    private readonly Guid                      _sprintId     = Guid.NewGuid();
+    private readonly Mock<IHubChannelService>   _hub           = new();
+    private readonly Mock<INotificationService> _notifications = new();
+    private readonly Guid                       _repositoryId  = Guid.NewGuid();
+    private readonly Guid                       _sprintId      = Guid.NewGuid();
 
     /// <summary>Sets up an isolated database holding one sprint.</summary>
     public UpsertCapacityMemberCommandHandlerTests()
@@ -38,7 +39,7 @@ public sealed class UpsertCapacityMemberCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private UpsertCapacityMemberCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow, _hub.Object);
+        new(_db, user, _database.Uow, _hub.Object, _notifications.Object);
 
     private IRequestUserContext AuthorizedUser() =>
         RequestUserContextMock.ForUser()

@@ -55,7 +55,7 @@
         @if (svc.loading()) {
           <p class="px-4 py-8 text-center text-sm text-slate-500">Loading users…</p>
         } @else if (svc.error()) {
-          <p class="px-4 py-6 text-center text-sm text-rose-400">{{ svc.error() }}</p>
+          <div class="p-4"><app-load-error [message]="svc.error()!" (retry)="svc.load()" /></div>
         } @else if (!filteredUsers().length) {
           <p class="px-4 py-8 text-center text-sm text-slate-500">No users match the current filter.</p>
         } @else {

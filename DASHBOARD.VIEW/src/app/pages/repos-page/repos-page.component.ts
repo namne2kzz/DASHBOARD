@@ -3,11 +3,12 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { GitRepositoryService } from '../../services/git-repository.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
 import { ResourceService } from '../../services/resource.service';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
 
 @Component({
   selector: 'app-repos-page',
   standalone: true,
-  imports: [DatePipe],
+  imports: [LoadErrorComponent, DatePipe],
   templateUrl: './repos-page.component.html',
   styleUrl: './repos-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

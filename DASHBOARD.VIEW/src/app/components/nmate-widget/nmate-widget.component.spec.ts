@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { NMateWidgetComponent } from './nmate-widget.component';
 import { NMateService } from '../../services/nmate.service';
 import { NMateMessage } from '../../models/nmate.model';
+import { PreferencesService } from '../../core/services/preferences.service';
 
 /**
  * Unit tests for NMateWidgetComponent. The service is replaced by a signal-backed fake so the tests
@@ -13,6 +14,9 @@ describe('NMateWidgetComponent', () => {
   let fixture: ComponentFixture<NMateWidgetComponent>;
   let el: HTMLElement;
 
+  /** The user's Settings → General preference for showing NMate. */
+  const prefs = { showNMate: signal(true) };
+
   const fake = {
     isOpen: signal(false),
     enabled: signal<boolean | null>(true),
@@ -20,6 +24,12 @@ describe('NMateWidgetComponent', () => {
     messages: signal<NMateMessage[]>([]),
     suggestions: signal<string[]>(['Làm sao tạo sprint mới?']),
     isStreaming: signal(false),
+    conversationId: signal<string | null>('c2'),
+    recentConversations: signal<{ id: string; title: string; lastMessageAt: string }[]>([]),
+    historyLoading: signal(false),
+    conversationLoading: signal(false),
+    loadRecentConversations: jasmine.createSpy('loadRecentConversations'),
+    openConversation: jasmine.createSpy('openConversation'),
     open: jasmine.createSpy('open'),
     close: jasmine.createSpy('close'),
     toggle: jasmine.createSpy('toggle'),
@@ -34,14 +44,28 @@ describe('NMateWidgetComponent', () => {
 
   beforeEach(() => {
     fake.isOpen.set(false);
+    prefs.showNMate.set(true);
     fake.enabled.set(true);
     fake.isStreaming.set(false);
     fake.messages.set([]);
+    // The fake is shared and Jasmine runs specs in random order, so every signal a spec may change is reset here.
+    fake.available.set(true);
+    fake.conversationId.set('c2');
+    fake.historyLoading.set(false);
+    fake.conversationLoading.set(false);
+    fake.recentConversations.set([
+      { id: 'c1', title: 'Làm sao đóng sprint?', lastMessageAt: new Date().toISOString() },
+      { id: 'c2', title: 'Promote to Sprint là gì?', lastMessageAt: new Date().toISOString() },
+    ]);
     Object.values(fake).forEach(v => (v as jasmine.Spy).calls?.reset());
 
     TestBed.configureTestingModule({
       imports: [NMateWidgetComponent],
-      providers: [provideRouter([]), { provide: NMateService, useValue: fake }],
+      providers: [
+        provideRouter([]),
+        { provide: NMateService, useValue: fake },
+        { provide: PreferencesService, useValue: prefs },
+      ],
     });
     fixture = TestBed.createComponent(NMateWidgetComponent);
     el = fixture.nativeElement;
@@ -107,5 +131,79 @@ describe('NMateWidgetComponent', () => {
 
     expect(el.querySelector('.nm-maintenance')).not.toBeNull();
     fake.available.set(true);
+  });
+
+  it('clock button opens the recent conversations, highlighting the current one', () => {
+    fake.isOpen.set(true);
+    fixture.detectChanges();
+
+    (el.querySelector('.nm-history-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fake.loadRecentConversations).toHaveBeenCalledWith(3);
+    const items = el.querySelectorAll('.nm-history__item');
+    expect(items.length).toBe(2);
+    expect(items[1].classList).toContain('is-current');
+    expect(items[0].textContent).toContain('just now');
+  });
+
+  it('picking a conversation continues it and closes the menu', () => {
+    fake.isOpen.set(true);
+    fixture.detectChanges();
+    (el.querySelector('.nm-history-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    (el.querySelector('.nm-history__item') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fake.openConversation).toHaveBeenCalledWith('c1');
+    expect(el.querySelector('.nm-history')).toBeNull();
+  });
+
+  it('Escape closes the menu first, the panel on the next press; outside click also closes it', () => {
+    fake.isOpen.set(true);
+    fixture.detectChanges();
+    (el.querySelector('.nm-history-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(el.querySelector('.nm-history')).toBeNull();
+    expect(fake.close).not.toHaveBeenCalled();
+
+    (el.querySelector('.nm-history-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    document.body.click();
+    fixture.detectChanges();
+    expect(el.querySelector('.nm-history')).toBeNull();
+  });
+
+  it('shows an empty state when there is no earlier conversation', () => {
+    fake.isOpen.set(true);
+    fake.recentConversations.set([]);
+    fixture.detectChanges();
+    (el.querySelector('.nm-history-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(el.querySelector('.nm-history__empty')?.textContent).toContain('Chưa có');
+  });
+
+  it('renders nothing and ignores Ctrl + / when the user hid NMate in Settings', () => {
+    prefs.showNMate.set(false);
+    fixture.detectChanges();
+
+    expect(el.querySelector('.nm-fab')).toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true }));
+    expect(fake.toggle).not.toHaveBeenCalled();
+  });
+
+  it('hiding NMate while the panel is open closes the panel', () => {
+    fake.isOpen.set(true);
+    fixture.detectChanges();
+
+    prefs.showNMate.set(false);
+    fixture.detectChanges();
+
+    expect(fake.close).toHaveBeenCalled();
   });
 });

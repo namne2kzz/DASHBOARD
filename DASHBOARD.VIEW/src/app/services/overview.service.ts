@@ -5,6 +5,7 @@ import { catchError, of, Subject, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { OverviewStatsDto } from '../models/overview.model';
 import { RepositoryContextService } from './repository-context.service';
+import { describeLoadError } from '../utils/http-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class OverviewService {
@@ -31,7 +32,7 @@ export class OverviewService {
           const url  = sprintId ? `${base}?sprintId=${sprintId}` : base;
           return this.http.get<OverviewStatsDto>(url).pipe(
             catchError((err: HttpErrorResponse) => {
-              this.error.set(err.message);
+              this.error.set(describeLoadError(err, 'Failed to load the overview.'));
               this.stats.set(null);
               return of(null);
             }),
@@ -51,6 +52,13 @@ export class OverviewService {
       this.error.set(null);
       this.loadTrigger$.next({ repoId, sprintId });
     });
+  }
+
+  /** Reloads the statistics for the current repository and sprint — used by the page's "Try again". */
+  retryLoad(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.loadTrigger$.next({ repoId: this.repoCtx.selectedRepoId(), sprintId: this.selectedSprintId() });
   }
 
   /** Selects a sprint and reloads overview statistics. @param sprintId Sprint ID, or null for the default sprint. */

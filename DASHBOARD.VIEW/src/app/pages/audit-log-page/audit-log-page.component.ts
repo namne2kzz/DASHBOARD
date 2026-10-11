@@ -6,6 +6,7 @@ import { MembersService } from '../../services/members.service';
 import { InfiniteScrollDirective } from '../../directives/infinite-scroll.directive';
 import { FlipDropDirective } from '../../directives/flip-drop.directive';
 import { AuditLogCategory, AuditLogFilters } from '../../models/audit-log.model';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
 
 /**
  * Repository-wide audit log for admins: a filterable, paged view of every recorded change,
@@ -13,7 +14,7 @@ import { AuditLogCategory, AuditLogFilters } from '../../models/audit-log.model'
  */
 @Component({
   selector: 'app-audit-log-page',
-  imports: [CommonModule, NgClass, FormsModule, InfiniteScrollDirective, FlipDropDirective],
+  imports: [LoadErrorComponent, CommonModule, NgClass, FormsModule, InfiniteScrollDirective, FlipDropDirective],
   templateUrl: './audit-log-page.component.html',
   styleUrl: './audit-log-page.component.css',
 })

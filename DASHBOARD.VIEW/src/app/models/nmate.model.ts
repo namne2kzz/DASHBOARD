@@ -62,6 +62,22 @@ export interface NMateServerMessage {
   createdAt: string;
 }
 
+/** A conversation in the history list (`GET /nmate/conversations`). */
+export interface NMateConversationSummary {
+  id: string;
+  /** First question of the conversation, truncated to 60 characters. */
+  title: string;
+  lastMessageAt: string;
+}
+
+/** A page of results returned by NMate list endpoints. */
+export interface NMatePage<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
 /** Error body returned by NMate / the DASHBOARD proxy. */
 export interface NMateErrorBody {
   error?: string;

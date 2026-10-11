@@ -1,4 +1,5 @@
 ﻿using DASHBOARD.Application.Common.Caching;
+using DASHBOARD.Application.Common.Helpers;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Exceptions;
 using DASHBOARD.Application.Common.Models;
@@ -19,7 +20,8 @@ public sealed class AddMemberCommandHandler(
     IRequestUserContext   user,
     IUnitOfWork           uow,
     IQueryCache           cache,
-    IPublishEndpoint      publisher) : IRequestHandler<AddMemberCommand, Result<MemberDto>>
+    IPublishEndpoint      publisher,
+    INotificationService  notifications) : IRequestHandler<AddMemberCommand, Result<MemberDto>>
 {
     /// <summary>Validates permissions and constraints, creates the member row, and returns the member DTO.</summary>
     /// <param name="command">The add-member command.</param>
@@ -74,6 +76,19 @@ public sealed class AddMemberCommandHandler(
         // HUB caches this repository's directory too, and its own TTL would otherwise leave the new
         // member invisible there for up to five minutes.
         await publisher.Publish(new MemberDirectoryChangedEvent(command.RepositoryId, command.UserId), ct);
+
+        var repoName = await db.Set<Repository>().AsNoTracking()
+            .Where(r => r.Id == command.RepositoryId)
+            .Select(r => r.Name)
+            .FirstOrDefaultAsync(ct);
+
+        if (await NotifyPrefsHelper.PushEnabledAsync(db, command.UserId, ct))
+            await notifications.NotifyAsync(
+                command.UserId,
+                NotificationType.AddedToRepository,
+                $"Added to \"{repoName}\"",
+                "You have been added as a member of this repository.",
+                url: null, ct);
 
         return Result<MemberDto>.Success(new MemberDto(member.Id, targetUser.Id, targetUser.Name, targetUser.Email, targetUser.AvatarClass,
             member.DefaultRole, member.RoleId, role.Name, member.CreatedAt));

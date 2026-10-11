@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { MyWorkItemApiDto } from '../models/my-work.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 /** Loads and holds the current user's cross-repository open work queue. */
 @Injectable({ providedIn: 'root' })
@@ -14,7 +15,7 @@ export class MyWorkService {
 
   private readonly _items   = signal<MyWorkItemApiDto[]>([]);
   private readonly _loading = signal(false);
-  private readonly _error   = signal(false);
+  private readonly _error   = signal<string | null>(null);
 
   /** All open work items assigned to the current user. */
   readonly items   = this._items.asReadonly();
@@ -35,7 +36,7 @@ export class MyWorkService {
   /** Fetches the user's assigned open work items, replacing the current list. */
   refresh(): void {
     this._loading.set(true);
-    this._error.set(false);
+    this._error.set(null);
     this.http
       .get<MyWorkItemApiDto[]>(this.baseUrl)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -44,8 +45,8 @@ export class MyWorkService {
           this._items.set(items);
           this._loading.set(false);
         },
-        error: () => {
-          this._error.set(true);
+        error: (err: unknown) => {
+          this._error.set(describeLoadError(err, 'Failed to load your work items.'));
           this._loading.set(false);
         },
       });

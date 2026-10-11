@@ -8,6 +8,7 @@ import { SystemUserDto, CreateUserPayload, AuthProvider, UserHierarchy, UserHier
 import { PrivilegeService } from '../../core/services/privilege.service';
 import { ToastService } from '../../core/components/toast/toast.service';
 import { UserSelectComponent, UserOption } from '../../components/user-select/user-select.component';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
 
 type UserFilter = 'all' | 'active' | 'inactive' | 'admins';
 
@@ -34,7 +35,7 @@ const AVATAR_PALETTE = [
 @Component({
   selector: 'app-settings-users-page',
   standalone: true,
-  imports: [FormsModule, NgClass, NgTemplateOutlet, UserSelectComponent],
+  imports: [LoadErrorComponent, FormsModule, NgClass, NgTemplateOutlet, UserSelectComponent],
   templateUrl: './settings-users-page.component.html',
   styleUrls: ['./settings-users-page.component.css'],
 })

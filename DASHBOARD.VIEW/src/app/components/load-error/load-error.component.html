@@ -1,0 +1,6 @@
+<div class="nx-alert nx-alert--danger items-center" role="alert">
+  <span class="flex-1">{{ message() }}</span>
+  @if (retryable()) {
+    <button type="button" class="nx-btn nx-btn--sm" (click)="retry.emit()">Try again</button>
+  }
+</div>

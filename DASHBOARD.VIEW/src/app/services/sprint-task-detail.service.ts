@@ -8,6 +8,8 @@ import { SprintBoardService, PRIORITY_MAP } from './sprint-board.service';
 import { ToastService } from '../core/components/toast/toast.service';
 import type { SprintTaskApiDto, SprintTaskApiState } from '../models/sprint-planning-api.model';
 import type { DiscussionApiDto, HistoryApiDto, UpdateSprintTaskPayload } from '../models/sprint-task-detail.model';
+import type { MentionCandidateApiDto } from '../models/member.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 const API = `${environment.apiBaseUrl}/repositories`;
 
@@ -25,6 +27,7 @@ export class SprintTaskDetailService {
   readonly history     = signal<HistoryApiDto[]>([]);
   readonly loading     = signal(false);
   readonly error       = signal<string | null>(null);
+  readonly mentionCandidates = signal<MentionCandidateApiDto[]>([]);
 
   /**
    * Resolves a formatted work-item key (e.g. "DASH-10") to its task UUID.
@@ -62,7 +65,20 @@ export class SprintTaskDetailService {
           this.history.set(history);
           this.loading.set(false);
         },
-        error: () => { this.error.set('Failed to load task detail'); this.loading.set(false); },
+        error: (err: unknown) => { this.error.set(describeLoadError(err, 'Failed to load task detail')); this.loading.set(false); },
+      });
+  }
+
+  /** Loads the users that can be @mentioned for this task (sprint capacity members). @param taskId The sprint task. */
+  loadMentionCandidates(taskId: string): void {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId) return;
+    this.http
+      .get<MentionCandidateApiDto[]>(`${API}/${repoId}/sprint-tasks/${taskId}/mention-candidates`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: list => this.mentionCandidates.set(list),
+        error: () => this.mentionCandidates.set([]),
       });
   }
 

@@ -8,6 +8,7 @@ import {
   CreateRolePayload,
   UpdateRolePayload,
 } from '../models/role.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class RoleService {
@@ -31,7 +32,7 @@ export class RoleService {
     this.error.set(null);
     this.http.get<RoleDto[]>(this.url(repoId)).subscribe({
       next:  roles => { this.roles.set(roles.map(r => this.normalize(r))); this.loading.set(false); },
-      error: ()    => { this.error.set('Failed to load roles'); this.loading.set(false); },
+      error: (err: unknown)    => { this.error.set(describeLoadError(err, 'Failed to load roles')); this.loading.set(false); },
     });
   }
 

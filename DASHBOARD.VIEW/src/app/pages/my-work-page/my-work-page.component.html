@@ -55,10 +55,7 @@
       }
     </div>
   } @else if (myWork.error()) {
-    <div class="nx-alert nx-alert--danger">
-      Failed to load your work items.
-      <button class="ml-1 underline" (click)="myWork.refresh()">Try again</button>
-    </div>
+    <app-load-error [message]="myWork.error()!" (retry)="myWork.refresh()" />
   } @else if (myWork.items().length === 0) {
     <div class="rounded-2xl border border-dashed border-slate-700 py-14 text-center">
       <p class="text-sm font-medium text-slate-400">You're all caught up</p>

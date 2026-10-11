@@ -7,6 +7,7 @@ import { RepositoryContextService } from '../../services/repository-context.serv
 import { DateTimeService } from '../../core/services/date-time.service';
 import { MetadataDto, CreateMetadataPayload, UpdateMetadataPayload } from '../../models/metadata.model';
 import { ConfirmService } from '../../core/components/confirm/confirm.service';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
 
 type ActivePanel = 'create' | 'edit' | null;
 
@@ -21,7 +22,7 @@ interface MetadataGroup {
 @Component({
   selector: 'app-settings-metadata-page',
   standalone: true,
-  imports: [FormsModule],
+  imports: [LoadErrorComponent, FormsModule],
   templateUrl: './settings-metadata-page.component.html',
   styleUrls: ['./settings-metadata-page.component.scss'],
 })

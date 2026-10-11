@@ -22,13 +22,14 @@ import { InvitationListItemDto, InvitationStatus } from '../../models/invitation
 import { Permission } from '../../core/enums/system.enum';
 import { PERMISSION_LABELS, PERMISSION_GROUPS } from '../../core/constants/system.constant';
 import { UserSelectComponent, UserOption } from '../../components/user-select/user-select.component';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
 
 type ActivePanel = 'add-member' | 'invite-email' | 'create-role' | 'edit-role' | null;
 
 @Component({
   selector: 'app-settings-members-page',
   standalone: true,
-  imports: [FormsModule, NgClass, UserSelectComponent],
+  imports: [LoadErrorComponent, FormsModule, NgClass, UserSelectComponent],
   templateUrl: './settings-members-page.component.html',
   styleUrls: ['./settings-members-page.component.css'],
 })

@@ -1,4 +1,5 @@
 ﻿using DASHBOARD.Application.Common.Exceptions;
+using DASHBOARD.Application.Common.Helpers;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
@@ -17,7 +18,8 @@ public sealed class RemoveCapacityMemberCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
     IUnitOfWork           uow,
-    IHubChannelService    hub) : IRequestHandler<RemoveCapacityMemberCommand, Result>
+    IHubChannelService    hub,
+    INotificationService  notifications) : IRequestHandler<RemoveCapacityMemberCommand, Result>
 {
     /// <summary>Validates permission, removes the capacity row, and removes the member from the HUB channel.</summary>
     /// <param name="command">The remove command.</param>
@@ -56,6 +58,21 @@ public sealed class RemoveCapacityMemberCommandHandler(
             {
                 // Best-effort sync — the capacity row is removed either way.
             }
+        }
+
+        if (await NotifyPrefsHelper.PushEnabledAsync(db, removedUserId, ct))
+        {
+            var sprintName = await db.Set<Sprint>().AsNoTracking()
+                .Where(s => s.Id == command.SprintId)
+                .Select(s => s.Name)
+                .FirstOrDefaultAsync(ct);
+
+            await notifications.NotifyAsync(
+                removedUserId,
+                NotificationType.RemovedFromSprint,
+                $"Removed from sprint \"{sprintName}\"",
+                "You have been removed from the sprint capacity.",
+                url: null, ct);
         }
 
         return Result.Ok;

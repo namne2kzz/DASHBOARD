@@ -36,9 +36,7 @@
         }
       </section>
     } @else if (repos.error()) {
-      <section class="rounded-lg border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-200">
-        {{ repos.error() }}
-      </section>
+      <app-load-error [message]="repos.error()!" (retry)="refresh()" />
     } @else if (!repos.hasConnection()) {
       <section class="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center">
         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-sky-300 ring-1 ring-slate-700">

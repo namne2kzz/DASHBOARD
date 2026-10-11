@@ -191,10 +191,12 @@ describe('BacklogManagementService', () => {
       expect(service.visibleItems()).toEqual([]);
     });
 
-    it('shows a toast and leaves the list empty when the request fails', () => {
+    it('exposes a load error for the page (not a toast) and leaves the list empty when the request fails', () => {
       load([], { failBacklog: true });
 
-      expect(toast.error).toHaveBeenCalledWith('Failed to load backlog items.');
+      // Page-load failures render inline via <app-load-error>; toasts are reserved for failed actions.
+      expect(service.error()).toBe('Failed to load backlog items.');
+      expect(toast.error).not.toHaveBeenCalled();
       expect(service.items()).toEqual([]);
     });
 

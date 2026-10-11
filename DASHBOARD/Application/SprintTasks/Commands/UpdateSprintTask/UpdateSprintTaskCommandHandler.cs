@@ -1,4 +1,5 @@
 using DASHBOARD.Application.Common.Exceptions;
+using DASHBOARD.Application.Common.Helpers;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
@@ -172,12 +173,13 @@ public sealed class UpdateSprintTaskCommandHandler(
         try
         {
             // Collect all user ids we need in a single round-trip.
-            var userIds = new HashSet<Guid> { changedById };
-            if (oldAssigneeId.HasValue) userIds.Add(oldAssigneeId.Value);
-            if (newAssigneeId.HasValue) userIds.Add(newAssigneeId.Value);
+            var notifyIds = new HashSet<Guid>();
+            if (oldAssigneeId.HasValue && oldAssigneeId != changedById) notifyIds.Add(oldAssigneeId.Value);
+            if (newAssigneeId.HasValue && newAssigneeId != changedById) notifyIds.Add(newAssigneeId.Value);
 
+            var allUserIds = notifyIds.Append(changedById).ToHashSet();
             var users = await db.Set<User>().AsNoTracking()
-                .Where(u => userIds.Contains(u.Id))
+                .Where(u => allUserIds.Contains(u.Id))
                 .Select(u => new { u.Id, u.Email, u.Name })
                 .ToDictionaryAsync(u => u.Id, ct);
 
@@ -188,38 +190,51 @@ public sealed class UpdateSprintTaskCommandHandler(
 
             if (repo is null) return;
 
-            var itemNumber   = SprintTask.BuildWorkItemNumber(repo.Code, workItemNumber);
-            var itemUrl      = $"{settings.InvitationFrontendBaseUrl.TrimEnd('/')}/boards/{itemNumber}";
-            var changerName  = users.TryGetValue(changedById, out var changer) ? changer.Name : "Someone";
+            var itemNumber  = SprintTask.BuildWorkItemNumber(repo.Code, workItemNumber);
+            var itemUrl     = $"{settings.InvitationFrontendBaseUrl.TrimEnd('/')}/boards/{itemNumber}";
+            var changerName = users.TryGetValue(changedById, out var changer) ? changer.Name : "Someone";
 
-            // Notify old assignee that they were unassigned (skip if they made the change themselves).
+            // Batch-fetch notification prefs for all affected users in one query.
+            var prefs = notifyIds.Count > 0
+                ? await NotifyPrefsHelper.GetBatchAsync(db, notifyIds, ct)
+                : [];
+
+            // Notify old assignee that they were unassigned.
             if (oldAssigneeId.HasValue && oldAssigneeId != changedById &&
                 users.TryGetValue(oldAssigneeId.Value, out var oldUser))
             {
-                await email.SendAssigneeChangedAsync(
-                    oldUser.Email, oldUser.Name, itemNumber, taskTitle,
-                    assigned: false, changerName, repo.Name, itemUrl, ct);
+                var (emailOn, pushOn) = prefs.TryGetValue(oldAssigneeId.Value, out var p) ? p : (true, false);
 
-                await notifications.NotifyAsync(
-                    oldAssigneeId.Value,
-                    NotificationType.WorkItemUnassigned,
-                    $"Unassigned from {itemNumber}",
-                    taskTitle, itemUrl, ct);
+                if (emailOn)
+                    await email.SendAssigneeChangedAsync(
+                        oldUser.Email, oldUser.Name, itemNumber, taskTitle,
+                        assigned: false, changerName, repo.Name, itemUrl, ct);
+
+                if (pushOn)
+                    await notifications.NotifyAsync(
+                        oldAssigneeId.Value,
+                        NotificationType.WorkItemUnassigned,
+                        $"Unassigned from {itemNumber}",
+                        taskTitle, itemUrl, ct);
             }
 
-            // Notify new assignee that they were assigned (skip if they made the change themselves).
+            // Notify new assignee that they were assigned.
             if (newAssigneeId.HasValue && newAssigneeId != changedById &&
                 users.TryGetValue(newAssigneeId.Value, out var newUser))
             {
-                await email.SendAssigneeChangedAsync(
-                    newUser.Email, newUser.Name, itemNumber, taskTitle,
-                    assigned: true, changerName, repo.Name, itemUrl, ct);
+                var (emailOn, pushOn) = prefs.TryGetValue(newAssigneeId.Value, out var p) ? p : (true, false);
 
-                await notifications.NotifyAsync(
-                    newAssigneeId.Value,
-                    NotificationType.WorkItemAssigned,
-                    $"Assigned to {itemNumber}",
-                    taskTitle, itemUrl, ct);
+                if (emailOn)
+                    await email.SendAssigneeChangedAsync(
+                        newUser.Email, newUser.Name, itemNumber, taskTitle,
+                        assigned: true, changerName, repo.Name, itemUrl, ct);
+
+                if (pushOn)
+                    await notifications.NotifyAsync(
+                        newAssigneeId.Value,
+                        NotificationType.WorkItemAssigned,
+                        $"Assigned to {itemNumber}",
+                        taskTitle, itemUrl, ct);
             }
         }
         catch (Exception ex)

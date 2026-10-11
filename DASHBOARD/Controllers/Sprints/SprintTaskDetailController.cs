@@ -2,6 +2,7 @@
 using DASHBOARD.Application.Discussions.Commands.AddDiscussion;
 using DASHBOARD.Application.Discussions.DTOs;
 using DASHBOARD.Application.Discussions.Queries.ListDiscussions;
+using DASHBOARD.Application.Discussions.Queries.ListMentionCandidates;
 using DASHBOARD.Application.History.DTOs;
 using DASHBOARD.Application.History.Queries.ListHistory;
 using DASHBOARD.Application.SprintTasks.Commands.SetSprintTaskMetadata;
@@ -112,6 +113,20 @@ public sealed class SprintTaskDetailController(ISender mediator) : ControllerBas
     {
         var result = await mediator.Send(new AddDiscussionCommand(repoId, taskId, body), ct);
         return StatusCode(StatusCodes.Status201Created, result);
+    }
+
+    /// <summary>Returns the users who can be @mentioned in this task's discussion (sprint capacity members, or repo members for a backlog task).</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="taskId">The sprint task ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the list of <see cref="MentionCandidateDto"/>.</returns>
+    [HttpGet("mention-candidates")]
+    [ProducesResponseType<IReadOnlyList<MentionCandidateDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ListMentionCandidates(Guid repoId, Guid taskId, CancellationToken ct)
+    {
+        var result = await mediator.Send(new ListMentionCandidatesQuery(repoId, taskId), ct);
+        return Ok(result);
     }
 
     /// <summary>Returns the metadata catalog values (labels, components, versions) assigned to a sprint task.</summary>

@@ -23,6 +23,9 @@
 
   <!-- Body -->
   <div class="custom-scroll flex-1 overflow-y-auto p-5">
+    @if (metadataService.error()) {
+      <app-load-error class="mb-4" [message]="metadataService.error()!" (retry)="metadataService.load(repoCtx.selectedRepoId() ?? '')" />
+    }
     @if (!groups().length) {
       <p class="px-4 py-8 text-center text-sm text-slate-500">No metadata defined.</p>
     } @else {

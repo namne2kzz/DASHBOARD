@@ -185,4 +185,61 @@ describe('NMateService', () => {
     expect(service.messages().map(m => m.content)).toEqual(['Hỏi cũ', 'Đáp cũ']);
     expect(service.messages()[1].rating).toBe(1);
   });
+
+  it('loads the most recent conversations for the history menu', () => {
+    service.loadRecentConversations(3);
+    expect(service.historyLoading()).toBeTrue();
+
+    const req = httpMock.expectOne(r => r.url === `${base}/conversations`);
+    expect(req.request.params.get('page')).toBe('1');
+    expect(req.request.params.get('pageSize')).toBe('3');
+    req.flush({ items: [{ id: 'c1', title: 'Làm sao đóng sprint?', lastMessageAt: '2026-10-11T08:00:00Z' }], page: 1, pageSize: 3, total: 7 });
+
+    expect(service.recentConversations().map(c => c.id)).toEqual(['c1']);
+    expect(service.historyLoading()).toBeFalse();
+  });
+
+  it('openConversation switches to the picked thread so the next question continues it', () => {
+    service.openConversation('c7');
+    expect(service.conversationLoading()).toBeTrue();
+
+    httpMock.expectOne(`${base}/conversations/c7/messages`).flush([
+      { id: 'u1', role: 'user', content: 'Câu cũ', citations: [], isInterrupted: false, rating: null, createdAt: '' },
+      { id: 'a1', role: 'assistant', content: 'Đáp cũ', citations: [], isInterrupted: true, rating: null, createdAt: '' },
+    ]);
+
+    expect(service.conversationId()).toBe('c7');
+    expect(sessionStorage.getItem('nmate.conversationId')).toBe('c7');
+    expect(service.messages().map(m => m.content)).toEqual(['Câu cũ', 'Đáp cũ']);
+    expect(service.messages()[1].errorCode).toBe('INTERRUPTED');
+    expect(service.conversationLoading()).toBeFalse();
+
+    service.ask('Hỏi tiếp', null);
+    expect(httpMock.expectOne(`${base}/chat`).request.body.conversationId).toBe('c7');
+  });
+
+  it('openConversation ignores a slow response for an earlier pick', () => {
+    service.openConversation('old');
+    service.openConversation('new');
+    const [oldReq, newReq] = [
+      httpMock.expectOne(`${base}/conversations/old/messages`),
+      httpMock.expectOne(`${base}/conversations/new/messages`),
+    ];
+
+    newReq.flush([{ id: 'n', role: 'user', content: 'mới', citations: [], isInterrupted: false, rating: null, createdAt: '' }]);
+    oldReq.flush([{ id: 'o', role: 'user', content: 'cũ', citations: [], isInterrupted: false, rating: null, createdAt: '' }]);
+
+    expect(service.conversationId()).toBe('new');
+    expect(service.messages().map(m => m.content)).toEqual(['mới']);
+  });
+
+  it('openConversation drops a conversation that no longer exists from the menu', () => {
+    service.recentConversations.set([{ id: 'gone', title: 'x', lastMessageAt: '' }, { id: 'ok', title: 'y', lastMessageAt: '' }]);
+
+    service.openConversation('gone');
+    httpMock.expectOne(`${base}/conversations/gone/messages`).flush('', { status: 404, statusText: 'Not Found' });
+
+    expect(service.recentConversations().map(c => c.id)).toEqual(['ok']);
+    expect(service.conversationLoading()).toBeFalse();
+  });
 });
