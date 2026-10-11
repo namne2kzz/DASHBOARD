@@ -31,6 +31,8 @@ describe('SettingsMembersPageComponent', () => {
 
   const roleStub: Partial<RoleService> = {
     roles: signal([]),
+    error: signal<string | null>(null),
+    load:  () => undefined,
   } as unknown as Partial<RoleService>;
 
   const metadataStub: Partial<MetadataService> = {

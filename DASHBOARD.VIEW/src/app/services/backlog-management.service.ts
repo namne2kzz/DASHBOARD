@@ -18,6 +18,7 @@ import { RepositoryContextService } from './repository-context.service';
 import { PrivilegeService } from '../core/services/privilege.service';
 import { ToastService } from '../core/components/toast/toast.service';
 import { environment } from '../../environments/environment';
+import { describeLoadError } from '../utils/http-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class BacklogManagementService {
@@ -28,6 +29,7 @@ export class BacklogManagementService {
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly _loadTrigger$   = new Subject<string | null>();
+  private readonly _error         = signal<string | null>(null);
   private readonly _activeLevel    = signal<BacklogLevel>('user-story');
   private readonly _estimateMode   = signal<EstimateMode>('fibonacci');
   private readonly _items          = signal<BacklogItem[]>([]);
@@ -50,6 +52,8 @@ export class BacklogManagementService {
   readonly canEditWorkItem   = computed(() => this.privilege.canEditWorkItem());
 
   readonly loading        = this._loading.asReadonly();
+  /** Message when the backlog failed to load; null otherwise. Shown inline by the page. */
+  readonly error          = this._error.asReadonly();
   readonly sprints        = this._sprints.asReadonly();
   readonly selectedEpicId = this._selectedEpicId.asReadonly();
   readonly filterKeyword  = this._filterKeyword.asReadonly();
@@ -140,11 +144,12 @@ export class BacklogManagementService {
             this._loading.set(false);
             return EMPTY;
           }
+          this._error.set(null);
           return this.http
             .get<BacklogItemApiDto[]>(this.baseUrl(repoId))
             .pipe(
-              catchError(() => {
-                this.toast.error('Failed to load backlog items.');
+              catchError((err: unknown) => {
+                this._error.set(describeLoadError(err, 'Failed to load backlog items.'));
                 this._loading.set(false);
                 return of([]);
               }),
@@ -542,6 +547,11 @@ export class BacklogManagementService {
 
   private reload(repoId: string): void {
     this._loadTrigger$.next(repoId);
+  }
+
+  /** Reloads the backlog for the selected repository — used by the page's "Try again". */
+  retryLoad(): void {
+    this.reload(this.repoCtx.selectedRepoId() ?? '');
   }
 
   /** Calls the rank API with prev/next sibling IDs, then reloads. */

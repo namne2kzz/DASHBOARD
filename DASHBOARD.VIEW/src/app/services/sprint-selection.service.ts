@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../environments/environment';
 import { RepositoryContextService } from './repository-context.service';
 import { SprintApiDto } from '../models/sprint-planning-api.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 const STORAGE_KEY_PREFIX = 'selectedSprintId:';
 
@@ -88,7 +89,7 @@ export class SprintSelectionService {
             ?? this.pickDefaultSprint(sprints);
           if (target) this._selectedSprintId.set(target.id);
         },
-        error: () => { this._error.set('Failed to load sprints'); this._loading.set(false); },
+        error: (err: unknown) => { this._error.set(describeLoadError(err, 'Failed to load sprints')); this._loading.set(false); },
       });
   }
 

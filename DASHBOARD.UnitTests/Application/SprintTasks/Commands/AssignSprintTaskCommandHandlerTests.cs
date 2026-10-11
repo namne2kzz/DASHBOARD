@@ -5,6 +5,7 @@ using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.UnitTests.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace DASHBOARD.UnitTests.Application.SprintTasks.Commands;
@@ -14,22 +15,27 @@ public sealed class AssignSprintTaskCommandHandlerTests : IDisposable
 {
     private readonly TestDatabase             _database;
     private readonly TestApplicationDbContext _db;
-    private readonly Mock<IHistoryService>    _history = new();
-    private readonly Guid                     _repositoryId = Guid.NewGuid();
-    private readonly Guid                     _sprintId     = Guid.NewGuid();
+    private readonly Mock<IHistoryService>      _history       = new();
+    private readonly Mock<INotificationService> _notifications = new();
+    private readonly Mock<IEmailService>        _email         = new();
+    private readonly Mock<IAppSettings>         _settings      = new();
+    private readonly Guid                       _repositoryId  = Guid.NewGuid();
+    private readonly Guid                       _sprintId      = Guid.NewGuid();
 
     /// <summary>Sets up an isolated in-memory database.</summary>
     public AssignSprintTaskCommandHandlerTests()
     {
         _database = TestDbContextFactory.Create();
         _db       = _database.Db;
+        _settings.SetupGet(s => s.InvitationFrontendBaseUrl).Returns("https://localhost");
     }
 
     /// <summary>Disposes the in-memory database.</summary>
     public void Dispose() => _database.Dispose();
 
     private AssignSprintTaskCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _history.Object, _database.Uow);
+        new(_db, user, _history.Object, _notifications.Object, _email.Object, _settings.Object,
+            Mock.Of<ILogger<AssignSprintTaskCommandHandler>>(), _database.Uow);
 
     private IRequestUserContext AuthorizedUser() =>
         RequestUserContextMock.ForUser()

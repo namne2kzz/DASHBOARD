@@ -6,6 +6,7 @@ import { RepositoryContextService } from './repository-context.service';
 import { environment } from '../../environments/environment';
 import { WorkflowColumnApiDto } from '../models/workflow-api.model';
 import type { BoardColumn, SprintTaskStateKey, WipMode } from '../models/workflow.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 export type { BoardColumn, SprintTaskStateKey, WipMode } from '../models/workflow.model';
 
@@ -67,10 +68,13 @@ export class WorkflowService {
 
   private readonly _columns = signal<BoardColumn[]>([]);
   private readonly _loading = signal(false);
+  private readonly _error   = signal<string | null>(null);
 
   readonly canManageBoard = computed(() => this.privilege.canManageBoard());
   readonly columns        = this._columns.asReadonly();
   readonly loading        = this._loading.asReadonly();
+  /** Message when the columns failed to load; null otherwise. */
+  readonly error          = this._error.asReadonly();
 
   /** Columns that have a WIP limit configured (> 0). */
   readonly wipColumns = computed(() => this._columns().filter(c => c.wipLimit > 0));
@@ -137,13 +141,20 @@ export class WorkflowService {
 
   private loadBoard(repoId: string): void {
     this._loading.set(true);
+    this._error.set(null);
     this.http
       .get<WorkflowColumnApiDto[]>(`${this.boardUrl(repoId)}/columns`)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  cols => { this._columns.set(cols.map(mapColumn)); this._loading.set(false); },
-        error: ()   => this._loading.set(false),
+        error: (err: unknown) => { this._error.set(describeLoadError(err, 'Failed to load board columns.')); this._loading.set(false); },
       });
+  }
+
+  /** Reloads the columns of the selected repository — used by the page's "Try again". */
+  retryLoad(): void {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (repoId) this.loadBoard(repoId);
   }
 
   private patchColumn(columnId: string, patch: Partial<BoardColumn>): void {
@@ -168,6 +179,25 @@ export class WorkflowService {
       .put(`${this.boardUrl(repoId)}/columns/${columnId}`, null, { params })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({ error: () => this.loadBoard(repoId) });
+  }
+
+  /**
+   * Deletes a board column. Optimistically removes it from the local list and reloads on failure.
+   * @param columnId The column to delete.
+   */
+  deleteColumn(columnId: string): void {
+    const repoId = this.repoCtx.selectedRepoId();
+    if (!repoId) return;
+
+    const previous = this._columns();
+    this._columns.update(cols => cols.filter(c => c.id !== columnId));
+
+    this.http
+      .delete(`${this.boardUrl(repoId)}/columns/${columnId}`)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        error: () => this._columns.set(previous),
+      });
   }
 
   private boardUrl(repoId: string): string {

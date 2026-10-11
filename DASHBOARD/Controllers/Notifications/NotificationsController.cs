@@ -48,6 +48,16 @@ public sealed class NotificationsController(
         Response.Headers.ContentType    = "text/event-stream";
         Response.Headers.CacheControl   = "no-cache";
         Response.Headers["X-Accel-Buffering"] = "no"; // disable nginx buffering
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+
+        // Disable response buffering so each SSE frame reaches the browser immediately.
+        if (Response.HttpContext.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature>() is { } bodyFeature)
+            bodyFeature.DisableBuffering();
+
+        // Commit the status line and headers to the wire now, before the first write. Without this
+        // the MVC pipeline holds the response open until the body completes, so EventSource never
+        // sees the 200 and onopen never fires.
+        await Response.StartAsync(ct);
 
         // Send an initial keep-alive comment so the client knows the connection is live.
         await WriteRawAsync(": connected\n\n", ct);

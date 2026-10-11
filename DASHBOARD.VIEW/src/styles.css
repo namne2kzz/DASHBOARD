@@ -502,3 +502,6 @@ select option:checked {
 .nmate-md table { display: block; max-width: 100%; margin: 0 0 8px; overflow-x: auto; border-collapse: collapse; font-size: 12px; }
 .nmate-md th, .nmate-md td { padding: 4px 8px; border: 1px solid var(--border); text-align: left; }
 .nmate-md blockquote { margin: 0 0 8px; padding-left: 10px; border-left: 2px solid var(--border-strong); color: var(--text-2); }
+
+/* @mention highlight in discussion comments (rendered via [innerHTML], so must be global). */
+.mention { color: var(--accent); font-weight: 600; background: color-mix(in srgb, var(--accent) 14%, transparent); padding: 0 3px; border-radius: 4px; }

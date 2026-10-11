@@ -4,7 +4,11 @@ export type NotificationType =
   | 'WorkItemStateChanged'
   | 'SprintActivated'
   | 'SprintClosed'
-  | 'MentionedInDiscussion';
+  | 'MentionedInDiscussion'
+  | 'AddedToRepository'
+  | 'RemovedFromRepository'
+  | 'AddedToSprint'
+  | 'RemovedFromSprint';
 
 export interface AppNotification {
   id: string;

@@ -12,6 +12,7 @@ import { SprintTaskApiState, SprintTaskApiType } from '../core/enums/system.enum
 import { SPRINT_TASK_STATE_LABEL } from '../core/constants/system.constant';
 import type { BoardItem, BoardItemType, BoardPriority } from '../models/boards.model';
 import type { SprintTaskStateKey } from '../models/workflow.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 const API = `${environment.apiBaseUrl}/repositories`;
 
@@ -324,6 +325,13 @@ export class SprintBoardService {
       });
   }
 
+  /** Reloads the board tasks of the selected sprint — used by the page's "Try again". */
+  retryLoad(): void {
+    const repoId   = this.repoCtx.selectedRepoId();
+    const sprintId = this.selectedSprintId();
+    if (repoId && sprintId) this.loadTasks(repoId, sprintId);
+  }
+
   private loadTasks(repoId: string, sprintId: string): void {
     this.loading.set(true);
     this.error.set(null);
@@ -331,7 +339,7 @@ export class SprintBoardService {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next:  dtos => { this._allItems.set(dtos.map(toItem)); this.loading.set(false); },
-        error: ()   => { this.error.set('Failed to load board tasks'); this.loading.set(false); },
+        error: (err: unknown)   => { this.error.set(describeLoadError(err, 'Failed to load board tasks')); this.loading.set(false); },
       });
   }
 }

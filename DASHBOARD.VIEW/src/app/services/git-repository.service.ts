@@ -6,6 +6,7 @@ import {
   GitRepositoryOverview,
 } from '../models/git-repository.model';
 import { RepositoryContextService } from './repository-context.service';
+import { describeLoadError } from '../utils/http-error.util';
 
 /**
  * Feature service for the Repos tab. Loads the list of configured GitHub connections and the
@@ -97,8 +98,8 @@ export class GitRepositoryService {
         this.overview.set(overview);
         this.loading.set(false);
       },
-      error: () => {
-        this.error.set('Failed to load repository overview');
+      error: (err: unknown) => {
+        this.error.set(describeLoadError(err, 'Failed to load repository overview'));
         this.overview.set(null);
         this.loading.set(false);
       },

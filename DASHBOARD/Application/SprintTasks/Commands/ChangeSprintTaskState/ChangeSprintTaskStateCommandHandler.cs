@@ -1,4 +1,5 @@
 using DASHBOARD.Application.Common.Exceptions;
+using DASHBOARD.Application.Common.Helpers;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
@@ -107,18 +108,23 @@ public sealed class ChangeSprintTaskStateCommandHandler(
                     var oldLabel   = StateLabels.GetValueOrDefault(oldState, oldState.ToString());
                     var newLabel   = StateLabels.GetValueOrDefault(command.NewState, command.NewState.ToString());
 
-                    await email.SendStateChangedAsync(
-                        notifyData.Email, notifyData.Name,
-                        itemNumber, task.Title,
-                        oldLabel, newLabel,
-                        notifyData.ChangerName, notifyData.RepoName, itemUrl, ct);
+                    var prefs = await NotifyPrefsHelper.GetBatchAsync(db, [notifyUserId.Value], ct);
+                    var (emailOn, pushOn) = prefs[notifyUserId.Value];
 
-                    await notifications.NotifyAsync(
-                        notifyUserId.Value,
-                        NotificationType.WorkItemStateChanged,
-                        $"{itemNumber} state changed: {oldLabel} → {newLabel}",
-                        task.Title,
-                        itemUrl, ct);
+                    if (emailOn)
+                        await email.SendStateChangedAsync(
+                            notifyData.Email, notifyData.Name,
+                            itemNumber, task.Title,
+                            oldLabel, newLabel,
+                            notifyData.ChangerName, notifyData.RepoName, itemUrl, ct);
+
+                    if (pushOn)
+                        await notifications.NotifyAsync(
+                            notifyUserId.Value,
+                            NotificationType.WorkItemStateChanged,
+                            $"{itemNumber} state changed: {oldLabel} → {newLabel}",
+                            task.Title,
+                            itemUrl, ct);
                 }
             }
             catch (Exception ex)

@@ -63,6 +63,7 @@ Cũng trong **Settings → General**:
 - **Timezone**: múi giờ hiển thị; **Local (device)** dùng múi giờ của máy bạn.
 - **Compact mode**: thu hẹp khoảng cách dòng trong các danh sách.
 - **Reduce motion**: giảm hiệu ứng chuyển động.
+- **NMate assistant** (phần **Appearance**): bật/tắt nút trợ lý NMate ở góc phải dưới. Mặc định bật; tắt thì nút và phím tắt Ctrl/Cmd + / biến mất, bật lại bất cứ lúc nào.
 
 Các tuỳ chỉnh này chỉ áp dụng cho riêng bạn. Định dạng ngày và múi giờ cũng được NHub dùng, nên bạn không phải chỉnh lại ở NHub.
 

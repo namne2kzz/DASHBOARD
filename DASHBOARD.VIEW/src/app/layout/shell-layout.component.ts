@@ -64,6 +64,9 @@ export class ShellLayoutComponent {
   });
 
   constructor() {
+    // Reconnect SSE on page refresh — applySession() only runs on login, not on reload.
+    this.notiSvc.connect();
+
     effect(() => {
       if ((this.currentUrl() ?? '').includes('/settings')) {
         this.settingsOpen.set(true);

@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-11 | 18:33 | Thêm setting ẩn/hiện NMate | Thêm key `ui.nmate-widget` (`true`/`false`, chưa set = hiện): user bật/tắt nút trợ lý NMate ở Settings → General → Appearance |
 | 2026-09-26 | 14:02 | Khởi tạo document | Tạo document business ban đầu cho feature User Settings + avatar upload qua MinIO — đã có trong code từ 2026-09-20 nhưng chưa được document |
 
 ---
@@ -21,7 +22,7 @@ Lưu preference hiển thị/thông báo của từng user (date format, timezon
   - `Value` — string đã serialize. `null` = chưa set → app dùng default.
   - Thiết kế key-value có chủ đích: thêm setting mới **không cần migration DB**, chỉ thêm 1 string key.
 - Các key hiện có (`UserSettingKeys`):
-  - **UI**: `ui.date-format` (`dmy`/`mdy`/`ymd`), `ui.timezone` (rỗng = browser local, hoặc `utc7`/`utc0`/`utc-5`/`utc9`), `ui.theme` (`dark`/`light`/`system`), `ui.language` (`en`/`vi`/`ja`), `ui.compact-mode`.
+  - **UI**: `ui.date-format` (`dmy`/`mdy`/`ymd`), `ui.timezone` (rỗng = browser local, hoặc `utc7`/`utc0`/`utc-5`/`utc9`), `ui.theme` (`dark`/`light`/`system`), `ui.language` (`en`/`vi`/`ja`), `ui.compact-mode`, `ui.nmate-widget` (`true`/`false` — hiện nút trợ lý NMate; chưa set = hiện).
   - **Notification**: `notify.email`, `notify.push`, `notify.digest`, `notify.mentions-only`.
   - **Profile**: `profile.avatar-url`.
   - **Accessibility**: `a11y.reduce-motion`.

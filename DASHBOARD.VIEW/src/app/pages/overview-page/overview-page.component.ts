@@ -4,6 +4,7 @@ import { Color, NgxChartsModule, ScaleType } from '@swimlane/ngx-charts';
 import { ResourceService } from '../../services/resource.service';
 import { OverviewService } from '../../services/overview.service';
 import { timeAgo } from '../../utils/time-ago.util';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
 
 const TYPE_LABELS: Record<string, string> = {
   UserStory: 'User Story',
@@ -57,7 +58,7 @@ const HEALTH_BADGES: Record<string, { label: string; classes: string }> = {
 
 @Component({
   selector: 'app-overview-page',
-  imports: [CommonModule, NgxChartsModule],
+  imports: [LoadErrorComponent, CommonModule, NgxChartsModule],
   templateUrl: './overview-page.component.html',
   styleUrl: './overview-page.component.css',
 })
@@ -76,6 +77,11 @@ export class OverviewPageComponent {
   readonly stats   = this.overviewSvc.stats;
   readonly loading = this.overviewSvc.loading;
   readonly error   = this.overviewSvc.error;
+
+  /** Re-requests the overview after a failed load. */
+  retry(): void {
+    this.overviewSvc.retryLoad();
+  }
 
   readonly selectedSprintId = this.overviewSvc.selectedSprintId;
 

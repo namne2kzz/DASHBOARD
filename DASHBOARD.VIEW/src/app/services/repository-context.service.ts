@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import { CreateRepositoryPayload, RepositoryApiDto } from '../models/repository.model';
 import { StorageKeys } from '../core/constants/storage-keys.constant';
 import { TokenService } from '../core/services/token.service';
+import { describeLoadError } from '../utils/http-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryContextService {
@@ -80,8 +81,8 @@ export class RepositoryContextService {
         this.loading.set(false);
         this.loaded$.next(true);
       },
-      error: () => {
-        this.error.set('Failed to load repositories');
+      error: (err: unknown) => {
+        this.error.set(describeLoadError(err, 'Failed to load repositories'));
         this.loading.set(false);
         this.loaded$.next(true);
       },

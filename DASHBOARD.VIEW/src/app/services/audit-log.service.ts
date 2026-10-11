@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { environment } from '../../environments/environment';
 import { RepositoryContextService } from './repository-context.service';
 import { AuditLogEntry, AuditLogFilters, PagedResponse } from '../models/audit-log.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 /** Loads the repository audit log with server-side filtering and incremental paging. */
 @Injectable({ providedIn: 'root' })
@@ -16,7 +17,7 @@ export class AuditLogService {
 
   private readonly _entries    = signal<AuditLogEntry[]>([]);
   private readonly _loading    = signal(false);
-  private readonly _error      = signal(false);
+  private readonly _error      = signal<string | null>(null);
   private readonly _page       = signal(1);
   private readonly _hasMore    = signal(false);
   private readonly _totalCount = signal(0);
@@ -69,7 +70,7 @@ export class AuditLogService {
     if (this._filters.to)         params = params.set('to', `${this._filters.to}T23:59:59Z`);
 
     this._loading.set(true);
-    this._error.set(false);
+    this._error.set(null);
     this.http
       .get<PagedResponse<AuditLogEntry>>(`${environment.apiBaseUrl}/repositories/${repoId}/audit-log`, { params })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -80,8 +81,8 @@ export class AuditLogService {
           this._totalCount.set(res.totalCount);
           this._loading.set(false);
         },
-        error: () => {
-          this._error.set(true);
+        error: (err: unknown) => {
+          this._error.set(describeLoadError(err, 'Failed to load the audit log.'));
           this._loading.set(false);
         },
       });

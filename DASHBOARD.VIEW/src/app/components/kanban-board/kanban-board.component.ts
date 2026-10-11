@@ -12,10 +12,11 @@ import { DialogService } from '../../core/components/dialog/dialog.service';
 import { KanbanColumnComponent } from '../kanban-column/kanban-column.component';
 import { CreateWorkItemDialogComponent } from '../create-workitem-dialog/create-workitem-dialog.component';
 import { SprintTaskApiType } from '../../core/enums/system.enum';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
 
 @Component({
   selector: 'app-kanban-board',
-  imports: [DragDropModule, FormsModule, NgClass, KanbanColumnComponent],
+  imports: [LoadErrorComponent, DragDropModule, FormsModule, NgClass, KanbanColumnComponent],
   templateUrl: './kanban-board.component.html',
   styleUrl: './kanban-board.component.css',
 })

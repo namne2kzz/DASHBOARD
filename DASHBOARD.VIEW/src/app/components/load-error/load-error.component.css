@@ -1,0 +1,8 @@
+:host {
+  display: block;
+}
+
+/* Centre the 6px dot on the button row rather than the first text line. */
+.nx-alert::before {
+  margin-top: 0;
+}

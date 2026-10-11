@@ -1,5 +1,6 @@
 ﻿using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.SmartBoard.Commands.CreateColumn;
+using DASHBOARD.Application.SmartBoard.Commands.DeleteColumn;
 using DASHBOARD.Application.SmartBoard.Commands.ReorderColumns;
 using DASHBOARD.Application.SmartBoard.Commands.UpdateColumn;
 using DASHBOARD.Application.SmartBoard.DTOs;
@@ -106,6 +107,24 @@ public sealed class SmartBoardController(ISender mediator) : ControllerBase
     public async Task<IActionResult> ReorderColumns(Guid repoId, [FromBody] List<Guid> orderedColumnIds, CancellationToken ct)
     {
         var result = await mediator.Send(new ReorderColumnsCommand(repoId, orderedColumnIds), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+        return NoContent();
+    }
+
+    /// <summary>Deletes a board column. The board must keep at least one column.</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="columnId">The column to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 on success; 400 when it is the last column.</returns>
+    [HttpDelete("columns/{columnId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteColumn(Guid repoId, Guid columnId, CancellationToken ct)
+    {
+        var result = await mediator.Send(new DeleteColumnCommand(repoId, columnId), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });
         return NoContent();
     }

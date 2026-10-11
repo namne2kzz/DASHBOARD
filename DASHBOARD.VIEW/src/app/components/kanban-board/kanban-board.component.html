@@ -182,7 +182,7 @@
   <!-- error / loading / empty states -->
   @if (board.error()) {
     <div class="mt-4 px-5">
-      <p class="nx-alert nx-alert--danger">{{ board.error() }}</p>
+      <app-load-error [message]="board.error()!" (retry)="board.retryLoad()" />
     </div>
   } @else if (workflow.columns().length === 0) {
     <section class="mx-5 mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">

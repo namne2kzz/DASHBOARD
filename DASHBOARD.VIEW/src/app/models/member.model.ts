@@ -10,3 +10,10 @@ export interface MemberApiDto {
   roleName: string | null;
   joinedAt: string;
 }
+
+/** Matches MentionCandidateDto from the backend — a user who can be @mentioned in a discussion. */
+export interface MentionCandidateApiDto {
+  userId: string;
+  name: string;
+  avatarClass: string;
+}

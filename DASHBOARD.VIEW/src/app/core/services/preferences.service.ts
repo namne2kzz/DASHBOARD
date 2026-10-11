@@ -35,11 +35,13 @@ export class PreferencesService {
   readonly notifyEmail  = signal<boolean>(this._loadBool('nxs.notify.email',         true));
   readonly notifyPush   = signal<boolean>(this._loadBool('nxs.notify.push',          false));
   readonly notifyDigest = signal<boolean>(this._loadBool('nxs.notify.digest',        false));
-  readonly mentionsOnly = signal<boolean>(this._loadBool('nxs.notify.mentions-only', false));
+  readonly notifyMentions = signal<boolean>(this._loadBool('nxs.notify.mentions', true));
 
   // ── Accessibility / UX ──────────────────────────────────────────────────────
   readonly reduceMotion = signal<boolean>(this._loadBool('nxs.a11y.reduce-motion', false));
   readonly compactMode  = signal<boolean>(this._loadBool('nxs.ui.compact-mode',    false));
+  /** Whether the floating NMate assistant is shown. Defaults to on so new users discover it. */
+  readonly showNMate    = signal<boolean>(this._loadBool('nxs.ui.nmate-widget',    true));
 
   constructor() {
     // Mirror all changes to localStorage immediately.
@@ -49,9 +51,10 @@ export class PreferencesService {
     effect(() => localStorage.setItem('nxs.notify.email',           String(this.notifyEmail())));
     effect(() => localStorage.setItem('nxs.notify.push',            String(this.notifyPush())));
     effect(() => localStorage.setItem('nxs.notify.digest',          String(this.notifyDigest())));
-    effect(() => localStorage.setItem('nxs.notify.mentions-only',   String(this.mentionsOnly())));
+    effect(() => localStorage.setItem('nxs.notify.mentions',        String(this.notifyMentions())));
     effect(() => localStorage.setItem('nxs.a11y.reduce-motion',     String(this.reduceMotion())));
     effect(() => localStorage.setItem('nxs.ui.compact-mode',        String(this.compactMode())));
+    effect(() => localStorage.setItem('nxs.ui.nmate-widget',        String(this.showNMate())));
   }
 
   // ── Server sync ─────────────────────────────────────────────────────────────
@@ -76,9 +79,10 @@ export class PreferencesService {
         if (v(SETTING_KEYS.notifyEmail)  != null) this.notifyEmail.set(v(SETTING_KEYS.notifyEmail) === 'true');
         if (v(SETTING_KEYS.notifyPush)   != null) this.notifyPush.set(v(SETTING_KEYS.notifyPush) === 'true');
         if (v(SETTING_KEYS.notifyDigest) != null) this.notifyDigest.set(v(SETTING_KEYS.notifyDigest) === 'true');
-        if (v(SETTING_KEYS.mentionsOnly) != null) this.mentionsOnly.set(v(SETTING_KEYS.mentionsOnly) === 'true');
+        if (v(SETTING_KEYS.notifyMentions) != null) this.notifyMentions.set(v(SETTING_KEYS.notifyMentions) === 'true');
         if (v(SETTING_KEYS.reduceMotion) != null) this.reduceMotion.set(v(SETTING_KEYS.reduceMotion) === 'true');
         if (v(SETTING_KEYS.compactMode)  != null) this.compactMode.set(v(SETTING_KEYS.compactMode) === 'true');
+        if (v(SETTING_KEYS.showNMate)    != null) this.showNMate.set(v(SETTING_KEYS.showNMate) === 'true');
 
         // Return avatarUrl so the caller can patch the auth profile (avoids circular DI).
         return v(SETTING_KEYS.avatarUrl) ?? null;
@@ -100,12 +104,14 @@ export class PreferencesService {
   setNotifyPush(value: boolean): void      { this.notifyPush.set(value);  this._save({ [SETTING_KEYS.notifyPush]: String(value) }); }
   /** @param value Whether to receive a digest email of unread activity. */
   setNotifyDigest(value: boolean): void    { this.notifyDigest.set(value); this._save({ [SETTING_KEYS.notifyDigest]: String(value) }); }
-  /** @param value Whether to receive notifications only for mentions. */
-  setMentionsOnly(value: boolean): void    { this.mentionsOnly.set(value); this._save({ [SETTING_KEYS.mentionsOnly]: String(value) }); }
+  /** @param value Whether to notify the user when they are @mentioned in a discussion. */
+  setNotifyMentions(value: boolean): void  { this.notifyMentions.set(value); this._save({ [SETTING_KEYS.notifyMentions]: String(value) }); }
   /** @param value Whether to reduce UI animations. */
   setReduceMotion(value: boolean): void    { this.reduceMotion.set(value); this._save({ [SETTING_KEYS.reduceMotion]: String(value) }); }
   /** @param value Whether to use compact row density. */
   setCompactMode(value: boolean): void     { this.compactMode.set(value);  this._save({ [SETTING_KEYS.compactMode]: String(value) }); }
+  /** @param value Whether to show the floating NMate assistant. */
+  setShowNMate(value: boolean): void       { this.showNMate.set(value);    this._save({ [SETTING_KEYS.showNMate]: String(value) }); }
 
   // ── Derived helpers ─────────────────────────────────────────────────────────
 

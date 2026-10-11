@@ -9,6 +9,7 @@ import {
   CreateMetadataPayload,
   UpdateMetadataPayload,
 } from '../models/metadata.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class MetadataService {
@@ -36,7 +37,7 @@ export class MetadataService {
     this.error.set(null);
     this.http.get<MetadataDto[]>(this.url(repoId)).subscribe({
       next:  items => { this.items.set(items); this.loading.set(false); },
-      error: ()    => { this.error.set('Failed to load metadata'); this.loading.set(false); },
+      error: (err: unknown)    => { this.error.set(describeLoadError(err, 'Failed to load metadata')); this.loading.set(false); },
     });
   }
 

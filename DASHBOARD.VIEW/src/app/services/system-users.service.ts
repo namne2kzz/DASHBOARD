@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import { HttpCacheService } from './http-cache.service';
 import { SystemUserDto, CreateUserPayload, UserHierarchy } from '../models/system-user.model';
 import { UserPickerItem } from '../models/user.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class SystemUsersService {
@@ -31,7 +32,7 @@ export class SystemUsersService {
     this.error.set(null);
     this.http.get<{ items: SystemUserDto[] }>(`${this.baseUrl}?pageSize=500`).subscribe({
       next:  res => { this.users.set(res.items ?? []); this.loading.set(false); },
-      error: ()  => { this.error.set('Failed to load users'); this.loading.set(false); },
+      error: (err: unknown)  => { this.error.set(describeLoadError(err, 'Failed to load users')); this.loading.set(false); },
     });
   }
 

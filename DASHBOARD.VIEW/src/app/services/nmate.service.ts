@@ -11,8 +11,10 @@ import { environment } from '../../environments/environment';
 import {
   AskNMateRequest,
   NMateCitation,
+  NMateConversationSummary,
   NMateErrorBody,
   NMateMessage,
+  NMatePage,
   NMateServerMessage,
   NMateStatus,
   NMateStreamEvent,
@@ -61,10 +63,18 @@ export class NMateService {
   readonly conversationId = signal<string | null>(readConversationId());
   /** True while an answer is being generated. */
   readonly isStreaming = computed(() => this.messages().some(m => m.status === 'streaming'));
+  /** The user's most recent conversations, for the history menu. */
+  readonly recentConversations = signal<NMateConversationSummary[]>([]);
+  /** True while the history menu is loading. */
+  readonly historyLoading = signal(false);
+  /** True while a picked conversation's messages are loading. */
+  readonly conversationLoading = signal(false);
 
   private streamSub: Subscription | null = null;
   private statusRequested = false;
   private restoreRequested = false;
+  /** Guards against a slow response for an earlier pick overwriting a later one. */
+  private pickedConversationId: string | null = null;
 
   /** Opens the panel; loads availability and restores the previous conversation on first open. */
   open(): void {
@@ -162,8 +172,57 @@ export class NMateService {
   /** Starts a fresh conversation (the old one stays in history on the server). */
   newConversation(): void {
     this.stop();
+    this.pickedConversationId = null;
     this.messages.set([]);
     this.setConversationId(null);
+  }
+
+  /**
+   * Loads the user's most recent conversations for the history menu (newest activity first).
+   * @param take How many to show.
+   */
+  loadRecentConversations(take = 3): void {
+    this.historyLoading.set(true);
+    const params = new HttpParams().set('page', 1).set('pageSize', take);
+    this.http.get<NMatePage<NMateConversationSummary>>(`${this.baseUrl}/conversations`, { params }).subscribe({
+      next: page => {
+        this.recentConversations.set(page.items);
+        this.historyLoading.set(false);
+      },
+      error: () => {
+        this.recentConversations.set([]);
+        this.historyLoading.set(false);
+      },
+    });
+  }
+
+  /**
+   * Switches the panel to an earlier conversation so the user can continue it: the next question is
+   * sent with this conversation's id. A running answer is stopped first.
+   * @param id Conversation to open.
+   */
+  openConversation(id: string): void {
+    if (id === this.conversationId() && this.messages().length > 0) return;
+
+    this.stop();
+    this.restoreRequested = true; // a picked thread replaces whatever restore would have loaded
+    this.pickedConversationId = id;
+    this.conversationLoading.set(true);
+
+    this.http.get<NMateServerMessage[]>(`${this.baseUrl}/conversations/${id}/messages`).subscribe({
+      next: stored => {
+        if (this.pickedConversationId !== id) return;
+        this.setConversationId(id);
+        this.messages.set(stored.map(toWidgetMessage));
+        this.conversationLoading.set(false);
+      },
+      error: () => {
+        if (this.pickedConversationId !== id) return;
+        // Deleted or expired since the list was loaded: drop it from the menu.
+        this.recentConversations.update(list => list.filter(c => c.id !== id));
+        this.conversationLoading.set(false);
+      },
+    });
   }
 
   /**
@@ -266,21 +325,26 @@ export class NMateService {
     this.http.get<NMateServerMessage[]>(`${this.baseUrl}/conversations/${id}/messages`).subscribe({
       next: stored => {
         if (this.messages().length > 0) return; // user already started typing a new thread
-        this.messages.set(stored.map(m => ({
-          localId: newLocalId(),
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          citations: m.citations,
-          status: m.isInterrupted ? 'error' : 'done',
-          errorCode: m.isInterrupted ? 'INTERRUPTED' : undefined,
-          rating: m.rating,
-        })));
+        this.messages.set(stored.map(toWidgetMessage));
       },
       // Deleted, expired, or belongs to a previous login in this tab: start fresh.
       error: () => this.setConversationId(null),
     });
   }
+}
+
+/** Maps a stored message to the widget's shape (an interrupted answer shows the "stopped" line). */
+function toWidgetMessage(m: NMateServerMessage): NMateMessage {
+  return {
+    localId: newLocalId(),
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    citations: m.citations,
+    status: m.isInterrupted ? 'error' : 'done',
+    errorCode: m.isInterrupted ? 'INTERRUPTED' : undefined,
+    rating: m.rating,
+  };
 }
 
 /** Converts a raw SSE message to a typed event; unknown or malformed events are ignored. */

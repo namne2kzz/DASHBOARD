@@ -19,6 +19,10 @@
       </div>
     </header>
 
+    @if (backlog.error()) {
+      <app-load-error [message]="backlog.error()!" (retry)="backlog.retryLoad()" />
+    }
+
     <!-- ── Summary cards ──────────────────────────────────────────────────── -->
     @if (backlog.loading()) {
       <section class="grid gap-3 md:grid-cols-4">

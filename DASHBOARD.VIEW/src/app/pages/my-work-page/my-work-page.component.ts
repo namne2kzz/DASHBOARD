@@ -8,6 +8,7 @@ import { AuthService } from '../../services/auth.service';
 import { MyWorkGrouping, MyWorkGroup, MyWorkItemApiDto } from '../../models/my-work.model';
 import { SprintTaskApiState, SprintTaskApiType, WorkItemApiPriority } from '../../core/enums/system.enum';
 import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL } from '../../core/constants/system.constant';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
 
 /**
  * Personal cross-repository work queue: every open work item assigned to the current user,
@@ -15,7 +16,7 @@ import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL } from '../../core/con
  */
 @Component({
   selector: 'app-my-work-page',
-  imports: [CommonModule, NgClass, FormsModule],
+  imports: [LoadErrorComponent, CommonModule, NgClass, FormsModule],
   templateUrl: './my-work-page.component.html',
   styleUrl: './my-work-page.component.css',
 })

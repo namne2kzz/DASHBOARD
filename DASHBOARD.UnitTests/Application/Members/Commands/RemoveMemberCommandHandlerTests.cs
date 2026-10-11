@@ -5,6 +5,7 @@ using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.UnitTests.Common;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Shared.IntegrationEvents;
 
 namespace DASHBOARD.UnitTests.Application.Members.Commands;
@@ -27,10 +28,11 @@ public sealed class RemoveMemberCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private RemoveMemberCommandHandler CreateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow, _cache, _publisher);
+        new(_db, user, _database.Uow, _cache, _publisher, _notifications.Object);
 
-    private readonly FakeQueryCache _cache = new();
-    private readonly RecordingPublishEndpoint _publisher = new();
+    private readonly FakeQueryCache             _cache         = new();
+    private readonly RecordingPublishEndpoint   _publisher     = new();
+    private readonly Mock<INotificationService> _notifications = new();
 
     private IRequestUserContext AuthorizedUser() =>
         RequestUserContextMock.ForUser()

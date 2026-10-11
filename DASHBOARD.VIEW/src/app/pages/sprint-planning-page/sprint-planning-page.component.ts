@@ -19,10 +19,11 @@ import { ConfirmService } from '../../core/components/confirm/confirm.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../core/components/toast/toast.service';
+import { LoadErrorComponent } from '../../components/load-error/load-error.component';
 
 @Component({
   selector: 'app-sprint-planning-page',
-  imports: [CommonModule, FormsModule, NgClass, InfiniteScrollDirective, FlipDropDirective],
+  imports: [LoadErrorComponent, CommonModule, FormsModule, NgClass, InfiniteScrollDirective, FlipDropDirective],
   templateUrl: './sprint-planning-page.component.html',
   styleUrl: './sprint-planning-page.component.css',
 })

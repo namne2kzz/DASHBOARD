@@ -1,4 +1,5 @@
 using DASHBOARD.Application.Common.Exceptions;
+using DASHBOARD.Application.Common.Helpers;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Domain.Entities;
@@ -60,13 +61,16 @@ public sealed class ActivateSprintCommandHandler(
             .Distinct()
             .ToListAsync(ct);
 
+        var prefs = await NotifyPrefsHelper.GetBatchAsync(db, memberIds, ct);
+
         foreach (var memberId in memberIds)
-            await notifications.NotifyAsync(
-                memberId,
-                NotificationType.SprintActivated,
-                $"Sprint \"{sprint.Name}\" activated",
-                "The sprint is now active. Start working!",
-                url: null, ct);
+            if (prefs.TryGetValue(memberId, out var p) && p.Push)
+                await notifications.NotifyAsync(
+                    memberId,
+                    NotificationType.SprintActivated,
+                    $"Sprint \"{sprint.Name}\" activated",
+                    "The sprint is now active. Start working!",
+                    url: null, ct);
 
         return Result.Ok;
     }

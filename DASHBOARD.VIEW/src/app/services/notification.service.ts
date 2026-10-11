@@ -41,7 +41,6 @@ export class NotificationService implements OnDestroy {
   connect(): void {
     this._destroyed = false;
     this._reconnectAttempt = 0;
-    this._fetchRecent();
     this._openStream();
   }
 
@@ -91,20 +90,24 @@ export class NotificationService implements OnDestroy {
   private _openStream(): void {
     this._closeStream();
 
-    // EventSource does not send the Authorization header, so we pass the token
-    // as a query param — the backend reads it from the standard JWT bearer location,
-    // or we use a cookie-based approach. Here we append the raw token so the
-    // existing JWT middleware can pick it up via a custom query-param check.
-    const token = this.storage.get<string>(StorageKeys.accessToken);
+    // EventSource cannot send the Authorization header, so the JWT is passed as a query param;
+    // the backend's JwtBearerEvents.OnMessageReceived reads it from ?access_token= for SSE paths.
+    const token = this.storage.getString(StorageKeys.accessToken);
     if (!token) return;
 
     this._es = new EventSource(`${BASE}/stream?access_token=${encodeURIComponent(token)}`);
+
+    // Fetch the current list as soon as the stream is established so the panel is in sync.
+    this._fetchRecent();
+
+    this._es.onopen = () => {
+      this._reconnectAttempt = 0;
+    };
 
     this._es.addEventListener('notification', (e: MessageEvent) => {
       try {
         const n: AppNotification = JSON.parse(e.data);
         this._notifications.update(list => [n, ...list].slice(0, 50));
-        this._reconnectAttempt = 0;
       } catch { /* malformed event — ignore */ }
     });
 
@@ -124,7 +127,10 @@ export class NotificationService implements OnDestroy {
     const delay = RECONNECT_DELAYS[Math.min(this._reconnectAttempt, RECONNECT_DELAYS.length - 1)];
     this._reconnectAttempt++;
     this._reconnectTimer = setTimeout(() => {
-      if (!this._destroyed) this._openStream();
+      if (!this._destroyed) {
+        this._fetchRecent();
+        this._openStream();
+      }
     }, delay);
   }
 

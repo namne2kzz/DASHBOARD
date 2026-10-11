@@ -68,3 +68,7 @@ Bạn có thể bấm 👍 hoặc 👎 dưới mỗi câu trả lời để giú
 ## Vì sao NMate báo "tạm hết lượt" hoặc "hỏi hơi nhanh"?
 
 NMate giới hạn số câu hỏi mỗi phút cho mỗi người, và hệ thống AI phía sau có hạn mức sử dụng chung. Đợi khoảng một phút rồi hỏi lại.
+
+## Làm sao ẩn nút NMate?
+
+Vào **Settings → General**, phần **Appearance**, tắt **NMate assistant**. Nút trợ lý ở góc phải dưới và phím tắt Ctrl/Cmd + / sẽ biến mất. Lịch sử hội thoại vẫn được giữ; bật lại lúc nào cũng được. Tuỳ chọn này chỉ áp dụng cho riêng bạn.

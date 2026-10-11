@@ -8,6 +8,7 @@ import {
   WorkItemDetailApiDto,
   WorkItemSummaryApiDto,
 } from '../models/work-item-api.model';
+import { MentionCandidateApiDto } from '../models/member.model';
 import { PagedResult } from '../models/common.model';
 import {
   DiscussionEntry,
@@ -31,6 +32,7 @@ import {
   workItemTypeFromApi,
   workItemTypeToApi,
 } from '../utils/work-item-mapper.util';
+import { describeLoadError } from '../utils/http-error.util';
 
 const API_BASE = `${environment.apiBaseUrl}/repositories`;
 
@@ -416,8 +418,8 @@ export class TaskBoardService {
           this.allTasks.set(result.items.map(summaryToWorkItem));
           this.loading.set(false);
         },
-        error: () => {
-          this.error.set('Failed to load work items');
+        error: (err: unknown) => {
+          this.error.set(describeLoadError(err, 'Failed to load work items'));
           this.loading.set(false);
         },
       });

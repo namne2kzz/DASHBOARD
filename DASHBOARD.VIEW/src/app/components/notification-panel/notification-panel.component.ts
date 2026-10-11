@@ -49,6 +49,10 @@ export class NotificationPanelComponent {
       case 'SprintActivated':       return 'M13 10V3L4 14h7v7l9-11h-7z';
       case 'SprintClosed':          return 'M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z';
       case 'MentionedInDiscussion': return 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z';
+      case 'AddedToRepository':    return 'M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zm9 1v6m-3-3h6';
+      case 'RemovedFromRepository':return 'M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7zm3 5h12';
+      case 'AddedToSprint':        return 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01M19 8l2 2 4-4';
+      case 'RemovedFromSprint':    return 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01M17 11l4 4m0-4l-4 4';
       default: return 'M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6 6 0 0 0-10-5.659V5a2 2 0 0 0-4 0v.341C5.67 6.165 4 8.388 4 11v3.159c0 .538-.214 1.055-.595 1.436L2 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9';
     }
   }
@@ -62,6 +66,10 @@ export class NotificationPanelComponent {
       case 'SprintActivated':       return 'text-emerald-400';
       case 'SprintClosed':          return 'text-rose-400';
       case 'MentionedInDiscussion': return 'text-amber-400';
+      case 'AddedToRepository':    return 'text-teal-400';
+      case 'RemovedFromRepository':return 'text-slate-400';
+      case 'AddedToSprint':        return 'text-indigo-400';
+      case 'RemovedFromSprint':    return 'text-slate-400';
       default:                      return 'text-slate-400';
     }
   }

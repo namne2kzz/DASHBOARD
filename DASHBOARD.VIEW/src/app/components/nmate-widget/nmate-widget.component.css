@@ -107,7 +107,11 @@
 
 .nm-maintenance {
   margin-bottom: 12px;
+  color: var(--danger);
+  background: var(--danger-soft);
 }
+/* Drop the leading dot indicator for the maintenance notice. */
+.nm-maintenance::before { display: none; }
 
 .nm-empty__lead {
   margin: 4px 0 12px;
@@ -167,4 +171,77 @@
   .nm-fab.is-open {
     display: none;
   }
+}
+
+/* ── Recent conversations menu ─────────────────────────────────────────────
+   A popover anchored under the header (the panel is position: fixed, so it is the containing block). */
+.nm-history-toggle.is-active {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.nm-history {
+  position: absolute;
+  top: 56px;
+  right: 8px;
+  left: 8px;
+  z-index: 1;
+  padding: 6px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.nm-history__title {
+  padding: 4px 8px 6px;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.nm-history__empty {
+  padding: 8px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.nm-history__item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.nm-history__item:hover {
+  background: var(--surface-2);
+}
+
+.nm-history__item.is-current {
+  background: var(--accent-soft);
+}
+
+.nm-history__name {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nm-history__time {
+  flex-shrink: 0;
+  color: var(--text-3);
+  font-size: 11px;
+}
+
+.nm-loading {
+  padding: 8px 0;
+  color: var(--text-3);
+  font-size: 13px;
 }

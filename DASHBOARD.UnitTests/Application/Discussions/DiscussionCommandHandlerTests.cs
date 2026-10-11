@@ -7,6 +7,7 @@ using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.UnitTests.Common;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace DASHBOARD.UnitTests.Application.Discussions;
 
@@ -25,6 +26,7 @@ public sealed class DiscussionCommandHandlerTests : IDisposable
     private readonly Guid                     _repositoryId = Guid.NewGuid();
     private readonly Guid                     _authorId     = Guid.NewGuid();
     private readonly Guid                     _taskId       = Guid.NewGuid();
+    private readonly Mock<INotificationService> _notifications = new();
 
     /// <summary>Sets up an isolated database with one sprint task and the comment author.</summary>
     public DiscussionCommandHandlerTests()
@@ -53,7 +55,7 @@ public sealed class DiscussionCommandHandlerTests : IDisposable
     public void Dispose() => _database.Dispose();
 
     private AddDiscussionCommandHandler AddHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow);
+        new(_db, user, _database.Uow, _notifications.Object);
 
     private UpdateDiscussionCommandHandler UpdateHandler(IRequestUserContext user) =>
         new(_db, user, _database.Uow);

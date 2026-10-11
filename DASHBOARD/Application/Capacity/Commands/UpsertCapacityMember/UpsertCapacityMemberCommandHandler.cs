@@ -1,5 +1,6 @@
 ﻿using DASHBOARD.Application.Capacity.DTOs;
 using DASHBOARD.Application.Common.Exceptions;
+using DASHBOARD.Application.Common.Helpers;
 using DASHBOARD.Application.Common.Interfaces;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
@@ -17,7 +18,8 @@ public sealed class UpsertCapacityMemberCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
     IUnitOfWork           uow,
-    IHubChannelService    hub) : IRequestHandler<UpsertCapacityMemberCommand, CapacityMemberDto>
+    IHubChannelService    hub,
+    INotificationService  notifications) : IRequestHandler<UpsertCapacityMemberCommand, CapacityMemberDto>
 {
     /// <summary>Validates ManageCapacity permission, upserts the capacity row, and returns the DTO.</summary>
     /// <param name="command">The upsert command.</param>
@@ -41,7 +43,9 @@ public sealed class UpsertCapacityMemberCommandHandler(
         var existing = await db.Set<CapacityMember>().AsTracking()
             .FirstOrDefaultAsync(c => c.SprintId == command.SprintId && c.UserId == command.UserId, ct);
 
-        if (existing is null)
+        var isNew = existing is null;
+
+        if (isNew)
         {
             existing = new CapacityMember
             {
@@ -83,6 +87,21 @@ public sealed class UpsertCapacityMemberCommandHandler(
             {
                 // Best-effort sync — the member is configured either way.
             }
+        }
+
+        if (isNew && await NotifyPrefsHelper.PushEnabledAsync(db, command.UserId, ct))
+        {
+            var sprintName = await db.Set<Sprint>().AsNoTracking()
+                .Where(s => s.Id == command.SprintId)
+                .Select(s => s.Name)
+                .FirstOrDefaultAsync(ct);
+
+            await notifications.NotifyAsync(
+                command.UserId,
+                NotificationType.AddedToSprint,
+                $"Added to sprint \"{sprintName}\"",
+                "You have been added to the sprint capacity.",
+                url: null, ct);
         }
 
         return new CapacityMemberDto(existing.Id, existing.SprintId, existing.UserId,

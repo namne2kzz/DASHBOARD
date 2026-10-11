@@ -7,6 +7,8 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-11 | 18:33 | Cho user ẩn/hiện NMate | Settings → General → Appearance có switch "NMate assistant" (setting `ui.nmate-widget`, mặc định bật); tắt thì nút nổi và phím tắt Ctrl+/ biến mất, panel đang mở tự đóng |
+| 2026-10-11 | 18:17 | Thêm lịch sử hội thoại gần đây | Nút đồng hồ cạnh "Mới" mở danh sách 3 hội thoại gần nhất của user; chọn một hội thoại để xem lại và hỏi tiếp trong chính hội thoại đó |
 | 2026-10-09 | 22:20 | Thêm widget chat NMate | Nút nổi góc phải dưới trên mọi màn hình trong app (Ctrl+/ mở/đóng), gợi ý câu hỏi theo màn hình, stream câu trả lời, nút Dừng, nguồn bấm được, 👍/👎; hội thoại tiếp tục sau khi reload trong cùng tab |
 | 2026-10-09 | 21:40 | Khởi tạo document | Tạo document business ban đầu cho feature NMate (proxy `/api/v1/nmate/*` sang service SUPPORT, rate limit theo user, knowledge từ `Knowledge/`) |
 
@@ -61,7 +63,9 @@ Cho người dùng hỏi cách dùng hệ thống ngay trong app (widget chat n�
 - **Enter** để gửi, **Shift+Enter** để xuống dòng. Trong lúc đang trả lời thì nút Gửi đổi thành **Dừng**.
 - Nguồn hiển thị dưới câu trả lời (gộp các đoạn cùng mục). Bấm để mở đúng màn hình trong org/project hiện tại.
 - **Mới**: bắt đầu hội thoại mới. Hội thoại hiện tại được giữ theo tab (sessionStorage): reload trang vẫn xem tiếp được, đóng tab thì bắt đầu lại.
+- **Lịch sử (nút đồng hồ cạnh "Mới")**: hiện **3 hội thoại gần nhất** của chính user (theo hoạt động mới nhất, kèm thời gian tương đối), hội thoại đang mở được tô sáng. Chọn một hội thoại → tải lại toàn bộ tin nhắn và **câu hỏi tiếp theo được gửi vào chính hội thoại đó** (NMate dùng 10 tin gần nhất làm ngữ cảnh). Đang có câu trả lời chạy dở thì bị dừng trước khi chuyển. Hội thoại đã bị xoá/hết hạn thì tự biến khỏi danh sách. Esc hoặc bấm ra ngoài để đóng danh sách.
 - Backend tắt NMate thì nút nổi không hiện. NMate bảo trì thì panel báo "đang bảo trì" và khoá ô gửi.
+- **User tự ẩn/hiện**: Settings → General → Appearance → **NMate assistant** (setting cá nhân `ui.nmate-widget`, mặc định **bật** để user mới biết có trợ lý). Tắt → nút nổi biến mất, Ctrl+/ không còn tác dụng, panel đang mở tự đóng. Chỉ ảnh hưởng giao diện của chính user đó; lịch sử hội thoại vẫn giữ nguyên.
 
 ## 6. Edge Cases & Notes
 

@@ -32,9 +32,10 @@ export const SETTING_KEYS = {
   notifyEmail:  'notify.email',
   notifyPush:   'notify.push',
   notifyDigest: 'notify.digest',
-  mentionsOnly: 'notify.mentions-only',
+  notifyMentions: 'notify.mentions',
   reduceMotion: 'a11y.reduce-motion',
   compactMode:  'ui.compact-mode',
+  showNMate:    'ui.nmate-widget',
   avatarUrl:    'profile.avatar-url',
 } as const;
 

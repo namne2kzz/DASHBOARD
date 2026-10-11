@@ -353,6 +353,7 @@ export class WorkItemDetailPageComponent implements OnInit {
         next: (taskId) => {
           this.taskId.set(taskId);
           this.detailSvc.loadDetail(taskId);
+          this.detailSvc.loadMentionCandidates(taskId);
           this.resolving.set(false);
         },
         error: () => {
@@ -461,12 +462,99 @@ export class WorkItemDetailPageComponent implements OnInit {
 
   // ── Discussion ───────────────────────────────────────────────────────────────
 
+  /** Whether the @mention picker is currently open. */
+  readonly mentionOpen = signal(false);
+  /** Current text typed after the active "@" (used to filter candidates). */
+  readonly mentionQuery = signal('');
+  /** Caret index of the "@" that triggered the open picker. */
+  private mentionAnchor = -1;
+  /** Users picked from the mention dropdown, keyed by display name → userId, for token resolution on post. */
+  private readonly pickedMentions = new Map<string, string>();
+
+  /** Candidates filtered by the current @query, capped at 8. */
+  readonly mentionMatches = computed(() => {
+    const q = this.mentionQuery().toLowerCase();
+    return this.detailSvc.mentionCandidates()
+      .filter(c => c.name.toLowerCase().includes(q))
+      .slice(0, 8);
+  });
+
+  /**
+   * Re-evaluates the mention picker whenever the comment text or caret changes.
+   * Opens when the caret sits in an "@word" token, closes otherwise.
+   * @param value Current textarea value.
+   * @param caret Current caret position.
+   */
+  onCommentInput(value: string, caret: number): void {
+    this.commentDraft.set(value);
+
+    const uptoCaret = value.slice(0, caret);
+    const at = uptoCaret.lastIndexOf('@');
+    // Open only when "@" starts a token (preceded by start/space) and no space follows it yet.
+    if (at >= 0 && (at === 0 || /\s/.test(uptoCaret[at - 1])) && !/\s/.test(uptoCaret.slice(at + 1))) {
+      this.mentionAnchor = at;
+      this.mentionQuery.set(uptoCaret.slice(at + 1));
+      this.mentionOpen.set(true);
+    } else {
+      this.mentionOpen.set(false);
+    }
+  }
+
+  /**
+   * Inserts the chosen mention as a plain, readable "@Name " and remembers its userId
+   * so it can be resolved to a token when the comment is posted.
+   * @param c The selected candidate.
+   */
+  selectMention(c: { userId: string; name: string }): void {
+    const text   = this.commentDraft();
+    const anchor = this.mentionAnchor;
+    if (anchor < 0) return;
+
+    const before = text.slice(0, anchor);
+    const after  = text.slice(anchor + 1 + this.mentionQuery().length);
+    this.pickedMentions.set(c.name, c.userId);
+    this.commentDraft.set(`${before}@${c.name}${after} `);
+    this.mentionOpen.set(false);
+    this.mentionAnchor = -1;
+  }
+
+  /**
+   * Replaces each plain "@Name" the user picked with a `@[Name](userId)` token the backend parses.
+   * Longest names first, so "@Anna Lee" is matched before "@Anna".
+   * @param text The draft body with plain @Name mentions.
+   * @returns The body with resolvable mention tokens.
+   */
+  private encodeMentions(text: string): string {
+    let out = text;
+    for (const name of [...this.pickedMentions.keys()].sort((a, b) => b.length - a.length)) {
+      const id = this.pickedMentions.get(name)!;
+      out = out.split(`@${name}`).join(`@[${name}](${id})`);
+    }
+    return out;
+  }
+
+  /**
+   * Renders a stored comment body for display: turns `@[Name](id)` tokens into a highlighted "@Name".
+   * @param body Raw comment body.
+   * @returns Sanitised HTML string.
+   */
+  renderComment(body: string): string {
+    const escaped = body
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return escaped.replace(
+      /@\[([^\]]+)\]\([0-9a-fA-F-]{36}\)/g,
+      (_m, name) => `<span class="mention">@${name}</span>`,
+    );
+  }
+
   /** Posts the drafted comment and clears the input. */
   postComment(): void {
     const id = this.taskId();
     if (!id || !this.commentDraft().trim()) return;
-    this.detailSvc.postComment(id, this.commentDraft());
+    this.detailSvc.postComment(id, this.encodeMentions(this.commentDraft()));
     this.commentDraft.set('');
+    this.pickedMentions.clear();
+    this.mentionOpen.set(false);
   }
 
   // ── Test steps ───────────────────────────────────────────────────────────────
