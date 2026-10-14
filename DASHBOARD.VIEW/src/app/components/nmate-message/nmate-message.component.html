@@ -17,6 +17,12 @@
         <p class="nm-error" [class.nm-error--muted]="m.errorCode === 'INTERRUPTED'">{{ error }}</p>
       }
 
+      @if (m.mode === 'general' && m.status !== 'streaming') {
+        <p class="nm-general" title="Câu trả lời này không dựa trên tài liệu hướng dẫn NFlow">
+          Kiến thức chung — không dựa trên tài liệu NFlow
+        </p>
+      }
+
       @if (sources().length > 0) {
         <div class="nm-sources">
           <span class="nm-sources__label">Nguồn</span>
