@@ -223,7 +223,9 @@ export class NMateService {
           this.updateAnswer(answerId, m => ({ ...m, citations: event.citations }));
           break;
         case 'done':
-          this.updateAnswer(answerId, m => ({ ...m, id: event.messageId, status: event.answered ? 'done' : 'declined' }));
+          this.updateAnswer(answerId, m => ({
+            ...m, id: event.messageId, status: event.answered ? 'done' : 'declined', mode: event.mode,
+          }));
           break;
         case 'error':
           this.updateAnswer(answerId, m => ({ ...m, id: event.messageId, status: 'error', errorCode: event.code }));
@@ -283,6 +285,21 @@ export class NMateService {
   }
 }
 
+/** Maps a stored message to the widget's shape (an interrupted answer shows the "stopped" line). */
+function toWidgetMessage(m: NMateServerMessage): NMateMessage {
+  return {
+    localId: newLocalId(),
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    citations: m.citations,
+    status: m.isInterrupted ? 'error' : 'done',
+    errorCode: m.isInterrupted ? 'INTERRUPTED' : undefined,
+    rating: m.rating,
+    mode: m.mode ?? undefined,
+  };
+}
+
 /** Converts a raw SSE message to a typed event; unknown or malformed events are ignored. */
 function toStreamEvent(message: SseMessage): NMateStreamEvent | null {
   try {
@@ -291,7 +308,10 @@ function toStreamEvent(message: SseMessage): NMateStreamEvent | null {
       case 'meta': return { type: 'meta', conversationId: data.conversationId };
       case 'delta': return { type: 'delta', text: data.text ?? '' };
       case 'citations': return { type: 'citations', citations: data as NMateCitation[] };
-      case 'done': return { type: 'done', messageId: data.messageId, latencyMs: data.latencyMs, answered: data.answered };
+      case 'done': return {
+        type: 'done', messageId: data.messageId, latencyMs: data.latencyMs, answered: data.answered,
+        mode: data.mode ?? (data.answered ? 'docs' : 'declined'),
+      };
       case 'error': return { type: 'error', code: data.code, message: data.message, messageId: data.messageId ?? null };
       default: return null;
     }
