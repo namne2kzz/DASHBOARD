@@ -26,7 +26,12 @@ export interface NMateMessage {
   rating: 1 | -1 | null;
   /** Error code when `status === 'error'` (e.g. `NMATE_QUOTA_EXCEEDED`). */
   errorCode?: string;
+  /** How an answer was produced: from documentation, from general knowledge, or declined. */
+  mode?: NMateAnswerMode;
 }
+
+/** `docs` = grounded on NFlow documentation (with sources); `general` = general knowledge (no sources). */
+export type NMateAnswerMode = 'docs' | 'general' | 'declined';
 
 /** Body of `POST /nmate/chat`. */
 export interface AskNMateRequest {
@@ -40,7 +45,7 @@ export type NMateStreamEvent =
   | { type: 'meta'; conversationId: string }
   | { type: 'delta'; text: string }
   | { type: 'citations'; citations: NMateCitation[] }
-  | { type: 'done'; messageId: string; latencyMs: number; answered: boolean }
+  | { type: 'done'; messageId: string; latencyMs: number; answered: boolean; mode: NMateAnswerMode }
   | { type: 'error'; code: string; message: string; messageId: string | null };
 
 /** Availability reported by `GET /nmate/status`. */
@@ -60,6 +65,7 @@ export interface NMateServerMessage {
   isInterrupted: boolean;
   rating: 1 | -1 | null;
   createdAt: string;
+  mode: NMateAnswerMode | null;
 }
 
 /** A conversation in the history list (`GET /nmate/conversations`). */
