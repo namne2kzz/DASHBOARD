@@ -82,7 +82,7 @@ public sealed class CloseSprintCommandHandler(
             .Distinct()
             .ToListAsync(ct);
 
-        var prefs = await NotifyPrefsHelper.GetBatchAsync(db, memberIds, ct);
+        var prefs = await NotifyPrefsHelper.GetBatchForTypeAsync(db, memberIds, NotificationType.SprintClosed, ct);
 
         foreach (var memberId in memberIds)
             if (prefs.TryGetValue(memberId, out var p) && p.Push)

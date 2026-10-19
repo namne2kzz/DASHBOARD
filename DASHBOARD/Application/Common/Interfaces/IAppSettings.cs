@@ -73,6 +73,9 @@ public interface IAppSettings
     /// <summary>Gets the bucket name used for storing user avatar images.</summary>
     string MinioAvatarBucket { get; }
 
+    /// <summary>Gets the bucket name used for work-item attachments and pasted inline images.</summary>
+    string MinioAttachmentBucket { get; }
+
     /// <summary>
     /// Gets the public base URL used to build object URLs returned to the browser
     /// (e.g. "http://localhost:9100"). May differ from <see cref="MinioEndpoint"/> in Docker.

@@ -5,19 +5,22 @@ import { catchError, of, Subject, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { OverviewStatsDto } from '../models/overview.model';
 import { RepositoryContextService } from './repository-context.service';
+import { SprintSelectionService } from './sprint-selection.service';
 import { describeLoadError } from '../utils/http-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class OverviewService {
   private readonly http    = inject(HttpClient);
   private readonly repoCtx = inject(RepositoryContextService);
+  private readonly sprintSelection = inject(SprintSelectionService);
 
   private readonly loadTrigger$ = new Subject<{ repoId: string | null; sprintId: string | null }>();
 
   readonly loading        = signal(false);
   readonly error          = signal<string | null>(null);
   readonly stats          = signal<OverviewStatsDto | null>(null);
-  readonly selectedSprintId = signal<string | null>(null);
+  /** The shared selected sprint — kept in sync with the Board and Sprint Planning pages. */
+  readonly selectedSprintId = this.sprintSelection.selectedSprintId;
 
   constructor() {
     this.loadTrigger$
@@ -61,8 +64,8 @@ export class OverviewService {
     this.loadTrigger$.next({ repoId: this.repoCtx.selectedRepoId(), sprintId: this.selectedSprintId() });
   }
 
-  /** Selects a sprint and reloads overview statistics. @param sprintId Sprint ID, or null for the default sprint. */
+  /** Selects a sprint (shared across Overview/Board/Sprint pages) and reloads statistics. @param sprintId Sprint ID. */
   selectSprint(sprintId: string | null): void {
-    this.selectedSprintId.set(sprintId);
+    if (sprintId) this.sprintSelection.selectSprint(sprintId);
   }
 }

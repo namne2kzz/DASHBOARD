@@ -166,20 +166,21 @@ public sealed class CreateSprintTaskCommandHandlerTests : IDisposable
     // ── Initial state ───────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Handle_WhenCreatedInASprint_StartsAsNew()
+    public async Task Handle_WhenATaskIsCreatedInASprint_StartsInToDo()
     {
         var handler = CreateHandler(AuthorizedUser());
 
+        // Command() defaults to a Task; a Task committed to a sprint starts in ToDo on the board.
         var result = await handler.Handle(Command(sprintId: _sprintId), CancellationToken.None);
 
         var created = await _db.Set<SprintTask>().AsNoTracking()
             .SingleAsync(t => t.Id == result.Value!.Id);
-        created.State.Should().Be(WorkItemState.Open);
+        created.State.Should().Be(WorkItemState.ToDo);
         created.StateChangedAt.Should().NotBeNull();
     }
 
     [Fact]
-    public async Task Handle_WhenCreatedWithoutASprint_StartsInTheBacklog()
+    public async Task Handle_WhenCreatedWithoutASprint_StartsOpen()
     {
         var handler = CreateHandler(AuthorizedUser());
 
@@ -187,8 +188,8 @@ public sealed class CreateSprintTaskCommandHandlerTests : IDisposable
 
         var created = await _db.Set<SprintTask>().AsNoTracking()
             .SingleAsync(t => t.Id == result.Value!.Id);
-        created.State.Should().Be(WorkItemState.ToDo,
-            "unscheduled work waits in the backlog rather than appearing on a board");
+        created.State.Should().Be(WorkItemState.Open,
+            "an item not committed to a sprint starts Open");
     }
 
     // ── Work-item numbering ─────────────────────────────────────────────────

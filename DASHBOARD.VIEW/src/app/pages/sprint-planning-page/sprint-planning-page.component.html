@@ -1,16 +1,19 @@
 <div class="min-h-0 flex-1 overflow-auto bg-slate-950">
   <!-- Nexus UI page header: 52px bar — sprint · dates · secondary · one Primary -->
   <header class="sticky top-0 z-20 flex h-[52px] items-center gap-3 border-b border-slate-800 bg-slate-900 px-5">
-    <select
-      class="h-8 rounded-md border border-transparent bg-transparent pl-1 text-lg font-semibold text-slate-100 outline-none transition hover:border-slate-700 focus:border-sky-500"
-      aria-label="Sprint"
-      [ngModel]="planning.selectedSprintId()"
-      (ngModelChange)="planning.selectSprint($event)"
-    >
-      @for (sprint of planning.sprints(); track sprint.id) {
-        <option [ngValue]="sprint.id">{{ sprint.name }}{{ sprint.status === 'Active' ? ' ▶' : sprint.status === 'Closed' ? ' ✓' : '' }}</option>
-      }
-    </select>
+    <h1 class="text-lg font-semibold text-slate-100">Sprint</h1>
+    @if (planning.sprints().length > 0) {
+      <select
+        class="field-select !h-7 !text-xs w-auto"
+        aria-label="Sprint"
+        [ngModel]="planning.selectedSprintId()"
+        (ngModelChange)="planning.selectSprint($event)"
+      >
+        @for (sprint of planning.sprints(); track sprint.id) {
+          <option [ngValue]="sprint.id">{{ sprint.name }}</option>
+        }
+      </select>
+    }
     @if (planning.selectedSprint(); as s) {
       <span class="font-mono text-xs text-slate-500">{{ s.startDate }} – {{ s.endDate }}</span>
       @switch (s.status) {
@@ -482,27 +485,21 @@
         </select>
       </div>
 
-      <ul class="mt-3 space-y-2">
+      <ul class="mt-3 divide-y divide-slate-800/60 overflow-hidden rounded-lg">
         @for (story of pagedSprintStories(); track story.id) {
           <li
-            class="group cursor-pointer rounded-lg border border-slate-800 bg-slate-950/40 px-4 py-3 transition hover:border-slate-700 hover:bg-slate-900/70"
+            class="group cursor-pointer bg-slate-950/40 px-4 py-3 transition hover:bg-slate-900/70"
             (click)="openStoryDetail(story)"
           >
             <div class="flex items-center gap-3">
-              <!-- User Story icon -->
-              <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-story ring-slate-800 bg-slate-800">
-                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                  <path d="M8 7h8M8 11h8"/>
-                </svg>
-              </div>
+              <!-- User Story type dot -->
+              <span class="nx-type nx-type--story" title="User Story"></span>
 
               <!-- work item number -->
               <span class="shrink-0 font-mono text-xs text-slate-600">{{ story.workItemNumber }}</span>
 
               <!-- title -->
-              <p class="min-w-0 flex-1 truncate font-medium text-slate-100" [title]="story.title">{{ story.title }}</p>
+              <p class="min-w-0 flex-1 truncate font-medium text-slate-100 transition group-hover:text-sky-300" [title]="story.title">{{ story.title }}</p>
 
               <!-- sub-task count -->
               @if (storySubTaskCount(story.id); as count) {
@@ -521,11 +518,6 @@
               <span class="inline-flex items-center whitespace-nowrap shrink-0"
                 [ngClass]="stateBadge[stateApi(story.state)]"
               >{{ stateLabel[stateApi(story.state)] }}</span>
-
-              <!-- chevron hint -->
-              <svg class="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/>
-              </svg>
             </div>
           </li>
         } @empty {
@@ -574,7 +566,7 @@
         </select>
       </div>
 
-      <div class="mt-4 overflow-x-auto">
+      <div class="mt-3 overflow-x-auto">
         <table class="w-full min-w-[900px] text-left text-sm">
           <thead>
             <tr class="text-xs font-medium text-slate-400">
@@ -586,49 +578,22 @@
               <th class="pb-2 font-medium">Assignee</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-800">
+          <tbody class="divide-y divide-slate-800/60">
             @for (task of pagedSprintTaskRows(); track task.id) {
               <tr>
-                <!-- Work item type icon -->
+                <!-- Work item type dot -->
                 <td class="py-3 pr-2 align-middle">
-                  @switch (task.type) {
-                    @case ('user-story') {
-                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-story ring-slate-800 bg-slate-800" title="User Story">
-                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h8"/>
-                        </svg>
-                      </div>
-                    }
-                    @case ('bug') {
-                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-bug ring-slate-800 bg-slate-800" title="Bug">
-                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                          <path d="M8 2h8l1 6H7L8 2z"/><path d="M7 8h10v2a5 5 0 0 1-10 0V8z"/><path d="M12 15v3M9 22h6"/>
-                        </svg>
-                      </div>
-                    }
-                    @case ('task') {
-                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-task ring-slate-800 bg-slate-800" title="Task">
-                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                          <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-                        </svg>
-                      </div>
-                    }
-                    @case ('test-plan') {
-                      <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md ring-1 text-type-test ring-slate-800 bg-slate-800" title="Test Plan">
-                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1" ry="1"/><path stroke-linecap="round" d="M9 12h6M9 16h4"/>
-                        </svg>
-                      </div>
-                    }
-                  }
+                  <span class="nx-type" [ngClass]="taskTypeDot(task.type)" [title]="task.type"></span>
                 </td>
-                <td class="w-64 py-3 pr-4">
-                  <p
-                    class="cursor-pointer truncate font-medium text-slate-100 underline-offset-2 hover:text-sky-300 hover:underline"
-                    [title]="task.title + ' — open detail'"
-                    (click)="navigateToItem(task.workItemNumber)"
-                  >{{ task.title }}</p>
-                  <p class="truncate text-xs text-slate-500">{{ parentStoryTitle(task.parentId) }}</p>
+                <td class="py-3 pr-4">
+                  <div class="flex max-w-[28rem] items-center gap-2">
+                    <span class="shrink-0 font-mono text-xs text-slate-500">{{ task.workItemNumber }}</span>
+                    <p
+                      class="min-w-0 cursor-pointer truncate font-medium text-slate-100 underline-offset-2 hover:text-sky-300 hover:underline"
+                      [title]="task.title + ' — open detail'"
+                      (click)="navigateToItem(task.workItemNumber)"
+                    >{{ task.title }}</p>
+                  </div>
                 </td>
                 <td class="py-3 pr-4">
                   <select
@@ -637,7 +602,7 @@
                     (ngModelChange)="planning.changeTaskState(task.id, $event)"
                     [disabled]="!planning.canEditWorkItem()"
                   >
-                    @for (opt of taskStateOptions; track opt.value) {
+                    @for (opt of taskStateKeyOptions; track opt.value) {
                       <option [value]="opt.value">{{ opt.label }}</option>
                     }
                   </select>

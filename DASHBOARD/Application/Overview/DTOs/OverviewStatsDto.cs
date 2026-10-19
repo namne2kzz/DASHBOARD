@@ -13,6 +13,7 @@ namespace DASHBOARD.Application.Overview.DTOs;
 /// <param name="CycleTime">Approximate average cycle time for completed items in the selected sprint.</param>
 /// <param name="AssigneeWorkload">Task/story-point workload per assignee for the selected sprint.</param>
 /// <param name="RecentActivity">Most recent audit-trail entries across the repository.</param>
+/// <param name="Report">Sprint report card: completion rate and scope change for the selected sprint.</param>
 public sealed record OverviewStatsDto(
     WorkItemCountsDto WorkItemCounts,
     StatusDistributionDto StatusDistribution,
@@ -25,7 +26,23 @@ public sealed record OverviewStatsDto(
     SprintHealthDto SprintHealth,
     CycleTimeDto CycleTime,
     IReadOnlyList<AssigneeWorkloadItemDto> AssigneeWorkload,
-    IReadOnlyList<RecentActivityItemDto> RecentActivity);
+    IReadOnlyList<RecentActivityItemDto> RecentActivity,
+    SprintReportDto Report);
+
+/// <summary>Sprint report card for the selected sprint — completion and scope-change summary.</summary>
+/// <param name="TotalTasks">Total non-deleted tasks in the sprint.</param>
+/// <param name="CompletedTasks">Tasks in a terminal (Done) state.</param>
+/// <param name="TaskCompletionRate">Completed ÷ total tasks, 0–1. Zero when there are no tasks.</param>
+/// <param name="PointCompletionRate">Completed ÷ committed story points, 0–1. Zero when there are no points.</param>
+/// <param name="AddedAfterStart">Tasks created after the sprint's start date (scope added mid-sprint, approximate).</param>
+/// <param name="ScopeChangePoints">Story points of the tasks added after the sprint start.</param>
+public sealed record SprintReportDto(
+    int    TotalTasks,
+    int    CompletedTasks,
+    double TaskCompletionRate,
+    double PointCompletionRate,
+    int    AddedAfterStart,
+    int    ScopeChangePoints);
 
 /// <summary>Counts of work items by type for the selected sprint.</summary>
 /// <param name="Total">Total item count.</param>

@@ -19,3 +19,13 @@ export interface AppNotification {
   isRead: boolean;
   createdAt: string;
 }
+
+/** Category filter for the notification panel. */
+export type NotificationCategory = 'workitems' | 'sprints' | 'membership' | 'mentions';
+
+/** A page of notifications returned by the list endpoint. */
+export interface NotificationPage {
+  items: AppNotification[];
+  hasMore: boolean;
+  unreadCount: number;
+}

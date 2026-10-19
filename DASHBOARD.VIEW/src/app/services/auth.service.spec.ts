@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
 import { AuthService } from './auth.service';
 import { PreferencesService } from '../core/services/preferences.service';
+import { NotificationService } from './notification.service';
 import { StorageKeys } from '../core/constants/storage-keys.constant';
 import { LoginResponse } from '../models/auth.model';
 import { UserProfile } from '../models/user.model';
@@ -61,6 +62,8 @@ describe('AuthService', () => {
         provideHttpClientTesting(),
         AuthService,
         { provide: PreferencesService, useValue: { syncFromServer } },
+        // applySession also calls notiSvc.connect(); logout calls disconnect(). Stub both.
+        { provide: NotificationService, useValue: { connect: jasmine.createSpy('connect'), disconnect: jasmine.createSpy('disconnect') } },
       ],
     });
 

@@ -75,10 +75,10 @@
             <span class="font-mono text-xs text-slate-500">{{ group.items.length }}</span>
           </div>
 
-          <ul class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 divide-y divide-slate-800">
+          <ul class="divide-y divide-slate-800/60">
             @for (item of group.items; track item.id) {
               <li
-                class="group flex h-11 cursor-pointer items-center gap-3 px-4 transition hover:bg-slate-800"
+                class="group flex h-11 cursor-pointer items-center gap-3 rounded-lg px-4 transition hover:bg-slate-900/70"
                 (click)="openItem(item)"
               >
                 <!-- Type square (Nexus UI: no colour bars or type pills) -->
@@ -88,7 +88,7 @@
                 <span class="shrink-0 font-mono text-xs text-slate-500">{{ item.workItemNumber }}</span>
 
                 <!-- Title -->
-                <p class="min-w-0 flex-1 truncate text-sm text-slate-100" [title]="item.title">{{ item.title }}</p>
+                <p class="min-w-0 flex-1 truncate text-sm text-slate-100 transition group-hover:text-sky-300" [title]="item.title">{{ item.title }}</p>
 
                 <!-- Repository badge -->
                 <span class="nx-tag hidden gap-1 font-mono sm:inline-flex"
@@ -109,10 +109,6 @@
                 <span class="inline-flex w-24 shrink-0 items-center text-xs"
                   [ngClass]="stateBadge[item.state]"
                 >{{ stateLabel[item.state] }}</span>
-
-                <svg class="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-slate-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/>
-                </svg>
               </li>
             }
           </ul>

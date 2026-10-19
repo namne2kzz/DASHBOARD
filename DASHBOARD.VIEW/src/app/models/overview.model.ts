@@ -12,6 +12,17 @@ export interface OverviewStatsDto {
   cycleTime: CycleTimeDto;
   assigneeWorkload: AssigneeWorkloadItemDto[];
   recentActivity: RecentActivityItemDto[];
+  report: SprintReportDto;
+}
+
+/** Sprint report card — completion and scope-change summary for the selected sprint. */
+export interface SprintReportDto {
+  totalTasks: number;
+  completedTasks: number;
+  taskCompletionRate: number;
+  pointCompletionRate: number;
+  addedAfterStart: number;
+  scopeChangePoints: number;
 }
 
 /** Work item counts by type for the selected sprint. */

@@ -1,12 +1,15 @@
+# syntax=docker/dockerfile:1
 # Build the .NET API image.
 # Run from repo root: docker build -f DASHBOARD/Dockerfile -t dashboard-api .
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY DASHBOARD/DASHBOARD.csproj DASHBOARD/
-RUN dotnet restore DASHBOARD/DASHBOARD.csproj
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet restore DASHBOARD/DASHBOARD.csproj
 COPY DASHBOARD/ DASHBOARD/
-RUN dotnet publish DASHBOARD/DASHBOARD.csproj -c Release -o /app/publish --no-restore
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet publish DASHBOARD/DASHBOARD.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app

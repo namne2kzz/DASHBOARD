@@ -23,7 +23,6 @@ export interface WorkItemDetailApiDto extends WorkItemSummaryApiDto {
   description: string;
   implementInBuild: string | null;
   fixedInVersion: string | null;
-  links: string[];
   closedAt: string | null;
   updatedAt: string | null;
   acceptanceCriteria: string | null;

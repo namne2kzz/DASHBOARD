@@ -98,7 +98,7 @@ public sealed class AssignSprintTaskCommandHandler(
 
             var itemNumber = SprintTask.BuildWorkItemNumber(repo.Code, task.WorkItemNumber);
             var itemUrl    = $"{settings.InvitationFrontendBaseUrl.TrimEnd('/')}/boards/{itemNumber}";
-            var prefs      = await NotifyPrefsHelper.GetBatchAsync(db, notifyIds, ct);
+            var prefs      = await NotifyPrefsHelper.GetBatchForTypeAsync(db, notifyIds, NotificationType.WorkItemAssigned, ct);
 
             // Old assignee → unassigned.
             if (oldAssigneeId is { } oldId && oldId != changedById && users.TryGetValue(oldId, out var oldUser))

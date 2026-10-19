@@ -82,7 +82,7 @@ public sealed class AddMemberCommandHandler(
             .Select(r => r.Name)
             .FirstOrDefaultAsync(ct);
 
-        if (await NotifyPrefsHelper.PushEnabledAsync(db, command.UserId, ct))
+        if (await NotifyPrefsHelper.PushEnabledForTypeAsync(db, command.UserId, NotificationType.AddedToRepository, ct))
             await notifications.NotifyAsync(
                 command.UserId,
                 NotificationType.AddedToRepository,

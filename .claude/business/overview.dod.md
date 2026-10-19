@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-17 | 11:45 | Thêm Sprint Report card | Bổ sung report card cho sprint đang chọn: task completion rate (done/total), point completion rate (completed/committed), scope change (số item + story point được **tạo sau ngày StartDate** = scope thêm giữa sprint, xấp xỉ vì item move vào sprint vẫn giữ CreatedAt gốc) |
 | 2026-07-05 | 13:41 | Thêm health/cycle-time/workload/activity | Bổ sung sprint health indicator, cycle time xấp xỉ, workload theo assignee, recent activity feed, và type-trend 7 sprint vào overview |
 | 2026-06-23 | 20:58 | Khởi tạo document | Tạo document business ban đầu cho feature Overview |
 

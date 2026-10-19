@@ -71,14 +71,22 @@ public sealed class NotificationsController(
         }
     }
 
-    /// <summary>Returns the 30 most recent notifications for the authenticated user.</summary>
+    /// <summary>Returns a page of the authenticated user's notifications with an optional category filter.</summary>
     /// <param name="unreadOnly">When true, returns only unread notifications.</param>
+    /// <param name="category">Optional filter: "workitems" | "sprints" | "membership" | "mentions".</param>
+    /// <param name="skip">Number of notifications to skip (load-more paging).</param>
+    /// <param name="take">Page size (max 50).</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>200 with notification list.</returns>
+    /// <returns>200 with a <see cref="NotificationPageDto"/>.</returns>
     [HttpGet]
-    [ProducesResponseType<IReadOnlyList<NotificationDto>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> List([FromQuery] bool unreadOnly = false, CancellationToken ct = default)
-        => Ok(await mediator.Send(new ListNotificationsQuery(unreadOnly), ct));
+    [ProducesResponseType<NotificationPageDto>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> List(
+        [FromQuery] bool unreadOnly = false,
+        [FromQuery] string? category = null,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 30,
+        CancellationToken ct = default)
+        => Ok(await mediator.Send(new ListNotificationsQuery(unreadOnly, category, skip, take), ct));
 
     /// <summary>Marks a single notification as read.</summary>
     /// <param name="id">Notification id.</param>

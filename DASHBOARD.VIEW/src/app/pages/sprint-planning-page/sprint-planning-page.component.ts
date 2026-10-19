@@ -13,7 +13,7 @@ import { AddSprintTaskDialogComponent } from '../../components/add-sprint-task-d
 import { AddCapacityMemberDialogComponent } from '../../components/add-capacity-member-dialog/add-capacity-member-dialog.component';
 import { SprintStoryDetailDialogComponent } from '../../components/sprint-story-detail-dialog/sprint-story-detail-dialog.component';
 import type { SprintTask } from '../../models/sprint-planning.model';
-import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant';
+import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS, SPRINT_TASK_STATE_KEY_OPTIONS } from '../../core/constants/system.constant';
 import { getStateCategory, SprintTaskApiState, StateCategory } from '../../core/enums/system.enum';
 import { ConfirmService } from '../../core/components/confirm/confirm.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
@@ -30,6 +30,8 @@ import { LoadErrorComponent } from '../../components/load-error/load-error.compo
 export class SprintPlanningPageComponent implements OnInit {
   readonly planning          = inject(SprintPlanningService);
   readonly taskStateOptions  = SPRINT_TASK_STATE_OPTIONS;
+  /** State options keyed by string state ('open', 'todo', …) for the task-row dropdown. */
+  readonly taskStateKeyOptions = SPRINT_TASK_STATE_KEY_OPTIONS;
   readonly stateBadge        = SPRINT_TASK_STATE_BADGE;
   readonly stateLabel        = SPRINT_TASK_STATE_LABEL;
 
@@ -72,6 +74,16 @@ export class SprintPlanningPageComponent implements OnInit {
     const repoCode = this.repoCtx.selectedRepo()?.code;
     if (!orgAlias || !repoCode) return;
     this.router.navigate(['/', orgAlias, repoCode, 'boards', workItemNumber]);
+  }
+
+  /** Maps a work item type key to its nx-type dot modifier class. @param type The task type key. */
+  taskTypeDot(type: 'user-story' | 'task' | 'bug' | 'test-plan'): string {
+    switch (type) {
+      case 'user-story': return 'nx-type--story';
+      case 'bug':        return 'nx-type--bug';
+      case 'test-plan':  return 'nx-type--test';
+      default:           return 'nx-type--task';
+    }
   }
   readonly members         = inject(MembersService);
   private readonly dialog  = inject(DialogService);

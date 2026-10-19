@@ -36,6 +36,10 @@ export class PreferencesService {
   readonly notifyPush   = signal<boolean>(this._loadBool('nxs.notify.push',          false));
   readonly notifyDigest = signal<boolean>(this._loadBool('nxs.notify.digest',        false));
   readonly notifyMentions = signal<boolean>(this._loadBool('nxs.notify.mentions', true));
+  // Per-category in-app toggles (gated under notifyPush). Default on.
+  readonly notifyTypeWorkItems  = signal<boolean>(this._loadBool('nxs.notify.type.workitems',  true));
+  readonly notifyTypeSprints    = signal<boolean>(this._loadBool('nxs.notify.type.sprints',    true));
+  readonly notifyTypeMembership = signal<boolean>(this._loadBool('nxs.notify.type.membership', true));
 
   // ── Accessibility / UX ──────────────────────────────────────────────────────
   readonly reduceMotion = signal<boolean>(this._loadBool('nxs.a11y.reduce-motion', false));
@@ -52,6 +56,9 @@ export class PreferencesService {
     effect(() => localStorage.setItem('nxs.notify.push',            String(this.notifyPush())));
     effect(() => localStorage.setItem('nxs.notify.digest',          String(this.notifyDigest())));
     effect(() => localStorage.setItem('nxs.notify.mentions',        String(this.notifyMentions())));
+    effect(() => localStorage.setItem('nxs.notify.type.workitems',  String(this.notifyTypeWorkItems())));
+    effect(() => localStorage.setItem('nxs.notify.type.sprints',    String(this.notifyTypeSprints())));
+    effect(() => localStorage.setItem('nxs.notify.type.membership', String(this.notifyTypeMembership())));
     effect(() => localStorage.setItem('nxs.a11y.reduce-motion',     String(this.reduceMotion())));
     effect(() => localStorage.setItem('nxs.ui.compact-mode',        String(this.compactMode())));
     effect(() => localStorage.setItem('nxs.ui.nmate-widget',        String(this.showNMate())));
@@ -80,6 +87,9 @@ export class PreferencesService {
         if (v(SETTING_KEYS.notifyPush)   != null) this.notifyPush.set(v(SETTING_KEYS.notifyPush) === 'true');
         if (v(SETTING_KEYS.notifyDigest) != null) this.notifyDigest.set(v(SETTING_KEYS.notifyDigest) === 'true');
         if (v(SETTING_KEYS.notifyMentions) != null) this.notifyMentions.set(v(SETTING_KEYS.notifyMentions) === 'true');
+        if (v(SETTING_KEYS.notifyTypeWorkItems)  != null) this.notifyTypeWorkItems.set(v(SETTING_KEYS.notifyTypeWorkItems) === 'true');
+        if (v(SETTING_KEYS.notifyTypeSprints)    != null) this.notifyTypeSprints.set(v(SETTING_KEYS.notifyTypeSprints) === 'true');
+        if (v(SETTING_KEYS.notifyTypeMembership) != null) this.notifyTypeMembership.set(v(SETTING_KEYS.notifyTypeMembership) === 'true');
         if (v(SETTING_KEYS.reduceMotion) != null) this.reduceMotion.set(v(SETTING_KEYS.reduceMotion) === 'true');
         if (v(SETTING_KEYS.compactMode)  != null) this.compactMode.set(v(SETTING_KEYS.compactMode) === 'true');
         if (v(SETTING_KEYS.showNMate)    != null) this.showNMate.set(v(SETTING_KEYS.showNMate) === 'true');
@@ -106,6 +116,12 @@ export class PreferencesService {
   setNotifyDigest(value: boolean): void    { this.notifyDigest.set(value); this._save({ [SETTING_KEYS.notifyDigest]: String(value) }); }
   /** @param value Whether to notify the user when they are @mentioned in a discussion. */
   setNotifyMentions(value: boolean): void  { this.notifyMentions.set(value); this._save({ [SETTING_KEYS.notifyMentions]: String(value) }); }
+  /** @param value Whether to receive work-item notifications (assigned/unassigned/state). */
+  setNotifyTypeWorkItems(value: boolean): void  { this.notifyTypeWorkItems.set(value);  this._save({ [SETTING_KEYS.notifyTypeWorkItems]: String(value) }); }
+  /** @param value Whether to receive sprint lifecycle notifications. */
+  setNotifyTypeSprints(value: boolean): void    { this.notifyTypeSprints.set(value);    this._save({ [SETTING_KEYS.notifyTypeSprints]: String(value) }); }
+  /** @param value Whether to receive membership change notifications. */
+  setNotifyTypeMembership(value: boolean): void { this.notifyTypeMembership.set(value); this._save({ [SETTING_KEYS.notifyTypeMembership]: String(value) }); }
   /** @param value Whether to reduce UI animations. */
   setReduceMotion(value: boolean): void    { this.reduceMotion.set(value); this._save({ [SETTING_KEYS.reduceMotion]: String(value) }); }
   /** @param value Whether to use compact row density. */

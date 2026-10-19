@@ -61,7 +61,7 @@ public sealed class ActivateSprintCommandHandler(
             .Distinct()
             .ToListAsync(ct);
 
-        var prefs = await NotifyPrefsHelper.GetBatchAsync(db, memberIds, ct);
+        var prefs = await NotifyPrefsHelper.GetBatchForTypeAsync(db, memberIds, NotificationType.SprintActivated, ct);
 
         foreach (var memberId in memberIds)
             if (prefs.TryGetValue(memberId, out var p) && p.Push)

@@ -158,6 +158,8 @@ public sealed class GetOverviewStatsQueryHandler(
                 h.CreatedAt))
             .ToListAsync(ct);
 
+        var report = ComputeReport(selectedSprint, tasks, storyPoints);
+
         return new OverviewStatsDto(
             counts,
             statusDist,
@@ -170,7 +172,35 @@ public sealed class GetOverviewStatsQueryHandler(
             sprintHealth,
             cycleTime,
             assigneeWorkload,
-            recentActivity);
+            recentActivity,
+            report);
+    }
+
+    /// <summary>Builds the sprint report card: task/point completion rates and mid-sprint scope change.</summary>
+    /// <param name="sprint">The selected sprint, or null when the repository has none.</param>
+    /// <param name="tasks">The sprint's non-deleted tasks.</param>
+    /// <param name="storyPoints">Already-computed committed/completed story points.</param>
+    /// <returns>A <see cref="SprintReportDto"/>.</returns>
+    private static SprintReportDto ComputeReport(Sprint? sprint, List<SprintTask> tasks, StoryPointsDto storyPoints)
+    {
+        if (sprint is null || tasks.Count == 0)
+            return new SprintReportDto(0, 0, 0, 0, 0, 0);
+
+        var total     = tasks.Count;
+        var completed = tasks.Count(t => t.Category == StateCategory.Done);
+
+        // Scope added mid-sprint: tasks whose creation date falls after the sprint's start date.
+        // Approximate — a task moved into the sprint later shows its original creation date, not the move.
+        var sprintStart = sprint.StartDate.ToDateTime(TimeOnly.MinValue);
+        var addedLate   = tasks.Where(t => t.CreatedAt > sprintStart).ToList();
+
+        return new SprintReportDto(
+            total,
+            completed,
+            total == 0 ? 0 : Math.Round((double)completed / total, 3),
+            storyPoints.Committed == 0 ? 0 : Math.Round((double)storyPoints.Completed / storyPoints.Committed, 3),
+            addedLate.Count,
+            addedLate.Sum(t => t.StoryPoints));
     }
 
     /// <summary>Compares actual vs ideal burndown at today's working day to classify sprint health.</summary>

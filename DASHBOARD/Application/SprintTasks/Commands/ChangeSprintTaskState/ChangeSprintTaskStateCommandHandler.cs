@@ -108,7 +108,7 @@ public sealed class ChangeSprintTaskStateCommandHandler(
                     var oldLabel   = StateLabels.GetValueOrDefault(oldState, oldState.ToString());
                     var newLabel   = StateLabels.GetValueOrDefault(command.NewState, command.NewState.ToString());
 
-                    var prefs = await NotifyPrefsHelper.GetBatchAsync(db, [notifyUserId.Value], ct);
+                    var prefs = await NotifyPrefsHelper.GetBatchForTypeAsync(db, [notifyUserId.Value], NotificationType.WorkItemStateChanged, ct);
                     var (emailOn, pushOn) = prefs[notifyUserId.Value];
 
                     if (emailOn)
