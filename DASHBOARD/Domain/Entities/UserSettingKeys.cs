@@ -33,6 +33,17 @@ public static class UserSettingKeys
     /// <summary>Whether to notify the user when they are @mentioned in a discussion: <c>"true"</c> | <c>"false"</c>. Independent of the push toggle.</summary>
     public const string NotifyMentions = "notify.mentions";
 
+    // Per-category in-app toggles. Each gates push notifications of one event group,
+    // on top of the global NotifyPush master. Absent = enabled (opt-out).
+    /// <summary>Work-item events (assigned, unassigned, state changed): <c>"true"</c> | <c>"false"</c>. Default true.</summary>
+    public const string NotifyTypeWorkItems = "notify.type.workitems";
+
+    /// <summary>Sprint lifecycle events (activated, closed): <c>"true"</c> | <c>"false"</c>. Default true.</summary>
+    public const string NotifyTypeSprints = "notify.type.sprints";
+
+    /// <summary>Membership events (added to / removed from a repository or sprint): <c>"true"</c> | <c>"false"</c>. Default true.</summary>
+    public const string NotifyTypeMembership = "notify.type.membership";
+
     // ── Profile ───────────────────────────────────────────────────────────────
     /// <summary>Public URL of the user's uploaded avatar image. Empty/absent means use avatar colour class.</summary>
     public const string AvatarUrl = "profile.avatar-url";

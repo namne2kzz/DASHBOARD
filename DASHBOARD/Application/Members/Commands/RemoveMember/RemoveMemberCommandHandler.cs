@@ -58,7 +58,7 @@ public sealed class RemoveMemberCommandHandler(
             .Select(r => r.Name)
             .FirstOrDefaultAsync(ct);
 
-        if (await NotifyPrefsHelper.PushEnabledAsync(db, removedUserId, ct))
+        if (await NotifyPrefsHelper.PushEnabledForTypeAsync(db, removedUserId, NotificationType.RemovedFromRepository, ct))
             await notifications.NotifyAsync(
                 removedUserId,
                 NotificationType.RemovedFromRepository,

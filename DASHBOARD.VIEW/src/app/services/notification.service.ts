@@ -1,14 +1,15 @@
 import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
-import { AppNotification } from '../models/notification.model';
+import { AppNotification, NotificationCategory, NotificationPage } from '../models/notification.model';
 import { StorageService } from '../core/services/storage.service';
 import { StorageKeys } from '../core/constants/storage-keys.constant';
 
 const BASE = `${environment.apiBaseUrl}/notifications`;
 const RECONNECT_DELAYS = [2_000, 5_000, 10_000, 30_000];
+const PAGE_SIZE = 20;
 
 /**
  * Manages in-app notifications: opens a Server-Sent Events connection while the
@@ -22,18 +23,29 @@ export class NotificationService implements OnDestroy {
   private readonly router  = inject(Router);
 
   private readonly _notifications = signal<AppNotification[]>([]);
+  private readonly _serverUnread  = signal(0);
+  private readonly _hasMore       = signal(false);
+  private readonly _loading       = signal(false);
+  private readonly _filter        = signal<NotificationCategory | null>(null);
   private _es: EventSource | null = null;
   private _reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private _reconnectAttempt = 0;
   private _destroyed = false;
 
-  /** All notifications, newest first. */
+  /** All loaded notifications, newest first. */
   readonly notifications = this._notifications.asReadonly();
 
-  /** Number of unread notifications — drives the badge. */
-  readonly unreadCount = computed(() =>
-    this._notifications().filter(n => !n.isRead).length
-  );
+  /** Whether older notifications exist beyond the loaded page. */
+  readonly hasMore = this._hasMore.asReadonly();
+
+  /** Whether a page fetch is in flight. */
+  readonly loading = this._loading.asReadonly();
+
+  /** The active category filter (null = all). */
+  readonly filter = this._filter.asReadonly();
+
+  /** Number of unread notifications — drives the badge. Uses the server's count (whole inbox, not just loaded page). */
+  readonly unreadCount = this._serverUnread.asReadonly();
 
   // ── SSE lifecycle ────────────────────────────────────────────────────────
 
@@ -50,28 +62,51 @@ export class NotificationService implements OnDestroy {
     this._clearReconnect();
     this._closeStream();
     this._notifications.set([]);
+    this._serverUnread.set(0);
+    this._hasMore.set(false);
+    this._filter.set(null);
   }
 
   // ── REST operations ──────────────────────────────────────────────────────
 
-  /** Marks one notification as read and updates the local signal. */
+  /** Marks one notification as read and updates the local signal + unread count. */
   async markRead(id: string): Promise<void> {
+    const wasUnread = this._notifications().some(n => n.id === id && !n.isRead);
     await firstValueFrom(this.http.post(`${BASE}/${id}/read`, {}));
     this._notifications.update(list =>
       list.map(n => n.id === id ? { ...n, isRead: true } : n)
     );
+    if (wasUnread) this._serverUnread.update(c => Math.max(0, c - 1));
   }
 
   /** Marks all notifications as read. */
   async markAllRead(): Promise<void> {
     await firstValueFrom(this.http.post(`${BASE}/read-all`, {}));
     this._notifications.update(list => list.map(n => ({ ...n, isRead: true })));
+    this._serverUnread.set(0);
   }
 
   /** Navigates to the notification's URL (if any) and marks it read. */
   async open(n: AppNotification): Promise<void> {
     if (!n.isRead) await this.markRead(n.id);
     if (n.url) await this.router.navigateByUrl(n.url);
+  }
+
+  /** Sets the category filter and reloads the first page. @param category Category or null for all. */
+  setFilter(category: NotificationCategory | null): void {
+    this._filter.set(category);
+    this._loadPage(0, true);
+  }
+
+  /** Loads the next page of notifications (append). */
+  loadMore(): void {
+    if (this._loading() || !this._hasMore()) return;
+    this._loadPage(this._notifications().length, false);
+  }
+
+  /** Reloads the first page with the current filter (e.g. after opening the panel). */
+  refresh(): void {
+    this._loadPage(0, true);
   }
 
   ngOnDestroy(): void {
@@ -81,9 +116,23 @@ export class NotificationService implements OnDestroy {
   // ── Private ──────────────────────────────────────────────────────────────
 
   private _fetchRecent(): void {
-    this.http.get<AppNotification[]>(BASE).subscribe({
-      next: list => this._notifications.set(list),
-      error: () => { /* non-critical */ },
+    this._loadPage(0, true);
+  }
+
+  private _loadPage(skip: number, replace: boolean): void {
+    this._loading.set(true);
+    let params = new HttpParams().set('skip', skip).set('take', PAGE_SIZE);
+    const filter = this._filter();
+    if (filter) params = params.set('category', filter);
+
+    this.http.get<NotificationPage>(BASE, { params }).subscribe({
+      next: page => {
+        this._notifications.update(list => replace ? page.items : [...list, ...page.items]);
+        this._hasMore.set(page.hasMore);
+        this._serverUnread.set(page.unreadCount);
+        this._loading.set(false);
+      },
+      error: () => this._loading.set(false),
     });
   }
 
@@ -107,7 +156,10 @@ export class NotificationService implements OnDestroy {
     this._es.addEventListener('notification', (e: MessageEvent) => {
       try {
         const n: AppNotification = JSON.parse(e.data);
-        this._notifications.update(list => [n, ...list].slice(0, 50));
+        this._serverUnread.update(c => c + 1);
+        // Only prepend when it matches the active filter so the visible list stays consistent.
+        if (this._matchesFilter(n))
+          this._notifications.update(list => [n, ...list]);
       } catch { /* malformed event — ignore */ }
     });
 
@@ -115,6 +167,18 @@ export class NotificationService implements OnDestroy {
       this._closeStream();
       if (!this._destroyed) this._scheduleReconnect();
     };
+  }
+
+  /** Whether an incoming notification belongs to the active category filter. */
+  private _matchesFilter(n: AppNotification): boolean {
+    const filter = this._filter();
+    if (!filter) return true;
+    switch (filter) {
+      case 'workitems':  return n.type.startsWith('WorkItem');
+      case 'sprints':    return n.type === 'SprintActivated' || n.type === 'SprintClosed';
+      case 'membership': return n.type.startsWith('Added') || n.type.startsWith('Removed');
+      case 'mentions':   return n.type === 'MentionedInDiscussion';
+    }
   }
 
   private _closeStream(): void {

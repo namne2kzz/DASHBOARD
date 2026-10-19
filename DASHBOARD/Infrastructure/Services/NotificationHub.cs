@@ -33,8 +33,27 @@ internal sealed class NotificationHub : INotificationHub
 
         try
         {
-            await foreach (var notification in channel.Reader.ReadAllAsync(ct))
+            // Read manually and swallow the cancellation that fires when the client disconnects —
+            // that is the normal end of an SSE stream, not an error. Using ReadAllAsync(ct) would
+            // throw OperationCanceledException out of the iterator and surface as an unhandled
+            // exception in the debugger on every disconnect.
+            while (true)
+            {
+                Notification notification;
+                try
+                {
+                    if (!await channel.Reader.WaitToReadAsync(ct))
+                        break;
+                    if (!channel.Reader.TryRead(out notification!))
+                        continue;
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+
                 yield return notification;
+            }
         }
         finally
         {

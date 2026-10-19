@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Component, computed, inject } from '@angular/core';
 import { Color, NgxChartsModule, ScaleType } from '@swimlane/ngx-charts';
 import { ResourceService } from '../../services/resource.service';
@@ -58,7 +59,7 @@ const HEALTH_BADGES: Record<string, { label: string; classes: string }> = {
 
 @Component({
   selector: 'app-overview-page',
-  imports: [LoadErrorComponent, CommonModule, NgxChartsModule],
+  imports: [LoadErrorComponent, CommonModule, FormsModule, NgxChartsModule],
   templateUrl: './overview-page.component.html',
   styleUrl: './overview-page.component.css',
 })
@@ -100,6 +101,9 @@ export class OverviewPageComponent {
   readonly cycleTime = computed(() => this.stats()?.cycleTime ?? { averageDays: 0, sampleCount: 0 });
 
   readonly sprintHealth = computed(() => this.stats()?.sprintHealth);
+
+  /** Sprint report card data for the selected sprint. */
+  readonly report = computed(() => this.stats()?.report);
 
   readonly healthBadge = computed(() => {
     const status = this.sprintHealth()?.status ?? 'OnTrack';

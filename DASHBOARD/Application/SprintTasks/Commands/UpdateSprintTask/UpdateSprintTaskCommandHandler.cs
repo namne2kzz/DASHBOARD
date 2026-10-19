@@ -196,7 +196,7 @@ public sealed class UpdateSprintTaskCommandHandler(
 
             // Batch-fetch notification prefs for all affected users in one query.
             var prefs = notifyIds.Count > 0
-                ? await NotifyPrefsHelper.GetBatchAsync(db, notifyIds, ct)
+                ? await NotifyPrefsHelper.GetBatchForTypeAsync(db, notifyIds, NotificationType.WorkItemAssigned, ct)
                 : [];
 
             // Notify old assignee that they were unassigned.

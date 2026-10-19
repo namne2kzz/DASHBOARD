@@ -172,6 +172,7 @@ try
         var storage  = scope.ServiceProvider.GetRequiredService<IStorageService>();
         var settings = scope.ServiceProvider.GetRequiredService<IAppSettings>();
         await storage.EnsureBucketExistsAsync(settings.MinioAvatarBucket, CancellationToken.None);
+        await storage.EnsureBucketExistsAsync(settings.MinioAttachmentBucket, CancellationToken.None);
     }
 
     // ── Middleware pipeline ───────────────────────────────────────────────────

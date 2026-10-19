@@ -118,6 +118,10 @@ services:
       HubChat__InternalToken:    "${HUB_CHAT_INTERNAL_TOKEN:?required}"
       HubChat__FrontendBaseUrl:  "${HUB_FRONTEND_URL:?required}"
       Invitation__FrontendBaseUrl: "${DASHBOARD_FRONTEND_URL:?required}"
+      # DASHBOARD → NMate (repo SUPPORT) over hub-net. Empty BaseUrl = NMate disabled (widget hidden).
+      # Token must match NMATE_INTERNAL_TOKEN_DASHBOARD in SUPPORT/.env.
+      NMate__BaseUrl:       "${NMATE_BASE_URL:-}"
+      NMate__InternalToken: "${NMATE_INTERNAL_TOKEN:-}"
       MinIO__Endpoint:      "http://minio:9000"
       MinIO__AccessKey:     "${MINIO_ACCESS_KEY}"
       MinIO__SecretKey:     "${MINIO_SECRET_KEY}"

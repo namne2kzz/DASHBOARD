@@ -112,6 +112,7 @@ services:
       MinIO__AccessKey: "${MINIO_ACCESS_KEY:-minioadmin}"
       MinIO__SecretKey: "${MINIO_SECRET_KEY:-minioadmin}"
       MinIO__AvatarBucket: "dashboard-avatars"
+      MinIO__AttachmentBucket: "dashboard-attachments"
       MinIO__PublicBaseUrl: "http://localhost:9100"
       Google__ClientId: "${GOOGLE_CLIENT_ID}"
     ports:

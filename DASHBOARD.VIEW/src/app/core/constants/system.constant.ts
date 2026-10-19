@@ -33,6 +33,9 @@ export const SETTING_KEYS = {
   notifyPush:   'notify.push',
   notifyDigest: 'notify.digest',
   notifyMentions: 'notify.mentions',
+  notifyTypeWorkItems:  'notify.type.workitems',
+  notifyTypeSprints:    'notify.type.sprints',
+  notifyTypeMembership: 'notify.type.membership',
   reduceMotion: 'a11y.reduce-motion',
   compactMode:  'ui.compact-mode',
   showNMate:    'ui.nmate-widget',
@@ -231,6 +234,23 @@ export const SPRINT_TASK_STATE_BADGE: Record<SprintTaskApiState, string> = {
 };
 
 /** Display labels per SprintTaskApiState. */
+/**
+ * Options for a sprint-task state dropdown bound to the string state KEY
+ * ('open', 'todo', …) used by SprintTask rows — not the numeric enum.
+ */
+export const SPRINT_TASK_STATE_KEY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'open',        label: 'Open' },
+  { value: 'todo',        label: 'To Do' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'in-review',   label: 'In Review' },
+  { value: 'verified',    label: 'Verified' },
+  { value: 'running',     label: 'Running' },
+  { value: 'done',        label: 'Done' },
+  { value: 'passed',      label: 'Passed' },
+  { value: 'failed',      label: 'Failed' },
+  { value: 'closed',      label: 'Closed' },
+];
+
 export const SPRINT_TASK_STATE_LABEL: Record<SprintTaskApiState, string> = {
   [SprintTaskApiState.Open]:       'Open',
   [SprintTaskApiState.ToDo]:       'To Do',

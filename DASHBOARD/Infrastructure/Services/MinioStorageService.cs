@@ -32,6 +32,9 @@ public sealed class MinioStorageService : IStorageService, IAsyncDisposable
                 ForcePathStyle   = true,   // required for MinIO — virtual-hosted style not supported
                 SignatureVersion = "4",
                 AuthenticationRegion = "us-east-1", // MinIO ignores region but SDK requires a value
+                // Without this the SDK signs presigned URLs as https even for an http endpoint,
+                // so the browser's PUT fails with ERR_SSL_PROTOCOL_ERROR against the plain-HTTP MinIO.
+                UseHttp = settings.MinioEndpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase),
             });
     }
 

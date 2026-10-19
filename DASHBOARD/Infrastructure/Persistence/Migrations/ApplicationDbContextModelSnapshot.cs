@@ -1411,6 +1411,108 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("PublicUrl")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("RepositoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("SprintTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UploadedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SprintTaskId")
+                        .HasDatabaseName("IX_WorkItemAttachments_SprintTaskId");
+
+                    b.HasIndex("UploadedById");
+
+                    b.ToTable("WorkItemAttachments", (string)null);
+                });
+
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("LinkType")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RepositoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SourceTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("TargetTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("SourceTaskId")
+                        .HasDatabaseName("IX_WorkItemLinks_SourceTaskId");
+
+                    b.HasIndex("TargetTaskId")
+                        .HasDatabaseName("IX_WorkItemLinks_TargetTaskId");
+
+                    b.HasIndex("SourceTaskId", "TargetTaskId", "LinkType")
+                        .IsUnique()
+                        .HasDatabaseName("IX_WorkItemLinks_Source_Target_Type");
+
+                    b.ToTable("WorkItemLinks", (string)null);
+                });
+
             modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemMetadata", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1703,6 +1805,52 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemAttachment", b =>
+                {
+                    b.HasOne("DASHBOARD.Domain.Entities.SprintTask", "SprintTask")
+                        .WithMany()
+                        .HasForeignKey("SprintTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DASHBOARD.Domain.Entities.User", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("SprintTask");
+
+                    b.Navigation("UploadedBy");
+                });
+
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemLink", b =>
+                {
+                    b.HasOne("DASHBOARD.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DASHBOARD.Domain.Entities.SprintTask", "SourceTask")
+                        .WithMany()
+                        .HasForeignKey("SourceTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DASHBOARD.Domain.Entities.SprintTask", "TargetTask")
+                        .WithMany()
+                        .HasForeignKey("TargetTaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("SourceTask");
+
+                    b.Navigation("TargetTask");
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.WorkItemMetadata", b =>

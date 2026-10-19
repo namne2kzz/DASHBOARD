@@ -22,9 +22,21 @@
     </div>
   </div>
 
+  <!-- Filter tabs -->
+  <div class="panel-filters">
+    @for (tab of filterTabs; track tab.key) {
+      <button
+        type="button"
+        class="filter-chip"
+        [class.filter-chip--active]="notiSvc.filter() === tab.key"
+        (click)="selectFilter(tab.key)"
+      >{{ tab.label }}</button>
+    }
+  </div>
+
   <!-- List -->
   <div class="panel-body custom-scroll">
-    @if (notiSvc.notifications().length === 0) {
+    @if (notiSvc.notifications().length === 0 && !notiSvc.loading()) {
       <div class="empty-state">
         <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
           <path stroke-linecap="round" stroke-linejoin="round"
@@ -59,6 +71,12 @@
         @if (!n.isRead) {
           <span class="unread-dot"></span>
         }
+      </button>
+    }
+
+    @if (notiSvc.hasMore()) {
+      <button type="button" class="load-more" [disabled]="notiSvc.loading()" (click)="loadMore()">
+        {{ notiSvc.loading() ? 'Loading…' : 'Load more' }}
       </button>
     }
   </div>

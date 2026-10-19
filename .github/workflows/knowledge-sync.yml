@@ -1,0 +1,79 @@
+name: Knowledge sync
+
+# Ships Knowledge/ (the NMate documentation for NFlow) to the SUPPORT server and re-indexes it.
+# Independent of DASHBOARD's CD: a docs-only change never rebuilds or redeploys the API.
+#
+# NOT AUTOMATIC YET — runs only when triggered by hand from the Actions tab.
+# Once the secrets are in place and the workflow has been exercised, add:
+#   push:
+#     branches: [main]
+#     paths: ["Knowledge/**"]
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        default: staging
+
+concurrency:
+  group: knowledge-sync-${{ inputs.environment }}
+  cancel-in-progress: false   # never interrupt a half-copied folder
+
+jobs:
+  sync:
+    name: Sync & reindex (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    # Required secrets: SSH_HOST, SSH_USER, SSH_KEY (same as CD),
+    #   NMATE_KNOWLEDGE_PATH  — host folder mounted into support-api, e.g. /opt/support/knowledge/dashboard
+    #   NMATE_INTERNAL_TOKEN  — same value as NMATE_INTERNAL_TOKEN in DASHBOARD/.env on the server
+    #   NMATE_REINDEX_URL     — http://127.0.0.1:8095/internal/v1/knowledge/reindex (loopback on the host)
+    steps:
+      - uses: actions/checkout@v4
+
+      # Upload to a staging folder first, so a failed transfer never leaves the live folder half-empty.
+      - name: Upload Knowledge/ to the server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "Knowledge/**/*.md"
+          target: ${{ secrets.NMATE_KNOWLEDGE_PATH }}.incoming
+          strip_components: 1
+          rm: true
+
+      # Replace the contents in place (not the folder itself): support-api bind-mounts the folder,
+      # and swapping the directory with mv would leave the container looking at the old inode.
+      # Deleted docs disappear from the folder; reindex archives them in the database.
+      - name: Swap in and reindex
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          envs: KNOWLEDGE_PATH,NMATE_TOKEN,REINDEX_URL
+          script: |
+            set -euo pipefail
+            INCOMING="${KNOWLEDGE_PATH}.incoming"
+            COUNT="$(find "$INCOMING" -name '*.md' | wc -l)"
+            if [ "$COUNT" -eq 0 ]; then
+              echo "::error::No markdown files arrived in $INCOMING — refusing to wipe the live knowledge folder."
+              exit 1
+            fi
+            echo "Received $COUNT documents."
+
+            mkdir -p "$KNOWLEDGE_PATH"
+            find "$KNOWLEDGE_PATH" -mindepth 1 -delete
+            cp -a "$INCOMING/." "$KNOWLEDGE_PATH/"
+            rm -rf "$INCOMING"
+
+            # The reindex can take a while on the Gemini free tier (embedding requests are rate-limited).
+            curl -fsS --max-time 600 -X POST "$REINDEX_URL" -H "X-Internal-Token: $NMATE_TOKEN"
+            echo
+        env:
+          KNOWLEDGE_PATH: ${{ secrets.NMATE_KNOWLEDGE_PATH }}
+          NMATE_TOKEN:    ${{ secrets.NMATE_INTERNAL_TOKEN }}
+          REINDEX_URL:    ${{ secrets.NMATE_REINDEX_URL }}

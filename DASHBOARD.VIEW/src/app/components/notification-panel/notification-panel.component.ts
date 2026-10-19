@@ -1,7 +1,13 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, effect, inject, input, output } from '@angular/core';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
-import { AppNotification } from '../../models/notification.model';
+import { AppNotification, NotificationCategory } from '../../models/notification.model';
+
+/** One selectable filter tab in the panel header. */
+interface FilterTab {
+  readonly key: NotificationCategory | null;
+  readonly label: string;
+}
 
 /** Full-height slide-in notification panel rendered in the shell. */
 @Component({
@@ -16,6 +22,29 @@ export class NotificationPanelComponent {
 
   readonly visible = input(false);
   readonly closed  = output<void>();
+
+  /** Category filter tabs shown under the panel header. */
+  readonly filterTabs: readonly FilterTab[] = [
+    { key: null,         label: 'All' },
+    { key: 'workitems',  label: 'Work items' },
+    { key: 'sprints',    label: 'Sprints' },
+    { key: 'membership', label: 'Membership' },
+    { key: 'mentions',   label: 'Mentions' },
+  ];
+
+  constructor() {
+    // Refresh the list each time the panel is opened so it reflects the latest state.
+    effect(() => {
+      if (this.visible()) this.notiSvc.refresh();
+    });
+  }
+
+  /** Applies a category filter. @param key Category or null for all. */
+  selectFilter(key: NotificationCategory | null): void {
+    this.notiSvc.setFilter(key);
+  }
+
+  loadMore(): void { this.notiSvc.loadMore(); }
 
   close(): void { this.closed.emit(); }
 

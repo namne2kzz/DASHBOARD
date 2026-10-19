@@ -60,7 +60,7 @@ public sealed class RemoveCapacityMemberCommandHandler(
             }
         }
 
-        if (await NotifyPrefsHelper.PushEnabledAsync(db, removedUserId, ct))
+        if (await NotifyPrefsHelper.PushEnabledForTypeAsync(db, removedUserId, NotificationType.RemovedFromSprint, ct))
         {
             var sprintName = await db.Set<Sprint>().AsNoTracking()
                 .Where(s => s.Id == command.SprintId)

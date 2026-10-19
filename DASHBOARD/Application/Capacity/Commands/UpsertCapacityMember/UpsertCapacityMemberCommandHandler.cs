@@ -89,7 +89,7 @@ public sealed class UpsertCapacityMemberCommandHandler(
             }
         }
 
-        if (isNew && await NotifyPrefsHelper.PushEnabledAsync(db, command.UserId, ct))
+        if (isNew && await NotifyPrefsHelper.PushEnabledForTypeAsync(db, command.UserId, NotificationType.AddedToSprint, ct))
         {
             var sprintName = await db.Set<Sprint>().AsNoTracking()
                 .Where(s => s.Id == command.SprintId)

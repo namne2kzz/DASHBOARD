@@ -84,6 +84,9 @@ public sealed class AppSettings : IAppSettings
     public string MinioAvatarBucket => Require("MinIO:AvatarBucket");
 
     /// <inheritdoc/>
+    public string MinioAttachmentBucket => _config["MinIO:AttachmentBucket"] ?? "attachments";
+
+    /// <inheritdoc/>
     public string MinioPublicBaseUrl => Require("MinIO:PublicBaseUrl");
 
     // ── HUB Chat integration ─────────────────────────────────────────────────

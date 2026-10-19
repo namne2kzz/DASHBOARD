@@ -3,7 +3,7 @@ import { NgClass, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LocalDatePipe } from '../../core/pipes/local-date.pipe';
 import { AutoResizeDirective } from '../../directives/auto-resize.directive';
@@ -13,12 +13,27 @@ import { DateTimeService } from '../../core/services/date-time.service';
 import { SprintTaskDetailService } from '../../services/sprint-task-detail.service';
 import { SprintBoardService } from '../../services/sprint-board.service';
 import { MembersService } from '../../services/members.service';
+import { RepositoryContextService } from '../../services/repository-context.service';
+import { AttachmentService } from '../../services/attachment.service';
+import { WorkItemLinkService } from '../../services/work-item-link.service';
+import { ConfirmService } from '../../core/components/confirm/confirm.service';
+import { renderMarkdown } from '../../utils/markdown.util';
+import type { AttachmentDto } from '../../models/attachment.model';
+import type { WorkItemLinkDto, WorkItemLinkType } from '../../models/work-item-link.model';
+import { LINK_TYPE_OPTIONS } from '../../models/work-item-link.model';
 import { SprintTaskApiState, SprintTaskApiType, WorkItemApiPriority } from '../../core/enums/system.enum';
 import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant';
 import type { UpdateSprintTaskPayload } from '../../models/sprint-task-detail.model';
 import type { WorkItemPickerApiDto } from '../../models/sprint-planning-api.model';
 
 // ── Type icon styling ────────────────────────────────────────────────────────
+const TYPE_DOT_CLASS: Record<SprintTaskApiType, string> = {
+  [SprintTaskApiType.UserStory]: 'nx-type--story',
+  [SprintTaskApiType.Task]:      'nx-type--task',
+  [SprintTaskApiType.Bug]:       'nx-type--bug',
+  [SprintTaskApiType.TestPlan]:  'nx-type--test',
+};
+
 const TYPE_ICON_CLASS: Record<SprintTaskApiType, string> = {
   [SprintTaskApiType.UserStory]: 'text-type-story ring-slate-800 bg-slate-800',
   [SprintTaskApiType.Task]:      'text-type-task ring-slate-800 bg-slate-800',
@@ -111,6 +126,10 @@ export class WorkItemDetailPageComponent implements OnInit {
   readonly board            = inject(SprintBoardService);
   readonly members          = inject(MembersService);
   readonly dateTime         = inject(DateTimeService);
+  private readonly attachments = inject(AttachmentService);
+  private readonly links       = inject(WorkItemLinkService);
+  private readonly confirm     = inject(ConfirmService);
+  private readonly repoCtx     = inject(RepositoryContextService);
 
   // ── Exposed constants for the template ──────────────────────────────────────
   readonly sprintTaskApiType = SprintTaskApiType;
@@ -127,7 +146,8 @@ export class WorkItemDetailPageComponent implements OnInit {
 
   // ── Route param ─────────────────────────────────────────────────────────────
   /** Work item number from the URL — e.g. "DASH-22". */
-  readonly itemKey = this.route.snapshot.paramMap.get('itemKey') ?? '';
+  /** The current item key from the route; updated reactively on navigation between linked items. */
+  readonly itemKey = signal(this.route.snapshot.paramMap.get('itemKey') ?? '');
 
   // ── Resolution state ─────────────────────────────────────────────────────────
   /**
@@ -144,8 +164,13 @@ export class WorkItemDetailPageComponent implements OnInit {
   readonly resolvedTaskId = computed(() => this.taskId() ?? '');
 
   // ── Tabs / comment draft ─────────────────────────────────────────────────────
-  readonly activeTab    = signal<'details' | 'discussion' | 'history'>('details');
+  readonly activeTab    = signal<'details' | 'discussion' | 'attachments' | 'history'>('details');
   readonly commentDraft = signal('');
+
+  // ── Attachments tab state ──────────────────────────────────────────────────────
+  readonly attachmentList      = signal<AttachmentDto[]>([]);
+  readonly attachmentUploading = signal(false);
+  readonly attachmentError     = signal<string | null>(null);
 
   // ── Assignee picker ──────────────────────────────────────────────────────────
 
@@ -161,6 +186,11 @@ export class WorkItemDetailPageComponent implements OnInit {
     const t = this.task();
     return t ? TYPE_ICON_CLASS[t.type] : '';
   });
+
+  /** Maps a work item type to its nx-type dot modifier class. @param type The work item type. */
+  typeDot(type: SprintTaskApiType): string {
+    return TYPE_DOT_CLASS[type] ?? 'nx-type--task';
+  }
 
   /**
    * Unified activity timeline, newest first — each history entry becomes one row read as a
@@ -281,6 +311,14 @@ export class WorkItemDetailPageComponent implements OnInit {
   // ── Editable fields ──────────────────────────────────────────────────────────
   readonly title            = signal('');
   readonly description      = signal('');
+  /** True while a pasted/dropped image is uploading. */
+  readonly imageUploading   = signal(false);
+  /** Rendered Markdown preview of the description (Angular sanitizes the [innerHTML]). */
+  readonly renderedDescription = computed(() => renderMarkdown(this.description()));
+  /** True when the description contains Markdown worth previewing (image, heading, list, code, link, bold). */
+  readonly descriptionHasMarkdown = computed(() =>
+    /!\[|\]\(|^#{1,6}\s|^[-*]\s|^\d+\.\s|```|`[^`]+`|\*\*|__/m.test(this.description()),
+  );
   readonly priority         = signal(WorkItemApiPriority.Medium);
   readonly storyPoints      = signal(0);
   readonly originalEstimate = signal(0);
@@ -312,7 +350,7 @@ export class WorkItemDetailPageComponent implements OnInit {
 
   private readonly parentSearch$ = new Subject<string>();
 
-  private readonly _seeded   = signal(false);
+  private readonly _seededId = signal<string | null>(null);
   private readonly _snapshot = signal('');
 
   readonly payload = computed<UpdateSprintTaskPayload>(() => {
@@ -345,15 +383,29 @@ export class WorkItemDetailPageComponent implements OnInit {
   readonly canSave = computed(() => this.isDirty() && this.title().trim().length > 0);
 
   constructor() {
-    // Resolve itemKey → taskId via the backend by-key endpoint.
-    // This works for tasks in any sprint (not just the active board sprint).
-    this.detailSvc.resolveKey(this.itemKey)
-      .pipe(takeUntilDestroyed())
+    // React to itemKey changes so navigating between linked items (same route, different param)
+    // reloads the view instead of reusing the stale component state.
+    this.route.paramMap
+      .pipe(
+        map(p => p.get('itemKey') ?? ''),
+        distinctUntilChanged(),
+        tap(key => {
+          // Reset per-item state before resolving the new key.
+          this.itemKey.set(key);
+          this.resolving.set(true);
+          this.notFound.set(false);
+          this.linkList.set([]);
+          this.attachmentList.set([]);
+        }),
+        switchMap(key => this.detailSvc.resolveKey(key)),
+        takeUntilDestroyed(),
+      )
       .subscribe({
         next: (taskId) => {
           this.taskId.set(taskId);
           this.detailSvc.loadDetail(taskId);
           this.detailSvc.loadMentionCandidates(taskId);
+          this.loadLinks();
           this.resolving.set(false);
         },
         error: () => {
@@ -362,10 +414,11 @@ export class WorkItemDetailPageComponent implements OnInit {
         },
       });
 
-    // Seed editable signals exactly once when the task first loads.
+    // Seed editable signals whenever a different task's detail loads (re-seeds on navigation
+    // between linked items, not just the first load).
     effect(() => {
       const t = this.task();
-      if (!t || this._seeded()) return;
+      if (!t || this._seededId() === t.id) return;
 
       this.title.set(t.title);
       this.description.set(t.description);
@@ -396,7 +449,7 @@ export class WorkItemDetailPageComponent implements OnInit {
       this.selectedParent.set(
         t.parentId ? { id: t.parentId, workItemNumber: t.parentWorkItemNumber ?? '', title: t.parentTitle ?? '' } : null,
       );
-      this._seeded.set(true);
+      this._seededId.set(t.id);
       this._snapshot.set(JSON.stringify(this.payload()));
     }, { allowSignalWrites: true });
 
@@ -539,12 +592,13 @@ export class WorkItemDetailPageComponent implements OnInit {
    * @returns Sanitised HTML string.
    */
   renderComment(body: string): string {
-    const escaped = body
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return escaped.replace(
+    // Replace mention tokens with a highlight placeholder BEFORE markdown so the parens/brackets
+    // in @[Name](id) are not interpreted as a markdown link. Angular sanitizes the final [innerHTML].
+    const withMentions = body.replace(
       /@\[([^\]]+)\]\([0-9a-fA-F-]{36}\)/g,
       (_m, name) => `<span class="mention">@${name}</span>`,
     );
+    return renderMarkdown(withMentions);
   }
 
   /** Posts the drafted comment and clears the input. */
@@ -555,6 +609,250 @@ export class WorkItemDetailPageComponent implements OnInit {
     this.commentDraft.set('');
     this.pickedMentions.clear();
     this.mentionOpen.set(false);
+  }
+
+  // ── Inline image paste / drop ─────────────────────────────────────────────────
+
+  /**
+   * Handles pasting an image into an editor: uploads it and inserts a Markdown image at the caret.
+   * @param e The clipboard event.
+   * @param box The textarea the paste happened in.
+   */
+  onEditorPaste(e: ClipboardEvent, box: HTMLTextAreaElement): void {
+    const file = this._imageFromItems(e.clipboardData?.items);
+    if (!file) return;
+    e.preventDefault();
+    void this._uploadAndInsert(file, box);
+  }
+
+  /**
+   * Handles dropping an image file onto an editor.
+   * @param e The drag event.
+   * @param box The textarea the drop happened on.
+   */
+  onEditorDrop(e: DragEvent, box: HTMLTextAreaElement): void {
+    const file = this._imageFromFiles(e.dataTransfer?.files);
+    if (!file) return;
+    e.preventDefault();
+    void this._uploadAndInsert(file, box);
+  }
+
+  /** Finds the first image file among clipboard items. */
+  private _imageFromItems(items?: DataTransferItemList): File | null {
+    if (!items) return null;
+    for (const item of Array.from(items))
+      if (item.kind === 'file' && item.type.startsWith('image/'))
+        return item.getAsFile();
+    return null;
+  }
+
+  /** Finds the first image file among dropped files. */
+  private _imageFromFiles(files?: FileList): File | null {
+    if (!files) return null;
+    for (const f of Array.from(files))
+      if (f.type.startsWith('image/')) return f;
+    return null;
+  }
+
+  /** Uploads an image then inserts `![](url)` at the textarea caret, updating the bound signal. */
+  private async _uploadAndInsert(file: File, box: HTMLTextAreaElement): Promise<void> {
+    const repoId = this.repoCtx.selectedRepoId();
+    const taskId = this.taskId();
+    if (!repoId || !taskId) return;
+
+    this.imageUploading.set(true);
+    try {
+      const url     = await this.attachments.uploadInlineImage(repoId, taskId, file);
+      const snippet = `![image](${url})`;
+      const start   = box.selectionStart ?? box.value.length;
+      const end     = box.selectionEnd ?? box.value.length;
+      const next    = box.value.slice(0, start) + snippet + box.value.slice(end);
+      // Route the update to whichever field this textarea is bound to.
+      if (box.placeholder.startsWith('Describe')) this.description.set(next);
+      else this.commentDraft.set(next);
+    } catch {
+      // Upload failed — keep the text as-is.
+    } finally {
+      this.imageUploading.set(false);
+    }
+  }
+
+  // ── Attachments tab ─────────────────────────────────────────────────────────
+
+  /** Switches to the Attachments tab and loads the list. */
+  openAttachments(): void {
+    this.activeTab.set('attachments');
+    this._loadAttachments();
+  }
+
+  /** Loads the current work item's attachments into the signal. */
+  private _loadAttachments(): void {
+    const repoId = this.repoCtx.selectedRepoId();
+    const taskId = this.taskId();
+    if (!repoId || !taskId) return;
+    this.attachments.list(repoId, taskId)
+      .then(list => this.attachmentList.set(list))
+      .catch(() => { /* non-critical */ });
+  }
+
+  /** Handles a file chosen via the file input. @param e The change event. */
+  onAttachmentPick(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    const file  = input.files?.[0];
+    if (file) void this._uploadAttachment(file);
+    input.value = '';
+  }
+
+  /** Handles a file dropped onto the drop zone. @param e The drag event. */
+  onAttachmentDrop(e: DragEvent): void {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (file) void this._uploadAttachment(file);
+  }
+
+  /** Uploads a file attachment and prepends it to the list. */
+  private async _uploadAttachment(file: File): Promise<void> {
+    const repoId = this.repoCtx.selectedRepoId();
+    const taskId = this.taskId();
+    if (!repoId || !taskId) return;
+
+    this.attachmentError.set(null);
+    this.attachmentUploading.set(true);
+    try {
+      const created = await this.attachments.upload(repoId, taskId, file);
+      this.attachmentList.update(list => [created, ...list]);
+    } catch (err) {
+      this.attachmentError.set(err instanceof Error ? err.message : 'Upload failed.');
+    } finally {
+      this.attachmentUploading.set(false);
+    }
+  }
+
+  /** Confirms then deletes an attachment. @param a The attachment to remove. */
+  async deleteAttachment(a: AttachmentDto): Promise<void> {
+    const repoId = this.repoCtx.selectedRepoId();
+    const taskId = this.taskId();
+    if (!repoId || !taskId) return;
+
+    const ok = await this.confirm.ask('Delete attachment?', `"${a.fileName}" will be removed.`, 'danger');
+    if (!ok) return;
+
+    try {
+      await this.attachments.delete(repoId, taskId, a.id);
+      this.attachmentList.update(list => list.filter(x => x.id !== a.id));
+    } catch {
+      this.attachmentError.set('Could not delete the attachment.');
+    }
+  }
+
+  /** Formats a byte count as a human-readable size. @param bytes Size in bytes. */
+  formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  // ── Work item links ─────────────────────────────────────────────────────────
+
+  readonly linkList          = signal<WorkItemLinkDto[]>([]);
+  readonly linkDialogOpen    = signal(false);
+  readonly linkTypeOptions   = LINK_TYPE_OPTIONS;
+  readonly linkDraftType     = signal<WorkItemLinkType>('Related');
+  readonly linkDraftDesc     = signal('');
+  readonly linkSearchTerm    = signal('');
+  readonly linkSearchResults = signal<WorkItemPickerApiDto[]>([]);
+  readonly linkSelectedTarget = signal<WorkItemPickerApiDto | null>(null);
+  readonly linkSaving        = signal(false);
+  readonly linkError         = signal<string | null>(null);
+
+  /** Links grouped by their display label for sectioned rendering. */
+  readonly linksByLabel = computed(() => {
+    const groups = new Map<string, WorkItemLinkDto[]>();
+    for (const l of this.linkList()) {
+      const arr = groups.get(l.label) ?? [];
+      arr.push(l);
+      groups.set(l.label, arr);
+    }
+    return [...groups.entries()].map(([label, items]) => ({ label, items }));
+  });
+
+  /** Loads the current work item's links. */
+  loadLinks(): void {
+    const repoId = this.repoCtx.selectedRepoId();
+    const taskId = this.taskId();
+    if (!repoId || !taskId) return;
+    this.links.list(repoId, taskId)
+      .then(list => this.linkList.set(list))
+      .catch(() => { /* non-critical */ });
+  }
+
+  /** Opens the add-link dialog with a fresh draft. */
+  openLinkDialog(): void {
+    this.linkDraftType.set('Related');
+    this.linkDraftDesc.set('');
+    this.linkSearchTerm.set('');
+    this.linkSearchResults.set([]);
+    this.linkSelectedTarget.set(null);
+    this.linkError.set(null);
+    this.linkDialogOpen.set(true);
+  }
+
+  /** Closes the add-link dialog. */
+  closeLinkDialog(): void { this.linkDialogOpen.set(false); }
+
+  /** Searches for a link target by title/key. @param term Search text. */
+  searchLinkTargets(term: string): void {
+    this.linkSearchTerm.set(term);
+    this.linkSelectedTarget.set(null);
+    const repoId = this.repoCtx.selectedRepoId();
+    const taskId = this.taskId();
+    if (!repoId || !taskId || !term.trim()) { this.linkSearchResults.set([]); return; }
+    this.links.searchTargets(repoId, taskId, term.trim())
+      .then(r => this.linkSearchResults.set(r))
+      .catch(() => this.linkSearchResults.set([]));
+  }
+
+  /** Picks a target from the search results. @param t The chosen item. */
+  selectLinkTarget(t: WorkItemPickerApiDto): void {
+    this.linkSelectedTarget.set(t);
+    this.linkSearchTerm.set(`${t.workItemNumber} ${t.title}`);
+    this.linkSearchResults.set([]);
+  }
+
+  /** Creates the link from the current draft. */
+  async saveLink(): Promise<void> {
+    const repoId = this.repoCtx.selectedRepoId();
+    const taskId = this.taskId();
+    const target = this.linkSelectedTarget();
+    if (!repoId || !taskId || !target) { this.linkError.set('Pick a work item to link.'); return; }
+
+    this.linkSaving.set(true);
+    this.linkError.set(null);
+    try {
+      const created = await this.links.create(
+        repoId, taskId, target.id, this.linkDraftType(),
+        this.linkDraftDesc().trim() || null);
+      this.linkList.update(list => [...list, created]);
+      this.linkDialogOpen.set(false);
+    } catch (err: unknown) {
+      const e = err as { error?: { error?: string } };
+      this.linkError.set(e?.error?.error ?? 'Could not create the link.');
+    } finally {
+      this.linkSaving.set(false);
+    }
+  }
+
+  /** Confirms then removes a link. @param l The link to delete. */
+  async deleteLink(l: WorkItemLinkDto): Promise<void> {
+    const repoId = this.repoCtx.selectedRepoId();
+    const taskId = this.taskId();
+    if (!repoId || !taskId) return;
+    const ok = await this.confirm.ask('Remove link?', `The link to ${l.targetKey} will be removed.`, 'danger');
+    if (!ok) return;
+    try {
+      await this.links.delete(repoId, taskId, l.id);
+      this.linkList.update(list => list.filter(x => x.id !== l.id));
+    } catch { /* non-critical */ }
   }
 
   // ── Test steps ───────────────────────────────────────────────────────────────
@@ -684,6 +982,11 @@ export class WorkItemDetailPageComponent implements OnInit {
     const t = this.task();
     if (!t?.parentWorkItemNumber) return;
     this.router.navigate(['..', t.parentWorkItemNumber], { relativeTo: this.route });
+  }
+
+  /** Navigates to a linked work item by its key (e.g. "DASH-36"). @param key The target work item key. */
+  openLinkTarget(key: string): void {
+    this.router.navigate(['..', key], { relativeTo: this.route });
   }
 
   // ── Navigation ───────────────────────────────────────────────────────────────

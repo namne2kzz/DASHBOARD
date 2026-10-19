@@ -176,6 +176,14 @@ export class SettingsGeneralPageComponent implements OnInit {
   toggleNotifyDigest(): void       { this.prefs.setNotifyDigest(!this.prefs.notifyDigest()); }
   /** Toggles mention notifications and persists. */
   toggleNotifyMentions(): void     { this.prefs.setNotifyMentions(!this.prefs.notifyMentions()); }
+
+  /** Per-category push toggles shown under the Push master when it is on. */
+  readonly pushCategories = [
+    { key: 'workitems',  label: 'Work item updates', value: () => this.prefs.notifyTypeWorkItems(),  toggle: () => this.prefs.setNotifyTypeWorkItems(!this.prefs.notifyTypeWorkItems()) },
+    { key: 'sprints',    label: 'Sprint activity',    value: () => this.prefs.notifyTypeSprints(),    toggle: () => this.prefs.setNotifyTypeSprints(!this.prefs.notifyTypeSprints()) },
+    { key: 'membership', label: 'Membership changes', value: () => this.prefs.notifyTypeMembership(), toggle: () => this.prefs.setNotifyTypeMembership(!this.prefs.notifyTypeMembership()) },
+  ];
+
   /** Toggles reduce-motion accessibility setting and persists. */
   toggleReduceMotion(): void       { this.prefs.setReduceMotion(!this.prefs.reduceMotion()); }
   /** Toggles compact density mode and persists. */

@@ -101,6 +101,7 @@ public sealed class DeleteSprintCommandHandlerTests : IDisposable
             Name         = "Active Sprint",
             StartDate    = today.AddDays(-1),
             EndDate      = today.AddDays(1),
+            Status       = SprintStatus.Active,
         };
         _db.Set<Sprint>().Add(sprint);
         await _db.SaveChangesAsync();

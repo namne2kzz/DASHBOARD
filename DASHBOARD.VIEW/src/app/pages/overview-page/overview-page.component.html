@@ -1,7 +1,18 @@
 <div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
   <div class="space-y-6">
-    <header class="sticky top-0 z-20 -mx-5 flex min-h-[52px] flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-5 py-2.5">
+    <header class="sticky top-0 z-20 -mx-5 flex min-h-[52px] flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900 px-5 py-2.5">
       <h1 class="text-lg font-semibold text-slate-100">Overview</h1>
+      @if (availableSprints().length > 0) {
+        <select
+          class="field-select !h-7 !text-xs w-auto"
+          [ngModel]="selectedSprintId()"
+          (ngModelChange)="selectSprint($event)"
+        >
+          @for (sprint of availableSprints(); track sprint.id) {
+            <option [value]="sprint.id">{{ sprint.name }}</option>
+          }
+        </select>
+      }
     </header>
 
     @if (loading()) {
@@ -36,18 +47,6 @@
             }
           </div>
           <p class="mt-1 text-sm text-slate-400">Sprint metrics update the charts and cards below.</p>
-        </div>
-        <div class="w-56">
-          <label class="block text-xs font-medium text-slate-400" for="selectedSprint">Sprint</label>
-          <select
-            id="selectedSprint"
-            class="field-select mt-2 w-full"
-            (change)="selectSprint($any($event.target).value)"
-          >
-            @for (sprint of availableSprints(); track sprint.id) {
-              <option [value]="sprint.id" [selected]="sprint.id === selectedSprintId()">{{ sprint.name }}</option>
-            }
-          </select>
         </div>
       </div>
     </section>
@@ -96,6 +95,48 @@
             class="h-full rounded-full bg-sky-500 transition-all duration-500"
             [style.width]="(sp.committed > 0 ? (sp.completed / sp.committed) * 100 : 0) + '%'"
           ></div>
+        </div>
+      </section>
+    }
+
+    <!-- Sprint report card -->
+    @if (report(); as r) {
+      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+        <div class="mb-4 flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-semibold text-slate-200">Sprint report</h2>
+            <p class="mt-1 text-xs text-slate-500">Completion and scope change for the selected sprint.</p>
+          </div>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <!-- Task completion -->
+          <div class="rounded-xl border border-slate-800/60 bg-slate-950/40 p-4">
+            <p class="text-xs text-slate-400">Task completion</p>
+            <div class="mt-2 text-2xl font-semibold text-white">{{ (r.taskCompletionRate * 100) | number:'1.0-0' }}%</div>
+            <p class="mt-1 text-[11px] text-slate-500">{{ r.completedTasks }} / {{ r.totalTasks }} tasks done</p>
+          </div>
+          <!-- Point completion -->
+          <div class="rounded-xl border border-slate-800/60 bg-slate-950/40 p-4">
+            <p class="text-xs text-slate-400">Point completion</p>
+            <div class="mt-2 text-2xl font-semibold text-white">{{ (r.pointCompletionRate * 100) | number:'1.0-0' }}%</div>
+            <p class="mt-1 text-[11px] text-slate-500">story points delivered</p>
+          </div>
+          <!-- Scope added -->
+          <div class="rounded-xl border border-slate-800/60 bg-slate-950/40 p-4">
+            <p class="text-xs text-slate-400">Scope added</p>
+            <div class="mt-2 text-2xl font-semibold" [class.text-amber-400]="r.addedAfterStart > 0" [class.text-white]="r.addedAfterStart === 0">
+              {{ r.addedAfterStart }}
+            </div>
+            <p class="mt-1 text-[11px] text-slate-500">item(s) added after start</p>
+          </div>
+          <!-- Scope points -->
+          <div class="rounded-xl border border-slate-800/60 bg-slate-950/40 p-4">
+            <p class="text-xs text-slate-400">Scope change pts</p>
+            <div class="mt-2 text-2xl font-semibold" [class.text-amber-400]="r.scopeChangePoints > 0" [class.text-white]="r.scopeChangePoints === 0">
+              +{{ r.scopeChangePoints }}
+            </div>
+            <p class="mt-1 text-[11px] text-slate-500">points added mid-sprint</p>
+          </div>
         </div>
       </section>
     }

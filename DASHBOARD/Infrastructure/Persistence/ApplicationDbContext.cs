@@ -41,6 +41,12 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     /// <summary>Discussion comments on sprint tasks.</summary>
     public DbSet<DiscussionEntry> DiscussionEntries => Set<DiscussionEntry>();
 
+    /// <summary>File attachments on work items.</summary>
+    public DbSet<WorkItemAttachment> WorkItemAttachments => Set<WorkItemAttachment>();
+
+    /// <summary>Typed relationships between work items.</summary>
+    public DbSet<WorkItemLink> WorkItemLinks => Set<WorkItemLink>();
+
     /// <summary>Audit history entries for sprint tasks.</summary>
     public DbSet<HistoryEntry> HistoryEntries => Set<HistoryEntry>();
 
