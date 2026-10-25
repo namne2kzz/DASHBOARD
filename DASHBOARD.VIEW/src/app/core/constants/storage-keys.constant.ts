@@ -1,6 +1,8 @@
 export const StorageKeys = {
   // ── Authentication ────────────────────────────────────────────
-  // Tokens and session data managed by AuthService / TokenService.
+  // Session data managed by AuthService / TokenService. Only the non-secret user profile is
+  // persisted; the access/refresh tokens now live in HttpOnly cookies and are never written to
+  // storage. The token keys are retained only so tests can assert they stay empty.
   accessToken:  'auth.access-token',
   refreshToken: 'auth.refresh-token',
   userProfile:  'auth.user',

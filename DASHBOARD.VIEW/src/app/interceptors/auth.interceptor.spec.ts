@@ -7,83 +7,66 @@ import {
 } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { authInterceptor } from './auth.interceptor';
-import { AuthService } from '../services/auth.service';
+import { environment } from '../../environments/environment';
 
 /**
  * The interceptor is tested through a real HttpClient rather than by calling it directly, because
  * what matters is the request the backend would actually receive — a `req.clone()` that dropped the
  * body or the params would still look correct in a hand-rolled `next` spy.
+ *
+ * Since the switch to HttpOnly cookie auth, the interceptor no longer attaches a bearer token. Its
+ * only job is to mark requests to our own API as credentialed (withCredentials) so the browser
+ * sends the auth cookie and Angular attaches the XSRF header; third-party URLs must be left alone
+ * so our cookies never leak to them.
  */
 describe('authInterceptor', () => {
   let http: HttpClient;
   let httpMock: HttpTestingController;
-  let token: string | null;
 
-  function configure(): void {
+  const apiUrl = `${environment.apiBaseUrl}/users`;
+
+  beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
-        // Only getToken() is reachable from the interceptor, so the rest of AuthService — which
-        // would pull in storage and a preferences HTTP call — stays out of this test.
-        { provide: AuthService, useValue: { getToken: () => token } },
       ],
     });
 
     http     = TestBed.inject(HttpClient);
     httpMock = TestBed.inject(HttpTestingController);
-  }
+  });
 
   afterEach(() => httpMock.verify());
 
-  describe('with a stored token', () => {
-    beforeEach(() => {
-      token = 'signed.jwt.value';
-      configure();
-    });
+  describe('for a request to our own API', () => {
+    it('marks the request as credentialed so the auth cookie is sent', () => {
+      http.get(apiUrl).subscribe();
 
-    it('attaches it as a bearer Authorization header', () => {
-      http.get('/api/v1/users').subscribe();
-
-      const request = httpMock.expectOne('/api/v1/users');
-      expect(request.request.headers.get('Authorization')).toBe('Bearer signed.jwt.value');
+      const request = httpMock.expectOne(apiUrl);
+      expect(request.request.withCredentials).toBeTrue();
 
       request.flush({});
     });
 
-    it('reads the token on every request rather than caching it', () => {
-      http.get('/api/v1/first').subscribe();
-      httpMock.expectOne('/api/v1/first').flush({});
-
-      // A refresh replaces the token mid-session; the next request must carry the new one.
-      token = 'rotated.jwt.value';
-
-      http.get('/api/v1/second').subscribe();
-      const second = httpMock.expectOne('/api/v1/second');
-
-      expect(second.request.headers.get('Authorization')).toBe('Bearer rotated.jwt.value');
-      second.flush({});
-    });
-
     it('leaves the body, method and params untouched', () => {
-      // The interceptor clones the request to add the header. A clone that lost the payload would
-      // send an empty POST, which the header assertions above would not notice.
-      http.post('/api/v1/items', { title: 'Keep me' }, { params: { repoId: 'abc' } }).subscribe();
+      http.post(`${environment.apiBaseUrl}/items`, { title: 'Keep me' }, { params: { repoId: 'abc' } }).subscribe();
 
-      const request = httpMock.expectOne(r => r.url === '/api/v1/items');
+      const request = httpMock.expectOne(r => r.url === `${environment.apiBaseUrl}/items`);
       expect(request.request.method).toBe('POST');
       expect(request.request.body).toEqual({ title: 'Keep me' });
       expect(request.request.params.get('repoId')).toBe('abc');
+      expect(request.request.withCredentials).toBeTrue();
 
       request.flush({});
     });
 
     it('preserves headers the caller set', () => {
-      http.get('/api/v1/export', { headers: { Accept: 'text/csv' } }).subscribe();
+      http.get(`${environment.apiBaseUrl}/export`, { headers: { Accept: 'text/csv' } }).subscribe();
 
-      const request = httpMock.expectOne('/api/v1/export');
+      const request = httpMock.expectOne(`${environment.apiBaseUrl}/export`);
       expect(request.request.headers.get('Accept')).toBe('text/csv');
-      expect(request.request.headers.get('Authorization')).toBe('Bearer signed.jwt.value');
+      expect(request.request.withCredentials).toBeTrue();
 
       request.flush('');
     });
@@ -91,9 +74,9 @@ describe('authInterceptor', () => {
     it('does not swallow an error response', () => {
       let status: number | undefined;
 
-      http.get('/api/v1/users').subscribe({ error: err => (status = err.status) });
+      http.get(apiUrl).subscribe({ error: err => (status = err.status) });
 
-      httpMock.expectOne('/api/v1/users').flush(
+      httpMock.expectOne(apiUrl).flush(
         {},
         { status: HttpStatusCode.InternalServerError, statusText: 'Server Error' },
       );
@@ -102,46 +85,50 @@ describe('authInterceptor', () => {
     });
   });
 
-  describe('without a stored token', () => {
-    beforeEach(() => {
-      token = null;
-      configure();
+  describe('CSRF double-submit header', () => {
+    afterEach(() => {
+      // Expire the test cookie so it does not bleed into other specs.
+      document.cookie = 'XSRF-TOKEN=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
     });
 
-    it('sends the request with no Authorization header', () => {
-      http.get('/api/v1/auth/login').subscribe();
+    it('echoes the XSRF-TOKEN cookie into X-XSRF-TOKEN on a mutating request', () => {
+      document.cookie = 'XSRF-TOKEN=csrf-secret-123; path=/';
 
-      const request = httpMock.expectOne('/api/v1/auth/login');
-      expect(request.request.headers.has('Authorization')).toBeFalse();
+      http.post(`${environment.apiBaseUrl}/items`, {}).subscribe();
+
+      const request = httpMock.expectOne(`${environment.apiBaseUrl}/items`);
+      expect(request.request.headers.get('X-XSRF-TOKEN')).toBe('csrf-secret-123');
 
       request.flush({});
     });
 
-    it('does not send the literal string "Bearer null"', () => {
-      // A truthiness check that slipped would produce exactly that, and the server would answer
-      // 401 on a call that was meant to be anonymous.
-      http.get('/api/v1/auth/login').subscribe();
+    it('does not attach the CSRF header on a safe (GET) request', () => {
+      document.cookie = 'XSRF-TOKEN=csrf-secret-123; path=/';
 
-      const request = httpMock.expectOne('/api/v1/auth/login');
-      expect(request.request.headers.get('Authorization')).toBeNull();
+      http.get(apiUrl).subscribe();
+
+      const request = httpMock.expectOne(apiUrl);
+      expect(request.request.headers.has('X-XSRF-TOKEN')).toBeFalse();
+
+      request.flush({});
+    });
+
+    it('omits the header when no CSRF cookie is present', () => {
+      http.post(`${environment.apiBaseUrl}/items`, {}).subscribe();
+
+      const request = httpMock.expectOne(`${environment.apiBaseUrl}/items`);
+      expect(request.request.headers.has('X-XSRF-TOKEN')).toBeFalse();
 
       request.flush({});
     });
   });
 
-  describe('with an empty token', () => {
-    beforeEach(() => {
-      // An empty string is falsy, so cleared storage that returns '' instead of null must also
-      // result in an anonymous request.
-      token = '';
-      configure();
-    });
+  describe('for a third-party URL', () => {
+    it('does not send credentials, so our cookies never leak to it', () => {
+      http.get('https://third-party.example.com/data').subscribe();
 
-    it('is treated as no token at all', () => {
-      http.get('/api/v1/auth/login').subscribe();
-
-      const request = httpMock.expectOne('/api/v1/auth/login');
-      expect(request.request.headers.has('Authorization')).toBeFalse();
+      const request = httpMock.expectOne('https://third-party.example.com/data');
+      expect(request.request.withCredentials).toBeFalse();
 
       request.flush({});
     });

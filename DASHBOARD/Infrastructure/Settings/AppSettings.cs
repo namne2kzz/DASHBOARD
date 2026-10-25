@@ -36,6 +36,35 @@ public sealed class AppSettings : IAppSettings
     public int InvitationRateLimitSegments =>
         _config.GetValue<int>("Invitation:RateLimit:SegmentsPerWindow");
 
+    // ── Global rate limiting ─────────────────────────────────────────────────
+    /// <inheritdoc/>
+    public bool GlobalRateLimitEnabled =>
+        _config.GetValue("GlobalRateLimit:Enabled", true);
+
+    /// <inheritdoc/>
+    public int GlobalRateLimitUserPermitLimit =>
+        _config.GetValue("GlobalRateLimit:User:PermitLimit", 300);
+
+    /// <inheritdoc/>
+    public TimeSpan GlobalRateLimitUserWindow =>
+        TimeSpan.FromSeconds(_config.GetValue("GlobalRateLimit:User:WindowSeconds", 60));
+
+    /// <inheritdoc/>
+    public int GlobalRateLimitUserSegments =>
+        _config.GetValue("GlobalRateLimit:User:SegmentsPerWindow", 6);
+
+    /// <inheritdoc/>
+    public int GlobalRateLimitIpPermitLimit =>
+        _config.GetValue("GlobalRateLimit:Ip:PermitLimit", 60);
+
+    /// <inheritdoc/>
+    public TimeSpan GlobalRateLimitIpWindow =>
+        TimeSpan.FromSeconds(_config.GetValue("GlobalRateLimit:Ip:WindowSeconds", 60));
+
+    /// <inheritdoc/>
+    public int GlobalRateLimitIpSegments =>
+        _config.GetValue("GlobalRateLimit:Ip:SegmentsPerWindow", 6);
+
     // ── Email / SMTP ─────────────────────────────────────────────────────────
     /// <inheritdoc/>
     public string SmtpHost => Require("EmailSettings:SmtpHost");

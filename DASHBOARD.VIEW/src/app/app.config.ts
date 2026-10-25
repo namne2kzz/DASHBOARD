@@ -4,7 +4,7 @@ import {
   provideAppInitializer,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withNoXsrfProtection } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { provideToastr } from 'ngx-toastr';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -23,6 +23,10 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => { inject(ThemeService); }),
     provideRouter(routes),
     provideHttpClient(
+      // Angular's built-in XSRF support does not attach the header to absolute cross-origin URLs
+      // (the dev setup: SPA :4200 → API :5152), so authInterceptor attaches the double-submit CSRF
+      // header itself for both dev and prod. Disable the built-in handling to avoid a duplicate.
+      withNoXsrfProtection(),
       withInterceptors([correlationIdInterceptor, authInterceptor, errorInterceptor]),
     ),
     provideAnimations(),

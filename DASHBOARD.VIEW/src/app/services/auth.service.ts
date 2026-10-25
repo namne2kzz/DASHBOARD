@@ -19,8 +19,18 @@ export class AuthService {
   private readonly notiSvc       = inject(NotificationService);
   private readonly apiUrl        = `${environment.apiBaseUrl}/auth`;
 
-  readonly isAuthenticated = signal<boolean>(this.storage.has(StorageKeys.accessToken));
+  // Tokens are no longer persisted to storage — they live in HttpOnly cookies the browser sends
+  // automatically. These in-memory copies exist only for flows that genuinely need the raw token
+  // in JS: the HUB SSO handoff (cross-origin redirect) and the SSE ?access_token= fallback.
+  // They are null after a page reload, which is fine: the cookie still authenticates API calls.
+  private _accessToken:  string | null = null;
+  private _refreshToken: string | null = null;
+
+  // Session presence is derived from a successfully-parsed persisted profile (not a secret), so a
+  // reload restores the authenticated UI immediately; the HttpOnly cookie remains the actual
+  // credential. A corrupt/absent profile means the UI treats the user as signed out.
   readonly currentUser     = signal<UserProfile | null>(this.storage.get<UserProfile>(StorageKeys.userProfile));
+  readonly isAuthenticated = signal<boolean>(this.currentUser() !== null);
 
   /** Authenticates with the backend and stores tokens. @returns Observable of LoginResponse. */
   login(request: LoginRequest): Observable<LoginResponse> {
@@ -41,19 +51,32 @@ export class AuthService {
     );
   }
 
-  /** Exchanges refresh token for a new access token. @returns Observable of LoginResponse. */
+  /**
+   * Exchanges the refresh token for a new access token. The refresh token is sent as an HttpOnly
+   * cookie the browser attaches automatically, so no body is needed; an empty object keeps the
+   * endpoint's JSON content type.
+   * @returns Observable of LoginResponse.
+   */
   refresh(): Observable<LoginResponse> {
-    const refreshToken = this.storage.getString(StorageKeys.refreshToken) ?? '';
-    return this.http.post<LoginResponse>(`${this.apiUrl}/refresh`, { refreshToken } as RefreshTokenRequest).pipe(
+    return this.http.post<LoginResponse>(`${this.apiUrl}/refresh`, {} as RefreshTokenRequest).pipe(
       tap(res => this.applySession(res))
     );
   }
 
-  /** Clears session from storage and resets signals. */
+  /**
+   * Ends the session. Fires a best-effort server logout so the HttpOnly cookies are expired and
+   * the refresh token is revoked (a purely local clear would leave the cookies in place and the
+   * next reload would re-authenticate), then resets all client-side state regardless of the
+   * server result — the user is logging out whether or not the network call succeeds.
+   */
   logout(): void {
+    // Fire-and-forget: callers (menu, 401 interceptor) do not await this. withCredentials sends
+    // the cookie so the server can revoke it; errors are swallowed since we clear locally anyway.
+    this.http.post(`${this.apiUrl}/logout`, {}).subscribe({ error: () => {} });
+
     this.notiSvc.disconnect();
-    this.storage.remove(StorageKeys.accessToken);
-    this.storage.remove(StorageKeys.refreshToken);
+    this._accessToken = null;
+    this._refreshToken = null;
     this.storage.remove(StorageKeys.userProfile);
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
@@ -77,14 +100,18 @@ export class AuthService {
     });
   }
 
-  /** @returns The stored JWT access token, or null. */
+  /**
+   * @returns The in-memory JWT access token, or null after a reload. Authentication itself uses
+   * the HttpOnly cookie; this is only for the SSE query-param fallback and the HUB SSO handoff,
+   * both of which run within the same session where login just populated it.
+   */
   getToken(): string | null {
-    return this.storage.getString(StorageKeys.accessToken);
+    return this._accessToken;
   }
 
-  /** @returns The stored refresh token, or null. Used by SSO redirect to add-on apps (e.g. Nexus HUB). */
+  /** @returns The in-memory refresh token, or null after a reload. Used by the HUB SSO redirect only. */
   getRefreshToken(): string | null {
-    return this.storage.getString(StorageKeys.refreshToken);
+    return this._refreshToken;
   }
 
   /**
@@ -103,8 +130,11 @@ export class AuthService {
       orgId: res.orgId,
       orgAlias: res.orgAlias,
     };
-    this.storage.setString(StorageKeys.accessToken, res.accessToken);
-    this.storage.setString(StorageKeys.refreshToken, res.refreshToken);
+    // Tokens stay in memory only (see field docs) — the server also set them as HttpOnly cookies,
+    // which are what actually authenticate requests. The profile is not a secret and is persisted
+    // so a reload restores the UI without a round-trip.
+    this._accessToken  = res.accessToken;
+    this._refreshToken = res.refreshToken;
     this.storage.set(StorageKeys.userProfile, profile);
     this.currentUser.set(profile);
     this.isAuthenticated.set(true);

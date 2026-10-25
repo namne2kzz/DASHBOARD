@@ -1,51 +1,36 @@
 import { Injectable } from '@angular/core';
-import { JwtClaims } from '../../models/auth.model';
+import { UserProfile } from '../../models/user.model';
 import { StorageService } from './storage.service';
 import { StorageKeys } from '../constants/storage-keys.constant';
 
+/**
+ * Exposes the current user's identity (id, email, name) to code that needs it synchronously.
+ *
+ * Since the switch to HttpOnly cookie auth, the JWT is no longer readable in JS, so identity is
+ * sourced from the persisted user profile (written by AuthService on login) rather than by
+ * decoding the access token. Token lifetime/expiry is now owned entirely by the cookie and the
+ * server, so this service no longer reports expiry.
+ */
 @Injectable({ providedIn: 'root' })
 export class TokenService {
   constructor(private readonly storage: StorageService) {}
 
-  get claims(): JwtClaims | null {
-    const token = this.storage.getString(StorageKeys.accessToken);
-    return token ? this.decode(token) : null;
+  private get profile(): UserProfile | null {
+    return this.storage.get<UserProfile>(StorageKeys.userProfile);
   }
 
+  /** @returns The current user's id, or null when signed out. */
   get userId(): string | null {
-    return this.claims?.sub ?? null;
+    return this.profile?.userId ?? null;
   }
 
+  /** @returns The current user's email, or null when signed out. */
   get email(): string | null {
-    return this.claims?.email ?? null;
+    return this.profile?.email ?? null;
   }
 
+  /** @returns The current user's display name, or null when signed out. */
   get name(): string | null {
-    return this.claims?.name ?? null;
-  }
-
-  get isExpired(): boolean {
-    const claims = this.claims;
-    if (!claims) return true;
-    return Date.now() >= claims.exp * 1000;
-  }
-
-  get expiresInSeconds(): number {
-    const claims = this.claims;
-    if (!claims) return -1;
-    return claims.exp - Math.floor(Date.now() / 1000);
-  }
-
-  /** Decodes a JWT payload without verifying signature. */
-  decode(token: string): JwtClaims | null {
-    try {
-      const parts = token.split('.');
-      if (parts.length !== 3) return null;
-      const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-      const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
-      return JSON.parse(atob(padded)) as JwtClaims;
-    } catch {
-      return null;
-    }
+    return this.profile?.name ?? null;
   }
 }

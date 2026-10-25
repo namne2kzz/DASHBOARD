@@ -4,8 +4,6 @@ import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import { AppNotification, NotificationCategory, NotificationPage } from '../models/notification.model';
-import { StorageService } from '../core/services/storage.service';
-import { StorageKeys } from '../core/constants/storage-keys.constant';
 
 const BASE = `${environment.apiBaseUrl}/notifications`;
 const RECONNECT_DELAYS = [2_000, 5_000, 10_000, 30_000];
@@ -19,7 +17,6 @@ const PAGE_SIZE = 20;
 @Injectable({ providedIn: 'root' })
 export class NotificationService implements OnDestroy {
   private readonly http    = inject(HttpClient);
-  private readonly storage = inject(StorageService);
   private readonly router  = inject(Router);
 
   private readonly _notifications = signal<AppNotification[]>([]);
@@ -139,12 +136,10 @@ export class NotificationService implements OnDestroy {
   private _openStream(): void {
     this._closeStream();
 
-    // EventSource cannot send the Authorization header, so the JWT is passed as a query param;
-    // the backend's JwtBearerEvents.OnMessageReceived reads it from ?access_token= for SSE paths.
-    const token = this.storage.getString(StorageKeys.accessToken);
-    if (!token) return;
-
-    this._es = new EventSource(`${BASE}/stream?access_token=${encodeURIComponent(token)}`);
+    // Auth now rides on the HttpOnly cookie. EventSource sends it automatically when opened with
+    // { withCredentials: true } (the backend CORS policy allows credentials), so there is no token
+    // to place in the URL — JwtBearerEvents.OnMessageReceived reads the access cookie instead.
+    this._es = new EventSource(`${BASE}/stream`, { withCredentials: true });
 
     // Fetch the current list as soon as the stream is established so the panel is in sync.
     this._fetchRecent();
