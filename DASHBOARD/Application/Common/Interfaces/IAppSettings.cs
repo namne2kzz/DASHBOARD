@@ -26,6 +26,31 @@ public interface IAppSettings
     /// <summary>Gets the number of segments the sliding window is divided into.</summary>
     int InvitationRateLimitSegments { get; }
 
+    // ── Global rate limiting ─────────────────────────────────────────────────
+    /// <summary>
+    /// Gets whether the catch-all global rate limiter is enabled. When <c>false</c>, only the
+    /// explicit per-endpoint policies apply.
+    /// </summary>
+    bool GlobalRateLimitEnabled { get; }
+
+    /// <summary>Gets the request allowance per authenticated user (JWT <c>sub</c>) per <see cref="GlobalRateLimitUserWindow"/>.</summary>
+    int GlobalRateLimitUserPermitLimit { get; }
+
+    /// <summary>Gets the sliding window over which <see cref="GlobalRateLimitUserPermitLimit"/> is counted.</summary>
+    TimeSpan GlobalRateLimitUserWindow { get; }
+
+    /// <summary>Gets the number of segments the per-user sliding window is divided into.</summary>
+    int GlobalRateLimitUserSegments { get; }
+
+    /// <summary>Gets the request allowance per client IP (anonymous/external callers) per <see cref="GlobalRateLimitIpWindow"/>.</summary>
+    int GlobalRateLimitIpPermitLimit { get; }
+
+    /// <summary>Gets the sliding window over which <see cref="GlobalRateLimitIpPermitLimit"/> is counted.</summary>
+    TimeSpan GlobalRateLimitIpWindow { get; }
+
+    /// <summary>Gets the number of segments the per-IP sliding window is divided into.</summary>
+    int GlobalRateLimitIpSegments { get; }
+
     // ── Email / SMTP ─────────────────────────────────────────────────────────
     /// <summary>Gets the SMTP server hostname.</summary>
     string SmtpHost { get; }

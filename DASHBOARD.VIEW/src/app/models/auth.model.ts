@@ -32,5 +32,9 @@ export interface LoginResponse {
 }
 
 export interface RefreshTokenRequest {
-  refreshToken: string;
+  /**
+   * Optional: the SPA omits it and relies on the HttpOnly refresh cookie the browser sends
+   * automatically. Only non-cookie callers (e.g. the HUB SSO handoff) populate it.
+   */
+  refreshToken?: string;
 }

@@ -88,15 +88,29 @@ try
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero,
             };
-            // EventSource (SSE) cannot send custom headers — accept the token from ?access_token=
-            // for SSE stream endpoints only.
+            // Token resolution order for a request that carries no Authorization header:
+            //   1. the HttpOnly access cookie (the normal SPA path — JS never touches the token);
+            //   2. the ?access_token= query param (SSE: EventSource cannot send headers, and in a
+            //      cookie world the cookie is actually sent too — kept for the HUB SSO handoff and
+            //      any client that still passes it explicitly).
+            // An explicit Authorization: Bearer header always wins and is handled by the default
+            // handler, so bearer-based callers (HUB SSO, service-to-service) are unaffected.
             opt.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
             {
                 OnMessageReceived = ctx =>
                 {
-                    var token = ctx.Request.Query["access_token"].FirstOrDefault();
-                    if (!string.IsNullOrEmpty(token) && ctx.Request.Path.StartsWithSegments("/api"))
-                        ctx.Token = token;
+                    if (!string.IsNullOrEmpty(ctx.Token)) return Task.CompletedTask;
+
+                    var cookieToken = ctx.Request.Cookies[DASHBOARD.Core.Constants.AppConstants.AccessTokenCookie];
+                    if (!string.IsNullOrEmpty(cookieToken))
+                    {
+                        ctx.Token = cookieToken;
+                        return Task.CompletedTask;
+                    }
+
+                    var queryToken = ctx.Request.Query["access_token"].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(queryToken) && ctx.Request.Path.StartsWithSegments("/api"))
+                        ctx.Token = queryToken;
                     return Task.CompletedTask;
                 }
             };
@@ -104,10 +118,78 @@ try
 
     builder.Services.AddAuthorization();
 
+    // ── Auth cookies ────────────────────────────────────────────────────────────
+    // HttpOnly access/refresh cookies replace browser-side token storage; the writer sets them
+    // on login/refresh and clears them on logout. Options come from the "AuthCookie" section.
+    builder.Services.Configure<DASHBOARD.Controllers.Auth.AuthCookieOptions>(
+        builder.Configuration.GetSection("AuthCookie"));
+    builder.Services.AddScoped<DASHBOARD.Controllers.Auth.AuthCookieWriter>();
+
     // ── Rate Limiting ─────────────────────────────────────────────────────────
     var rl = new DASHBOARD.Infrastructure.Settings.AppSettings(builder.Configuration);
     builder.Services.AddRateLimiter(opt =>
     {
+        // ── Global limiter ────────────────────────────────────────────────────
+        // A catch-all applied to every request *in addition* to the named policies below.
+        // Partitioning rule:
+        //   • authenticated request  → metered per user   (JWT "sub")   — the generous "internal" budget
+        //   • anonymous request      → metered per client IP            — the tighter "external" budget
+        // Exempt (no partition, i.e. unlimited here): service-to-service /internal/* calls carrying
+        // X-Internal-Token, health/doc probes, and SSE streams (one long-lived connection, not a flood).
+        if (rl.GlobalRateLimitEnabled)
+        {
+            opt.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            {
+                var path = httpContext.Request.Path;
+                var isInternal = path.StartsWithSegments("/internal")
+                                 || httpContext.Request.Headers.ContainsKey("X-Internal-Token");
+                var isProbe = path.StartsWithSegments("/health")
+                              || path.StartsWithSegments("/openapi")
+                              || path.StartsWithSegments("/swagger");
+                var isSse = httpContext.Request.Headers.Accept
+                    .Any(v => v != null && v.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase));
+
+                if (isInternal || isProbe || isSse)
+                    return RateLimitPartition.GetNoLimiter("exempt");
+
+                var userId = httpContext.User.FindFirst("sub")?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    // Internal (authenticated) caller → per-user budget.
+                    // Sliding window, not fixed: a fixed window lets a caller fire the full permit
+                    // at the end of one window and again at the start of the next — up to 2× the
+                    // limit across the boundary. This is the segmented-counter sliding window
+                    // (GetSlidingWindowLimiter), not a sliding log: the window is split into
+                    // SegmentsPerWindow buckets that each hold only a COUNT, so memory per partition
+                    // is a handful of integers regardless of request volume — it never stores per-request
+                    // timestamps. Each segment tick expires the oldest bucket and frees its permits.
+                    return RateLimitPartition.GetSlidingWindowLimiter(
+                        partitionKey: $"user:{userId}",
+                        factory: _ => new SlidingWindowRateLimiterOptions
+                        {
+                            PermitLimit          = rl.GlobalRateLimitUserPermitLimit,
+                            Window               = rl.GlobalRateLimitUserWindow,
+                            SegmentsPerWindow    = rl.GlobalRateLimitUserSegments,
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit           = 0,
+                        });
+                }
+
+                // External (anonymous) caller → per-IP budget.
+                var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                return RateLimitPartition.GetSlidingWindowLimiter(
+                    partitionKey: $"ip:{ip}",
+                    factory: _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit          = rl.GlobalRateLimitIpPermitLimit,
+                        Window               = rl.GlobalRateLimitIpWindow,
+                        SegmentsPerWindow    = rl.GlobalRateLimitIpSegments,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit           = 0,
+                    });
+            });
+        }
+
         // Sliding window — prevents boundary-burst attacks that fixed windows allow.
         // Applied on AcceptInvitation endpoint via [EnableRateLimiting("accept-invitation")].
         opt.AddPolicy("accept-invitation", httpContext =>
@@ -140,6 +222,33 @@ try
                 }));
 
         opt.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // Tell the client how long to back off. The SPA's HTTP interceptor can honour Retry-After
+        // instead of hammering a limited endpoint; without it a rejected caller only sees a bare 429.
+        opt.OnRejected = (context, cancellationToken) =>
+        {
+            if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                context.HttpContext.Response.Headers.RetryAfter =
+                    ((int)retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+            context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            return ValueTask.CompletedTask;
+        };
+    });
+
+    // ── Forwarded headers ──────────────────────────────────────────────────────
+    // Behind a reverse proxy (nginx / YARP / App Gateway) the socket IP is the proxy's, so
+    // the per-IP rate-limit partition — and the ClientIp log field — would collapse every
+    // external caller into one bucket. Restore the real client IP from X-Forwarded-For.
+    builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(o =>
+    {
+        o.ForwardedHeaders =
+            Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+            Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+        // Proxies are inside our own network (Docker / cluster); the list of trusted networks is
+        // not known at build time, so clear the defaults and trust the immediate upstream hop.
+        o.KnownIPNetworks.Clear();
+        o.KnownProxies.Clear();
     });
 
     // ── CORS ──────────────────────────────────────────────────────────────────
@@ -176,8 +285,12 @@ try
     }
 
     // ── Middleware pipeline ───────────────────────────────────────────────────
-    // First in the pipeline: every later log line, including the request summary and
-    // any unhandled exception, should carry the correlation id.
+    // Must run first: rewrites RemoteIpAddress from X-Forwarded-For before anything reads it
+    // (rate-limit partitioning, request logging's ClientIp field).
+    app.UseForwardedHeaders();
+
+    // Every later log line, including the request summary and any unhandled exception,
+    // should carry the correlation id.
     app.UseMiddleware<CorrelationIdMiddleware>();
 
     // Before ExceptionHandlingMiddleware so a request that ends in a 500 still gets one
@@ -215,6 +328,9 @@ try
     app.UseHttpsRedirection();
     app.UseCors(AppConstants.AngularCorsPolicy);
     app.UseAuthentication();
+    // After authentication (so bearer-auth requests are recognised and exempted), before the
+    // controllers run: rejects cookie-authenticated unsafe requests that lack a matching CSRF token.
+    app.UseMiddleware<CsrfValidationMiddleware>();
     app.UseAuthorization();
     // Must run after UseAuthorization: an unauthenticated request must get its 401 rather than a 304
     // built from the ETag of some other user's cached payload.

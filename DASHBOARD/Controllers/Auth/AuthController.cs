@@ -16,7 +16,10 @@ namespace DASHBOARD.Controllers.Auth;
 /// <summary>Handles authentication: login, token refresh, logout, and current-user profile.</summary>
 [ApiVersion("1.0")][ApiController]
 [Route("api/v{version:apiVersion}/auth")]
-public sealed class AuthController(ISender mediator, ICurrentUserService currentUser) : ControllerBase
+public sealed class AuthController(
+    ISender mediator,
+    ICurrentUserService currentUser,
+    AuthCookieWriter cookies) : ControllerBase
 {
     /// <summary>Authenticates a user and returns an access + refresh token pair.</summary>
     /// <param name="request">Login credentials.</param>
@@ -31,6 +34,9 @@ public sealed class AuthController(ISender mediator, ICurrentUserService current
     {
         var result = await mediator.Send(new LoginCommand(request.OrgAlias, request.Email, request.Password), ct);
         if (result.IsFailure) return Unauthorized(new { error = result.Error });
+        // Set the HttpOnly auth cookies. The body is still returned so the SPA can bootstrap its
+        // profile signals and the HUB SSO handoff can read the tokens for its cross-origin redirect.
+        cookies.WriteSession(Response, result.Value!);
         return Ok(result.Value);
     }
 
@@ -50,6 +56,7 @@ public sealed class AuthController(ISender mediator, ICurrentUserService current
     {
         var result = await mediator.Send(new GoogleLoginCommand(request.GoogleIdToken), ct);
         if (result.IsFailure) return Unauthorized(new { error = result.Error });
+        cookies.WriteSession(Response, result.Value!);
         return Ok(result.Value);
     }
 
@@ -64,9 +71,23 @@ public sealed class AuthController(ISender mediator, ICurrentUserService current
     [AllowAnonymous]
     [ProducesResponseType<LoginResult>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken ct)
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest? request, CancellationToken ct)
     {
-        var result = await mediator.Send(new RefreshTokenCommand(request.RefreshToken), ct);
+        // Prefer the body (HUB SSO / non-browser callers) but fall back to the HttpOnly cookie,
+        // which is how the SPA refreshes now that it no longer holds the token in JS.
+        var token = request?.RefreshToken;
+        if (string.IsNullOrEmpty(token))
+            token = Request.Cookies[DASHBOARD.Core.Constants.AppConstants.RefreshTokenCookie];
+
+        if (string.IsNullOrEmpty(token))
+        {
+            cookies.ClearSession(Response);
+            return Unauthorized(new { error = "No refresh token supplied." });
+        }
+
+        var result = await mediator.Send(new RefreshTokenCommand(token), ct);
+        // Rotation issued a new pair — refresh the cookies so the next request carries them.
+        cookies.WriteSession(Response, result);
         return Ok(result);
     }
 
@@ -83,6 +104,7 @@ public sealed class AuthController(ISender mediator, ICurrentUserService current
             return Unauthorized();
 
         await mediator.Send(new LogoutCommand(currentUser.JwtId, currentUser.UserId.Value), ct);
+        cookies.ClearSession(Response);
         return Ok(new { message = "Logged out successfully." });
     }
 

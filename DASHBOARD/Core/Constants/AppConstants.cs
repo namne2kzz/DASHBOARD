@@ -17,4 +17,20 @@ public static class AppConstants
 
     /// <summary>Named CORS policy allowing requests from the Angular dev server.</summary>
     public const string AngularCorsPolicy = "AllowAngular";
+
+    // ── Auth cookies ───────────────────────────────────────────────────────────
+    /// <summary>Name of the HttpOnly cookie carrying the JWT access token.</summary>
+    public const string AccessTokenCookie = "nflow_at";
+
+    /// <summary>Name of the HttpOnly cookie carrying the opaque refresh token.</summary>
+    public const string RefreshTokenCookie = "nflow_rt";
+
+    /// <summary>
+    /// Name of the readable (non-HttpOnly) CSRF cookie. Must match the Angular
+    /// <c>withXsrfConfiguration</c> cookieName so the SPA echoes it back in a header.
+    /// </summary>
+    public const string CsrfCookie = "XSRF-TOKEN";
+
+    /// <summary>Request header the SPA uses to echo the CSRF cookie value (double-submit).</summary>
+    public const string CsrfHeader = "X-XSRF-TOKEN";
 }

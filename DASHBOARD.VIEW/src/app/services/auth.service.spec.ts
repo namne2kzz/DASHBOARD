@@ -13,12 +13,14 @@ import { environment } from '../../environments/environment';
 /**
  * Unit tests for AuthService — the gate every other flow depends on.
  *
- * Two things shape this file. First, `isAuthenticated` and `currentUser` are initialised from
- * localStorage in the field initialisers, which run when the service is constructed; a test that
- * wants a pre-existing session therefore has to seed storage *before* injecting. Second,
- * `applySession` kicks off `PreferencesService.syncFromServer()`, so the real service is replaced
- * with a stub — otherwise every login test would leave an unexpected outstanding request and fail
- * `httpMock.verify()` for a reason that has nothing to do with authentication.
+ * Three things shape this file. First, `isAuthenticated` and `currentUser` are initialised from
+ * the persisted *profile* in localStorage in the field initialisers, which run when the service is
+ * constructed; a test that wants a pre-existing session therefore seeds the profile *before*
+ * injecting. Tokens themselves are no longer stored — they live in HttpOnly cookies the browser
+ * sends automatically, so `getToken()` returns an in-memory value that is null after a reload.
+ * Second, `applySession` kicks off `PreferencesService.syncFromServer()`, stubbed out so login
+ * tests do not leave an unrelated outstanding request. Third, `logout()` fires a best-effort
+ * `POST /auth/logout` so the server can expire the cookies; logout tests flush that request.
  *
  * The StorageService itself is left real. It is a thin wrapper over localStorage, and stubbing it
  * would hide the prefixing that decides whether a session actually survives a reload.
@@ -30,6 +32,10 @@ describe('AuthService', () => {
   const loginUrl   = `${environment.apiBaseUrl}/auth/login`;
   const googleUrl  = `${environment.apiBaseUrl}/auth/google-login`;
   const refreshUrl = `${environment.apiBaseUrl}/auth/refresh`;
+  const logoutUrl  = `${environment.apiBaseUrl}/auth/logout`;
+
+  /** Flushes the best-effort server-logout request that logout() fires, so httpMock.verify() passes. */
+  const flushLogout = () => httpMock.expectOne(logoutUrl).flush({});
 
   /** The prefix StorageService puts in front of every key. */
   const prefixed = (key: string) => `dashboard.${key}`;
@@ -89,31 +95,31 @@ describe('AuthService', () => {
   });
 
   describe('on construction with a stored session', () => {
-    it('restores the session so a page reload stays signed in', () => {
+    it('restores the session from the persisted profile so a page reload stays signed in', () => {
+      // After a reload the HttpOnly cookie still authenticates API calls; the persisted profile is
+      // what lets the UI render as signed-in without a round-trip. The raw token is gone from JS.
       const stored: UserProfile = {
         userId: 'user-9', email: 'back@acme.local', name: 'Returning',
         avatarClass: 'bg-sky-600', isGlobalAdmin: true, orgId: 'org-1', orgAlias: 'acme',
       };
-      localStorage.setItem(prefixed(StorageKeys.accessToken), 'restored.token');
       localStorage.setItem(prefixed(StorageKeys.userProfile), JSON.stringify(stored));
 
       const auth = createService();
 
       expect(auth.isAuthenticated()).toBeTrue();
       expect(auth.currentUser()).toEqual(stored);
-      expect(auth.getToken()).toBe('restored.token');
+      // Tokens are not persisted — only the cookie survives the reload.
+      expect(auth.getToken()).toBeNull();
     });
 
-    it('survives a corrupt profile without throwing', () => {
-      // StorageService.get swallows a JSON parse failure and returns null. The token is still
-      // there, so the user counts as authenticated but with no profile — the app must not crash
-      // on construction.
-      localStorage.setItem(prefixed(StorageKeys.accessToken), 'restored.token');
+    it('treats a corrupt profile as signed out without throwing', () => {
+      // StorageService.get swallows a JSON parse failure and returns null. With no readable profile
+      // and no token in JS, the UI cannot present a session; the app must not crash on construction.
       localStorage.setItem(prefixed(StorageKeys.userProfile), '{not json');
 
       const auth = createService();
 
-      expect(auth.isAuthenticated()).toBeTrue();
+      expect(auth.isAuthenticated()).toBeFalse();
       expect(auth.currentUser()).toBeNull();
     });
   });
@@ -135,14 +141,16 @@ describe('AuthService', () => {
       request.flush(session);
     });
 
-    it('stores both tokens and the profile', () => {
+    it('keeps both tokens in memory and does not persist them to storage', () => {
       const auth = createService();
 
       auth.login({ orgAlias: 'acme', email: 'nam@acme.local', password: 'Str0ng!' }).subscribe();
       httpMock.expectOne(loginUrl).flush(session);
 
-      expect(localStorage.getItem(prefixed(StorageKeys.accessToken))).toBe('access.token.v1');
-      expect(localStorage.getItem(prefixed(StorageKeys.refreshToken))).toBe('refresh.token.v1');
+      // Tokens must never touch localStorage now — they live in HttpOnly cookies. The in-memory
+      // copies remain readable for the SSO handoff within this session.
+      expect(localStorage.getItem(prefixed(StorageKeys.accessToken))).toBeNull();
+      expect(localStorage.getItem(prefixed(StorageKeys.refreshToken))).toBeNull();
       expect(auth.getToken()).toBe('access.token.v1');
       expect(auth.getRefreshToken()).toBe('refresh.token.v1');
     });
@@ -187,7 +195,7 @@ describe('AuthService', () => {
       expect(failed).toBeTrue();
       expect(auth.isAuthenticated()).toBeFalse();
       expect(auth.getToken()).toBeNull();
-      expect(localStorage.getItem(prefixed(StorageKeys.refreshToken))).toBeNull();
+      expect(auth.getRefreshToken()).toBeNull();
     });
 
     it('pulls display preferences once the session is established', () => {
@@ -265,32 +273,20 @@ describe('AuthService', () => {
   // ── refresh ─────────────────────────────────────────────────────────────
 
   describe('refresh', () => {
-    it('sends the stored refresh token', () => {
-      localStorage.setItem(prefixed(StorageKeys.refreshToken), 'stored.refresh');
+    it('posts an empty body and lets the HttpOnly refresh cookie carry the token', () => {
+      // The refresh token is sent as a cookie the browser attaches automatically; the SPA has no
+      // token to put in the body, so it posts {} to keep the JSON content type.
       const auth = createService();
 
       auth.refresh().subscribe();
 
       const request = httpMock.expectOne(refreshUrl);
-      expect(request.request.body).toEqual({ refreshToken: 'stored.refresh' });
+      expect(request.request.body).toEqual({});
 
       request.flush(session);
     });
 
-    it('sends an empty string when there is no stored token rather than omitting the field', () => {
-      // The request body is typed, and the backend validator expects the property to be present.
-      const auth = createService();
-
-      auth.refresh().subscribe();
-
-      const request = httpMock.expectOne(refreshUrl);
-      expect(request.request.body).toEqual({ refreshToken: '' });
-
-      request.flush(session);
-    });
-
-    it('replaces both tokens with the rotated pair', () => {
-      localStorage.setItem(prefixed(StorageKeys.refreshToken), 'stored.refresh');
+    it('replaces both in-memory tokens with the rotated pair', () => {
       const auth = createService();
 
       auth.refresh().subscribe();
@@ -308,12 +304,16 @@ describe('AuthService', () => {
   // ── logout ──────────────────────────────────────────────────────────────
 
   describe('logout', () => {
-    it('clears every trace of the session', () => {
+    it('clears every trace of the session and asks the server to expire the cookies', () => {
       const auth = createService();
       auth.login({ orgAlias: 'acme', email: 'nam@acme.local', password: 'Str0ng!' }).subscribe();
       httpMock.expectOne(loginUrl).flush(session);
 
       auth.logout();
+
+      // The server call is what actually clears the HttpOnly cookies; a purely local clear would
+      // leave them in place and the next reload would re-authenticate.
+      flushLogout();
 
       expect(auth.isAuthenticated()).toBeFalse();
       expect(auth.currentUser()).toBeNull();
@@ -322,12 +322,25 @@ describe('AuthService', () => {
       expect(localStorage.getItem(prefixed(StorageKeys.userProfile))).toBeNull();
     });
 
+    it('clears the session even when the server logout call fails', () => {
+      const auth = createService();
+      auth.login({ orgAlias: 'acme', email: 'nam@acme.local', password: 'Str0ng!' }).subscribe();
+      httpMock.expectOne(loginUrl).flush(session);
+
+      auth.logout();
+      httpMock.expectOne(logoutUrl).flush({}, { status: 500, statusText: 'Server Error' });
+
+      expect(auth.isAuthenticated()).toBeFalse();
+      expect(auth.currentUser()).toBeNull();
+    });
+
     it('is safe to call when nobody is signed in', () => {
       // The error interceptor calls logout() on any 401, including one that arrives while the user
-      // is already signed out.
+      // is already signed out. The best-effort server call still fires and is flushed.
       const auth = createService();
 
       expect(() => auth.logout()).not.toThrow();
+      flushLogout();
       expect(auth.isAuthenticated()).toBeFalse();
     });
 
@@ -337,6 +350,7 @@ describe('AuthService', () => {
       const auth = createService();
 
       auth.logout();
+      flushLogout();
 
       expect(localStorage.getItem(prefixed(StorageKeys.theme))).toBe('dark');
     });

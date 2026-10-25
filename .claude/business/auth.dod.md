@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-24 | — | Token sang HttpOnly cookie + CSRF | Access token và refresh token không còn lưu ở browser storage mà phát dưới dạng **HttpOnly cookie** (`nflow_at`, `nflow_rt`) — JS không đọc được → chống XSS đánh cắp token. Login/google-login/refresh **vẫn trả token trong body** để luồng SSO sang HUB (origin khác) đính token vào URL redirect. Request state-changing qua cookie phải kèm CSRF token double-submit: server set thêm cookie đọc được `XSRF-TOKEN`, client echo lại ở header `X-XSRF-TOKEN`, không khớp → 403. Request mang `Authorization: Bearer` hoặc `X-Internal-Token` (SSO/service) được miễn CSRF. Refresh token đọc từ cookie `nflow_rt` khi body rỗng. Logout xoá cả 3 cookie server-side |
 | 2026-09-26 | 14:02 | Login theo Organization | Login giờ yêu cầu `OrgAlias` — xác thực là (OrgAlias + Email + Password); email chỉ unique trong 1 Organization. Sai alias trả cùng lỗi chung để chống enumeration tenant. Login result mang thêm `OrgId`/`OrgAlias`. Xem [organizations.dod.md](organizations.dod.md) |
 | 2026-07-11 | 22:15 | Thêm đăng nhập bằng Google | Thêm `POST /api/auth/google-login`: verify Google id_token, tìm `User` theo `GoogleSubjectId` đã liên kết sẵn (không tạo account mới, không cần Invitation) → phát session giống login thường. User chưa từng accept invite (chưa có `GoogleSubjectId` liên kết) bấm Sign in with Google sẽ bị từ chối, yêu cầu được invite trước |
 | 2026-06-23 | 20:58 | Khởi tạo document | Tạo document business ban đầu cho feature Auth |
@@ -37,6 +38,11 @@ Xác thực người dùng (đăng nhập/đăng xuất) và quản lý session 
 - Đăng nhập bằng Google chỉ dùng cho account **đã tồn tại** và đã liên kết `GoogleSubjectId` (qua accept invitation trước đó) — không tự tạo account mới. Không match được → từ chối, yêu cầu liên hệ admin để được invite.
 - Access token mang claim `OrgId` để downstream request không phải resolve lại tenant.
 - Google id_token được verify bằng `Google.Apis.Auth` (chữ ký + audience khớp `Google:ClientId`) trước khi tin tưởng email/subject bên trong.
+- **Token không bao giờ nằm trong browser storage (localStorage/sessionStorage)** — chỉ ở HttpOnly cookie. Chỉ `userProfile` (không phải secret) được persist để restore UI sau reload; token thật do cookie giữ.
+- Server resolve access token theo thứ tự: `Authorization: Bearer` → cookie `nflow_at` → query `?access_token=` (SSE). Bearer thắng để SSO/service không bị ảnh hưởng.
+- Cookie `nflow_rt` (refresh) scope `Path=/api`, không gửi kèm mọi request thường; `nflow_at` scope `Path=/`.
+- CSRF double-submit: chỉ áp cho method unsafe (POST/PUT/PATCH/DELETE) **đi bằng cookie**; request có `Authorization`/`X-Internal-Token` được miễn (không bị trình duyệt nạn nhân điều khiển).
+- Cookie `Secure` theo config (`true` prod HTTPS, `false` dev http); `SameSite=Lax` để top-level navigation tới accept-invite vẫn mang cookie mà chặn cross-site POST.
 
 ## 4. Main Workflows / Use Cases
 
@@ -56,6 +62,9 @@ Xác thực người dùng (đăng nhập/đăng xuất) và quản lý session 
 - [ ] Logout revoke đúng `JwtId` của session hiện tại, không ảnh hưởng session khác của cùng user.
 - [x] Đăng nhập Google không bao giờ tự tạo account mới hay repository membership mới.
 - [x] Google id_token luôn được verify chữ ký + audience trước khi tin tưởng thông tin bên trong.
+- [x] Access/refresh token không bao giờ được ghi vào localStorage/sessionStorage — chỉ HttpOnly cookie.
+- [x] Request state-changing bằng cookie mà thiếu/sai CSRF token double-submit bị trả 403.
+- [x] Logout xoá cả `nflow_at`, `nflow_rt`, `XSRF-TOKEN` phía server (không chỉ clear phía client).
 
 ## 6. Edge Cases & Notes
 

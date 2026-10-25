@@ -194,6 +194,41 @@ public sealed class InternalController(IApplicationDbContext db) : ControllerBas
 
         return item is null ? NotFound() : Ok(item);
     }
+
+    /// <summary>
+    /// Returns work-item context by its human key (e.g. "NFLOW-142") — used by HUB to unfurl a pasted
+    /// work-item link, where the URL carries the key rather than the GUID.
+    /// </summary>
+    /// <param name="key">Work item key: repository code, a dash, then the number.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with context, or 404 when the key is malformed or the item does not exist.</returns>
+    [HttpGet("work-items/by-key/{key}")]
+    [ProducesResponseType<InternalWorkItemContextDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetWorkItemByKey(string key, CancellationToken ct)
+    {
+        // Split on the LAST dash: the number is after it, the repository code (which may itself contain a
+        // dash) is everything before.
+        var dash = key.LastIndexOf('-');
+        if (dash <= 0 || !int.TryParse(key[(dash + 1)..], out var number))
+            return NotFound();
+        var code = key[..dash];
+
+        var item = await (
+            from t in db.Set<SprintTask>().AsNoTracking()
+            join r in db.Set<Repository>().AsNoTracking() on t.RepositoryId equals r.Id
+            where r.Code == code && t.WorkItemNumber == number && !t.IsDeleted
+            select new InternalWorkItemContextDto(
+                t.Id,
+                SprintTask.BuildWorkItemNumber(r.Code, t.WorkItemNumber),
+                t.Title,
+                t.State.ToString(),
+                t.RepositoryId,
+                r.Code)
+        ).FirstOrDefaultAsync(ct);
+
+        return item is null ? NotFound() : Ok(item);
+    }
 }
 
 // ── DTOs (internal — not exposed via public Swagger) ─────────────────────────

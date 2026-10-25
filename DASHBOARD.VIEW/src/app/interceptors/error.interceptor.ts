@@ -11,7 +11,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError(err => {
-      if (err.status === HttpStatusCode.Unauthorized) {
+      // Skip the logout endpoint itself: logout() posts to it, and if that call 401s (an already
+      // expired session) reacting here would call logout() again → an infinite request loop.
+      const isLogout = req.url.endsWith('/auth/logout');
+      if (err.status === HttpStatusCode.Unauthorized && !isLogout) {
         auth.logout();
         const currentUrl = router.url;
         if (!currentUrl.startsWith('/login')) {
