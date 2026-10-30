@@ -6,6 +6,8 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-28 | — | Lời chào tách khỏi banner | Banner trên cùng trả về đúng chuẩn các màn khác (`My Work` + nút Refresh, `px-8 py-4`, `text-3xl`). Lời chào + ngày + câu tóm tắt chuyển xuống **1 card riêng** ở đầu cột trái. Lý do: banner định danh màn hình, lời chào là ghi chú theo ngày — hai loại nội dung khác nhau, nhét chung làm banner phình to và lệch với mọi màn còn lại. Nội dung và logic của lời chào không đổi. |
+| 2026-10-27 | 23:19 | Lời chào + tóm tắt ngày + empty state N-bot | Thêm lời chào theo giờ ("Good morning, Nam") và **1 câu tóm tắt** hình dạng công việc trong ngày: tổng việc đang mở, trong đó bao nhiêu High/Critical, và có việc nào đang chờ review không. Lý do: hình dạng của ngày đọc bằng câu nhanh hơn đọc bằng 4 ô số (4 ô số vẫn giữ ở panel "Today" cho ai muốn đọc thẳng). Không có việc nào → câu đổi thành "Nothing is assigned to you right now.". **Empty state dùng N-bot**: hết việc → bot vui (đây là tin tốt); filter không khớp gì → bot ngủ (không phải thành tích); không có gì chờ review → bot ngủ ở panel bên phải. |
 | 2026-07-25 | 17:06 | Khởi tạo document | Tạo feature "My Work" — view cross-repository các work item được assign cho user hiện tại |
 
 ---

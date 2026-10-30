@@ -1,3 +1,5 @@
+using DASHBOARD.Application.Common.Models.Emails;
+
 namespace DASHBOARD.Application.Common.Interfaces;
 
 /// <summary>Abstraction for sending transactional emails. Implementation lives in Infrastructure (MailKit).</summary>
@@ -25,6 +27,18 @@ public interface IEmailService
     /// <param name="ct">Cancellation token.</param>
     Task SendStateChangedAsync(string toEmail, string recipientName, string workItemNumber, string workItemTitle,
         string oldState, string newState, string changedByName, string repositoryName, string itemUrl, CancellationToken ct);
+
+    /// <summary>
+    /// Welcomes the first administrator of a newly provisioned organisation and carries the
+    /// one-time link they use to choose a password.
+    /// </summary>
+    /// <remarks>
+    /// Sent to the admin alone. The link grants administrator access on redemption, so it is never
+    /// copied to the billing contact or anyone else who did not request it.
+    /// </remarks>
+    /// <param name="model">Recipient, organisation and link details to render.</param>
+    /// <param name="ct">Cancellation token.</param>
+    Task SendOrganizationWelcomeAsync(OrganizationWelcomeEmailModel model, CancellationToken ct);
 
     /// <summary>Notifies a user that a work item has been assigned to or unassigned from them.</summary>
     /// <param name="toEmail">Recipient email address.</param>

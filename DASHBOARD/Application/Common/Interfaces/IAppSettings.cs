@@ -26,6 +26,27 @@ public interface IAppSettings
     /// <summary>Gets the number of segments the sliding window is divided into.</summary>
     int InvitationRateLimitSegments { get; }
 
+    // ── Organisation provisioning (NKey) ─────────────────────────────────────
+    /// <summary>
+    /// Gets how long a password-setup token stays valid after an organisation is provisioned.
+    /// Longer than an invitation token because onboarding often waits on the customer's schedule.
+    /// </summary>
+    TimeSpan PasswordSetupTokenTtl { get; }
+
+    // ── Organisation alias lookup (sign-in step 1) ───────────────────────────
+    /// <summary>
+    /// Gets how many alias lookups one IP may make per <see cref="OrgLookupRateLimitWindow"/>.
+    /// Deliberately small: the endpoint reveals whether a tenant exists, so the budget suits a
+    /// person correcting a typo rather than a script enumerating names.
+    /// </summary>
+    int OrgLookupRateLimitPermitLimit { get; }
+
+    /// <summary>Gets the sliding window over which alias lookups are counted.</summary>
+    TimeSpan OrgLookupRateLimitWindow { get; }
+
+    /// <summary>Gets the number of segments in the alias-lookup sliding window.</summary>
+    int OrgLookupRateLimitSegments { get; }
+
     // ── Global rate limiting ─────────────────────────────────────────────────
     /// <summary>
     /// Gets whether the catch-all global rate limiter is enabled. When <c>false</c>, only the

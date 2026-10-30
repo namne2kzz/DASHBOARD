@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-27 | 23:19 | Ô search thành command palette thật | ⌘K/Ctrl+K giờ **chạy lệnh**, không chỉ tìm: New work item, New sprint, đổi light/dark, đi tới Backlog/Board. Lệnh match theo cả label lẫn **keyword người thật hay dùng** (gõ "theme" ra "Switch to dark mode"). Ô trống thì hiện đủ danh sách lệnh — đó là cách người dùng phát hiện palette làm được nhiều hơn tìm kiếm. Gõ ≥ 2 ký tự luôn có thêm dòng cuối **"Ask NMate: …"** — thứ gõ vào mà không khớp gì thường là câu hỏi chứ không phải từ khoá sai. Tên lệnh đổi theme ghi theo **việc nó sẽ làm**, không theo trạng thái hiện tại. |
 | 2026-09-26 | 14:02 | Khởi tạo document | Tạo document business ban đầu cho feature Search (command palette Ctrl/Cmd+K) — đã có trong code từ 2026-08-01 nhưng chưa được document |
 
 ---

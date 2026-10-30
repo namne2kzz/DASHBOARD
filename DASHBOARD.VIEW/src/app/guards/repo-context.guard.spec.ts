@@ -41,6 +41,7 @@ describe('repo-context guards', () => {
   const profile: UserProfile = {
     userId: 'user-1', email: 'nam@acme.local', name: 'Nam',
     avatarClass: 'bg-sky-600', isGlobalAdmin: false, orgId: 'org-1', orgAlias: 'acme',
+    orgName: 'Acme Corporation',
   };
 
   function configure(options: {

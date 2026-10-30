@@ -1,5 +1,5 @@
 /**
- * Nexus UI Foundation v1 — the Tailwind palette is remapped onto the design
+ * Nexus UI Foundation v2 — the Tailwind palette is remapped onto the design
  * tokens declared in src/styles.css (`--c-*` RGB channels). Templates keep
  * their existing utilities (bg-slate-900, text-sky-400, …) while every colour
  * resolves to a token that switches per theme via html[data-theme].
@@ -78,10 +78,13 @@ module.exports = {
           test: t('type-test'),
           improvement: t('type-improvement'),
         },
+        // Coral: AI output and moments worth noticing. Deliberately absent from the
+        // generic hue aliases above so it cannot be reached for as "just another pink".
+        ai: { DEFAULT: t('ai'), soft: t('ai-soft') },
         // Direct token access for new markup: bg-nx-surface, text-nx-text-2, …
         nx: Object.fromEntries(
           ['bg', 'surface', 'surface-2', 'surface-3', 'border', 'border-strong', 'text', 'text-2', 'text-3',
-            'accent', 'accent-hover', 'accent-soft', 'on-accent', 'success', 'success-soft',
+            'accent', 'accent-hover', 'accent-soft', 'on-accent', 'ai', 'ai-soft', 'success', 'success-soft',
             'warning', 'warning-soft', 'danger', 'danger-soft'].map((n) => [n, t(n)]),
         ),
       },
@@ -94,7 +97,9 @@ module.exports = {
         sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
         mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
       },
-      // Density of a work tool: body 13px, label/meta 12px, title 15px, display 20px.
+      // Density of a work tool, with the v2 type scale on top: a headline metric is
+      // 40/700 so it wins the page outright, while its label drops to 13/600 uppercase.
+      // The gap between them is the hierarchy — at the old sizes the eye had no lead.
       fontSize: {
         xs: ['12px', '16px'],
         sm: ['13px', '20px'],
@@ -103,26 +108,34 @@ module.exports = {
         xl: ['18px', '26px'],
         '2xl': ['20px', '28px'],
         '3xl': ['24px', '32px'],
+        '4xl': ['32px', '40px'],
+        metric: ['40px', '48px'],
       },
-      // 4 badge/tag · 6 control/card · 8 panel.
+      // 8 control/input · 12 card · 16 modal/drawer. Nothing in between.
       borderRadius: {
         sm: '4px',
-        DEFAULT: '4px',
-        md: '6px',
-        lg: '6px',
-        xl: '6px',
-        '2xl': '8px',
-        '3xl': '8px',
+        DEFAULT: '8px',
+        md: '8px',
+        lg: '12px',
+        xl: '12px',
+        '2xl': '16px',
+        '3xl': '16px',
       },
-      // 1px borders instead of shadows; elevation only for menus and dialogs.
+      // Depth instead of outlines: a card carries a soft shadow on the grey page,
+      // and only overlays go deeper.
       boxShadow: {
-        sm: 'none',
-        DEFAULT: 'none',
-        md: 'none',
+        sm: 'var(--shadow-card)',
+        DEFAULT: 'var(--shadow-card)',
+        md: 'var(--shadow-raised)',
         inner: 'none',
         lg: 'var(--shadow-pop)',
         xl: 'var(--shadow-pop)',
         '2xl': 'var(--shadow-pop)',
+      },
+      letterSpacing: {
+        // Labels are small caps with a little air; display numbers pull in slightly.
+        label: '.06em',
+        metric: '-.02em',
       },
     },
   },

@@ -19,6 +19,7 @@ import {
   NMateStatus,
   NMateStreamEvent,
 } from '../models/nmate.model';
+import { backgroundRequest } from '../models/http-context.model';
 import { SseMessage, SseParser } from '../utils/sse-parser';
 import { AuthService } from './auth.service';
 import { RepositoryContextService } from './repository-context.service';
@@ -70,6 +71,15 @@ export class NMateService {
   /** True while a picked conversation's messages are loading. */
   readonly conversationLoading = signal(false);
 
+  /**
+   * Replies that finished while the panel was closed.
+   *
+   * An answer keeps streaming after the user closes the panel, so without this the reply would
+   * land silently and they would have no reason to look again. Cleared on open, since opening is
+   * reading.
+   */
+  readonly unreadCount = signal(0);
+
   private streamSub: Subscription | null = null;
   private statusRequested = false;
   private restoreRequested = false;
@@ -79,6 +89,7 @@ export class NMateService {
   /** Opens the panel; loads availability and restores the previous conversation on first open. */
   open(): void {
     this.isOpen.set(true);
+    this.unreadCount.set(0);
     if (!this.statusRequested) this.refreshStatus();
     this.restoreConversation();
   }
@@ -97,7 +108,9 @@ export class NMateService {
   /** Reloads availability from `GET /nmate/status`. A 404 means the feature is switched off. */
   refreshStatus(): void {
     this.statusRequested = true;
-    this.http.get<NMateStatus>(`${this.baseUrl}/status`).subscribe({
+    // Background: the widget asks for this itself, so its failure is never the user's action and
+    // must not end their session.
+    this.http.get<NMateStatus>(`${this.baseUrl}/status`, { context: backgroundRequest() }).subscribe({
       next: status => {
         this.enabled.set(true);
         this.available.set(status.available);
@@ -115,7 +128,8 @@ export class NMateService {
    */
   loadSuggestions(route: string): void {
     const params = new HttpParams().set('route', route);
-    this.http.get<string[]>(`${this.baseUrl}/suggestions`, { params }).subscribe({
+    // Background: starter questions load themselves when the panel opens.
+    this.http.get<string[]>(`${this.baseUrl}/suggestions`, { params, context: backgroundRequest() }).subscribe({
       next: suggestions => this.suggestions.set(suggestions),
       error: () => this.suggestions.set([]),
     });
@@ -285,6 +299,9 @@ export class NMateService {
           this.updateAnswer(answerId, m => ({
             ...m, id: event.messageId, status: event.answered ? 'done' : 'declined', mode: event.mode,
           }));
+          // The panel may have been closed mid-answer; the launcher raises a badge so the reply
+          // is not left sitting unseen.
+          if (!this.isOpen()) this.unreadCount.update(n => n + 1);
           break;
         case 'error':
           this.updateAnswer(answerId, m => ({ ...m, id: event.messageId, status: 'error', errorCode: event.code }));

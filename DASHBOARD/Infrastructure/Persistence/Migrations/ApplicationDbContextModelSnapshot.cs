@@ -486,6 +486,44 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.PasswordSetupToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PasswordSetupTokens_TokenHash");
+
+                    b.HasIndex("UserId", "UsedAt")
+                        .HasDatabaseName("IX_PasswordSetupTokens_UserId_UsedAt");
+
+                    b.ToTable("PasswordSetupTokens", (string)null);
+                });
+
             modelBuilder.Entity("DASHBOARD.Domain.Entities.Repository", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1661,6 +1699,17 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("DASHBOARD.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.PasswordSetupToken", b =>
                 {
                     b.HasOne("DASHBOARD.Domain.Entities.User", "User")
                         .WithMany()

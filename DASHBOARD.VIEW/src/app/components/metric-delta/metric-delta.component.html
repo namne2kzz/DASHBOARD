@@ -1,0 +1,12 @@
+@if (visible()) {
+  <!-- The arrow, not the colour, carries the direction: the same meaning has to survive
+       a reader who cannot separate red from green. -->
+  <p class="nx-delta mt-1.5"
+     [class.nx-delta--up]="favourable()"
+     [class.nx-delta--down]="!favourable()">
+    <span aria-hidden="true">{{ rising() ? '↑' : '↓' }}</span>
+    <span class="sr-only">{{ rising() ? 'up' : 'down' }}</span>
+    {{ magnitude() }}{{ unit() ? ' ' + unit() : '' }}
+    <span class="font-normal text-nx-text-3">vs last sprint</span>
+  </p>
+}

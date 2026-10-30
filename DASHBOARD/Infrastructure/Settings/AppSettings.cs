@@ -36,6 +36,27 @@ public sealed class AppSettings : IAppSettings
     public int InvitationRateLimitSegments =>
         _config.GetValue<int>("Invitation:RateLimit:SegmentsPerWindow");
 
+    // ── Organisation provisioning (NKey) ─────────────────────────────────────
+    /// <inheritdoc/>
+    public TimeSpan PasswordSetupTokenTtl =>
+        TimeSpan.FromDays(_config.GetValue("Provisioning:PasswordSetupTokenTtlDays", 3));
+
+    // ── Organisation alias lookup (sign-in step 1) ───────────────────────────
+    // Far tighter than the global IP allowance of 60/minute: this endpoint answers "does this
+    // tenant exist?" to anonymous callers, so the budget is sized for someone mistyping their own
+    // alias a few times, not for walking a dictionary of candidate names.
+    /// <inheritdoc/>
+    public int OrgLookupRateLimitPermitLimit =>
+        _config.GetValue("OrgLookup:RateLimit:PermitLimit", 10);
+
+    /// <inheritdoc/>
+    public TimeSpan OrgLookupRateLimitWindow =>
+        TimeSpan.FromSeconds(_config.GetValue("OrgLookup:RateLimit:WindowSeconds", 300));
+
+    /// <inheritdoc/>
+    public int OrgLookupRateLimitSegments =>
+        _config.GetValue("OrgLookup:RateLimit:SegmentsPerWindow", 5);
+
     // ── Global rate limiting ─────────────────────────────────────────────────
     /// <inheritdoc/>
     public bool GlobalRateLimitEnabled =>

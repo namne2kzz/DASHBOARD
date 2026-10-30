@@ -51,14 +51,15 @@ public sealed class RemoveMemberCommandHandlerTests : IDisposable
         return role;
     }
 
-    private async Task<RepositoryMember> AddMemberAsync(Guid roleId, Guid? repositoryId = null)
+    private async Task<RepositoryMember> AddMemberAsync(
+        Guid roleId, Guid? repositoryId = null, string defaultRole = "Developer")
     {
         var member = new RepositoryMember
         {
             RepositoryId = repositoryId ?? _repositoryId,
             UserId       = Guid.NewGuid(),
             RoleId       = roleId,
-            DefaultRole  = "Developer",
+            DefaultRole  = defaultRole,
         };
         _db.Set<RepositoryMember>().Add(member);
         await _db.SaveChangesAsync();
@@ -109,7 +110,7 @@ public sealed class RemoveMemberCommandHandlerTests : IDisposable
         await act.Should().ThrowAsync<NotFoundException>();
     }
 
-    // ── ManageMembers guard ─────────────────────────────────────────────────
+    // ── Lead guard ──────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Handle_WhenRemovingTheLastManageMembersHolder_Fails()
@@ -125,7 +126,7 @@ public sealed class RemoveMemberCommandHandlerTests : IDisposable
             new RemoveMemberCommand(_repositoryId, soleManager.Id), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("last member with ManageMembers");
+        result.Error.Should().Contain("last member who can manage members");
         (await _db.Set<RepositoryMember>().AnyAsync(m => m.Id == soleManager.Id)).Should().BeTrue();
     }
 

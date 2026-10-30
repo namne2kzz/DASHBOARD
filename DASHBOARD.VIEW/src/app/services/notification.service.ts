@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
+import { backgroundRequest } from '../models/http-context.model';
 import { AppNotification, NotificationCategory, NotificationPage } from '../models/notification.model';
 
 const BASE = `${environment.apiBaseUrl}/notifications`;
@@ -113,16 +114,25 @@ export class NotificationService implements OnDestroy {
   // ── Private ──────────────────────────────────────────────────────────────
 
   private _fetchRecent(): void {
-    this._loadPage(0, true);
+    // Background: this runs on connect and on every SSE reconnect, neither of which the user
+    // asked for. A 401 here must not bounce them out of the page they are working on.
+    this._loadPage(0, true, true);
   }
 
-  private _loadPage(skip: number, replace: boolean): void {
+  /**
+   * Fetches one page of notifications.
+   * @param skip Offset into the list. @param replace Whether to replace rather than append.
+   * @param background True for polls and reconnect catch-up reads, so a 401 does not end the session.
+   */
+  private _loadPage(skip: number, replace: boolean, background = false): void {
     this._loading.set(true);
     let params = new HttpParams().set('skip', skip).set('take', PAGE_SIZE);
     const filter = this._filter();
     if (filter) params = params.set('category', filter);
 
-    this.http.get<NotificationPage>(BASE, { params }).subscribe({
+    const options = background ? { params, context: backgroundRequest() } : { params };
+
+    this.http.get<NotificationPage>(BASE, options).subscribe({
       next: page => {
         this._notifications.update(list => replace ? page.items : [...list, ...page.items]);
         this._hasMore.set(page.hasMore);

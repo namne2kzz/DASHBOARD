@@ -20,7 +20,7 @@
   >{{ data.story.title }}</h2>
 
   <!-- Meta row: story points + estimate + remaining -->
-  <div class="flex flex-wrap gap-x-8 gap-y-3 rounded-2xl border border-slate-800 px-4 py-3">
+  <div class="flex flex-wrap gap-x-8 gap-y-3 rounded-lg bg-nx-surface-2 px-4 py-3">
     <div>
       <p class="text-xs font-medium text-slate-400">Story points</p>
       <p class="mt-0.5 font-mono text-sm font-medium text-slate-100">{{ data.story.storyPoints || '—' }}</p>
@@ -108,7 +108,7 @@
   @if (data.story.description) {
     <div>
       <h3 class="mb-2 text-sm font-semibold text-slate-100">Description</h3>
-      <p class="whitespace-pre-wrap rounded-2xl border border-slate-800 px-4 py-3 text-sm leading-relaxed text-slate-300">{{ data.story.description }}</p>
+      <p class="whitespace-pre-wrap rounded-lg bg-nx-surface-2 px-4 py-3 text-sm leading-relaxed text-slate-300">{{ data.story.description }}</p>
     </div>
   }
 
@@ -116,7 +116,7 @@
   @if (data.story.acceptanceCriteria) {
     <div>
       <h3 class="mb-2 text-sm font-semibold text-slate-100">Acceptance Criteria</h3>
-      <ul class="space-y-1.5 rounded-2xl border border-slate-800 px-4 py-3">
+      <ul class="space-y-1.5 rounded-lg bg-nx-surface-2 px-4 py-3">
         @for (line of acLines(); track $index) {
           @if (line.trim()) {
             <li class="flex items-start gap-2.5 text-sm text-slate-300">
@@ -135,7 +135,7 @@
   @if (data.story.documents.length > 0) {
     <div>
       <h3 class="mb-2 text-sm font-semibold text-slate-100">Documents</h3>
-      <ul class="space-y-1.5 rounded-2xl border border-slate-800 px-4 py-3">
+      <ul class="space-y-1.5 rounded-lg bg-nx-surface-2 px-4 py-3">
         @for (doc of data.story.documents; track $index) {
           <li class="flex items-center gap-2">
             <svg class="h-3.5 w-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -167,9 +167,9 @@
     </div>
 
     @if (data.subTasks.length === 0) {
-      <p class="rounded-2xl border border-dashed border-slate-700 px-4 py-3 text-sm text-slate-500">No tasks yet. Click "+ Task" to add one.</p>
+      <p class="rounded-lg bg-nx-surface-2 px-4 py-3 text-sm text-nx-text-2">No tasks yet. Click "+ Task" to add one.</p>
     } @else {
-      <ul class="divide-y divide-slate-800 rounded-2xl border border-slate-800">
+      <ul class="nx-card divide-y divide-nx-border overflow-hidden">
         @for (sub of data.subTasks; track sub.id) {
           <li class="flex h-11 items-center gap-3 px-3">
             <!-- type -->

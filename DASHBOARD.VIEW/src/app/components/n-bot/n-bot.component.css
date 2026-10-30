@@ -1,0 +1,55 @@
+:host {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.nb { display: block; }
+
+/* Mark colours are fixed hex rather than theme tokens: N-bot is the product's
+   character and has to look the same in either theme. */
+.nb-antenna { stroke: #30363D; stroke-width: 2; stroke-linecap: round; }
+
+.nb-head {
+  fill: #161B22;
+  stroke: #161B22;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+/* The two strokes of the "N", doing duty as eyes. */
+.nb-eye--left  { fill: #8B5CF6; }
+.nb-eye--right { fill: #F0506E; }
+.nb-stroke     { fill: #F5F6FA; }
+
+.nb-eye-arc {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+.nb-eye-arc--left  { stroke: #8B5CF6; }
+.nb-eye-arc--right { stroke: #F0506E; }
+
+.nb-mouth {
+  fill: none;
+  stroke: #F5F6FA;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.nb-cross {
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.nb-cross--left  { stroke: #8B5CF6; }
+.nb-cross--right { stroke: #F0506E; }
+
+.nb-z {
+  fill: #8B5CF6;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+}
+.nb-z--small { font-size: 7px; }
+
+.nb-hat      { fill: #E3A008; }
+.nb-hat-brim { fill: #BF8700; }

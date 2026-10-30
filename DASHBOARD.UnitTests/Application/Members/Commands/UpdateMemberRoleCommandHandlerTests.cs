@@ -187,7 +187,7 @@ public sealed class UpdateMemberRoleCommandHandlerTests : IDisposable
             CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
-        result.Error.Should().Contain("last member with ManageMembers");
+        result.Error.Should().Contain("last member who can manage members");
 
         var unchanged = await _db.Set<RepositoryMember>().AsNoTracking()
             .SingleAsync(m => m.Id == soleManager.Id);

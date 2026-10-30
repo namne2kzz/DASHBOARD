@@ -17,6 +17,12 @@ import { NMateMessage } from '../../models/nmate.model';
 import { NMateService } from '../../services/nmate.service';
 import { PreferencesService } from '../../core/services/preferences.service';
 import { NMateMessageComponent } from '../nmate-message/nmate-message.component';
+import { BrandLogoComponent } from '../brand-logo/brand-logo.component';
+import { NBotComponent } from '../n-bot/n-bot.component';
+import { NMateNudgeService } from '../../services/nmate-nudge.service';
+import { NMateNudge } from '../../models/nmate-nudge.model';
+import { NMateNudgeComponent } from '../nmate-nudge/nmate-nudge.component';
+import { NMateLauncherComponent } from '../nmate-launcher/nmate-launcher.component';
 import { timeAgo } from '../../utils/time-ago.util';
 
 /**
@@ -26,7 +32,7 @@ import { timeAgo } from '../../utils/time-ago.util';
  */
 @Component({
   selector: 'app-nmate-widget',
-  imports: [NMateMessageComponent],
+  imports: [NMateMessageComponent, BrandLogoComponent, NBotComponent, NMateNudgeComponent, NMateLauncherComponent],
   templateUrl: './nmate-widget.component.html',
   styleUrl: './nmate-widget.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +41,10 @@ export class NMateWidgetComponent {
   readonly nmate = inject(NMateService);
   private readonly router = inject(Router);
   private readonly prefs = inject(PreferencesService);
+  private readonly nudges = inject(NMateNudgeService);
+
+  /** The contextual offer of help currently on screen, if a screen has published one. */
+  readonly nudge = this.nudges.current;
 
   /** Shown only when the backend has NMate on and the user has not hidden it in Settings → General. */
   readonly visible = computed(() => this.nmate.enabled() !== false && this.prefs.showNMate());
@@ -194,5 +204,22 @@ export class NMateWidgetComponent {
   /** Closes the panel after following a source link on narrow screens, where it covers the page. */
   onNavigated(): void {
     if (window.matchMedia('(max-width: 640px)').matches) this.nmate.close();
+  }
+
+  /**
+   * Takes up the offer: opens the panel and asks the question the nudge was built around,
+   * so accepting lands on an answer rather than on an empty chat box.
+   *
+   * @param hint The nudge being accepted.
+   */
+  acceptNudge(hint: NMateNudge): void {
+    this.nudges.dismiss();
+    this.nmate.open();
+    this.nmate.ask(hint.question, this.currentUrl());
+  }
+
+  /** Dismisses the offer. It will not be raised again this session. */
+  dismissNudge(): void {
+    this.nudges.dismiss();
   }
 }

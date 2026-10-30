@@ -1,1 +1,25 @@
-/* Layout and visuals are handled by Tailwind utility classes in the template. */
+/* A palette row: result and command look identical on purpose, because to the person
+   typing they are the same gesture — find the thing, press enter. */
+.palette-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-hover) var(--ease-out);
+}
+
+.palette-row:hover,
+.palette-row:focus-visible {
+  background: var(--accent-soft);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palette-row { transition: none; }
+}

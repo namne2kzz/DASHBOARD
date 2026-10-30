@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DASHBOARD.Application.Repositories.Commands.CreateRepository;
 
-/// <summary>Handles <see cref="CreateRepositoryCommand"/>: enforces global-admin gate, checks Code uniqueness, validates the Scrum Master, creates the repository and seeds the assigned user as ScrumMaster.</summary>
+/// <summary>Handles <see cref="CreateRepositoryCommand"/>: enforces global-admin gate, checks Code uniqueness, validates the lead, creates the repository and seeds them as its Project Manager.</summary>
 public sealed class CreateRepositoryCommandHandler(
     IApplicationDbContext db,
     IRequestUserContext   user,
@@ -42,10 +42,10 @@ public sealed class CreateRepositoryCommandHandler(
         if (await db.Set<Repository>().AnyAsync(r => r.OrgId == orgId && r.Code == codeUpper, ct))
             throw new InvalidOperationException($"A repository with code '{codeUpper}' already exists.");
 
-        // The Scrum Master must be a user in the same organization.
-        var scrumMasterExists = await db.Set<User>().AnyAsync(u => u.Id == command.ScrumMasterId && u.OrgId == orgId, ct);
-        if (!scrumMasterExists)
-            throw new InvalidOperationException($"User '{command.ScrumMasterId}' does not exist.");
+        // The lead must be a user in the same organization.
+        var leadExists = await db.Set<User>().AnyAsync(u => u.Id == command.ProjectManagerId && u.OrgId == orgId, ct);
+        if (!leadExists)
+            throw new InvalidOperationException($"User '{command.ProjectManagerId}' does not exist.");
 
         var repo = new Repository
         {
@@ -57,7 +57,7 @@ public sealed class CreateRepositoryCommandHandler(
         db.Set<Repository>().Add(repo);
 
         // Bootstrap the repository's own standard roles + discipline catalog (no shared/seeded ids).
-        Role? scrumMasterRole = null;
+        Role? projectManagerRole = null;
         foreach (var def in DefaultRoleDefinitions.All)
         {
             var role = new Role
@@ -69,8 +69,8 @@ public sealed class CreateRepositoryCommandHandler(
                 AllowedFunctions = [.. def.AllowedFunctions],
             };
             db.Set<Role>().Add(role);
-            if (def.Name == DefaultRoleDefinitions.ScrumMaster)
-                scrumMasterRole = role;
+            if (def.Name == DefaultRoleDefinitions.ProjectManager)
+                projectManagerRole = role;
 
             db.Set<RepositoryMetadata>().Add(new RepositoryMetadata
             {
@@ -83,14 +83,25 @@ public sealed class CreateRepositoryCommandHandler(
 
         db.Set<RepositoryMember>().Add(new RepositoryMember
         {
-            UserId       = command.ScrumMasterId,
+            UserId       = command.ProjectManagerId,
             RepositoryId = repo.Id,
-            DefaultRole  = DefaultRoleDefinitions.ScrumMaster,
-            RoleId       = scrumMasterRole!.Id,
+            DefaultRole  = DefaultRoleDefinitions.ProjectManager,
+            RoleId       = projectManagerRole!.Id,
         });
 
         await uow.CommitAsync(ct);
 
-        return new RepositoryDto(repo.Id, repo.Name, repo.Code, repo.Description, 1, repo.CreatedAt);
+        // The caller just named the lead, so the response can carry them straight back
+        // rather than making the client re-fetch to learn what it already chose.
+        var leadName = await db.Set<User>().AsNoTracking()
+            .Where(u => u.Id == command.ProjectManagerId)
+            .Select(u => u.Name)
+            .FirstOrDefaultAsync(ct);
+
+        return new RepositoryDto(
+            repo.Id, repo.Name, repo.Code, repo.Description, 1, repo.CreatedAt,
+            IsArchived:      false,
+            LeadId:     command.ProjectManagerId,
+            LeadName:   leadName);
     }
 }

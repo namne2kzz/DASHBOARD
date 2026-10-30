@@ -1,0 +1,269 @@
+<div class="flex h-full flex-col">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between border-b border-nx-border bg-nx-surface px-8 py-4">
+    <h1 class="text-3xl font-bold text-nx-text">Repositories</h1>
+    <button type="button" (click)="openCreate()" class="nx-btn nx-btn--primary">
+      + New repository
+    </button>
+  </div>
+
+  <!-- Body -->
+  <div class="custom-scroll flex-1 overflow-y-auto p-5">
+    <div class="space-y-5">
+
+      @if (svc.error()) {
+        <app-load-error [message]="svc.error()!" (retry)="svc.load(searchQuery())" />
+      }
+
+      <!-- Filter bar -->
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="relative min-w-[13rem] flex-1">
+          <svg class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500"
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path stroke-linecap="round" d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="search" placeholder="Search name or code…"
+            [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+            (keyup.enter)="onSearch()"
+            class="field-input !pl-8 text-xs w-full" />
+        </div>
+
+        <!-- The same segmented control as everywhere else, with the count inline: a tab that
+             reads "Archived 0" tells you not to bother clicking it. -->
+        <div class="nx-segmented">
+          <button type="button" (click)="activeFilter.set('active')"
+                  [class.is-active]="activeFilter() === 'active'">
+            Active <span class="ml-1 font-mono">{{ counts().active }}</span>
+          </button>
+          <button type="button" (click)="activeFilter.set('archived')"
+                  [class.is-active]="activeFilter() === 'archived'">
+            Archived <span class="ml-1 font-mono">{{ counts().archived }}</span>
+          </button>
+          <button type="button" (click)="activeFilter.set('all')"
+                  [class.is-active]="activeFilter() === 'all'">
+            All <span class="ml-1 font-mono">{{ counts().all }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- List -->
+      @if (svc.loading()) {
+        <p class="px-4 py-8 text-center text-sm text-slate-500">Loading repositories…</p>
+      } @else if (!filteredRepos().length) {
+        <p class="px-4 py-8 text-center text-sm text-slate-500">
+          @if (activeFilter() === 'archived') {
+            Nothing archived.
+          } @else {
+            No repositories found.
+          }
+        </p>
+      } @else {
+        <div class="space-y-3">
+          @for (repo of filteredRepos(); track repo.id) {
+            <div class="nx-card nx-card--hover flex items-center gap-4 px-6 py-5"
+                 [class.opacity-60]="repo.isArchived">
+
+              <!-- The repository's code in the product's hexagon, the same shape as the
+                   avatars and the logo. -->
+              <span class="nx-hex-code text-xs" style="--hex-size: 52px">{{ repo.code }}</span>
+
+              <!-- Name + description -->
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <p class="truncate text-[15px] font-bold text-nx-text">{{ repo.name }}</p>
+                  @if (repo.isArchived) {
+                    <span class="nx-tag">Archived</span>
+                  }
+                </div>
+                @if (repo.description) {
+                  <p class="truncate text-sm text-nx-text-2">{{ repo.description }}</p>
+                }
+              </div>
+
+              <!-- Project Manager -->
+              <div class="hidden w-44 shrink-0 md:block">
+                <p class="nx-label !text-[11px]">Project Manager</p>
+                <p class="mt-0.5 truncate text-sm text-nx-text">
+                  {{ repo.leadName ?? '—' }}
+                </p>
+              </div>
+
+              <!-- Members -->
+              <div class="hidden w-20 shrink-0 text-center lg:block">
+                <p class="nx-label !text-[11px]">Members</p>
+                <p class="mt-0.5 font-mono text-sm tabular-nums text-nx-text">{{ repo.memberCount }}</p>
+              </div>
+
+              <!-- Created -->
+              <div class="hidden w-28 shrink-0 lg:block">
+                <p class="nx-label !text-[11px]">Created</p>
+                <p class="mt-0.5 text-sm text-nx-text">{{ repo.createdAt | localDate:'MMM d, y' }}</p>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex shrink-0 items-center gap-2">
+                @if (repo.isArchived) {
+                  <button type="button" (click)="unarchive(repo)" class="nx-btn nx-btn--sm">
+                    Restore
+                  </button>
+                } @else {
+                  <button type="button" (click)="openEdit(repo)" class="nx-btn nx-btn--sm">
+                    Edit
+                  </button>
+                  <button type="button" (click)="confirmArchive(repo)"
+                    class="nx-btn nx-btn--sm nx-btn--danger">
+                    Archive
+                  </button>
+                }
+              </div>
+
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit dialog ──────────────────────────────────────────────── -->
+@if (editing(); as repo) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-[rgb(13_17_23/.42)] px-6"
+       (click)="closeEdit()">
+    <div class="w-full max-w-[42rem] rounded-2xl bg-nx-surface shadow-[0_24px_64px_rgba(13,17,23,0.28)]"
+         (click)="$event.stopPropagation()">
+
+      <div class="flex items-center justify-between border-b border-nx-border px-6 py-4">
+        <h2 class="text-base font-semibold text-slate-100">Edit repository</h2>
+        <button type="button" (click)="closeEdit()"
+          class="text-slate-500 transition hover:text-slate-200">✕</button>
+      </div>
+
+      <div class="space-y-4 p-5">
+
+        <!-- Code is shown but never editable: it is the URL segment and work-item key prefix. -->
+        <div class="flex items-center gap-2 rounded-lg bg-nx-surface-2 px-3 py-2">
+          <span class="text-xs text-slate-500">Code</span>
+          <span class="font-mono text-sm font-semibold text-slate-300">{{ repo.code }}</span>
+          <span class="ml-auto text-[11px] text-slate-600">Cannot be changed</span>
+        </div>
+
+        <div>
+          <label class="field-label" for="repoName">Name *</label>
+          <input id="repoName" type="text"
+            [ngModel]="formName()" (ngModelChange)="formName.set($event)"
+            class="field-input mt-1.5 w-full" placeholder="My Project" />
+        </div>
+
+        <div>
+          <label class="field-label" for="repoDescription">Description</label>
+          <textarea id="repoDescription" rows="3"
+            [ngModel]="formDescription()" (ngModelChange)="formDescription.set($event)"
+            class="field-textarea mt-1.5 w-full" placeholder="Optional project description…"></textarea>
+        </div>
+
+        <div>
+          <label class="field-label">Project Manager</label>
+          <div class="mt-1.5">
+            @if (membersLoading()) {
+              <p class="text-xs text-slate-500">Loading members…</p>
+            } @else {
+              <app-user-select
+                [users]="memberOptions()"
+                [selectedId]="formLead()"
+                [allowClear]="false"
+                placeholder="Select a member"
+                (selected)="formLead.set($event)"
+              />
+              <p class="mt-1.5 text-[11px] leading-relaxed text-slate-500">
+                Handing the role over moves the current Project Manager to Developer. They stay in
+                the repository — every project keeps exactly one.
+              </p>
+            }
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex justify-end gap-2 border-t border-nx-border px-6 py-4">
+        <button type="button" (click)="closeEdit()" class="nx-btn nx-btn--sm">Cancel</button>
+        <button type="button" (click)="save()" [disabled]="!canSave()"
+          class="nx-btn nx-btn--primary nx-btn--sm">
+          {{ saving() ? 'Saving…' : 'Save changes' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ── Archive confirmation ───────────────────────────────────────
+     Typing the repository's code is the safeguard: a fixed word like "archive" would be the same
+     for every repository and become muscle memory, while the code can only be produced by reading
+     which repository this prompt is actually about. -->
+@if (archiving(); as repo) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-[rgb(13_17_23/.42)] px-6"
+       (click)="cancelArchive()">
+    <div class="w-full max-w-[28rem] rounded-2xl bg-nx-surface shadow-[0_24px_64px_rgba(13,17,23,0.28)]"
+         (click)="$event.stopPropagation()">
+
+      <div class="flex items-start gap-3 border-b border-nx-border px-6 py-4">
+        <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+          <svg class="h-4 w-4 text-amber-400" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v3.75m0 3.75h.008M10.29 3.86 1.82 18a1.5 1.5 0 0 0 1.29 2.25h17.78a1.5 1.5 0 0 0 1.29-2.25L13.71 3.86a1.5 1.5 0 0 0-2.42 0Z" />
+          </svg>
+        </span>
+        <div>
+          <h2 class="text-base font-semibold text-slate-100">Archive this repository?</h2>
+          <p class="mt-1 text-sm leading-relaxed text-slate-400">
+            <span class="font-medium text-slate-200">{{ repo.name }}</span> disappears from
+            everyone's repository list and from the sidebar.
+          </p>
+        </div>
+      </div>
+
+      <div class="space-y-4 p-5">
+
+        <div class="rounded-lg bg-nx-surface-2 px-3.5 py-3">
+          <p class="text-xs leading-relaxed text-slate-400">
+            Nothing is deleted. Boards, work items, members and history stay exactly as they are,
+            and you can restore the repository from this page at any time.
+          </p>
+        </div>
+
+        <div>
+          <label class="field-label" for="archiveConfirm">
+            Type <span class="font-mono font-semibold text-slate-200">{{ repo.code }}</span> to confirm
+          </label>
+          <input
+            id="archiveConfirm"
+            #archiveInput
+            type="text"
+            [ngModel]="archiveConfirmation()"
+            (ngModelChange)="archiveConfirmation.set($event)"
+            (change)="archiveConfirmation.set(archiveInput.value)"
+            (keyup.enter)="archive()"
+            class="field-input mt-1.5 w-full font-mono"
+            [placeholder]="repo.code"
+            autocomplete="off"
+            autofocus
+          />
+        </div>
+
+      </div>
+
+      <div class="flex justify-end gap-2 border-t border-nx-border px-6 py-4">
+        <button type="button" (click)="cancelArchive()" class="nx-btn nx-btn--sm">Cancel</button>
+        <button type="button" (click)="archive()" [disabled]="!canArchive()"
+          class="nx-btn nx-btn--sm border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20">
+          {{ archivePending() ? 'Archiving…' : 'Archive' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+}

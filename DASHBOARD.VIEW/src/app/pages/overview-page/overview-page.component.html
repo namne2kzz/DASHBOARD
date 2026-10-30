@@ -1,7 +1,7 @@
 <div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
   <div class="space-y-6">
-    <header class="sticky top-0 z-20 -mx-5 flex min-h-[52px] flex-wrap items-center gap-3 border-b border-slate-800 bg-slate-900 px-5 py-2.5">
-      <h1 class="text-lg font-semibold text-slate-100">Overview</h1>
+    <header class="sticky top-0 z-20 -mx-5 flex min-h-[72px] flex-wrap items-center gap-3 border-b border-nx-border bg-nx-surface px-8 py-3">
+      <h1 class="text-3xl font-bold text-nx-text">Overview</h1>
       @if (availableSprints().length > 0) {
         <select
           class="field-select !h-7 !text-xs w-auto"
@@ -26,60 +26,151 @@
       <app-load-error [message]="error()!" (retry)="retry()" />
     }
 
-    <!-- Sprint header + health -->
-    <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p class="text-xs font-medium text-slate-400">Current sprint</p>
-          <div class="mt-2 flex items-center gap-3">
-            <h2 class="text-xl font-semibold text-white">{{ selectedSprintName() }}</h2>
+    <!-- Needs attention — the problems on the board, each linking to where it is fixed.
+         Absent entirely when the sprint is healthy, so its presence is itself the signal. -->
+    @if (attention().length > 0) {
+      <section
+        class="attention-strip"
+        [class.attention-strip--critical]="attentionLevel() === 'critical'"
+        role="status"
+        aria-label="Needs attention"
+      >
+        <div class="attention-strip__head">
+          <svg class="attention-strip__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
+            <path d="M12 9v4M12 17h.01"/>
+          </svg>
+          {{ attentionLevel() === 'critical' ? 'Needs attention' : 'Worth a look' }}
+          <span class="attention-strip__count">{{ attention().length }}</span>
+        </div>
+        @for (item of attention(); track item.message) {
+          <a
+            class="attention-chip"
+            [class.attention-chip--critical]="item.severity === 'Critical'"
+            [routerLink]="repoLink(item.route)"
+          >
+            {{ item.message }}
+            <span aria-hidden="true">→</span>
+          </a>
+        }
+      </section>
+    }
+
+    <!-- Current sprint: the one card that earns a status stripe, plus the burn-down that
+         justifies the label it is wearing. -->
+    <section class="nx-card nx-card--striped grid gap-8 p-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]"
+             [style.--stripe]="healthStripe()">
+      <div class="flex flex-col gap-3.5">
+        <p class="nx-label">Current sprint</p>
+        <div class="flex flex-wrap items-center gap-3">
+          <h2 class="text-2xl font-bold text-nx-text">{{ selectedSprintName() }}</h2>
+          @if (sprintHealth(); as health) {
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ring-1"
+              [class]="healthBadge().classes"
+            >
+              <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+              {{ healthBadge().label }}
+            </span>
+          }
+        </div>
+        @if (sprintRange(); as range) {
+          <p class="font-mono text-sm text-nx-text-2">
+            {{ range }}
             @if (sprintHealth(); as health) {
-              <span
-                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1"
-                [class]="healthBadge().classes"
-              >
-                <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                {{ healthBadge().label }}
-                @if (health.daysRemaining > 0) {
-                  · {{ health.daysRemaining }}d left
-                }
+              · {{ health.daysRemaining > 0 ? health.daysRemaining + ' days left' : 'ended' }}
+            }
+          </p>
+        }
+
+        @if (storyPoints(); as points) {
+          <div class="mt-2 flex flex-col gap-2.5">
+            <div class="flex items-baseline justify-between">
+              <span class="text-sm font-semibold text-nx-text">Story points</span>
+              <span>
+                <span class="text-2xl font-bold tabular-nums text-nx-text">{{ points.completed }}</span>
+                <span class="text-nx-text-2"> / {{ points.committed }} pts</span>
               </span>
+            </div>
+            <!-- The grey tick is where a sprint on schedule would be today, so the bar is read
+                 against a target rather than against nothing. -->
+            <div class="relative h-3 rounded-full bg-nx-surface-2">
+              <div class="h-full rounded-full bg-nx-accent transition-[width] duration-500"
+                   [style.width.%]="pointProgress()"></div>
+              @if (idealProgress() !== null) {
+                <div class="absolute -top-1 h-5 w-0.5 bg-nx-text-2"
+                     [style.left.%]="idealProgress()" aria-hidden="true"></div>
+              }
+            </div>
+            @if (idealProgress() !== null) {
+              <p class="text-xs text-nx-text-2">Grey tick marks today's ideal pace</p>
             }
           </div>
-          <p class="mt-1 text-sm text-slate-400">Sprint metrics update the charts and cards below.</p>
-        </div>
+        }
       </div>
+
+      <figure class="m-0 flex flex-col gap-2">
+        <figcaption class="flex gap-4 text-xs text-nx-text-2">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="h-0 w-4 border-t-2 border-dashed border-nx-text-3"></span>Ideal
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <span class="h-[3px] w-4 rounded-sm bg-nx-accent"></span>Actual
+          </span>
+          <span class="ml-auto font-mono">pts remaining</span>
+        </figcaption>
+        <!-- The same series as the full burn-down section below, drawn compact and without
+             axis furniture: here it is evidence for the health badge, not a chart to read off. -->
+        <div class="h-[200px] w-full">
+          <ngx-charts-line-chart
+            [results]="burndownChartSeries()"
+            [scheme]="burndownScheme"
+            [xAxis]="false"
+            [yAxis]="false"
+            [legend]="false"
+            [autoScale]="true"
+            [animations]="true"
+          />
+        </div>
+      </figure>
     </section>
 
-    <!-- Stat cards -->
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
-        <p class="text-xs text-slate-400">Total items</p>
-        <div class="mt-2 text-3xl font-semibold text-white">{{ sprintTotal() }}</div>
+    <!-- Stat cards. Each number carries its change against the previous sprint — a figure on
+         its own says nothing about whether it is good news. -->
+    <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="nx-card p-6">
+        <p class="nx-label">Total items</p>
+        <div class="nx-metric mt-1.5 text-nx-text">{{ sprintTotal() }}</div>
+        <app-metric-delta [delta]="totalDelta()" unit="items" />
       </div>
-      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
-        <p class="text-xs text-slate-400">In progress</p>
-        <div class="mt-2 text-3xl font-semibold text-white">{{ sprintInProgress() }}</div>
+      <div class="nx-card p-6">
+        <p class="nx-label">In progress</p>
+        <div class="nx-metric mt-1.5 text-nx-text">{{ sprintInProgress() }}</div>
       </div>
-      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
-        <p class="text-xs text-slate-400">Done</p>
-        <div class="mt-2 text-3xl font-semibold text-white">{{ sprintDone() }}</div>
+      <div class="nx-card p-6">
+        <p class="nx-label">Done</p>
+        <div class="nx-metric mt-1.5 text-nx-text">{{ sprintDone() }}</div>
+        <app-metric-delta [delta]="doneDelta()" unit="items" />
       </div>
-      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-4 ring-1 ring-white/5">
-        <p class="text-xs text-slate-400">Avg. cycle time</p>
+      <div class="nx-card p-6">
+        <p class="nx-label">Avg. cycle time</p>
         @if (cycleTime().sampleCount > 0) {
-          <div class="mt-2 text-3xl font-semibold text-white">{{ cycleTime().averageDays }}<span class="text-base font-normal text-slate-400"> days</span></div>
-          <p class="mt-1 text-[11px] text-slate-500">Based on {{ cycleTime().sampleCount }} completed item(s)</p>
+          <div class="nx-metric mt-1.5 text-nx-text">
+            {{ cycleTime().averageDays }}<span class="text-base font-normal text-nx-text-2"> days</span>
+          </div>
+          <!-- Faster is better here, so the arrow's colour is inverted against the other tiles. -->
+          <app-metric-delta [delta]="cycleTimeDelta()" unit="days" [lowerIsBetter]="true" />
         } @else {
-          <div class="mt-2 text-3xl font-semibold text-slate-600">—</div>
-          <p class="mt-1 text-[11px] text-slate-500">No completed items yet</p>
+          <div class="nx-metric mt-1.5 text-nx-text-3">—</div>
+          <p class="mt-1 text-xs text-nx-text-3">No completed items yet</p>
         }
       </div>
     </section>
 
     <!-- Story points progress -->
     @if (storyPoints(); as sp) {
-      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <section class="nx-card p-6">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-sm font-semibold text-slate-200">Story points</h2>
@@ -101,7 +192,7 @@
 
     <!-- Sprint report card -->
     @if (report(); as r) {
-      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <section class="nx-card p-6">
         <div class="mb-4 flex items-center justify-between">
           <div>
             <h2 class="text-sm font-semibold text-slate-200">Sprint report</h2>
@@ -110,19 +201,19 @@
         </div>
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <!-- Task completion -->
-          <div class="rounded-xl border border-slate-800/60 bg-slate-950/40 p-4">
+          <div class="rounded-lg bg-nx-surface-2 p-4">
             <p class="text-xs text-slate-400">Task completion</p>
             <div class="mt-2 text-2xl font-semibold text-white">{{ (r.taskCompletionRate * 100) | number:'1.0-0' }}%</div>
             <p class="mt-1 text-[11px] text-slate-500">{{ r.completedTasks }} / {{ r.totalTasks }} tasks done</p>
           </div>
           <!-- Point completion -->
-          <div class="rounded-xl border border-slate-800/60 bg-slate-950/40 p-4">
+          <div class="rounded-lg bg-nx-surface-2 p-4">
             <p class="text-xs text-slate-400">Point completion</p>
             <div class="mt-2 text-2xl font-semibold text-white">{{ (r.pointCompletionRate * 100) | number:'1.0-0' }}%</div>
             <p class="mt-1 text-[11px] text-slate-500">story points delivered</p>
           </div>
           <!-- Scope added -->
-          <div class="rounded-xl border border-slate-800/60 bg-slate-950/40 p-4">
+          <div class="rounded-lg bg-nx-surface-2 p-4">
             <p class="text-xs text-slate-400">Scope added</p>
             <div class="mt-2 text-2xl font-semibold" [class.text-amber-400]="r.addedAfterStart > 0" [class.text-white]="r.addedAfterStart === 0">
               {{ r.addedAfterStart }}
@@ -130,7 +221,7 @@
             <p class="mt-1 text-[11px] text-slate-500">item(s) added after start</p>
           </div>
           <!-- Scope points -->
-          <div class="rounded-xl border border-slate-800/60 bg-slate-950/40 p-4">
+          <div class="rounded-lg bg-nx-surface-2 p-4">
             <p class="text-xs text-slate-400">Scope change pts</p>
             <div class="mt-2 text-2xl font-semibold" [class.text-amber-400]="r.scopeChangePoints > 0" [class.text-white]="r.scopeChangePoints === 0">
               +{{ r.scopeChangePoints }}
@@ -143,7 +234,7 @@
 
     <!-- Work items by type + type distribution -->
     <div class="grid gap-6 lg:grid-cols-2">
-      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <section class="nx-card p-6">
         <h2 class="text-sm font-semibold text-slate-200">Work items by type</h2>
         <p class="mt-1 text-xs text-slate-500">Item count per type for the selected sprint.</p>
         <div class="mt-4 h-64 w-full">
@@ -159,7 +250,7 @@
         </div>
       </section>
 
-      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <section class="nx-card p-6">
         <h2 class="text-sm font-semibold text-slate-200">Type distribution</h2>
         <p class="mt-1 text-xs text-slate-500">Share of work item types in the selected sprint.</p>
         <div class="mt-4 h-64 w-full">
@@ -175,7 +266,7 @@
 
     <!-- Status distribution + velocity trend -->
     <div class="grid gap-6 lg:grid-cols-2">
-      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <section class="nx-card p-6">
         <h2 class="text-sm font-semibold text-slate-200">Status distribution</h2>
         <p class="mt-1 text-xs text-slate-500">Item count by workflow state in the selected sprint.</p>
         <div class="mt-4 h-64 w-full">
@@ -191,7 +282,7 @@
         </div>
       </section>
 
-      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <section class="nx-card p-6">
         <h2 class="text-sm font-semibold text-slate-200">Velocity trend</h2>
         <p class="mt-1 text-xs text-slate-500">Committed vs completed story points across the last 5 sprints.</p>
         <div class="mt-4 h-64 w-full">
@@ -209,7 +300,7 @@
     </div>
 
     <!-- Work item trend by type (7 sprints) -->
-    <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+    <section class="nx-card p-6">
       <h2 class="text-sm font-semibold text-slate-200">Work item trend by type</h2>
       <p class="mt-1 text-xs text-slate-500">Item count per type — current sprint vs the up to 6 preceding sprints.</p>
       <div class="mt-4 h-80 w-full">
@@ -226,7 +317,7 @@
     </section>
 
     <!-- Burndown -->
-    <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+    <section class="nx-card p-6">
       <h2 class="text-sm font-semibold text-slate-200">{{ t('overview.burndown.title') }}</h2>
       <p class="mt-1 text-xs text-slate-500">{{ t('overview.burndown.note') }}</p>
       <div class="mt-4 h-64 w-full">
@@ -244,7 +335,7 @@
 
     <!-- Workload by assignee + recent activity -->
     <div class="grid gap-6 lg:grid-cols-2">
-      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <section class="nx-card p-6">
         <h2 class="text-sm font-semibold text-slate-200">Workload by assignee</h2>
         <p class="mt-1 text-xs text-slate-500">Item count assigned to each member in the selected sprint.</p>
         @if (assigneeWorkload().length > 0) {
@@ -272,7 +363,7 @@
         }
       </section>
 
-      <section class="rounded-2xl border border-slate-800/80 bg-slate-900/50 p-5 ring-1 ring-white/5">
+      <section class="nx-card p-6">
         <h2 class="text-sm font-semibold text-slate-200">Recent activity</h2>
         <p class="mt-1 text-xs text-slate-500">Latest changes across the repository.</p>
         @if (recentActivity().length > 0) {

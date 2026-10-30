@@ -6,6 +6,8 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-28 | — | Dải "Cần chú ý" đổi sang dạng cảnh báo | Dải này trước nằm trên `nx-card` trắng giống mọi panel khác nên đọc như nội dung thường, không ra cảnh báo. Nay là **khối duy nhất trên trang không phải card**: nền nhuốm màu + viền trái 4px. **Tông lấy theo mức nặng nhất đang có**, không mặc định đỏ: toàn `Warning` → vàng, tiêu đề "Worth a look"; có ≥1 `Critical` → đỏ, tiêu đề "Needs attention". Lý do: thẻ kẹt lâu và vi phạm WIP hard-stop không cùng mức độ; banner lúc nào cũng đỏ thì người đọc ngừng để ý, giữ đỏ cho vi phạm thật để khi trang đỏ là nó có nghĩa. Chip bên trong chuyển nền đặc (`--surface`) vì nền tint cũ sẽ chìm vào dải cùng màu — mức độ vẫn đọc được qua màu chữ. Quy tắc nghiệp vụ (3 loại item, tối đa 5, `Critical` trước) **không đổi**. |
+| 2026-10-27 | 23:19 | Thêm dải "Cần chú ý" + so sánh sprint trước | Overview trả thêm 2 khối: (1) **Attention** — tối đa 5 vấn đề đang cần xử lý, mỗi item có sẵn câu mô tả và route để bấm tới chỗ sửa: cột vượt WIP (`Critical` nếu hard-stop, `Warning` nếu soft), tối đa 2 người quá tải (> 20 pts), và **1** thẻ kẹt lâu nhất (quá `AgingLimitDays` của cột). (2) **Comparison** — số liệu sprint liền trước (theo StartDate, không theo thứ tự list) để mỗi chỉ số hiện mũi tên tăng/giảm; `HasPrevious=false` ở sprint đầu tiên thì ẩn hết delta. `SprintRefDto` thêm StartDate/EndDate để header hiện khoảng ngày. |
 | 2026-10-17 | 11:45 | Thêm Sprint Report card | Bổ sung report card cho sprint đang chọn: task completion rate (done/total), point completion rate (completed/committed), scope change (số item + story point được **tạo sau ngày StartDate** = scope thêm giữa sprint, xấp xỉ vì item move vào sprint vẫn giữ CreatedAt gốc) |
 | 2026-07-05 | 13:41 | Thêm health/cycle-time/workload/activity | Bổ sung sprint health indicator, cycle time xấp xỉ, workload theo assignee, recent activity feed, và type-trend 7 sprint vào overview |
 | 2026-06-23 | 20:58 | Khởi tạo document | Tạo document business ban đầu cho feature Overview |
@@ -36,6 +38,14 @@ Dashboard tổng hợp/analytics cho 1 Repository (có thể scope theo 1 Sprint
 - **Cycle time**: xấp xỉ bằng trung bình `(ClosedAt - CreatedAt)` (đơn vị ngày) trên các task đã Done trong sprint đang chọn. Đây **không phải** cycle time thật (thời gian Active → Done) vì hệ thống chưa lưu lịch sử chuyển trạng thái có cấu trúc (chỉ có `HistoryEntry.Message` dạng free-text) — cần nêu rõ đây là chỉ số xấp xỉ khi hiển thị.
 - **Workload theo assignee**: group task trong sprint đang chọn theo `AssignedToId`; task chưa gán (`AssignedToId == null`) gộp vào nhóm "Unassigned".
 - **Recent activity**: lấy tối đa 8 `HistoryEntry` mới nhất theo `RepositoryId` (toàn bộ repository, không giới hạn theo 1 task) — tái sử dụng entity/pattern có sẵn của feature History, không tạo bảng mới.
+- **Attention (Cần chú ý)**: tối đa 5 item, sắp xếp `Critical` trước. Ba loại:
+  - `WipExceeded` — cột có `WipLimit > 0` và số item vượt limit. Severity = `Critical` nếu `WipMode = Hard` (chặn thật), `Warning` nếu Soft (chỉ cảnh báo). `WipLimit = 0` nghĩa là không giới hạn → bỏ qua.
+  - `Overloaded` — tối đa 2 người có `StoryPoints > 20` trong sprint, nhiều nhất trước. Ngưỡng **cố định 20 pts**, cố ý không đọc capacity thật: màn Capacity đã mô hình hóa ngày nghỉ/part-time, dải này chỉ cần chỉ ra chỗ lệch rõ ràng chứ không được nói khác màn kia.
+  - `StaleItem` — **chỉ 1** item kẹt lâu nhất (chưa Done, `StateChangedAt` quá `AgingLimitDays` của cột tương ứng). Liệt kê 30 thẻ cũ là backlog chứ không còn là cảnh báo.
+  - Mỗi item mang sẵn `Route` dạng route tương đối (`boards`, `sprint-planning`) + `TargetId` — server không biết client đánh URL thế nào.
+  - Không có vấn đề nào → trả mảng rỗng, UI ẩn hẳn dải. Chính sự xuất hiện của dải là tín hiệu.
+- **Comparison (so sánh sprint trước)**: "sprint trước" xác định theo `StartDate` nhỏ hơn sprint đang chọn và gần nhất — **không** theo vị trí trong list, để vẫn đúng khi người dùng chọn 1 sprint cũ bất kỳ. Trả `CompletedPoints`, `CycleTimeDays`, `TotalItems`, `DoneItems`. Sprint đầu tiên của repository → `HasPrevious = false`, UI ẩn toàn bộ mũi tên delta (không hiện "0" giả).
+- **Hướng tốt/xấu của delta không giống nhau giữa các chỉ số**: item xong nhiều hơn là tốt, cycle time dài hơn là xấu — UI phải đảo màu cho chỉ số kiểu "càng thấp càng tốt", và luôn kèm mũi tên chứ không chỉ dùng màu (người không phân biệt được đỏ/xanh vẫn phải đọc được).
 
 ## 4. Main Workflows / Use Cases
 
@@ -46,6 +56,8 @@ Dashboard tổng hợp/analytics cho 1 Repository (có thể scope theo 1 Sprint
 5. Manager xem workload theo assignee để phát hiện thành viên đang quá tải trong sprint hiện tại.
 6. Bất kỳ member nào xem recent activity feed để nắm nhanh các thay đổi gần đây trong repository mà không cần vào từng task.
 7. Filter theo 1 sprint cụ thể để xem chi tiết toàn bộ các chỉ số trên.
+8. Mở Overview thấy ngay dải "Cần chú ý", bấm 1 chip để nhảy thẳng tới màn xử lý (Board cho WIP/thẻ kẹt, Sprint cho người quá tải).
+9. Đọc mũi tên bên dưới mỗi con số để biết sprint này tốt hơn hay xấu hơn sprint trước, thay vì phải tự nhớ số cũ.
 
 ## 5. Definition of Done
 

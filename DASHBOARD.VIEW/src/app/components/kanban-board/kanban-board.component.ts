@@ -11,12 +11,22 @@ import { PrivilegeService } from '../../core/services/privilege.service';
 import { DialogService } from '../../core/components/dialog/dialog.service';
 import { KanbanColumnComponent } from '../kanban-column/kanban-column.component';
 import { CreateWorkItemDialogComponent } from '../create-workitem-dialog/create-workitem-dialog.component';
-import { SprintTaskApiType } from '../../core/enums/system.enum';
+import { SprintTaskApiType, getAllowedStates } from '../../core/enums/system.enum';
 import { LoadErrorComponent } from '../../components/load-error/load-error.component';
+import { HorizontalPagerDirective } from '../../directives/horizontal-pager.directive';
+import type { BoardItemType } from '../../models/boards.model';
+
+/** Board card types as the API numbers them, for the allowed-state lookup. */
+const BOARD_TYPE_TO_API: Record<BoardItemType, SprintTaskApiType> = {
+  'user-story': SprintTaskApiType.UserStory,
+  'task':       SprintTaskApiType.Task,
+  'bug':        SprintTaskApiType.Bug,
+  'test-plan':  SprintTaskApiType.TestPlan,
+};
 
 @Component({
   selector: 'app-kanban-board',
-  imports: [LoadErrorComponent, DragDropModule, FormsModule, NgClass, KanbanColumnComponent],
+  imports: [LoadErrorComponent, DragDropModule, FormsModule, NgClass, KanbanColumnComponent, HorizontalPagerDirective],
   templateUrl: './kanban-board.component.html',
   styleUrl: './kanban-board.component.css',
 })
@@ -98,22 +108,75 @@ export class KanbanBoardComponent {
     return result;
   });
 
+  /**
+   * Type of the card currently being dragged, or null when nothing is in flight.
+   *
+   * Held on the board rather than in each column because every column needs to know it:
+   * the ones that cannot accept this type recede for the duration of the drag.
+   */
+  readonly draggingType = signal<BoardItemType | null>(null);
+
+  /**
+   * Records what is in flight when a card is picked up.
+   * @param item The card being dragged.
+   */
+  onDragStarted(item: BoardItem): void {
+    this.draggingType.set(item.type);
+  }
+
+  /**
+   * Clears the drag state and stops any edge auto-scroll still running.
+   * @param pager The board's horizontal pager.
+   */
+  onDragEnded(pager: HorizontalPagerDirective): void {
+    this.draggingType.set(null);
+    // Without this the loop keeps scrolling after the card is released, because the last pointer
+    // position it saw was inside an edge zone.
+    pager.trackPointer(null);
+  }
+
   private readonly _predicateCache = new Map<string, (d: CdkDrag, l: CdkDropList) => boolean>();
 
   /**
    * Returns a stable CDK enter-predicate for the given column.
-   * Hard-stop columns at their limit return false to block drops.
+   *
+   * Two separate rules decide whether a card may land here, and both must hold:
+   *
+   * 1. The column's state has to be one the dragged item's type can occupy at all — a test
+   *    plan has no "In Review", so that column must refuse it however empty it is. This is a
+   *    property of the work item type and no amount of capacity changes it.
+   * 2. A hard-stop column already at its WIP limit refuses anything further.
+   *
    * @param colId Column to evaluate.
    * @returns Predicate function for CdkDropList.
    */
   getEnterPredicate(colId: string): (drag: CdkDrag, drop: CdkDropList) => boolean {
     if (!this._predicateCache.has(colId)) {
-      this._predicateCache.set(colId, () => {
+      this._predicateCache.set(colId, (drag: CdkDrag) => {
+        if (!this.columnAcceptsType(colId, (drag.data as BoardItem | undefined)?.type)) return false;
+
         const wip = this.wipStatusMap().get(colId);
         return !(wip?.exceeded && wip.mode === 'hard');
       });
     }
     return this._predicateCache.get(colId)!;
+  }
+
+  /**
+   * Whether a work item of the given type is allowed in the column's mapped state.
+   *
+   * @param colId Column to test.
+   * @param type Work item type being dragged; null or undefined while no drag is in progress.
+   * @returns True when the type may occupy that state.
+   */
+  columnAcceptsType(colId: string, type: BoardItemType | null | undefined): boolean {
+    if (!type) return true;
+
+    const column = this.workflow.columns().find(c => c.id === colId);
+    if (!column) return true;
+
+    const allowed = getAllowedStates(BOARD_TYPE_TO_API[type]);
+    return allowed.includes(STATE_KEY_TO_API[column.mappedState]);
   }
 
   /** @returns Count of query rows with a selected criteria. */

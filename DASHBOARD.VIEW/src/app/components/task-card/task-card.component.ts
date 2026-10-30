@@ -28,6 +28,28 @@ export class TaskCardComponent {
     return limit > 0 && this.agingDays() >= limit;
   });
 
+  /**
+   * How far past its limit the card has drifted: yellow → orange → red.
+   *
+   * A single "aging" flag put a card one day over and one a hundred days over in the same
+   * bucket, which is exactly the distinction someone scanning the board needs. The
+   * multipliers are deliberately coarse — the point is to sort cards into "slipping",
+   * "late" and "forgotten", not to be precise about any one of them.
+   */
+  readonly ageLevel = computed<'none' | 'warn' | 'late' | 'stale'>(() => {
+    const limit = this.agingLimitDays();
+    if (limit <= 0) return 'none';
+
+    const days = this.agingDays();
+    if (days < limit)     return 'none';
+    if (days < limit * 2) return 'warn';
+    if (days < limit * 4) return 'late';
+    return 'stale';
+  });
+
+  /** Age label text, e.g. "12d · over 7d". */
+  readonly ageLabel = computed(() => `${this.agingDays()}d · over ${this.agingLimitDays()}d`);
+
   /** 8px type square next to the ID. */
   readonly typeSquareClass: Record<BoardItemType, string> = {
     'user-story': 'nx-type--story',

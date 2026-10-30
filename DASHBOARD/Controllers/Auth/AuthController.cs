@@ -2,13 +2,17 @@
 using DASHBOARD.Application.Auth.Commands.Login;
 using DASHBOARD.Application.Auth.Commands.Logout;
 using DASHBOARD.Application.Auth.Commands.RefreshToken;
+using DASHBOARD.Application.Auth.Commands.SetPassword;
 using DASHBOARD.Application.Auth.DTOs;
 using DASHBOARD.Application.Auth.Queries.GetCurrentUser;
 using DASHBOARD.Application.Common.Interfaces;
+using DASHBOARD.Application.Orgs.DTOs;
+using DASHBOARD.Application.Orgs.Queries.GetOrganizationByAlias;
 using DASHBOARD.Controllers.Auth.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.Auth;
@@ -21,6 +25,33 @@ public sealed class AuthController(
     ICurrentUserService currentUser,
     AuthCookieWriter cookies) : ControllerBase
 {
+    /// <summary>Rate-limit policy guarding the anonymous alias lookup; configured in Program.cs.</summary>
+    public const string OrgLookupRateLimitPolicy = "org-lookup";
+
+    /// <summary>Resolves a tenant alias typed on the first step of sign-in.</summary>
+    /// <remarks>
+    /// Anonymous by necessity — the user cannot authenticate before naming their organisation. A
+    /// 200 therefore tells the caller that tenant exists, which is why the route is rate limited
+    /// well below the global allowance and the body carries the alias and nothing else.
+    /// </remarks>
+    /// <param name="alias">The URL-safe tenant alias.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with <see cref="OrganizationLookupDto"/>, 404 when no organisation has that alias.</returns>
+    [HttpGet("orgs/{alias}")]
+    [AllowAnonymous]
+    [EnableRateLimiting(OrgLookupRateLimitPolicy)]
+    [ProducesResponseType<OrganizationLookupDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public async Task<IActionResult> GetOrganization(string alias, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetOrganizationByAliasQuery(alias), ct);
+        if (result.IsFailure) return NotFound(new { error = result.Error });
+
+        return Ok(result.Value);
+    }
+
     /// <summary>Authenticates a user and returns an access + refresh token pair.</summary>
     /// <param name="request">Login credentials.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -36,6 +67,32 @@ public sealed class AuthController(
         if (result.IsFailure) return Unauthorized(new { error = result.Error });
         // Set the HttpOnly auth cookies. The body is still returned so the SPA can bootstrap its
         // profile signals and the HUB SSO handoff can read the tokens for its cross-origin redirect.
+        cookies.WriteSession(Response, result.Value!);
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Redeems a one-time password-setup link so a newly provisioned user can choose their first
+    /// password, then signs them in.
+    /// </summary>
+    /// <remarks>
+    /// Issued when NKey provisions an organisation: the first admin account is created without a
+    /// password and this link is emailed instead. Holding the token proves control of that mailbox,
+    /// so no further credentials are required.
+    /// </remarks>
+    /// <param name="request">The setup token and the chosen password.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with <see cref="LoginResult"/>, 400 when the link is invalid, expired or already used, 422 on a weak password.</returns>
+    [HttpPost("set-password")]
+    [AllowAnonymous]
+    [ProducesResponseType<LoginResult>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> SetPassword([FromBody] SetPasswordRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new SetPasswordCommand(request.Token, request.NewPassword), ct);
+        if (result.IsFailure) return BadRequest(new { error = result.Error });
+
         cookies.WriteSession(Response, result.Value!);
         return Ok(result.Value);
     }
@@ -81,7 +138,11 @@ public sealed class AuthController(
 
         if (string.IsNullOrEmpty(token))
         {
-            cookies.ClearSession(Response);
+            // Deliberately not clearing the cookies here. This branch means only that no refresh
+            // token reached us — a caller that never had one, or whose refresh cookie expired
+            // while the access cookie is still perfectly valid. Expiring the access cookie on the
+            // way out would end a working session because of a request that failed to start one,
+            // which is how a single stray refresh call used to sign people out.
             return Unauthorized(new { error = "No refresh token supplied." });
         }
 

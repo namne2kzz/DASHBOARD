@@ -56,23 +56,28 @@ export class SettingsMembersPageComponent {
     this.metadataService.items().filter(m => m.key === 'RepoRole').map(m => m.value),
   );
 
-  /** The seeded Scrum Master discipline value, guarded as the repository's lead discipline. */
-  private readonly SCRUM_MASTER = 'Scrum Master';
-
-  /** Id of the default Scrum Master permission role, when loaded. */
-  private readonly scrumMasterRoleId = computed(() =>
-    this.roleService.roles().find(r => r.isDefault && r.name === this.SCRUM_MASTER)?.id ?? null,
+  /**
+   * Ids of every role in this repository that grants ManageMembers.
+   *
+   * Judged by permission, never by role name (roles.dod.md §3, BUG-004): a repository may rename
+   * its lead role or grant the same authority through a custom one.
+   */
+  private readonly leadRoleIds = computed(() =>
+    new Set(this.roleService.roles()
+      .filter(r => r.permissions.includes(Permission.ManageMembers))
+      .map(r => r.id)),
   );
 
-  /** Number of members whose discipline is Scrum Master. */
-  private readonly smDisciplineCount = computed(() =>
-    this.membersService.members().filter(m => m.defaultRole === this.SCRUM_MASTER).length,
-  );
+  /** How many members can currently manage members — the invariant is that this never reaches zero. */
+  private readonly leadCount = computed(() => {
+    const leadRoles = this.leadRoleIds();
+    return this.membersService.members().filter(m => leadRoles.has(m.roleId)).length;
+  });
 
-  /** Number of members holding the Scrum Master role. */
-  private readonly smRoleCount = computed(() =>
-    this.membersService.members().filter(m => m.roleId === this.scrumMasterRoleId()).length,
-  );
+  /** @param roleId A role id. @returns Whether that role grants ManageMembers. */
+  private grantsLead(roleId: string): boolean {
+    return this.leadRoleIds().has(roleId);
+  }
 
   // ── Search ────────────────────────────────────────────────────
   readonly searchQuery = signal('');
@@ -324,13 +329,8 @@ export class SettingsMembersPageComponent {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return;
 
-    // Guard: keep at least one Scrum Master discipline.
-    if (member.defaultRole === this.SCRUM_MASTER && value !== this.SCRUM_MASTER && this.smDisciplineCount() <= 1) {
-      this.toast.warning('At least one member must keep the Scrum Master discipline. Assign it to another member first.');
-      this.membersService.load(repoId);
-      return;
-    }
-
+    // No lead guard here: this changes the discipline label only, leaving the assigned role — and
+    // therefore every permission — exactly as it was.
     this.membersService.updateMemberRole(repoId, member.memberId, value, member.roleId)
       .subscribe({ error: () => this.membersService.load(repoId) });
   }
@@ -341,10 +341,10 @@ export class SettingsMembersPageComponent {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return;
 
-    // Guard: keep at least one member holding the Scrum Master role.
-    const smRoleId = this.scrumMasterRoleId();
-    if (member.roleId === smRoleId && value !== smRoleId && this.smRoleCount() <= 1) {
-      this.toast.warning('At least one member must keep the Scrum Master role. Assign it to another member first.');
+    // Guard: somebody must still be able to manage members afterwards. Moving between two roles
+    // that both grant it is not a loss, which is why the incoming role is checked too.
+    if (this.grantsLead(member.roleId) && !this.grantsLead(value) && this.leadCount() <= 1) {
+      this.toast.warning('At least one member must keep permission to manage members. Assign it to another member first.');
       this.membersService.load(repoId);
       return;
     }
@@ -359,13 +359,9 @@ export class SettingsMembersPageComponent {
     const repoId = this.repoCtx.selectedRepoId();
     if (!repoId) return;
 
-    // Guard: keep at least one Scrum Master discipline and one Scrum Master role.
-    if (member.defaultRole === this.SCRUM_MASTER && this.smDisciplineCount() <= 1) {
-      this.toast.warning('Cannot remove the last Scrum Master (discipline). Assign the Scrum Master discipline to another member first.');
-      return;
-    }
-    if (member.roleId === this.scrumMasterRoleId() && this.smRoleCount() <= 1) {
-      this.toast.warning('Cannot remove the last member holding the Scrum Master role. Assign it to another member first.');
+    // Guard: somebody must still be able to manage members afterwards.
+    if (this.grantsLead(member.roleId) && this.leadCount() <= 1) {
+      this.toast.warning('Cannot remove the last member who can manage members. Assign that permission to another member first.');
       return;
     }
 

@@ -111,7 +111,7 @@
         }
       </select>
     } @else {
-      <p class="rounded-lg border border-dashed border-slate-700 px-3 py-2.5 text-xs text-slate-500">
+      <p class="rounded-md bg-nx-surface-2 px-3 py-2.5 text-xs text-nx-text-2">
         No capacity members in this sprint — add members in Sprint Planning first.
       </p>
     }
@@ -152,14 +152,14 @@
 
       @if (parentDropdownRect(); as rect) {
         <div
-          class="fixed z-[9990] rounded-xl border border-slate-700 bg-slate-800/95 py-1.5 shadow-2xl "
+          class="nx-menu fixed z-[9990] "
           [style.top.px]="rect.top" [style.left.px]="rect.left" [style.width.px]="rect.width"
         >
           @if (parentSearching()) {
             @for (i of [1, 2, 3]; track i) {
               <div class="flex items-center gap-2.5 px-3 py-2">
-                <div class="h-3 w-12 shrink-0 animate-pulse rounded bg-slate-700/80"></div>
-                <div class="h-2.5 flex-1 animate-pulse rounded bg-slate-700/60"></div>
+                <div class="h-3 w-12 shrink-0 nx-skeleton"></div>
+                <div class="h-2.5 flex-1 nx-skeleton"></div>
               </div>
             }
           } @else if (parentResults().length > 0) {

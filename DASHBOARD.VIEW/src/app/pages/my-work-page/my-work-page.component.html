@@ -1,119 +1,140 @@
-<!-- Header -->
-<div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-5 py-3.5">
-    <div>
-      <h1 class="text-lg font-semibold text-white">My Work</h1>
-      <p class="mt-0.5 text-sm text-slate-500">Every open item assigned to you across all your repositories.</p>
-    </div>
-    <button
-      type="button"
-      class="nx-btn nx-btn--sm"
-      (click)="myWork.refresh()"
-      [disabled]="myWork.loading()"
-    >
-      <svg class="h-3.5 w-3.5" [class.animate-spin]="myWork.loading()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 0 0-14.9-2M4 16a8 8 0 0 0 14.9 2"/>
-      </svg>
-      Refresh
-    </button>
-</div>
-<div class="px-5 py-5">
+<!-- The page banner matches every other screen: title on the left, actions on the right. The
+     greeting is a different kind of thing — a daily note, not a page title — so it lives in its
+     own card below rather than inflating this bar. -->
+<header class="flex items-center justify-between border-b border-nx-border bg-nx-surface px-8 py-4">
+  <h1 class="text-3xl font-bold text-nx-text">My Work</h1>
+  <button
+    type="button"
+    class="nx-btn"
+    (click)="myWork.refresh()"
+    [disabled]="myWork.loading()"
+  >
+    <svg class="h-4 w-4" [class.animate-spin]="myWork.loading()" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>
+    </svg>
+    Refresh
+  </button>
+</header>
 
-  <!-- Summary line (Nexus UI: no KPI tiles) -->
-  <div class="mb-5 flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-slate-400">
-    <span><b class="font-mono font-medium text-slate-100">{{ myWork.totalCount() }}</b> open items</span>
-    <span class="flex items-center gap-1.5"><span class="nx-dot bg-blue-500"></span><b class="font-mono font-medium text-slate-100">{{ myWork.activeCount() }}</b> active</span>
-    <span class="flex items-center gap-1.5"><span class="nx-dot bg-amber-500"></span><b class="font-mono font-medium text-slate-100">{{ myWork.inReviewCount() }}</b> in review</span>
-    <span><b class="font-mono font-medium text-slate-100">{{ myWork.repoCount() }}</b> repositories</span>
-  </div>
+<div class="grid w-full max-w-[1280px] gap-6 px-8 py-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,1fr)]">
+  <div class="flex flex-col gap-5">
+    <!-- The day in words. Separate from the banner because it says something different: the
+         banner names the screen, this says what the screen amounts to today. The sentence does
+         the work, so the numbers in the panel beside it confirm rather than announce. -->
+    <section class="nx-card px-6 py-5">
+      <p class="nx-label m-0">{{ todayLabel() }}</p>
+      <h2 class="m-0 mt-1.5 text-[22px] font-bold tracking-[-0.01em] text-nx-text">{{ greeting() }}</h2>
+      <p class="m-0 mt-1 text-[15px] text-nx-text-2">{{ summary() }}</p>
+    </section>
 
-  <!-- Controls -->
-  <div class="mb-4 flex flex-wrap items-center gap-2">
-    <input
-      type="text"
-      placeholder="Search title, number, or repository…"
-      class="field-input min-w-[12rem] flex-1"
-      [ngModel]="search()"
-      (ngModelChange)="search.set($event)"
-    />
-    <span class="text-xs font-medium text-slate-400">Group by</span>
-    <div class="nx-segmented">
-      @for (opt of groupingOptions; track opt.value) {
-        <button
-          type="button"
-          [class.is-active]="grouping() === opt.value"
-          (click)="setGrouping(opt.value)"
-        >{{ opt.label }}</button>
-      }
+    <!-- Controls -->
+    <div class="flex flex-wrap items-center gap-3">
+      <input
+        type="text"
+        placeholder="Search title, number, or repository…"
+        class="field-input min-w-[12rem] flex-1"
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+      />
+      <div class="nx-segmented">
+        @for (opt of groupingOptions; track opt.value) {
+          <button
+            type="button"
+            [class.is-active]="grouping() === opt.value"
+            (click)="setGrouping(opt.value)"
+          >{{ opt.label }}</button>
+        }
+      </div>
     </div>
-  </div>
 
-  <!-- Loading -->
-  @if (myWork.loading() && myWork.items().length === 0) {
-    <div class="space-y-2">
-      @for (_ of [1, 2, 3, 4]; track $index) {
-        <div class="h-11 animate-pulse rounded-2xl border border-slate-800 bg-slate-900"></div>
-      }
-    </div>
-  } @else if (myWork.error()) {
-    <app-load-error [message]="myWork.error()!" (retry)="myWork.refresh()" />
-  } @else if (myWork.items().length === 0) {
-    <div class="rounded-2xl border border-dashed border-slate-700 py-14 text-center">
-      <p class="text-sm font-medium text-slate-400">You're all caught up</p>
-      <p class="mt-1 text-xs text-slate-500">No open work items are currently assigned to you.</p>
-    </div>
-  } @else if (filteredItems().length === 0) {
-    <div class="rounded-2xl border border-dashed border-slate-700 py-10 text-center text-sm text-slate-500">
-      No items match "{{ search() }}".
-    </div>
-  } @else {
-    <!-- Grouped list -->
-    <div class="space-y-6">
-      @for (group of groups(); track group.key) {
-        <section>
-          <div class="mb-2 flex items-center gap-2 px-0.5">
-            <h2 class="text-sm font-semibold text-slate-100">{{ group.label }}</h2>
-            <span class="font-mono text-xs text-slate-500">{{ group.items.length }}</span>
-          </div>
+    @if (myWork.loading() && myWork.items().length === 0) {
+      <!-- Skeletons in the shape of the rows that are coming, rather than a spinner that
+           says only "wait". -->
+      <div class="flex flex-col gap-2.5">
+        @for (_ of [1, 2, 3, 4]; track $index) {
+          <div class="nx-skeleton h-[60px] rounded-xl"></div>
+        }
+      </div>
+    } @else if (myWork.error()) {
+      <app-load-error [message]="myWork.error()!" (retry)="myWork.refresh()" />
+    } @else if (myWork.items().length === 0) {
+      <!-- Nothing assigned at all: a cheerful bot, because this is good news. -->
+      <div class="nx-card flex flex-col items-center gap-3 px-6 py-14 text-center">
+        <app-n-bot mood="happy" [size]="96" label="All caught up" />
+        <p class="text-base font-semibold text-nx-text">All caught up</p>
+        <p class="text-sm text-nx-text-2">No open work items are assigned to you right now.</p>
+      </div>
+    } @else if (filteredItems().length === 0) {
+      <!-- A filter that matched nothing is not an achievement, so the bot only sleeps. -->
+      <div class="nx-card flex flex-col items-center gap-3 px-6 py-12 text-center">
+        <app-n-bot mood="sleeping" [size]="72" />
+        <p class="text-sm text-nx-text-2">No items match “{{ search() }}”.</p>
+      </div>
+    } @else {
+      <div class="flex flex-col gap-5">
+        @for (group of groups(); track group.key) {
+          <section class="flex flex-col gap-2.5">
+            <h2 class="nx-label m-0">{{ group.label }} · {{ group.items.length }}</h2>
 
-          <ul class="divide-y divide-slate-800/60">
             @for (item of group.items; track item.id) {
-              <li
-                class="group flex h-11 cursor-pointer items-center gap-3 rounded-lg px-4 transition hover:bg-slate-900/70"
-                (click)="openItem(item)"
-              >
-                <!-- Type square (Nexus UI: no colour bars or type pills) -->
-                <span class="nx-type" [ngClass]="typeAccent(item.type)" [title]="typeLabel(item.type)"></span>
+              <!-- One card per item rather than a table row: the priority bar down the left
+                   edge is readable while scrolling, which a cell of text is not. -->
+              <div class="work-row" (click)="openItem(item)">
+                <span class="work-row__priority" [style.background]="priorityColor(item.priority)"></span>
+                <span class="nx-type shrink-0" [ngClass]="typeAccent(item.type)" [title]="typeLabel(item.type)"></span>
+                <span class="shrink-0 font-mono text-xs text-nx-text-2">{{ item.workItemNumber }}</span>
+                <p class="min-w-0 flex-1 basis-[260px] truncate text-sm font-semibold text-nx-text" [title]="item.title">{{ item.title }}</p>
 
-                <!-- Work item number -->
-                <span class="shrink-0 font-mono text-xs text-slate-500">{{ item.workItemNumber }}</span>
-
-                <!-- Title -->
-                <p class="min-w-0 flex-1 truncate text-sm text-slate-100 transition group-hover:text-sky-300" [title]="item.title">{{ item.title }}</p>
-
-                <!-- Repository badge -->
-                <span class="nx-tag hidden gap-1 font-mono sm:inline-flex"
-                  [title]="item.repositoryName"
-                >
-                  <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
-                  </svg>
+                <span class="nx-tag hidden gap-1 font-mono sm:inline-flex" [title]="item.repositoryName">
                   {{ item.repositoryCode }}
                 </span>
 
-                <!-- Priority chip -->
-                <span class="nx-tag hidden !border-transparent md:inline-flex"
-                  [ngClass]="priorityBadge(item.priority)"
-                >{{ priorityLabel(item.priority) }}</span>
+                <span class="nx-tag hidden !border-transparent md:inline-flex" [ngClass]="priorityBadge(item.priority)">
+                  {{ priorityLabel(item.priority) }}
+                </span>
 
-                <!-- State badge -->
-                <span class="inline-flex w-24 shrink-0 items-center text-xs"
-                  [ngClass]="stateBadge[item.state]"
-                >{{ stateLabel[item.state] }}</span>
-              </li>
+                <span class="inline-flex w-24 shrink-0 items-center text-xs" [ngClass]="stateBadge[item.state]">
+                  {{ stateLabel[item.state] }}
+                </span>
+              </div>
             }
-          </ul>
-        </section>
-      }
-    </div>
-  }
+          </section>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Today: the same figures as the greeting sentence, for anyone who prefers to read the
+       numbers directly. -->
+  <aside class="flex flex-col gap-4">
+    <section class="nx-card flex flex-col gap-3.5 p-5">
+      <p class="nx-label">Today</p>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <div class="text-[32px] font-bold tabular-nums leading-tight text-nx-text">{{ myWork.totalCount() }}</div>
+          <div class="text-xs text-nx-text-2">open</div>
+        </div>
+        <div>
+          <div class="text-[32px] font-bold tabular-nums leading-tight text-nx-accent">{{ myWork.activeCount() }}</div>
+          <div class="text-xs text-nx-text-2">in progress</div>
+        </div>
+        <div>
+          <div class="text-[32px] font-bold tabular-nums leading-tight text-nx-warning">{{ myWork.inReviewCount() }}</div>
+          <div class="text-xs text-nx-text-2">in review</div>
+        </div>
+        <div>
+          <div class="text-[32px] font-bold tabular-nums leading-tight text-nx-text">{{ myWork.repoCount() }}</div>
+          <div class="text-xs text-nx-text-2">{{ myWork.repoCount() === 1 ? 'repository' : 'repositories' }}</div>
+        </div>
+      </div>
+    </section>
+
+    @if (myWork.items().length > 0 && myWork.inReviewCount() === 0) {
+      <section class="nx-card flex flex-col items-center gap-2.5 px-5 py-7 text-center">
+        <app-n-bot mood="sleeping" [size]="64" />
+        <p class="text-sm text-nx-text-2">Nothing waiting on review.</p>
+      </section>
+    }
+  </aside>
 </div>

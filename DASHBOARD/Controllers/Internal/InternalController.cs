@@ -1,5 +1,9 @@
+using DASHBOARD.Application.Orgs.Commands.ProvisionOrganization;
+using DASHBOARD.Application.Orgs.DTOs;
+using DASHBOARD.Controllers.Internal.Requests;
 using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,15 +11,89 @@ using Microsoft.EntityFrameworkCore;
 namespace DASHBOARD.Controllers.Internal;
 
 /// <summary>
-/// Machine-to-machine endpoints consumed by HUB services over the internal Docker network.
+/// Machine-to-machine endpoints consumed by HUB and NKey over the internal network.
 /// Protected by <see cref="Middleware.InternalApiKeyMiddleware"/> (X-Internal-Token header) — no JWT.
 /// </summary>
 /// <param name="db">Read-only access to the application database.</param>
+/// <param name="mediator">Dispatches commands for the write endpoints.</param>
 [ApiController]
 [Route("internal/v1")]
 [AllowAnonymous]
-public sealed class InternalController(IApplicationDbContext db) : ControllerBase
+public sealed class InternalController(IApplicationDbContext db, ISender mediator) : ControllerBase
 {
+    // ── Organisations (NKey) ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates a tenant organisation and its first admin account, then returns a one-time link for
+    /// that admin to choose a password.
+    /// </summary>
+    /// <remarks>
+    /// Called by NKey after an operator approves an org request. This is the only way a brand-new
+    /// organisation can come into existence: without an existing user there is nobody who could sign
+    /// in to create one.
+    /// <para>Licence fields are stored as a snapshot — NKey stays the source of truth.</para>
+    /// </remarks>
+    /// <param name="request">Organisation, admin and licence details.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>201 with ids and links, or 409 when the alias or licence key is already taken.</returns>
+    [HttpPost("orgs/provision")]
+    [ProducesResponseType<ProvisionOrganizationDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+    public async Task<IActionResult> ProvisionOrganization(
+        [FromBody] ProvisionOrganizationRequest request,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(new ProvisionOrganizationCommand(
+            request.LicenceKey,
+            request.OrgName,
+            request.OrgAlias,
+            request.OrgAbout,
+            request.ContactEmail,
+            request.AdminName,
+            request.AdminEmail,
+            request.LicenceDueDate,
+            request.LicenceExpireDate,
+            request.LicenceRepoCapacity), ct);
+
+        // 409 rather than 400: the payload is well-formed, it collides with existing state.
+        if (result.IsFailure) return Conflict(new { error = result.Error });
+
+        return CreatedAtAction(nameof(GetOrganizationUsage), new { alias = result.Value!.OrgAlias }, result.Value);
+    }
+
+    /// <summary>Returns how much of an organisation's licence allowance is in use.</summary>
+    /// <param name="alias">The organisation's URL alias.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with usage figures, or 404 when no organisation has that alias.</returns>
+    [HttpGet("orgs/{alias}/usage")]
+    [ProducesResponseType<OrganizationUsageDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetOrganizationUsage(string alias, CancellationToken ct)
+    {
+        var normalised = alias.Trim().ToLowerInvariant();
+
+        var org = await db.Set<Organization>().AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Alias == normalised, ct);
+
+        if (org is null) return NotFound();
+
+        // Counted the same way CreateRepositoryCommandHandler counts — archived repositories
+        // included — so the capacity NKey displays matches the one actually enforced.
+        var repoCount = await db.Set<Repository>().CountAsync(r => r.OrgId == org.Id, ct);
+        var userCount = await db.Set<User>().CountAsync(u => u.OrgId == org.Id && !u.IsDeleted, ct);
+
+        return Ok(new OrganizationUsageDto(
+            OrgId:             org.Id,
+            Alias:             org.Alias,
+            Name:              org.Name,
+            RepoCount:         repoCount,
+            RepoCapacity:      org.LicenseRepoCapacity,
+            UserCount:         userCount,
+            LicenceDueDate:    org.LicenseDueDate,
+            LicenceExpireDate: org.LicenseExpireDate));
+    }
+
     // ── Users ────────────────────────────────────────────────────────────────
 
     /// <summary>Returns a user's public profile. Used by HUB dashboard-gateway to resolve display names.</summary>

@@ -21,11 +21,23 @@ namespace DASHBOARD.Controllers.NMate;
 /// </remarks>
 /// <param name="gateway">NMate gateway.</param>
 /// <param name="currentUser">Authenticated user.</param>
+/// <param name="logger">Logger, used to report a misconfigured upstream credential.</param>
 [ApiVersion("1.0")][ApiController]
 [Route("api/v{version:apiVersion}/nmate")]
 [Authorize]
-public sealed class NMateController(INMateGateway gateway, ICurrentUserService currentUser) : ControllerBase
+public sealed class NMateController(
+    INMateGateway gateway,
+    ICurrentUserService currentUser,
+    ILogger<NMateController> logger) : ControllerBase
 {
+    /// <summary>
+    /// Body returned when NMate rejects this service's own credential. It deliberately does not
+    /// echo upstream's "unauthorized" wording, which the widget would misread as the user's
+    /// problem rather than a deployment one.
+    /// </summary>
+    private const string GatewayRejectedBody =
+        """{"error":"NMATE_UNAVAILABLE","message":"NMate is unavailable right now. Please try again later."}""";
+
     /// <summary>Rate-limit policy name for <see cref="Chat"/> (registered in Program.cs).</summary>
     public const string ChatRateLimitPolicy = "nmate-chat";
 
@@ -112,6 +124,24 @@ public sealed class NMateController(INMateGateway gateway, ICurrentUserService c
 
         var json = body is null ? null : JsonSerializer.Serialize(body, body.GetType(), Json);
         await using var upstream = await gateway.SendAsync(new NMateUpstreamRequest(method, pathAndQuery, json, userId, orgId), ct);
+
+        // A 401/403 from upstream is about *this service's* credential with NMate — a wrong or
+        // missing X-Internal-Token — not about the caller's session, which was already proven
+        // valid by [Authorize] above. Relaying it verbatim made the SPA read it as an expired
+        // session and sign the user out of the whole app, from nothing worse than NMate being
+        // misconfigured. 502 says what it is: this gateway cannot reach its upstream.
+        if (upstream.StatusCode is StatusCodes.Status401Unauthorized or StatusCodes.Status403Forbidden)
+        {
+            logger.LogError(
+                "NMate rejected this service's credential ({Upstream}) for {Method} {Path} — check NMate:InternalToken " +
+                "against the SUPPORT service's InternalClients configuration. Reported to the client as 502.",
+                upstream.StatusCode, method, pathAndQuery);
+
+            Response.StatusCode = StatusCodes.Status502BadGateway;
+            Response.ContentType = "application/json; charset=utf-8";
+            await Response.WriteAsync(GatewayRejectedBody, ct);
+            return;
+        }
 
         Response.StatusCode = upstream.StatusCode;
         if (upstream.ContentType is not null) Response.ContentType = upstream.ContentType;

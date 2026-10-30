@@ -21,8 +21,8 @@ internal sealed class CreateRepositoryCommandValidator : AbstractValidator<Creat
         RuleFor(x => x.Description)
             .MaximumLength(1000);
 
-        RuleFor(x => x.ScrumMasterId)
+        RuleFor(x => x.ProjectManagerId)
             .NotEmpty()
-            .WithMessage("A Scrum Master must be assigned when creating a repository.");
+            .WithMessage("A Project Manager must be assigned when creating a repository.");
     }
 }

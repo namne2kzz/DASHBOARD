@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{OrgName}} is ready on NFlow</title>
+  <!--
+    Nexus UI Foundation v1 token values, inlined because email clients do not support CSS variables:
+    accent #15803D · bg #F5F6F8 · surface #FFFFFF · border #E2E4E9
+    text #171A1F / #4B5260 / #6B7280 · radius-lg 8px · warning #9A5B00 on #FBF1E0
+    Per the foundation, 1px borders carry structure instead of shadows.
+  -->
+  <style>
+    body  { margin:0; padding:0; background:#F5F6F8;
+            font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; }
+    .wrap { max-width:560px; margin:40px auto; background:#FFFFFF;
+            border:1px solid #E2E4E9; border-radius:8px; overflow:hidden; }
+
+    .top    { padding:28px 40px 0; }
+    .brand  { font-size:0; margin-bottom:22px; }
+    .mark   { display:inline-block; width:26px; height:26px; background:#15803D; border-radius:6px;
+              color:#FFFFFF; font-size:15px; font-weight:700; line-height:26px; text-align:center;
+              vertical-align:middle; }
+    .name   { display:inline-block; margin-left:9px; color:#171A1F; font-size:15px; font-weight:600;
+              vertical-align:middle; }
+    .top h1 { margin:0 0 6px; color:#171A1F; font-size:24px; font-weight:700; letter-spacing:-.4px; line-height:1.25; }
+    .top .lede { margin:0; color:#6B7280; font-size:14px; }
+
+    .body   { padding:24px 40px 36px; }
+    .body p { margin:0 0 16px; color:#4B5260; font-size:15px; line-height:1.6; }
+    .body strong { color:#171A1F; font-weight:600; }
+
+    .label  { margin:28px 0 10px !important; color:#6B7280 !important; font-size:11px !important;
+              font-weight:600 !important; text-transform:uppercase; letter-spacing:.7px; }
+
+    .facts    { width:100%; border-collapse:collapse; border:1px solid #E2E4E9; border-radius:6px; overflow:hidden; }
+    .facts td { padding:11px 14px; font-size:14px; border-bottom:1px solid #E2E4E9; }
+    .facts tr:last-child td { border-bottom:0; }
+    .facts .k { color:#6B7280; width:44%; }
+    .facts .v { color:#171A1F; font-weight:500; }
+    .facts .v a    { color:#15803D; text-decoration:none; }
+    .facts .v.mono { font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:13px; }
+
+    .btn-wrap { margin:26px 0 22px; }
+    .btn  { display:inline-block; padding:0 22px; height:36px; line-height:36px; background:#15803D;
+            color:#FFFFFF !important; border-radius:6px; text-decoration:none; font-size:14px; font-weight:600; }
+
+    .note   { background:#FBF1E0; border:1px solid #F0DCB8; border-radius:6px; padding:12px 14px; margin:0 0 20px; }
+    .note p { margin:0; color:#9A5B00; font-size:13.5px; line-height:1.55; }
+
+    .fine { margin:0 !important; padding-top:18px; border-top:1px solid #E2E4E9;
+            color:#6B7280 !important; font-size:13px !important; line-height:1.55 !important; }
+
+    .foot   { background:#F0F1F4; border-top:1px solid #E2E4E9; padding:16px 40px; }
+    .foot p { margin:0; font-size:12px; color:#6B7280; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <div class="top">
+      <div class="brand">
+        <span class="mark">N</span><span class="name">NFlow</span>
+      </div>
+      <h1>Your workspace is ready.</h1>
+      <p class="lede">One step left before you can sign in.</p>
+    </div>
+
+    <div class="body">
+      <p>Hi {{AdminName}},</p>
+      <p>
+        <strong>{{OrgName}}</strong> has been set up on NFlow and you are its administrator.
+        Choose a password to activate your account.
+      </p>
+
+      <p class="label">Your organisation</p>
+      <table class="facts" role="presentation">
+        <tr>
+          <td class="k">Organisation</td>
+          <td class="v">{{OrgName}}</td>
+        </tr>
+        <tr>
+          <td class="k">Workspace address</td>
+          <td class="v"><a href="{{LoginUrl}}">{{LoginUrl}}</a></td>
+        </tr>
+        <tr>
+          <td class="k">Sign-in email</td>
+          <td class="v mono">{{AdminEmail}}</td>
+        </tr>
+        <tr>
+          <td class="k">Role</td>
+          <td class="v">Administrator</td>
+        </tr>
+      </table>
+
+      <div class="btn-wrap">
+        <a href="{{SetPasswordUrl}}" class="btn">Set your password</a>
+      </div>
+
+      <div class="note">
+        <p>
+          This link expires in <strong>{{ExpiryHours}} hours</strong> and works only once.
+          After that, ask your account manager to issue a new one.
+        </p>
+      </div>
+
+      <p class="fine">
+        Until a password is set, nobody can sign in to {{OrgName}} — including you.
+        This email was sent only to you: do not forward it, as the link grants administrator access.
+      </p>
+    </div>
+
+    <div class="foot">
+      <p>NFlow &nbsp;·&nbsp; Automated message, please do not reply.</p>
+    </div>
+
+  </div>
+</body>
+</html>

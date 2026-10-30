@@ -6,7 +6,7 @@ using DASHBOARD.UnitTests.Common;
 namespace DASHBOARD.UnitTests.Application.Common.Guards;
 
 /// <summary>
-/// Unit tests for <see cref="ManageSettingsGuard"/>.
+/// Unit tests for <see cref="RepositoryLeadGuard"/>.
 /// </summary>
 /// <remarks>
 /// This guard exists because of BUG-004 (High): the original checks were hard-coded to the
@@ -15,14 +15,14 @@ namespace DASHBOARD.UnitTests.Application.Common.Guards;
 /// rule must be evaluated on actual permissions, never on a role or discipline name — the
 /// "custom role name" tests below are the regression guard for that.
 /// </remarks>
-public sealed class ManageSettingsGuardTests : IDisposable
+public sealed class RepositoryLeadGuardTests : IDisposable
 {
     private readonly TestDatabase             _database;
     private readonly TestApplicationDbContext _db;
     private readonly Guid                     _repositoryId = Guid.NewGuid();
 
     /// <summary>Sets up an isolated in-memory database.</summary>
-    public ManageSettingsGuardTests()
+    public RepositoryLeadGuardTests()
     {
         _database = TestDbContextFactory.Create();
         _db       = _database.Db;
@@ -59,7 +59,7 @@ public sealed class ManageSettingsGuardTests : IDisposable
     }
 
     private Task<bool> WouldOrphanAsync(Guid excludedMemberId, Guid? overrideRoleId = null) =>
-        ManageSettingsGuard.WouldOrphanManageSettingsAsync(
+        RepositoryLeadGuard.WouldOrphanLeadAsync(
             _db, _repositoryId, excludedMemberId, overrideRoleId, CancellationToken.None);
 
     // ── BUG-004 regression: the rule follows permissions, not role names ─────

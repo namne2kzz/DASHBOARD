@@ -47,7 +47,7 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
         var user = new User
         {
             OrgId        = orgId ?? _orgId,
-            Name         = "Scrum Master",
+            Name         = "Project Manager",
             Email        = $"{Guid.NewGuid():N}@acme.local",
             PasswordHash = "hash",
             PasswordSalt = "salt",
@@ -69,18 +69,18 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
     }
 
     private static CreateRepositoryCommand Command(
-        Guid scrumMasterId, string name = "New Project", string code = "NEW") =>
-        new(name, code, "A description", scrumMasterId);
+        Guid projectManagerId, string name = "New Project", string code = "NEW") =>
+        new(name, code, "A description", projectManagerId);
 
     // ── Permission ──────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Handle_WhenTheCallerIsNotAGlobalAdmin_Throws()
     {
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(RequestUserContextMock.ForUser(orgId: _orgId).Object);
 
-        var act = () => handler.Handle(Command(scrumMaster.Id), CancellationToken.None);
+        var act = () => handler.Handle(Command(lead.Id), CancellationToken.None);
 
         await act.Should().ThrowAsync<ForbiddenException>();
         (await _db.Set<Repository>().CountAsync()).Should().Be(0);
@@ -96,10 +96,10 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
         await _db.SaveChangesAsync();
         await AddRepositoryAsync("OLD");
 
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var act = () => handler.Handle(Command(scrumMaster.Id), CancellationToken.None);
+        var act = () => handler.Handle(Command(lead.Id), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*license allows up to 1 repositories*");
@@ -115,10 +115,10 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
         // Another tenant's repository must not consume this organization's allowance.
         await AddRepositoryAsync("FOREIGN", orgId: Guid.NewGuid());
 
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var act = () => handler.Handle(Command(scrumMaster.Id), CancellationToken.None);
+        var act = () => handler.Handle(Command(lead.Id), CancellationToken.None);
 
         await act.Should().NotThrowAsync();
     }
@@ -129,10 +129,10 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
     public async Task Handle_WhenTheCodeIsAlreadyUsedInTheOrganization_Throws()
     {
         await AddRepositoryAsync("NEW");
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var act = () => handler.Handle(Command(scrumMaster.Id, code: "NEW"), CancellationToken.None);
+        var act = () => handler.Handle(Command(lead.Id, code: "NEW"), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*already exists*");
@@ -142,10 +142,10 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
     public async Task Handle_TheCodeCollisionCheckIgnoresCase()
     {
         await AddRepositoryAsync("NEW");
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var act = () => handler.Handle(Command(scrumMaster.Id, code: "new"), CancellationToken.None);
+        var act = () => handler.Handle(Command(lead.Id, code: "new"), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -154,10 +154,10 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
     public async Task Handle_TheSameCodeMayExistInAnotherOrganization()
     {
         await AddRepositoryAsync("NEW", orgId: Guid.NewGuid());
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var result = await handler.Handle(Command(scrumMaster.Id, code: "NEW"), CancellationToken.None);
+        var result = await handler.Handle(Command(lead.Id, code: "NEW"), CancellationToken.None);
 
         result.Code.Should().Be("NEW", "codes are unique per organization, not globally");
     }
@@ -165,18 +165,18 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
     [Fact]
     public async Task Handle_NormalisesTheCodeToUppercase()
     {
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var result = await handler.Handle(Command(scrumMaster.Id, code: "abc"), CancellationToken.None);
+        var result = await handler.Handle(Command(lead.Id, code: "abc"), CancellationToken.None);
 
         result.Code.Should().Be("ABC");
     }
 
-    // ── Scrum Master validation ─────────────────────────────────────────────
+    // ── Project Manager validation ──────────────────────────────────────────
 
     [Fact]
-    public async Task Handle_WhenTheScrumMasterDoesNotExist_Throws()
+    public async Task Handle_WhenTheProjectManagerDoesNotExist_Throws()
     {
         var handler = CreateHandler(AdminUser());
 
@@ -187,7 +187,7 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task Handle_WhenTheScrumMasterBelongsToAnotherOrganization_Throws()
+    public async Task Handle_WhenTheProjectManagerBelongsToAnotherOrganization_Throws()
     {
         var foreignUser = await AddUserAsync(orgId: Guid.NewGuid());
         var handler     = CreateHandler(AdminUser());
@@ -203,27 +203,27 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
     [Fact]
     public async Task Handle_CreatesTheRepositoryInTheCallersOrganization()
     {
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
         var result = await handler.Handle(
-            Command(scrumMaster.Id, "Dashboard", "DASH"), CancellationToken.None);
+            Command(lead.Id, "Dashboard", "DASH"), CancellationToken.None);
 
         var persisted = await _db.Set<Repository>().AsNoTracking().SingleAsync();
         persisted.Id.Should().Be(result.Id);
         persisted.OrgId.Should().Be(_orgId);
         persisted.Name.Should().Be("Dashboard");
         persisted.Code.Should().Be("DASH");
-        result.MemberCount.Should().Be(1, "the Scrum Master is the founding member");
+        result.MemberCount.Should().Be(1, "the Project Manager is the founding member");
     }
 
     [Fact]
     public async Task Handle_SeedsTheRepositorysOwnDefaultRoles()
     {
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var result = await handler.Handle(Command(scrumMaster.Id), CancellationToken.None);
+        var result = await handler.Handle(Command(lead.Id), CancellationToken.None);
 
         var roles = await _db.Set<Role>().AsNoTracking()
             .Where(r => r.RepositoryId == result.Id)
@@ -232,16 +232,16 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
         roles.Should().HaveCount(DefaultRoleDefinitions.All.Count,
             "every repository gets its own copy of the standard roles");
         roles.Should().OnlyContain(r => r.IsDefault);
-        roles.Select(r => r.Name).Should().Contain(DefaultRoleDefinitions.ScrumMaster);
+        roles.Select(r => r.Name).Should().Contain(DefaultRoleDefinitions.ProjectManager);
     }
 
     [Fact]
     public async Task Handle_SeedsTheDisciplineMetadataCatalog()
     {
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var result = await handler.Handle(Command(scrumMaster.Id), CancellationToken.None);
+        var result = await handler.Handle(Command(lead.Id), CancellationToken.None);
 
         var metadata = await _db.Set<RepositoryMetadata>().AsNoTracking()
             .Where(m => m.RepositoryId == result.Id && m.Key == MetadataKey.RepoRole)
@@ -252,32 +252,32 @@ public sealed class CreateRepositoryCommandHandlerTests : IDisposable
     }
 
     [Fact]
-    public async Task Handle_AddsTheScrumMasterAsTheFoundingMember()
+    public async Task Handle_AddsTheProjectManagerAsTheFoundingMember()
     {
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var result = await handler.Handle(Command(scrumMaster.Id), CancellationToken.None);
+        var result = await handler.Handle(Command(lead.Id), CancellationToken.None);
 
         var membership = await _db.Set<RepositoryMember>().AsNoTracking().SingleAsync();
-        membership.UserId.Should().Be(scrumMaster.Id);
+        membership.UserId.Should().Be(lead.Id);
         membership.RepositoryId.Should().Be(result.Id);
-        membership.DefaultRole.Should().Be(DefaultRoleDefinitions.ScrumMaster);
+        membership.DefaultRole.Should().Be(DefaultRoleDefinitions.ProjectManager);
 
         var assignedRole = await _db.Set<Role>().AsNoTracking()
             .SingleAsync(r => r.Id == membership.RoleId);
-        assignedRole.Name.Should().Be(DefaultRoleDefinitions.ScrumMaster,
+        assignedRole.Name.Should().Be(DefaultRoleDefinitions.ProjectManager,
             "the founding member must hold the role that can manage the repository");
     }
 
     [Fact]
     public async Task Handle_TwoRepositoriesGetIndependentRoleRows()
     {
-        var scrumMaster = await AddUserAsync();
+        var lead = await AddUserAsync();
         var handler     = CreateHandler(AdminUser());
 
-        var first  = await handler.Handle(Command(scrumMaster.Id, code: "ONE"), CancellationToken.None);
-        var second = await handler.Handle(Command(scrumMaster.Id, code: "TWO"), CancellationToken.None);
+        var first  = await handler.Handle(Command(lead.Id, code: "ONE"), CancellationToken.None);
+        var second = await handler.Handle(Command(lead.Id, code: "TWO"), CancellationToken.None);
 
         var firstRoleIds  = await _db.Set<Role>().AsNoTracking()
             .Where(r => r.RepositoryId == first.Id).Select(r => r.Id).ToListAsync();

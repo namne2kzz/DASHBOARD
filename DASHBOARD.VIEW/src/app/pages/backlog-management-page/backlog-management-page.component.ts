@@ -10,10 +10,11 @@ import { InfiniteScrollDirective } from '../../directives/infinite-scroll.direct
 import { FlipDropDirective } from '../../directives/flip-drop.directive';
 import type { BacklogItem, BacklogState } from '../../models/backlog.model';
 import { LoadErrorComponent } from '../../components/load-error/load-error.component';
+import { NBotComponent } from '../../components/n-bot/n-bot.component';
 
 @Component({
   selector: 'app-backlog-management-page',
-  imports: [LoadErrorComponent, CommonModule, FormsModule, DragDropModule, InfiniteScrollDirective, FlipDropDirective],
+  imports: [NBotComponent, LoadErrorComponent, CommonModule, FormsModule, DragDropModule, InfiniteScrollDirective, FlipDropDirective],
   templateUrl: './backlog-management-page.component.html',
   styleUrl: './backlog-management-page.component.css',
 })

@@ -73,11 +73,11 @@ public sealed class MembersController(ISender mediator) : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Removes a member from the repository. Fails if they are the last ScrumMaster.</summary>
+    /// <summary>Removes a member from the repository. Fails if they are the last member who can manage members.</summary>
     /// <param name="repoId">The repository ID.</param>
     /// <param name="memberId">The membership row to remove.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 on success, 400 when the last ScrumMaster would be removed.</returns>
+    /// <returns>204 on success, 400 when the last member who can manage members would be removed.</returns>
     [HttpDelete("{memberId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

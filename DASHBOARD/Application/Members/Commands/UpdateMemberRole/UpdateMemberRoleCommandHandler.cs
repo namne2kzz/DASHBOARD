@@ -41,9 +41,11 @@ public sealed class UpdateMemberRoleCommandHandler(
         if (newRole is null)
             return Result.Failure("Role not found in this repository.");
 
-        // Guard: the repository must always retain at least one member who can manage members (by actual permission, not discipline/role name).
-        if (await ManageSettingsGuard.WouldOrphanManageSettingsAsync(db, command.RepositoryId, command.MemberId, command.RoleId, ct))
-            return Result.Failure("Cannot change the last member with ManageMembers permission. Assign that permission to another member first.");
+        // Guard: the repository must always retain somebody who can lead it — judged by actual
+        // permission, not by what their role is called (roles.dod.md §3). The role they are moving
+        // to is counted back in, so staying able to manage members is not a change.
+        if (await RepositoryLeadGuard.WouldOrphanLeadAsync(db, command.RepositoryId, command.MemberId, command.RoleId, ct))
+            return Result.Failure("Cannot change the last member who can manage members. Assign that permission to another member first.");
 
         member.DefaultRole = command.DefaultRole;
         member.RoleId      = command.RoleId;

@@ -100,7 +100,7 @@ describe('AuthService', () => {
       // what lets the UI render as signed-in without a round-trip. The raw token is gone from JS.
       const stored: UserProfile = {
         userId: 'user-9', email: 'back@acme.local', name: 'Returning',
-        avatarClass: 'bg-sky-600', isGlobalAdmin: true, orgId: 'org-1', orgAlias: 'acme',
+        avatarClass: 'bg-sky-600', isGlobalAdmin: true, orgId: 'org-1', orgAlias: 'acme', orgName: 'Acme',
       };
       localStorage.setItem(prefixed(StorageKeys.userProfile), JSON.stringify(stored));
 
@@ -164,7 +164,7 @@ describe('AuthService', () => {
       expect(auth.isAuthenticated()).toBeTrue();
       expect(auth.currentUser()).toEqual({
         userId: 'user-1', email: 'nam@acme.local', name: 'Nam',
-        avatarClass: 'bg-emerald-600', isGlobalAdmin: false, orgId: 'org-1', orgAlias: 'acme',
+        avatarClass: 'bg-emerald-600', isGlobalAdmin: false, orgId: 'org-1', orgAlias: 'acme', orgName: 'Acme',
       });
     });
 

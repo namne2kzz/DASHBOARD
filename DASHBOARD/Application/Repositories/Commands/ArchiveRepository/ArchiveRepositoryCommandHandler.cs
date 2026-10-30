@@ -23,9 +23,11 @@ public sealed class ArchiveRepositoryCommandHandler(
         if (!await user.IsGlobalAdminAsync(ct))
             throw new ForbiddenException("Only global admins may archive repositories.");
 
+        // Scoped to the caller's organization: being an admin of one tenant must not reach into
+        // another's repositories, and an id from elsewhere should read as not found.
         var repo = await db.Set<Repository>()
             .AsTracking()
-            .FirstOrDefaultAsync(r => r.Id == command.RepositoryId, ct)
+            .FirstOrDefaultAsync(r => r.Id == command.RepositoryId && r.OrgId == user.OrgId, ct)
             ?? throw new NotFoundException(nameof(Repository), command.RepositoryId);
 
         repo.IsArchived = true;

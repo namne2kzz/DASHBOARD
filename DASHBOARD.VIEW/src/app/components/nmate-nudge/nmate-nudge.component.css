@@ -1,0 +1,81 @@
+/* ── Contextual nudge ────────────────────────────────────────────
+   A dark bubble above the launcher, with the corner nearest the button squared off so it
+   reads as coming from the bot rather than floating independently. */
+.nm-nudge {
+  position: fixed;
+  right: 20px;
+  bottom: 88px;
+  z-index: var(--nm-z);
+  display: flex;
+  width: 300px;
+  max-width: calc(100vw - 40px);
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) 18px;
+  border-radius: var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl);
+  background: #0D1117;
+  color: #E6EDF3;
+  box-shadow: 0 12px 32px rgba(13, 17, 23, .28);
+  animation: nm-nudge-in var(--motion-enter) var(--ease-out) both;
+}
+
+@keyframes nm-nudge-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+.nm-nudge__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.nm-nudge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F0506E;
+}
+
+.nm-nudge__brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: #FF9EB1;
+}
+
+.nm-nudge__close {
+  width: 26px;
+  height: 26px;
+  margin-left: auto;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: #8B949E;
+  font-size: 12px;
+  cursor: pointer;
+}
+.nm-nudge__close:hover { color: #E6EDF3; }
+
+.nm-nudge__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.nm-nudge__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* The bubble supplies its own dark surface, so "Để sau" cannot inherit the page's
+   light button colours here. */
+.nm-nudge__later {
+  border-color: #30363D;
+  background: transparent;
+  color: #E6EDF3;
+}
+.nm-nudge__later:hover { background: #161B22; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nm-nudge { animation: none; }
+}

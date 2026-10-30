@@ -18,9 +18,13 @@ public record LoginCommand(string OrgAlias, string Email, string Password) : IRe
 /// <param name="UserId">The authenticated user's unique identifier.</param>
 /// <param name="Name">The authenticated user's display name.</param>
 /// <param name="Email">The authenticated user's email address.</param>
-/// <param name="IsGlobalAdmin">Whether the authenticated user has system-wide admin privileges.</param>
+/// <param name="IsGlobalAdmin">Whether the user bypasses repository-level permission checks within their organization.</param>
 /// <param name="OrgId">The organization (tenant) the user belongs to.</param>
 /// <param name="OrgAlias">The organization's URL alias.</param>
+/// <param name="OrgName">
+/// The organization's display name. Carried alongside the alias so the UI can name the tenant in
+/// full — the alias is a URL segment, not something to show a customer their company as.
+/// </param>
 /// <param name="AvatarClass">Tailwind CSS background class for the user's avatar chip.</param>
 public record LoginResult(
     string AccessToken,
@@ -34,4 +38,5 @@ public record LoginResult(
     bool IsGlobalAdmin,
     Guid OrgId,
     string OrgAlias,
+    string OrgName,
     string AvatarClass);

@@ -98,10 +98,10 @@ services:
       GitConnections__DASH__1__Token: "${GITHUB_TOKEN_DASH_1}"
       GitConnections__DASH__1__IsPrimary: "false"
       # Token HUB DashboardGateway gửi khi gọi DASHBOARD /internal/v1/* — phải khớp InternalApi:Token.
-      InternalApi__Token: "${INTERNAL_API_TOKEN:-CHANGE_THIS_INTERNAL_TOKEN_MIN_32_CHARS!}"
+      InternalApi__Token: "${INTERNAL_API_TOKEN:-SECRET_FOR_USE_INTERNAL_API_CALLS_ONLY_WITH32!@$}"
       # HUB Chat — Docker mode: gọi qua shared network hub-net bằng service name "chat".
       HubChat__BaseUrl: "http://chat:8080"
-      HubChat__InternalToken: "${HUB_CHAT_INTERNAL_TOKEN:-CHANGE_THIS_INTERNAL_TOKEN_MIN_32_CHARS!}"
+      HubChat__InternalToken: "${HUB_CHAT_INTERNAL_TOKEN:-SECRET_FOR_USE_INTERNAL_API_CALLS_ONLY_WITH32!@$}"
       HubChat__FrontendBaseUrl: "http://localhost:4202"
       # NMate (repo SUPPORT) — chạy native trên máy host (dotnet run, :5160) nên gọi qua host.docker.internal.
       # Thiếu BaseUrl → /api/v1/nmate/* trả 404 và widget tự ẩn. Token phải khớp InternalClients:0:Token bên SUPPORT.

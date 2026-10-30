@@ -25,4 +25,12 @@ export class ThemeService {
   toggle(): void {
     this.theme.update(t => (t === 'dark' ? 'light' : 'dark'));
   }
+
+  /**
+   * Switches to a specific theme.
+   * @param theme The theme to apply.
+   */
+  set(theme: Theme): void {
+    this.theme.set(theme);
+  }
 }

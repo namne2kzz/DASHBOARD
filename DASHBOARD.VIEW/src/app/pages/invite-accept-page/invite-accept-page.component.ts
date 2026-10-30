@@ -5,6 +5,7 @@ import { GoogleIdentityService } from '../../core/services/google-identity.servi
 import { InvitationsService } from '../../services/invitations.service';
 import { AuthService } from '../../services/auth.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
+import { BrandLogoComponent } from '../../components/brand-logo/brand-logo.component';
 
 type AcceptState = 'missing-token' | 'ready' | 'processing' | 'error';
 
@@ -12,7 +13,7 @@ type AcceptState = 'missing-token' | 'ready' | 'processing' | 'error';
 @Component({
   selector: 'app-invite-accept-page',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, BrandLogoComponent],
   templateUrl: './invite-accept-page.component.html',
   styleUrls: ['./invite-accept-page.component.css'],
 })

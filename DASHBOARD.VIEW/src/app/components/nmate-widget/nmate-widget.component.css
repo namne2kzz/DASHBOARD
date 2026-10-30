@@ -3,44 +3,16 @@
   --nm-z: 9000;
 }
 
-.nm-fab {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: var(--nm-z);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--accent);
-  border-radius: 50%;
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: var(--shadow-pop);
-  cursor: pointer;
-}
-
-.nm-fab:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-}
-
-.nm-fab.is-open {
-  border-color: var(--border-strong);
-  background: var(--surface);
-  color: var(--text-2);
-}
-
 .nm-panel {
   position: fixed;
   right: 20px;
-  bottom: 76px;
+  /* Clears the launcher: 20px margin + its 52px box + a 12px gap. */
+  bottom: 84px;
   z-index: var(--nm-z);
   display: flex;
   flex-direction: column;
   width: 380px;
-  height: min(560px, calc(100vh - 100px));
+  height: min(560px, calc(100vh - 108px));
   border-radius: var(--radius-lg);
   background: var(--bg);
   box-shadow: var(--shadow-pop);
@@ -61,19 +33,6 @@
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.nm-logo {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius);
-  background: var(--accent);
-  color: var(--on-accent);
-  font-weight: 600;
-  font-size: 13px;
 }
 
 .nm-header__name {
@@ -99,19 +58,54 @@
   justify-content: center;
 }
 
+/* The chat sits on the product's hexagon lattice with a soft accent glow behind it, so an
+   empty panel reads as part of NFlow rather than a blank rectangle. Both layers are decoration:
+   the lattice is held well below text contrast, and the glow is pinned to the top-left so it
+   never sits under the message column. The pattern scrolls with the content on purpose —
+   a fixed backdrop under moving messages reads as a rendering fault. */
 .nm-body {
+  position: relative;
   flex: 1;
   overflow-y: auto;
   padding: 14px;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(60% 50% at 8% 0%, rgb(var(--c-accent) / .10), transparent 70%),
+    var(--hex-field);
+  background-repeat: no-repeat, repeat;
+  background-size: auto, 28px 48.5px;
 }
 
-.nm-maintenance {
-  margin-bottom: 12px;
-  color: var(--danger);
-  background: var(--danger-soft);
+/* Messages and the empty state ride above both layers. */
+.nm-body > * {
+  position: relative;
 }
-/* Drop the leading dot indicator for the maintenance notice. */
-.nm-maintenance::before { display: none; }
+
+/* The lattice is texture, not information, so it goes when motion and visual noise are
+   unwelcome — the glow alone keeps the panel from looking unfinished. */
+@media (prefers-reduced-transparency: reduce) {
+  .nm-body { background-image: none; }
+}
+
+/* Maintenance: the hard-hatted bot carries the message. A service being worked on is a
+   wait, not an error the reader caused, so it is not dressed as one. */
+.nm-maintenance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: 18px var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  text-align: center;
+}
+
+.nm-maintenance__text {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 13px;
+}
 
 .nm-empty__lead {
   margin: 4px 0 12px;

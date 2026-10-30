@@ -41,7 +41,7 @@ public sealed class GetOverviewStatsQueryHandler(
                 .ToListAsync(ct);
 
         var availableSprints = sprints
-            .Select(s => new SprintRefDto(s.Id, s.Name))
+            .Select(s => new SprintRefDto(s.Id, s.Name, s.StartDate, s.EndDate))
             .ToList();
 
         var counts = new WorkItemCountsDto(
@@ -160,6 +160,21 @@ public sealed class GetOverviewStatsQueryHandler(
 
         var report = ComputeReport(selectedSprint, tasks, storyPoints);
 
+        // Board columns carry the WIP and aging limits the attention strip judges against.
+        var columns = await db.Set<SmartBoardColumn>().AsNoTracking()
+            .Where(c => c.RepositoryId == query.RepositoryId)
+            .OrderBy(c => c.Order)
+            .ToListAsync(ct);
+
+        // The repository's short code turns a work item number into the "DASH-22" people recognise.
+        var repoCode = await db.Set<Repository>().AsNoTracking()
+            .Where(r => r.Id == query.RepositoryId)
+            .Select(r => r.Code)
+            .FirstOrDefaultAsync(ct) ?? string.Empty;
+
+        var attention  = BuildAttention(tasks, columns, assigneeWorkload, repoCode);
+        var comparison = await ComputeComparisonAsync(sprints, selectedSprint, ct);
+
         return new OverviewStatsDto(
             counts,
             statusDist,
@@ -173,7 +188,144 @@ public sealed class GetOverviewStatsQueryHandler(
             cycleTime,
             assigneeWorkload,
             recentActivity,
-            report);
+            report,
+            attention,
+            comparison);
+    }
+
+    /// <summary>Points per person per sprint above which the workload is called overloaded.</summary>
+    /// <remarks>
+    /// A flat threshold, not a capacity lookup: the capacity screen models real availability
+    /// (days off, part-time) and this strip must not disagree with it. It flags only what is
+    /// lopsided enough to be worth a second look either way.
+    /// </remarks>
+    private const int OverloadPointThreshold = 20;
+
+    /// <summary>Collects the problems on the board that warrant action, most severe first.</summary>
+    /// <param name="tasks">The selected sprint's non-deleted tasks.</param>
+    /// <param name="columns">Board columns, carrying the WIP and aging limits to judge against.</param>
+    /// <param name="workload">Already-computed per-assignee workload.</param>
+    /// <param name="repoCode">Repository short code, for rendering work item numbers.</param>
+    /// <returns>At most five items; an empty list when nothing needs attention.</returns>
+    private static List<AttentionItemDto> BuildAttention(
+        List<SprintTask>                   tasks,
+        List<SmartBoardColumn>             columns,
+        List<AssigneeWorkloadItemDto>      workload,
+        string                             repoCode)
+    {
+        var items = new List<AttentionItemDto>();
+        var now   = DateTime.UtcNow;
+
+        // Columns over their WIP limit. A limit of 0 means the column is unbounded.
+        //
+        // The count is per state, which is also how the board itself fills its columns: two
+        // columns mapped to the same state show the same cards, so both are genuinely over
+        // the limit when that state is. Each is still reported by its own name, since that
+        // is the name the reader will be looking for on the board.
+        foreach (var column in columns.Where(c => c.WipLimit > 0))
+        {
+            var count = tasks.Count(t => t.State == column.MappedState);
+            if (count <= column.WipLimit) continue;
+
+            items.Add(new AttentionItemDto(
+                "WipExceeded",
+                column.WipMode == WipMode.Hard ? "Critical" : "Warning",
+                $"{column.Name} over WIP · {count}/{column.WipLimit}",
+                "boards",
+                column.Id));
+        }
+
+        // People carrying noticeably more than the rest.
+        foreach (var person in workload
+                     .Where(w => w.AssigneeId.HasValue && w.StoryPoints > OverloadPointThreshold)
+                     .OrderByDescending(w => w.StoryPoints)
+                     .Take(2))
+        {
+            items.Add(new AttentionItemDto(
+                "Overloaded",
+                "Warning",
+                $"{person.AssigneeName} overloaded · {person.StoryPoints} pts",
+                "sprint-planning",
+                person.AssigneeId));
+        }
+
+        // Items sitting in one column past that column's aging limit. Only the single worst
+        // offender is reported: a list of thirty stale cards is a backlog, not an alert.
+        //
+        // Several columns may map to the same state — nothing stops a board from splitting
+        // "Open" into two lanes — so group rather than key, and take the most forgiving limit
+        // of the group. Flagging a card against a stricter lane it may not even be in would
+        // raise an alert the reader cannot act on.
+        var agingByState = columns
+            .Where(c => c.AgingLimitDays > 0)
+            .GroupBy(c => c.MappedState)
+            .ToDictionary(g => g.Key, g => g.Max(c => c.AgingLimitDays));
+
+        var stalest = tasks
+            .Where(t => t.Category != StateCategory.Done && t.StateChangedAt.HasValue)
+            .Select(t => new
+            {
+                Task = t,
+                Days = (int)(now - t.StateChangedAt!.Value).TotalDays,
+                Limit = agingByState.TryGetValue(t.State, out var limit) ? limit : 0,
+            })
+            .Where(x => x.Limit > 0 && x.Days > x.Limit)
+            .OrderByDescending(x => x.Days)
+            .FirstOrDefault();
+
+        if (stalest is not null)
+        {
+            items.Add(new AttentionItemDto(
+                "StaleItem",
+                "Warning",
+                $"{SprintTask.BuildWorkItemNumber(repoCode, stalest.Task.WorkItemNumber)} stuck {stalest.Days}d",
+                "boards",
+                stalest.Task.Id));
+        }
+
+        // Critical first, then the order they were added, so the loudest problem leads.
+        return items
+            .OrderByDescending(i => i.Severity == "Critical")
+            .Take(5)
+            .ToList();
+    }
+
+    /// <summary>Loads the preceding sprint's headline figures so each metric can show its direction of travel.</summary>
+    /// <param name="sprints">All repository sprints, newest first.</param>
+    /// <param name="selected">The sprint currently being viewed, or null when the repository has none.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The previous sprint's figures, or <c>HasPrevious: false</c> when there is no earlier sprint.</returns>
+    private async Task<SprintComparisonDto> ComputeComparisonAsync(
+        List<Sprint>      sprints,
+        Sprint?           selected,
+        CancellationToken ct)
+    {
+        if (selected is null) return new SprintComparisonDto(false, 0, 0, 0, 0);
+
+        // "Previous" is by start date, not by list position, so it stays correct whichever
+        // sprint the reader has selected.
+        var previous = sprints
+            .Where(s => s.StartDate < selected.StartDate)
+            .OrderByDescending(s => s.StartDate)
+            .FirstOrDefault();
+
+        if (previous is null) return new SprintComparisonDto(false, 0, 0, 0, 0);
+
+        var previousTasks = await db.Set<SprintTask>().AsNoTracking()
+            .Where(t => t.SprintId == previous.Id && !t.IsDeleted)
+            .Select(t => new { t.State, t.StoryPoints, t.CreatedAt, t.ClosedAt })
+            .ToListAsync(ct);
+
+        // Done=6, Passed=7, Failed=8, Closed=9 — the terminal states, as in the velocity query.
+        var done = previousTasks.Where(t => (int)t.State >= 6).ToList();
+        var closed = done.Where(t => t.ClosedAt.HasValue).ToList();
+
+        return new SprintComparisonDto(
+            true,
+            done.Sum(t => t.StoryPoints),
+            closed.Count == 0 ? 0 : Math.Round(closed.Average(t => (t.ClosedAt!.Value - t.CreatedAt).TotalDays), 1),
+            previousTasks.Count,
+            done.Count);
     }
 
     /// <summary>Builds the sprint report card: task/point completion rates and mid-sprint scope change.</summary>

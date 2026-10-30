@@ -4,13 +4,13 @@
   <div class="relative w-full max-w-sm">
 
     <!-- Logo -->
-    <div class="flex items-center justify-center gap-2.5">
-      <span class="flex h-6 w-6 items-center justify-center rounded-[6px] bg-nx-text text-xs font-semibold text-nx-surface">N</span>
-      <span class="text-sm font-semibold text-slate-100">NFlow</span>
+    <div class="flex items-center justify-center gap-3">
+      <app-brand-logo [size]="42" [onDark]="true" />
+      <span class="text-xl font-semibold text-slate-100">NFlow</span>
     </div>
 
     <!-- Card -->
-    <div class="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
+    <div class="mt-8 nx-card p-8 text-center">
       @switch (state()) {
         @case ('missing-token') {
           <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 ring-1 ring-transparent">

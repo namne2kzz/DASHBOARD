@@ -40,7 +40,7 @@ describe('TaskBoardService', () => {
 
   const me: UserProfile = {
     userId: 'user-me', email: 'nam@acme.local', name: 'Nam',
-    avatarClass: 'bg-sky-600', isGlobalAdmin: false, orgId: 'org-1', orgAlias: 'acme',
+    avatarClass: 'bg-sky-600', isGlobalAdmin: false, orgId: 'org-1', orgAlias: 'acme', orgName: 'Acme',
   };
 
   function dto(

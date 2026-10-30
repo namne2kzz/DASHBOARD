@@ -12,17 +12,20 @@
   >
     <div class="flex h-[60px] items-center border-b border-slate-800 px-2">
       @if (!collapsed()) {
-        <!-- Repo picker (expanded) -->
+        <!-- Repo picker (expanded)
+             Stays open to an admin with no repositories yet, because "New repository" lives inside
+             this menu: disabling it on an empty list left a freshly provisioned organization unable
+             to create its first one. -->
         <div class="relative mr-2 min-w-0 flex-1">
           <button
             type="button"
             class="flex h-11 w-full items-center gap-2.5 rounded-md px-1.5 text-left transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
             (click)="repoDropdownOpen.set(!repoDropdownOpen())"
-            [disabled]="!repoCtx.repositories().length"
+            [disabled]="!repoCtx.repositories().length && !privilege.isGlobalAdmin()"
             [attr.aria-expanded]="repoDropdownOpen()"
             aria-label="Switch repository"
           >
-            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 text-xs font-semibold text-slate-950">{{ (repoCtx.selectedRepo()?.name ?? 'N').charAt(0).toUpperCase() }}</span>
+            <span class="nx-hex-code h-8 w-8">{{ repoCode() }}</span>
             <span class="flex min-w-0 flex-1 flex-col leading-tight">
               <span class="truncate text-sm font-semibold text-slate-100">
                 @if (repoCtx.loading()) {
@@ -31,8 +34,8 @@
                   {{ repoCtx.selectedRepo()?.name ?? 'Select repo' }}
                 }
               </span>
-              @if (orgAlias()) {
-                <span class="truncate text-xs text-slate-500">{{ orgAlias() }}</span>
+              @if (orgName()) {
+                <span class="truncate text-xs text-slate-500">{{ orgName() }}</span>
               }
             </span>
             <svg
@@ -49,38 +52,34 @@
               class="fixed inset-0 z-40"
               (click)="repoDropdownOpen.set(false)"
             ></div>
-            <div class="absolute left-0 top-full z-50 mt-1 min-w-[12rem] rounded-2xl bg-slate-900 py-1 shadow-xl">
+            <div class="nx-menu absolute left-0 top-full z-50 mt-1.5 min-w-[13rem] max-h-[18rem] overflow-y-auto">
               @if (!repoCtx.repositories().length) {
-                <p class="px-3 py-2 text-xs text-slate-500">No repositories found</p>
+                <p class="nx-menu-label">No repositories yet</p>
               }
               @for (r of repoCtx.repositories(); track r.id) {
                 <button
                   type="button"
-                  class="flex h-8 w-full items-center gap-2.5 px-3 text-sm transition hover:bg-slate-800"
-                  [class.text-slate-100]="r.id === repoCtx.selectedRepoId()"
-                  [class.font-medium]="r.id === repoCtx.selectedRepoId()"
-                  [class.text-slate-400]="r.id !== repoCtx.selectedRepoId()"
+                  class="nx-menu-item"
+                  [class.nx-menu-item--active]="r.id === repoCtx.selectedRepoId()"
                   (click)="selectRepo(r.id)"
                 >
                   <span
                     class="h-1.5 w-1.5 shrink-0 rounded-full"
-                    [class.bg-sky-500]="r.id === repoCtx.selectedRepoId()"
-                    [class.bg-slate-600]="r.id !== repoCtx.selectedRepoId()"
+                    [class.bg-nx-accent]="r.id === repoCtx.selectedRepoId()"
+                    [class.bg-nx-border-strong]="r.id !== repoCtx.selectedRepoId()"
                   ></span>
-                  {{ r.name }}
+                  <span class="truncate">{{ r.name }}</span>
                 </button>
               }
               @if (privilege.isGlobalAdmin()) {
-                <div class="my-1 border-t border-slate-800"></div>
-                <button
-                  type="button"
-                  class="flex h-8 w-full items-center gap-2 px-3 text-sm text-slate-300 transition hover:bg-slate-800"
-                  (click)="openNewRepo()"
-                >
+                @if (repoCtx.repositories().length) {
+                  <div class="nx-menu-sep"></div>
+                }
+                <button type="button" class="nx-menu-item" (click)="openNewRepo()">
                   <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path d="M12 5v14M5 12h14"/>
                   </svg>
-                  New Repository
+                  New repository
                 </button>
               }
             </div>
@@ -88,10 +87,7 @@
         </div>
       } @else {
         <!-- Repo icon (collapsed) -->
-        <div
-          class="mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sky-500 text-xs font-semibold text-slate-950"
-          [title]="repoCtx.selectedRepo()?.name ?? 'Repository'"
-        >{{ (repoCtx.selectedRepo()?.name ?? 'N').charAt(0).toUpperCase() }}</div>
+        <div class="nx-hex-code mr-1 h-8 w-8" [title]="repoCtx.selectedRepo()?.name ?? 'Repository'">{{ repoCode() }}</div>
       }
 
       <button
@@ -124,8 +120,8 @@
         (click)="search.openPalette()"
       >
         <span class="nav-icon">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path class="nav-icon-line" d="M21 21l-4.3-4.3"/>
           </svg>
         </span>
         @if (!collapsed()) {
@@ -146,7 +142,7 @@
         title="Overview"
       >
         <span class="nav-icon">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="3" width="7" height="9" rx="1" />
             <rect x="14" y="3" width="7" height="5" rx="1" />
             <rect x="14" y="11" width="7" height="10" rx="1" />
@@ -167,8 +163,8 @@
         title="Boards"
       >
         <span class="nav-icon">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path class="nav-icon-line" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
           </svg>
         </span>
         @if (!collapsed()) {
@@ -185,14 +181,14 @@
         title="Workflow"
       >
         <span class="nav-icon">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="1" y="9" width="5" height="6" rx="1.5"/>
             <rect x="9.5" y="9" width="5" height="6" rx="1.5"/>
             <rect x="18" y="9" width="5" height="6" rx="1.5"/>
-            <path d="M6.5 12h3" stroke-linecap="round"/>
-            <path d="M8 10.5l1.5 1.5-1.5 1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M15 12h3" stroke-linecap="round"/>
-            <path d="M16.5 10.5l1.5 1.5-1.5 1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path class="nav-icon-line" d="M6.5 12h3"/>
+            <path class="nav-icon-line" d="M8 10.5l1.5 1.5-1.5 1.5"/>
+            <path class="nav-icon-line" d="M15 12h3"/>
+            <path class="nav-icon-line" d="M16.5 10.5l1.5 1.5-1.5 1.5"/>
           </svg>
         </span>
         @if (!collapsed()) {
@@ -209,9 +205,9 @@
         title="Backlog"
       >
         <span class="nav-icon">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 5h14v4H5zM5 15h14v4H5z" />
-            <path d="M7 9v6M17 9v6M10 12h4" />
+            <path class="nav-icon-line" d="M7 9v6M17 9v6M10 12h4" />
           </svg>
         </span>
         @if (!collapsed()) {
@@ -228,9 +224,9 @@
         title="Sprint"
       >
         <span class="nav-icon">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="4" y="5" width="16" height="15" rx="2" />
-            <path d="M8 3v4M16 3v4M4 10h16M8 14h3M13 14h3M8 17h3" />
+            <path class="nav-icon-line" d="M8 3v4M16 3v4M4 10h16M8 14h3M13 14h3M8 17h3" />
           </svg>
         </span>
         @if (!collapsed()) {
@@ -247,10 +243,10 @@
         title="Repos"
       >
         <span class="nav-icon">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <ellipse cx="12" cy="6" rx="8" ry="3" />
-            <path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" />
-            <path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
+            <path class="nav-icon-line" d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6" />
+            <path class="nav-icon-line" d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
           </svg>
         </span>
         @if (!collapsed()) {
@@ -267,9 +263,9 @@
         title="Pipelines"
       >
         <span class="nav-icon">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-            <line x1="4" y1="22" x2="4" y2="15" />
+            <line class="nav-icon-line" x1="4" y1="22" x2="4" y2="15" />
           </svg>
         </span>
         @if (!collapsed()) {
@@ -287,8 +283,8 @@
           title="Audit log"
         >
           <span class="nav-icon">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path class="nav-icon-line" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
               <rect x="9" y="3" width="6" height="4" rx="1"/>
               <path stroke-linecap="round" d="M9 12h6M9 16h4"/>
             </svg>
@@ -299,9 +295,12 @@
         </a>
       }
       } <!-- end @if repositories -->
-    </nav>
-
-    <div class="shrink-0 border-t border-slate-800 p-2 flex flex-col gap-0.5">
+      <!-- Personal sits inside the same scrolling area as Workspace rather than in a fixed
+           footer. As its own non-shrinking block it squeezed Workspace whenever Settings
+           expanded, giving the sidebar two competing scrollbars and two different item
+           densities. One scroll region keeps every row the same size and lets the whole list
+           move together. -->
+      <div class="mt-3 border-t border-slate-800 pt-2 flex flex-col gap-0.5">
       @if (!collapsed()) {
         <p class="nav-label !mt-1">Personal</p>
       }
@@ -315,7 +314,7 @@
         title="My Work"
       >
         <span class="nav-icon">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3L22 4"/>
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
           </svg>
@@ -335,7 +334,7 @@
           title="Settings"
         >
           <span class="nav-icon">
-            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 0 0 2.572-1.065z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
@@ -391,6 +390,14 @@
               >
                 Users
               </a>
+              <a
+                [routerLink]="globalLink('settings/repositories')"
+                routerLinkActive="is-active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                class="nav-item nav-item--sub"
+              >
+                Repositories
+              </a>
             }
           </div>
         }
@@ -407,8 +414,9 @@
         title="Notifications"
       >
         <span class="nav-icon" style="position:relative">
-          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11a6.002 6.002 0 0 0-4-5.659V5a2 2 0 1 0-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9"/>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+            <path class="nav-icon-line" d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
           </svg>
           @if (notiSvc.unreadCount() > 0 && collapsed()) {
             <span class="noti-badge-dot">{{ notiSvc.unreadCount() > 99 ? '99+' : notiSvc.unreadCount() }}</span>
@@ -421,6 +429,50 @@
           }
         }
       </button>
+      </div> <!-- end Personal -->
+    </nav>
+
+    <!-- Appearance and Logout stay pinned: they are settings for the shell itself, not places to
+         navigate to, and they must not scroll out of reach when the nav list is long. -->
+    <div class="shrink-0 border-t border-slate-800 p-2 flex flex-col gap-0.5">
+
+      <!-- Appearance — both options stay visible so the current theme is readable at rest. -->
+      <div class="theme-switch" [class.theme-switch--collapsed]="collapsed()" role="group" aria-label="Appearance">
+        @if (collapsed()) {
+          <button
+            type="button"
+            class="theme-switch__option"
+            (click)="theme.toggle()"
+            [title]="theme.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+            [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+          >
+            @if (theme.theme() === 'dark') {
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            } @else {
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+            }
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="theme-switch__option"
+            [attr.aria-pressed]="theme.theme() === 'light'"
+            (click)="theme.set('light')"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            Light
+          </button>
+          <button
+            type="button"
+            class="theme-switch__option"
+            [attr.aria-pressed]="theme.theme() === 'dark'"
+            (click)="theme.set('dark')"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+            Dark
+          </button>
+        }
+      </div>
 
       <!-- Logout -->
       <button
@@ -451,20 +503,34 @@
 
         <!-- Foreground message -->
         <div class="relative z-10 flex flex-col items-center gap-5 px-6 text-center">
-          <div class="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900">
+          <div class="flex h-10 w-10 items-center justify-center nx-card">
             <svg class="h-6 w-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
               <ellipse cx="12" cy="6" rx="8" ry="3"/>
               <path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/>
               <path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>
             </svg>
           </div>
-          <div>
-            <h2 class="text-lg font-semibold text-slate-100">No repository access</h2>
-            <p class="mt-1.5 max-w-[260px] text-sm text-slate-400">
-              You haven't been assigned to any repository yet.<br>
-              Contact your administrator to get access.
-            </p>
-          </div>
+          <!-- An admin is the person a member would be told to contact, so they get the action
+               instead of the advice. This is the first screen of a newly provisioned organization. -->
+          @if (privilege.isGlobalAdmin()) {
+            <div>
+              <h2 class="text-lg font-semibold text-slate-100">No repositories yet</h2>
+              <p class="mt-1.5 max-w-[280px] text-sm text-slate-400">
+                Create the first repository to start planning sprints and tracking work.
+              </p>
+            </div>
+            <button type="button" (click)="openNewRepo()" class="nx-btn nx-btn--primary h-9">
+              Create repository
+            </button>
+          } @else {
+            <div>
+              <h2 class="text-lg font-semibold text-slate-100">No repository access</h2>
+              <p class="mt-1.5 max-w-[260px] text-sm text-slate-400">
+                You haven't been assigned to any repository yet.<br>
+                Contact your administrator to get access.
+              </p>
+            </div>
+          }
         </div>
 
       </div>

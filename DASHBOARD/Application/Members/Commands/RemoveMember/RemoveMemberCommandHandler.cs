@@ -36,9 +36,10 @@ public sealed class RemoveMemberCommandHandler(
             .FirstOrDefaultAsync(m => m.Id == command.MemberId && m.RepositoryId == command.RepositoryId, ct)
             ?? throw new NotFoundException(nameof(RepositoryMember), command.MemberId);
 
-        // Guard: the repository must always retain at least one member who can manage members (by actual permission, not discipline/role name).
-        if (await ManageSettingsGuard.WouldOrphanManageSettingsAsync(db, command.RepositoryId, command.MemberId, overrideRoleId: null, ct))
-            return Result.Failure("Cannot remove the last member with ManageMembers permission from a repository.");
+        // Guard: the repository must always retain somebody who can lead it — judged by actual
+        // permission, not by what their role is called (roles.dod.md §3).
+        if (await RepositoryLeadGuard.WouldOrphanLeadAsync(db, command.RepositoryId, command.MemberId, overrideRoleId: null, ct))
+            return Result.Failure("Cannot remove the last member who can manage members. Assign that permission to another member first.");
 
         var removedUserId = member.UserId;
 

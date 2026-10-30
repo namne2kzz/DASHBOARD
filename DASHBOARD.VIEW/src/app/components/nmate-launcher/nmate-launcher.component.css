@@ -1,0 +1,129 @@
+/* Sits above the app shell but below dialogs/overlays (z 9980+), so a confirm dialog always wins. */
+:host {
+  --nm-z: 9000;
+}
+/* ── N-bot launcher ────────────────────────────────────────────────────────
+   The hexagon is drawn by the SVG itself, so the button stays transparent and
+   only provides the hit area — a 52px square, comfortably past the 44px minimum even
+   though the head drawn inside it is smaller. Mark colours are fixed hex values rather than theme
+   tokens: this is the product's logo, and it must read the same in either theme. */
+.nm-fab {
+  /* Fixed also establishes the containing block the badge anchors to. */
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: var(--nm-z);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: transform .15s ease, filter .15s ease;
+}
+
+.nm-bot {
+  filter: drop-shadow(0 3px 6px rgb(13 17 23 / .28));
+  overflow: visible;
+  transition: opacity .15s ease, filter .15s ease;
+}
+
+
+.nm-bot-antenna { stroke: #30363D; stroke-width: 2; stroke-linecap: round; }
+.nm-bot-tip     { fill: #F0506E; }
+
+.nm-bot-head {
+  fill: #161B22;
+  stroke: #161B22;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  transition: stroke .15s ease;
+}
+
+.nm-bot-eye--left  { fill: #8B5CF6; }
+.nm-bot-eye--right { fill: #F0506E; }
+.nm-bot-stroke     { fill: #F5F6FA; }
+
+/* Hover: the head grows a violet rim and the whole mark lifts slightly. */
+.nm-fab:hover { transform: scale(1.1); }
+.nm-fab:hover .nm-bot { filter: drop-shadow(0 6px 12px rgb(75 43 196 / .45)); }
+.nm-fab:hover .nm-bot-head { stroke: #8B5CF6; }
+
+.nm-fab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Idle: an occasional blink, so a button sitting in the corner still feels awake.
+   Honours the reduced-motion preference below. */
+.nm-bot-eye--blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nm-blink 4s ease-in-out infinite;
+}
+
+@keyframes nm-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96%           { transform: scaleY(.15); }
+}
+
+/* Thinking: a violet arc circles the head while a reply streams in. */
+.nm-bot-ring {
+  fill: none;
+  stroke: #8B5CF6;
+  stroke-width: 2.5;
+  stroke-dasharray: 34 18;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: nm-spin 1.4s linear infinite;
+}
+
+@keyframes nm-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Unread: a count badge, outlined so it stays legible against the dark head. */
+.nm-fab-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border: 2px solid var(--bg);
+  border-radius: 9px;
+  background: var(--danger);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  text-align: center;
+}
+
+/* Open: the bot stays, dimmed and still, so the corner does not compete with the panel
+   it just opened. Hover brings it back to full strength. */
+.nm-bot--closed { opacity: .72; }
+.nm-fab:hover .nm-bot--closed { opacity: 1; }
+
+/* A coral rim while an offer of help is on screen, tying the bubble to the button that
+   raised it. Coral is the AI colour throughout, so this reads as "NMate has something"
+   rather than as a warning. */
+.nm-fab.has-nudge .nm-bot-head { stroke: #F0506E; stroke-width: 2.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nm-fab,
+  .nm-bot-eye--blink,
+  .nm-bot-ring {
+    animation: none;
+    transition: none;
+  }
+  .nm-fab:hover { transform: none; }
+}
+
