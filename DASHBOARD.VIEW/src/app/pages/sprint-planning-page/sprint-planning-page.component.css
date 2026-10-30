@@ -1,3 +1,74 @@
 :host {
   display: contents;
 }
+
+/* ── Rebalancing suggestion ──────────────────────────────────────
+   Coral-tinted because it came from NMate, not red: it is an offer, not a problem.
+   Red here would read as a second alarm beside the overloaded rows below. */
+.rebalance {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--ai-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ai) 28%, transparent);
+}
+
+.rebalance__brand {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--ai);
+}
+
+/* ── Load meter ──────────────────────────────────────────────────
+   The 100% tick sits at 75% of the bar's width, leaving a quarter to show how far past
+   capacity someone has gone. A bar that simply fills and stops cannot distinguish "exactly
+   at capacity" from "half as much work again", which is the distinction this screen is for. */
+.load-meter {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.load-meter__fill,
+.load-meter__over {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  transition: width var(--motion-enter) var(--ease-out);
+}
+
+.load-meter__fill {
+  left: 0;
+  border-radius: 999px 0 0 999px;
+  background: var(--accent);
+}
+
+.load-meter__over {
+  background: var(--danger);
+}
+
+.load-meter__marker {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--text-2);
+}
+
+/* An overloaded row carries a tint of its own, so it is findable while scrolling a long
+   table even once it has been sorted to the top. */
+.capacity-row--over {
+  background: var(--danger-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .load-meter__fill,
+  .load-meter__over { transition: none; }
+}

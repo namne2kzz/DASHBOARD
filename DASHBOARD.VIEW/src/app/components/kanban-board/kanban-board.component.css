@@ -24,3 +24,45 @@
   max-height: 20rem;
   overflow-y: auto;
 }
+
+/* ── Horizontal paging arrows ──────────────────────────────────────────────
+   The board's own scrollbar sits under a tall column list, usually below the
+   fold, so these float over the first and last column instead. Centred on the
+   band where column headers sit rather than the full height: the list can be
+   several screens tall, and a vertically centred button would drift far from
+   where the eye is. */
+.board-pager {
+  position: absolute;
+  top: 120px;
+  z-index: 15;
+  display: flex;
+  height: 36px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background-color: var(--surface);
+  color: var(--text-2);
+  box-shadow: var(--shadow-raised);
+  transition: color var(--motion-hover) var(--ease-out),
+              background-color var(--motion-hover) var(--ease-out);
+}
+
+.board-pager:hover {
+  background-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.board-pager:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.board-pager--left  { left: 8px; }
+.board-pager--right { right: 8px; }
+
+/* The arrows are a convenience over scrolling, not the only way across, so they
+   step aside for anyone who has asked for less movement. */
+@media (prefers-reduced-motion: reduce) {
+  .board-pager { transition: none; }
+}

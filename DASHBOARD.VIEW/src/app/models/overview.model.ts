@@ -13,6 +13,36 @@ export interface OverviewStatsDto {
   assigneeWorkload: AssigneeWorkloadItemDto[];
   recentActivity: RecentActivityItemDto[];
   report: SprintReportDto;
+  attention: AttentionItemDto[];
+  comparison: SprintComparisonDto;
+}
+
+/** What an attention item is about — decides its icon and where clicking it leads. */
+export type AttentionKind = 'WipExceeded' | 'Overloaded' | 'StaleItem';
+
+/** How loudly an attention item is shown. */
+export type AttentionSeverity = 'Warning' | 'Critical';
+
+/** One problem on the board worth acting on, pre-judged by the server. */
+export interface AttentionItemDto {
+  kind: AttentionKind;
+  severity: AttentionSeverity;
+  /** Ready-to-display summary, e.g. "Code Review over WIP · 25/3". */
+  message: string;
+  /** Repo-relative route to the screen that resolves it. */
+  route: string;
+  /** Column, member or task the destination should focus on. */
+  targetId: string | null;
+}
+
+/** The previous sprint's headline figures, for showing change rather than a bare number. */
+export interface SprintComparisonDto {
+  /** False on a repository's first sprint; every delta is then hidden. */
+  hasPrevious: boolean;
+  completedPoints: number;
+  cycleTimeDays: number;
+  totalItems: number;
+  doneItems: number;
 }
 
 /** Sprint report card — completion and scope-change summary for the selected sprint. */
@@ -54,6 +84,10 @@ export interface TypeDistributionItemDto {
 export interface SprintRefDto {
   id: string;
   name: string;
+  /** ISO date, e.g. "2026-06-29". */
+  startDate: string;
+  /** ISO date, e.g. "2026-07-10". */
+  endDate: string;
 }
 
 /** Burndown chart data — one element per sprint working day. */

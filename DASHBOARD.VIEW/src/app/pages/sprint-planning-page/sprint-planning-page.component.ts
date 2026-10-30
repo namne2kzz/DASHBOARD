@@ -11,6 +11,7 @@ import { DialogService } from '../../core/components/dialog/dialog.service';
 import { CreateSprintDialogComponent } from '../../components/create-sprint-dialog/create-sprint-dialog.component';
 import { AddSprintTaskDialogComponent } from '../../components/add-sprint-task-dialog/add-sprint-task-dialog.component';
 import { AddCapacityMemberDialogComponent } from '../../components/add-capacity-member-dialog/add-capacity-member-dialog.component';
+import { NBotComponent } from '../../components/n-bot/n-bot.component';
 import { SprintStoryDetailDialogComponent } from '../../components/sprint-story-detail-dialog/sprint-story-detail-dialog.component';
 import type { SprintTask } from '../../models/sprint-planning.model';
 import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS, SPRINT_TASK_STATE_KEY_OPTIONS } from '../../core/constants/system.constant';
@@ -23,7 +24,7 @@ import { LoadErrorComponent } from '../../components/load-error/load-error.compo
 
 @Component({
   selector: 'app-sprint-planning-page',
-  imports: [LoadErrorComponent, CommonModule, FormsModule, NgClass, InfiniteScrollDirective, FlipDropDirective],
+  imports: [LoadErrorComponent, CommonModule, FormsModule, NgClass, InfiniteScrollDirective, FlipDropDirective, NBotComponent],
   templateUrl: './sprint-planning-page.component.html',
   styleUrl: './sprint-planning-page.component.css',
 })
@@ -37,6 +38,21 @@ export class SprintPlanningPageComponent implements OnInit {
 
   /** Number of capacity members whose workload exceeds their capacity — the only load state that gets colour. */
   readonly overloadedCount   = computed(() => this.planning.memberLoads().filter(m => m.state === 'overloaded').length);
+
+  /**
+   * Where the 100% tick sits along the load meter, as a percentage of the bar's width.
+   *
+   * Below 100 so there is room to the right to draw the overflow. A bar whose full mark is
+   * also its right-hand edge cannot show how far past capacity someone is, which is the one
+   * thing this screen exists to answer.
+   */
+  readonly LOAD_MARKER_AT = 75;
+
+  /** Load beyond this is clipped; nobody needs to distinguish 200% from 260% by eye. */
+  private readonly LOAD_MAX_SHOWN = 150;
+
+  /** Whether a rebalancing suggestion has been waved away for this sprint. */
+  readonly rebalanceDismissed = signal(false);
   private readonly router    = inject(Router);
   private readonly repoCtx   = inject(RepositoryContextService);
   private readonly auth      = inject(AuthService);
@@ -270,6 +286,35 @@ export class SprintPlanningPageComponent implements OnInit {
   }
 
   /** Opens the add capacity member dialog. */
+  /**
+   * Width of the violet part of a load meter.
+   *
+   * @param percent The member's load as a percentage of capacity.
+   * @returns Width as a percentage of the bar.
+   */
+  loadFillWidth(percent: number): number {
+    return Math.min(percent, 100) / 100 * this.LOAD_MARKER_AT;
+  }
+
+  /**
+   * Width of the red segment past the 100% tick.
+   *
+   * @param percent The member's load as a percentage of capacity.
+   * @returns Width as a percentage of the bar; zero when not overloaded.
+   */
+  loadOverWidth(percent: number): number {
+    if (percent <= 100) return 0;
+
+    const over = Math.min(percent, this.LOAD_MAX_SHOWN) - 100;
+    const room = 100 - this.LOAD_MARKER_AT;
+    return over / (this.LOAD_MAX_SHOWN - 100) * room;
+  }
+
+  /** Waves away the rebalancing suggestion for this sprint. */
+  dismissRebalance(): void {
+    this.rebalanceDismissed.set(true);
+  }
+
   openAddCapacityMember(): void {
     this.dialog.open(AddCapacityMemberDialogComponent, { title: 'Add member to sprint', width: '28rem' });
   }

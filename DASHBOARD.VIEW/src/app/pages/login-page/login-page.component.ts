@@ -6,11 +6,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
 import { GoogleIdentityService } from '../../core/services/google-identity.service';
+import { BrandLogoComponent } from '../../components/brand-logo/brand-logo.component';
+
+/** Which half of the two-step sign-in is showing. */
+type LoginStep = 'organization' | 'credentials';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BrandLogoComponent],
   templateUrl: './login-page.component.html',
   styleUrls: ['./login-page.component.css'],
 })
@@ -23,7 +27,19 @@ export class LoginPageComponent implements AfterViewInit {
 
   @ViewChild('googleButton') private googleButtonRef?: ElementRef<HTMLDivElement>;
 
-  readonly orgAlias     = signal(this.route.snapshot.queryParamMap.get('org') ?? '');
+  /**
+   * Which half of the two-step sign-in is on screen. Step 1 names the organization and puts it in
+   * the URL as /{orgAlias}/login, so every later step — and the link in a provisioning email —
+   * already identifies the tenant.
+   */
+  readonly step = signal<LoginStep>(
+    this.route.snapshot.paramMap.get('orgAlias') ? 'credentials' : 'organization');
+
+  readonly orgAlias = signal(
+    this.route.snapshot.paramMap.get('orgAlias')
+    ?? this.route.snapshot.queryParamMap.get('org')
+    ?? '');
+
   readonly email        = signal('');
   readonly password     = signal('');
   readonly error        = signal<string | null>(null);
@@ -70,26 +86,102 @@ export class LoginPageComponent implements AfterViewInit {
   }
 
   /**
+   * Step 1: confirms the organization exists, then moves to /{orgAlias}/login so the tenant is
+   * named in the URL for the credentials step.
+   *
+   * Validating here rather than on submit means a mistyped alias is reported on its own, instead
+   * of surfacing later as an indistinguishable "invalid credentials" after the user has also typed
+   * their email and password.
+   * @param orgAlias Organization alias as currently shown in its field.
+   */
+  continueWithOrganization(orgAlias: string): void {
+    // As in login(): the DOM wins over the signal, so a browser autofill is not submitted empty.
+    const org = (orgAlias || this.orgAlias()).trim().toLowerCase();
+    this.orgAlias.set(org);
+
+    if (!org) {
+      this.error.set('Enter your organization name.');
+      return;
+    }
+
+    // Checked here as well as on the server, so a typo costs nothing from the lookup's deliberately
+    // small rate-limit budget — which a user correcting their own alias needs to keep.
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(org)) {
+      this.error.set('Use only lowercase letters, digits and hyphens.');
+      return;
+    }
+
+    this.error.set(null);
+    this.loading.set(true);
+
+    this.auth.lookupOrganization(org).subscribe({
+      next: () => {
+        this.loading.set(false);
+        // Carry the query string over, so an interrupted deep link still resumes after sign-in.
+        void this.router.navigate([org, 'login'], {
+          queryParams: this.route.snapshot.queryParams,
+        });
+        this.step.set('credentials');
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading.set(false);
+        this.error.set(this.lookupErrorMessage(err.status));
+      },
+    });
+  }
+
+  /**
+   * Turns a lookup failure into something the user can act on.
+   *
+   * A rejected shape and an unknown organization are different problems: telling someone who typed
+   * an accented character that no such organization exists sends them hunting for the right name
+   * when the characters are what needs fixing.
+   * @param status The HTTP status the lookup failed with.
+   * @returns The message to show beneath the field.
+   */
+  private lookupErrorMessage(status: number): string {
+    switch (status) {
+      case 422:
+        return 'Use only lowercase letters, digits and hyphens.';
+      case 429:
+        return 'Too many attempts. Please wait a few minutes and try again.';
+      case 0:
+        return 'Could not reach the server. Check your connection and try again.';
+      default:
+        return 'No organization found with that name.';
+    }
+  }
+
+  /** Returns to step 1 so a different organization can be entered, clearing what was typed. */
+  changeOrganization(): void {
+    this.error.set(null);
+    this.email.set('');
+    this.password.set('');
+    this.step.set('organization');
+
+    void this.router.navigate(['/login'], { queryParams: this.route.snapshot.queryParams });
+  }
+
+  /**
    * Submits credentials and navigates on success.
    *
    * The values are taken from the DOM rather than from the signals: a browser autofill writes
    * straight to `input.value` without raising the `input` event `ngModelChange` listens for, so a
    * field the user can plainly see filled in would otherwise be submitted empty.
-   * @param orgAlias Organization alias as currently shown in its field.
    * @param email Email as currently shown in its field.
    * @param password Password as currently shown in its field.
    */
-  login(orgAlias: string, email: string, password: string): void {
+  login(email: string, password: string): void {
     // The DOM wins when it holds something, since that is what the user sees — including a value
     // the browser autofilled without raising an event. An empty field falls back to the signal,
-    // which still carries a value ngModel has set but not yet flushed to the element (the ?org=
-    // prefill on first render).
-    const org  = orgAlias || this.orgAlias();
+    // which still carries a value ngModel has set but not yet flushed to the element.
     const mail = email    || this.email();
     const pass = password || this.password();
 
+    // The alias is settled by step 1 and shown read-only, so it comes from the signal alone.
+    const org = this.orgAlias();
+
     // Keep the signals in step, so error re-renders and later reads see what was sent.
-    this.orgAlias.set(org);
     this.email.set(mail);
     this.password.set(pass);
 
@@ -99,7 +191,8 @@ export class LoginPageComponent implements AfterViewInit {
     this.auth.login({ orgAlias: org, email: mail, password: pass }).subscribe({
       next: () => this.enterApp(),
       error: () => {
-        this.error.set('Invalid organization, email or password.');
+        // The organization was confirmed in step 1, so only the credentials can be at fault here.
+        this.error.set('Invalid email or password.');
         this.loading.set(false);
       },
     });
@@ -131,7 +224,10 @@ export class LoginPageComponent implements AfterViewInit {
     if (this.tryExternalReturn()) return;
 
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    const target = returnUrl && !returnUrl.startsWith('/login') ? returnUrl : '/';
+    // Sign-in lives at both /login and /{orgAlias}/login, so matching the path segment catches
+    // either — returning to a sign-in page we have just completed would only loop.
+    const isSignInUrl = (url: string) => /(^|\/)login(\/|\?|#|$)/.test(url);
+    const target = returnUrl && !isSignInUrl(returnUrl) ? returnUrl : '/';
     void this.router.navigateByUrl(target);
   }
 

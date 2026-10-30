@@ -140,8 +140,13 @@ internal sealed class AcceptInvitationCommandHandler(
 
         // Invited users are Google-only (no password), so they can't use the regular login
         // endpoint afterwards — issue a session here exactly like LoginCommandHandler does.
-        var orgAlias      = await db.Set<Organization>().AsNoTracking()
-            .Where(o => o.Id == userOrgId).Select(o => o.Alias).FirstOrDefaultAsync(ct) ?? string.Empty;
+        // One projection for both: the alias routes the UI, the name labels the tenant for people.
+        var org           = await db.Set<Organization>().AsNoTracking()
+            .Where(o => o.Id == userOrgId)
+            .Select(o => new { o.Alias, o.Name })
+            .FirstOrDefaultAsync(ct);
+        var orgAlias      = org?.Alias ?? string.Empty;
+        var orgName       = org?.Name  ?? string.Empty;
         var accessToken   = jwtService.GenerateToken(userId, userEmail, userName, userOrgId);
         var refreshToken  = jwtService.GenerateRefreshToken();
         var refreshExpiry = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiresInDays);
@@ -171,6 +176,7 @@ internal sealed class AcceptInvitationCommandHandler(
             IsGlobalAdmin:         isGlobalAdmin,
             OrgId:                 userOrgId,
             OrgAlias:              orgAlias,
+            OrgName:               orgName,
             AvatarClass:           avatarClass));
     }
 }

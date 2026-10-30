@@ -1,8 +1,8 @@
 <div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
   <div class="space-y-6">
-    <header class="sticky top-0 z-20 -mx-5 flex min-h-[52px] flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-5 py-2.5">
+    <header class="sticky top-0 z-20 -mx-5 flex min-h-[72px] flex-wrap items-center justify-between gap-3 border-b border-nx-border bg-nx-surface px-8 py-3">
       <div>
-        <h1 class="text-lg font-semibold text-slate-100">Workflow</h1>
+        <h1 class="text-3xl font-bold text-nx-text">Workflow</h1>
       </div>
     </header>
 
@@ -17,7 +17,7 @@
       <span><b class="font-mono font-medium text-slate-100">{{ board.columns().length }} / 6</b> states mapped</span>
     </div>
 
-    <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+    <section class="nx-card p-6">
       <div class="flex items-start justify-between gap-4">
         <div class="flex flex-col gap-1">
           <h2 class="text-sm font-semibold text-slate-100">Column configuration</h2>
@@ -39,7 +39,7 @@
             </button>
 
             @if (sectionMenuOpen()) {
-              <div class="absolute right-0 top-8 z-20 min-w-[150px] rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl">
+              <div class="absolute right-0 top-8 z-20 min-w-[150px] nx-menu">
                 <button
                   type="button"
                   class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"

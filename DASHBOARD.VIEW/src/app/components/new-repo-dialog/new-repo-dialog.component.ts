@@ -30,6 +30,9 @@ export class NewRepoDialogComponent {
   /** The organization this repository will belong to (the caller's org). Read-only. */
   readonly orgAlias = this.auth.currentUser()?.orgAlias ?? '';
 
+  /** The tenant as its people call it. Falls back to the alias when a session predates the name. */
+  readonly orgName = this.auth.currentUser()?.orgName || this.orgAlias;
+
   // ── Form fields ───────────────────────────────────────────────
   name        = '';
   code        = '';
@@ -38,7 +41,7 @@ export class NewRepoDialogComponent {
   // ── Code availability ─────────────────────────────────────────
   readonly codeStatus = signal<'idle' | 'checking' | 'available' | 'taken'>('idle');
 
-  // ── Scrum Master picker ───────────────────────────────────────
+  // ── Project Manager picker ────────────────────────────────────
   readonly searchTerm    = signal('');
   readonly searchResults = signal<UserPickerItem[]>([]);
   readonly selectedUser  = signal<UserPickerItem | null>(null);
@@ -115,7 +118,7 @@ export class NewRepoDialogComponent {
     this.dropdownRect.set(null);
   }
 
-  /** Clears the selected Scrum Master so a new search can be started. */
+  /** Clears the selected Project Manager so a new search can be started. */
   clearUser(): void {
     this.selectedUser.set(null);
     this.searchTerm.set('');
@@ -140,7 +143,7 @@ export class NewRepoDialogComponent {
       name:          this.name.trim(),
       code:          this.code.trim(),
       description:   this.description.trim(),
-      scrumMasterId: user.userId,
+      projectManagerId: user.userId,
     }).subscribe({
       next:  repo => { this.submitting.set(false); this.dialogRef.close(repo); },
       error: err  => {

@@ -7,6 +7,9 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-27 | 23:19 | NMate chủ động gợi ý theo ngữ cảnh | Thêm **nudge**: khi màn hình đang có vấn đề NMate xử lý được (vd item đầu của dải "Cần chú ý" ở Overview), NMate hiện 1 bong bóng tối cạnh nút nổi, nút nổi đồng thời lên viền coral. Bấm nhận → mở panel và **hỏi luôn câu hỏi** chứ không mở ô chat trống. **Mỗi nudge chỉ hiện 1 lần/phiên**, khoá theo `key` gồm cả màn hình lẫn vấn đề cụ thể — cùng màn nhưng vấn đề khác vẫn được hiện, còn cùng vấn đề thì không lặp lại (trợ lý nhắc đi nhắc lại sẽ bị bấm tắt không đọc). Màn Sprint thêm gợi ý cân tải (xem [capacity.dod.md](capacity.dod.md)). Trạng thái bảo trì đổi từ dòng chữ đỏ sang **N-bot đội mũ bảo hộ** — đây là chờ chứ không phải lỗi người dùng gây ra. Dòng disclaimer viết lại ngắn gọn bằng tiếng Anh: "NMate is an AI agent and can be wrong — please double-check." |
+| 2026-10-27 | 14:20 | N-bot dùng chung cho header và nút đóng | Logo chữ "N" trong ô vuông xanh ở đầu panel đổi thành **logo NFlow** (`app-brand-logo`, 30px, chỉ phần lục giác, không còn nền). Nút nổi lúc panel đang mở cũng đổi từ dấu **X** sang N-bot **mắt nhắm** (mờ 72%, sáng lại khi hover) thay vì icon khác hẳn — vẫn là một nhân vật, nhắm mắt để báo bấm vào là đóng. Nhãn screen-reader giữ nguyên "Đóng NMate". |
+| 2026-10-27 | 12:00 | Nút nổi thành N-bot | Nút nổi đổi từ icon chat tròn xanh sang **N-bot**: đầu lục giác lấy từ logo, hai nét chữ N làm mắt (tím `#8B5CF6` / hồng `#F0506E`, thân `#161B22` — màu logo cố định, không đổi theo theme). 4 trạng thái: **nghỉ** (mắt chớp 4s/lần), **hover** (phóng 1.1×, viền + bóng tím), **đang nghĩ** (mắt nheo, vòng tím xoay quanh đầu khi `isStreaming`), **tin mới** (badge đỏ đếm số câu trả lời hoàn thành lúc panel đóng, xoá khi mở lại). Vùng bấm 52×52px. Tôn trọng `prefers-reduced-motion`. |
 | 2026-10-11 | 18:33 | Cho user ẩn/hiện NMate | Settings → General → Appearance có switch "NMate assistant" (setting `ui.nmate-widget`, mặc định bật); tắt thì nút nổi và phím tắt Ctrl+/ biến mất, panel đang mở tự đóng |
 | 2026-10-11 | 18:17 | Thêm lịch sử hội thoại gần đây | Nút đồng hồ cạnh "Mới" mở danh sách 3 hội thoại gần nhất của user; chọn một hội thoại để xem lại và hỏi tiếp trong chính hội thoại đó |
 | 2026-10-09 | 22:20 | Thêm widget chat NMate | Nút nổi góc phải dưới trên mọi màn hình trong app (Ctrl+/ mở/đóng), gợi ý câu hỏi theo màn hình, stream câu trả lời, nút Dừng, nguồn bấm được, 👍/👎; hội thoại tiếp tục sau khi reload trong cùng tab |
@@ -58,7 +61,7 @@ Cho người dùng hỏi cách dùng hệ thống ngay trong app (widget chat n�
 
 ### Widget (DASHBOARD.VIEW)
 
-- Nút nổi góc phải dưới trên mọi màn hình sau đăng nhập (`shell-layout`). Bấm nút hoặc **Ctrl/Cmd + /** để mở/đóng, **Esc** để đóng. Trên điện thoại panel chiếm toàn màn hình.
+- Nút nổi góc phải dưới trên mọi màn hình sau đăng nhập (`shell-layout`), hình **N-bot** với 5 trạng thái (nghỉ / hover / đang nghĩ / có tin mới / đang mở — mắt nhắm). Cùng hình N-bot đó làm logo ở đầu panel. Bấm nút hoặc **Ctrl/Cmd + /** để mở/đóng, **Esc** để đóng. Trên điện thoại panel chiếm toàn màn hình.
 - Panel trống thì hiện **gợi ý câu hỏi** của màn hình đang đứng, bấm là hỏi luôn.
 - **Enter** để gửi, **Shift+Enter** để xuống dòng. Trong lúc đang trả lời thì nút Gửi đổi thành **Dừng**.
 - Nguồn hiển thị dưới câu trả lời (gộp các đoạn cùng mục). Bấm để mở đúng màn hình trong org/project hiện tại.

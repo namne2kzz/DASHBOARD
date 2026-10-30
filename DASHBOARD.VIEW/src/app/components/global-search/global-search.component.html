@@ -1,64 +1,90 @@
 @if (search.open()) {
   <!-- Backdrop -->
-  <div class="fixed inset-0 z-[9995] bg-slate-950/60 " (click)="search.close()"></div>
+  <div class="fixed inset-0 z-[9995] bg-[rgb(13_17_23/.42)]" (click)="search.close()"></div>
 
   <!-- Palette -->
-  <div class="fixed inset-x-0 top-[12vh] z-[9996] mx-auto w-[92vw] max-w-xl px-2">
-    <div class="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl" (click)="$event.stopPropagation()">
+  <div class="fixed inset-x-0 top-[12vh] z-[9996] mx-auto w-[92vw] max-w-2xl px-2">
+    <div class="overflow-hidden rounded-2xl bg-nx-surface shadow-[0_24px_64px_rgba(13,17,23,0.32)]"
+         (click)="$event.stopPropagation()">
+
       <!-- Input row -->
-      <div class="flex items-center gap-2 border-b border-slate-800 px-4">
-        <svg class="h-4 w-4 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="M21 21l-4.3-4.3"/>
+      <div class="flex h-[60px] items-center gap-3 border-b border-nx-border px-[18px]">
+        <svg class="h-5 w-5 shrink-0 text-nx-text-2" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/>
         </svg>
         <input
           #searchInput
           type="text"
-          placeholder="Search work items, backlog…"
-          class="w-full bg-transparent py-3.5 text-sm text-slate-100 outline-none placeholder:text-slate-600"
+          placeholder="Search, or type a command…"
+          class="w-full bg-transparent text-base font-medium text-nx-text outline-none placeholder:text-nx-text-3"
           [ngModel]="search.term()"
           (ngModelChange)="search.setTerm($event)"
         />
         @if (search.loading()) {
-          <svg class="h-4 w-4 shrink-0 animate-spin text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="h-4 w-4 shrink-0 animate-spin text-nx-text-3" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path stroke-linecap="round" d="M12 3a9 9 0 1 0 9 9"/>
           </svg>
         } @else {
-          <kbd class="hidden shrink-0 rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 sm:block">Esc</kbd>
+          <kbd class="hidden shrink-0 rounded-md border border-nx-border-strong px-2 py-0.5 font-mono text-[11px] text-nx-text-2 sm:block">Esc</kbd>
         }
       </div>
 
-      <!-- Results -->
-      <div class="custom-scroll max-h-[55vh] overflow-y-auto">
-        @if (search.term().trim().length < 2) {
-          <p class="px-4 py-6 text-center text-xs text-slate-600">Type at least 2 characters to search this repository.</p>
-        } @else if (!search.loading() && search.groups().length === 0) {
-          <p class="px-4 py-6 text-center text-xs text-slate-600">No matches for "{{ search.term() }}".</p>
-        } @else {
+      <!-- Results and commands -->
+      <div class="custom-scroll flex max-h-[55vh] flex-col gap-0.5 overflow-y-auto px-2 py-2.5">
+
+        @if (search.term().trim().length >= 2) {
           @for (group of search.groups(); track group.kind) {
-            <div class="px-2 py-1.5">
-              <p class="px-2 py-1 text-xs font-medium text-slate-400">{{ group.label }}</p>
-              @for (item of group.items; track item.id) {
-                <button
-                  type="button"
-                  class="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition hover:bg-slate-800/70"
-                  (click)="goTo(item)"
-                >
-                  <span class="nx-tag shrink-0"
-                    [ngClass]="kindAccent(item.kind)"
-                  >{{ group.label }}</span>
-                  <span class="min-w-0 flex-1">
-                    <span class="block truncate text-sm text-slate-100">{{ item.title }}</span>
-                    @if (item.subtitle) {
-                      <span class="block truncate text-xs text-slate-500">{{ item.subtitle }}</span>
-                    }
-                  </span>
-                  <svg class="h-4 w-4 shrink-0 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/>
-                  </svg>
-                </button>
-              }
-            </div>
+            <p class="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[.08em] text-nx-text-2">{{ group.label }}</p>
+            @for (item of group.items; track item.id) {
+              <button type="button" class="palette-row" (click)="goTo(item)">
+                <span class="nx-type shrink-0" [ngClass]="kindAccent(item.kind)"></span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-semibold text-nx-text">{{ item.title }}</span>
+                  @if (item.subtitle) {
+                    <span class="block truncate font-mono text-xs text-nx-text-2">{{ item.subtitle }}</span>
+                  }
+                </span>
+              </button>
+            }
           }
+
+          @if (!search.loading() && search.groups().length === 0 && commands().length === 0) {
+            <p class="px-3 py-6 text-center text-xs text-nx-text-3">Nothing matches “{{ search.term() }}”.</p>
+          }
+        }
+
+        @if (commands().length > 0) {
+          <p class="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[.08em] text-nx-text-2">Commands</p>
+          @for (command of commands(); track command.id) {
+            <button type="button" class="palette-row" (click)="runCommand(command)">
+              <svg class="h-[18px] w-[18px] shrink-0 text-nx-text-2" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path [attr.d]="command.icon"/>
+              </svg>
+              <span class="flex-1 text-sm text-nx-text">{{ command.label }}</span>
+              @if (command.hint) {
+                <kbd class="font-mono text-[11px] text-nx-text-3">{{ command.hint }}</kbd>
+              }
+            </button>
+          }
+        }
+
+        <!-- Whatever was typed is also a question. Offered last, because it is the fallback
+             for when none of the above was what the reader meant. -->
+        @if (canAskNMate()) {
+          <button type="button" class="palette-row" (click)="askNMate()">
+            <span class="flex h-[18px] w-[18px] shrink-0 items-center justify-center" aria-hidden="true">
+              <span class="h-2 w-2 rounded-full bg-nx-ai"></span>
+            </span>
+            <span class="flex-1 truncate text-sm text-nx-text">Ask NMate: “{{ search.term().trim() }}”</span>
+          </button>
+        }
+
+        @if (search.term().trim().length < 2 && commands().length === 0) {
+          <p class="px-3 py-6 text-center text-xs text-nx-text-3">Type at least 2 characters to search this repository.</p>
         }
       </div>
     </div>

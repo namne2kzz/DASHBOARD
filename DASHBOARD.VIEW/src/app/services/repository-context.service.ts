@@ -28,7 +28,10 @@ export class RepositoryContextService {
   );
 
   constructor() {
-    this.load();
+    // Public pages (sign-in, set-password, invite-accept) inject this service to call load() once
+    // a session exists. Loading unconditionally here would fire a request that 401s before they
+    // have signed in, which the global error interceptor would read as an expired session.
+    if (this.token.userId) this.load();
   }
 
   /** @returns localStorage key scoped to the current user to prevent cross-user bleed. */
@@ -49,7 +52,7 @@ export class RepositoryContextService {
 
   /**
    * Creates a new repository and appends it to the local list.
-   * @param payload Name, code, description, and Scrum Master user ID.
+   * @param payload Name, code, description, and Project Manager user ID.
    * @returns Observable of the created RepositoryApiDto.
    */
   create(payload: CreateRepositoryPayload): Observable<RepositoryApiDto> {

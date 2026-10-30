@@ -2,11 +2,11 @@
 
   <!-- Organization (read-only) — repo is created under the caller's org -->
   @if (orgAlias) {
-    <div class="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-800/40 px-3 py-2 text-xs text-slate-400">
+    <div class="flex items-center gap-2 rounded-lg bg-nx-surface-2 px-3 py-2 text-xs text-slate-400">
       <svg class="h-3.5 w-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>
       </svg>
-      Organization: <span class="font-semibold text-slate-200">{{ orgAlias }}</span>
+      Organization: <span class="font-semibold text-slate-200">{{ orgName }}</span>
     </div>
   }
 
@@ -67,9 +67,9 @@
       class="field-textarea w-auto"></textarea>
   </div>
 
-  <!-- Scrum Master picker -->
+  <!-- Project Manager picker -->
   <div class="flex flex-col gap-1">
-    <label class="text-xs font-medium text-slate-300">Scrum Master <span class="text-red-400">*</span></label>
+    <label class="text-xs font-medium text-slate-300">Project Manager <span class="text-red-400">*</span></label>
 
     @if (selectedUser(); as picked) {
       <div class="flex items-center gap-2 rounded-lg border border-sky-500/40 bg-sky-500/5 px-3 py-1.5">
@@ -101,16 +101,16 @@
 
         <!-- Fixed dropdown — floats outside dialog's overflow clipping -->
         @if (dropdownRect(); as rect) {
-          <div class="fixed z-[9990] rounded-xl border border-slate-700 bg-slate-800/95 py-1.5 shadow-2xl "
+          <div class="nx-menu fixed z-[9990] "
             [style.top.px]="rect.top" [style.left.px]="rect.left" [style.width.px]="rect.width">
 
             @if (searching()) {
               @for (i of [1, 2, 3]; track i) {
                 <div class="flex items-center gap-2.5 px-3 py-1.5">
-                  <div class="h-6 w-6 shrink-0 animate-pulse rounded-full bg-slate-700/80"></div>
+                  <div class="h-6 w-6 shrink-0 nx-skeleton !rounded-full"></div>
                   <div class="flex flex-1 flex-col gap-1.5">
-                    <div class="h-2.5 w-2/3 animate-pulse rounded bg-slate-700/80"></div>
-                    <div class="h-2 w-1/2 animate-pulse rounded bg-slate-700/60"></div>
+                    <div class="h-2.5 w-2/3 nx-skeleton"></div>
+                    <div class="h-2 w-1/2 nx-skeleton"></div>
                   </div>
                 </div>
               }

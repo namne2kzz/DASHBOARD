@@ -30,12 +30,17 @@ export const appConfig: ApplicationConfig = {
       withInterceptors([correlationIdInterceptor, authInterceptor, errorInterceptor]),
     ),
     provideAnimations(),
+    // Bottom-left, away from the NMate launcher in the opposite corner. Three at a time:
+    // beyond that they stop being read and start being a wall. Errors set their own
+    // timeOut: 0 at the call site, since a failure the reader missed is a failure twice.
     provideToastr({
-      timeOut: 4000,
-      positionClass: 'toast-top-right',
+      timeOut: 5000,
+      positionClass: 'toast-bottom-left',
       preventDuplicates: true,
-      progressBar: true,
+      progressBar: false,
       closeButton: true,
+      maxOpened: 3,
+      autoDismiss: true,
     }),
   ],
 };

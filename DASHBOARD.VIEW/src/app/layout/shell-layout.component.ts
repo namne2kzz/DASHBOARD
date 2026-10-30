@@ -15,6 +15,7 @@ import { NMateWidgetComponent } from '../components/nmate-widget/nmate-widget.co
 import { NotificationPanelComponent } from '../components/notification-panel/notification-panel.component';
 import { NotificationService } from '../services/notification.service';
 import { SearchService } from '../services/search.service';
+import { ThemeService } from '../core/services/theme.service';
 import { RepositoryApiDto } from '../models/repository.model';
 
 @Component({
@@ -33,6 +34,7 @@ export class ShellLayoutComponent {
   readonly privilege = inject(PrivilegeService);
   readonly search    = inject(SearchService);
   readonly notiSvc   = inject(NotificationService);
+  readonly theme     = inject(ThemeService);
   private readonly dialog  = inject(DialogService);
   private readonly confirm = inject(ConfirmService);
   private readonly router  = inject(Router);
@@ -46,7 +48,26 @@ export class ShellLayoutComponent {
   );
 
   /** The current tenant's URL alias (constant per session). */
+  /** The alias, used to build URLs. Not for display — see {@link orgName}. */
   readonly orgAlias = computed(() => this.auth.currentUser()?.orgAlias ?? '');
+
+  /** The tenant as its people call it. Falls back to the alias when a session predates the name. */
+  readonly orgName = computed(() => {
+    const user = this.auth.currentUser();
+    return user?.orgName || user?.orgAlias || '';
+  });
+
+  /**
+   * The selected repository's short code for the hexagon tile.
+   *
+   * The code (DASH, NXH) identifies a repository far better than the first letter of its
+   * name does — two repositories starting with the same letter were indistinguishable.
+   */
+  readonly repoCode = computed(() => {
+    const repo = this.repoCtx.selectedRepo();
+    if (!repo) return 'N';
+    return (repo.code || repo.name.charAt(0)).toUpperCase().slice(0, 4);
+  });
 
   /** Two-letter initials of the signed-in user for the sidebar user card. */
   readonly userInitials = computed(() => {

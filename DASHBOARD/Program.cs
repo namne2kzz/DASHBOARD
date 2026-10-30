@@ -204,6 +204,22 @@ try
                     QueueLimit           = 0,
                 }));
 
+        // Sign-in step 1 resolves a tenant alias for an anonymous caller, so a positive answer tells
+        // the caller that tenant exists. The budget is therefore sized for a person fixing a typo,
+        // not for enumeration: a dictionary of a thousand candidate names would take hours per IP.
+        // Applied on AuthController.GetOrganization via [EnableRateLimiting(...)].
+        opt.AddPolicy(DASHBOARD.Controllers.Auth.AuthController.OrgLookupRateLimitPolicy, httpContext =>
+            RateLimitPartition.GetSlidingWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new SlidingWindowRateLimiterOptions
+                {
+                    PermitLimit          = rl.OrgLookupRateLimitPermitLimit,
+                    Window               = rl.OrgLookupRateLimitWindow,
+                    SegmentsPerWindow    = rl.OrgLookupRateLimitSegments,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit           = 0,
+                }));
+
         // NMate questions spend the free-tier Gemini quota (counted per minute), so each user gets a small
         // allowance. Partitioned by user, not IP: users behind one office NAT must not share a budget.
         // Applied on NMateController.Chat via [EnableRateLimiting(NMateController.ChatRateLimitPolicy)].

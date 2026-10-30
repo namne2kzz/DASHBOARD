@@ -14,6 +14,8 @@ namespace DASHBOARD.Application.Overview.DTOs;
 /// <param name="AssigneeWorkload">Task/story-point workload per assignee for the selected sprint.</param>
 /// <param name="RecentActivity">Most recent audit-trail entries across the repository.</param>
 /// <param name="Report">Sprint report card: completion rate and scope change for the selected sprint.</param>
+/// <param name="Attention">Problems worth acting on right now, most severe first. Empty when the sprint is healthy.</param>
+/// <param name="Comparison">The same headline figures one sprint earlier, so each can be shown with its direction of travel.</param>
 public sealed record OverviewStatsDto(
     WorkItemCountsDto WorkItemCounts,
     StatusDistributionDto StatusDistribution,
@@ -27,7 +29,42 @@ public sealed record OverviewStatsDto(
     CycleTimeDto CycleTime,
     IReadOnlyList<AssigneeWorkloadItemDto> AssigneeWorkload,
     IReadOnlyList<RecentActivityItemDto> RecentActivity,
-    SprintReportDto Report);
+    SprintReportDto Report,
+    IReadOnlyList<AttentionItemDto> Attention,
+    SprintComparisonDto Comparison);
+
+/// <summary>
+/// One thing on the board that needs a person to look at it.
+/// </summary>
+/// <remarks>
+/// A number on its own rarely prompts action — "25 items in Code Review" only means something
+/// once you know the column allows 3. Each entry therefore arrives pre-judged, with the route
+/// that takes the reader to where they can fix it.
+/// </remarks>
+/// <param name="Kind">One of <c>"WipExceeded"</c>, <c>"Overloaded"</c>, or <c>"StaleItem"</c>.</param>
+/// <param name="Severity">One of <c>"Warning"</c> or <c>"Critical"</c>, deciding how loudly it is shown.</param>
+/// <param name="Message">Ready-to-display summary, e.g. "Code Review vượt WIP · 25/3".</param>
+/// <param name="Route">Relative route to the screen that resolves it, e.g. <c>"boards"</c>.</param>
+/// <param name="TargetId">Identifier the destination can focus on: a column, a member, or a task.</param>
+public sealed record AttentionItemDto(
+    string Kind,
+    string Severity,
+    string Message,
+    string Route,
+    Guid?  TargetId);
+
+/// <summary>The previous sprint's headline figures, for showing change rather than a bare number.</summary>
+/// <param name="HasPrevious">False when this is the repository's first sprint; the UI then omits every delta.</param>
+/// <param name="CompletedPoints">Story points completed in the previous sprint.</param>
+/// <param name="CycleTimeDays">Average cycle time in the previous sprint, in days.</param>
+/// <param name="TotalItems">Work item count in the previous sprint.</param>
+/// <param name="DoneItems">Completed work item count in the previous sprint.</param>
+public sealed record SprintComparisonDto(
+    bool   HasPrevious,
+    int    CompletedPoints,
+    double CycleTimeDays,
+    int    TotalItems,
+    int    DoneItems);
 
 /// <summary>Sprint report card for the selected sprint — completion and scope-change summary.</summary>
 /// <param name="TotalTasks">Total non-deleted tasks in the sprint.</param>
@@ -77,10 +114,12 @@ public sealed record StatusDistributionDto(
 /// <param name="Count">Number of items with this type in the selected sprint.</param>
 public sealed record TypeDistributionItemDto(string Type, int Count);
 
-/// <summary>Sprint identifier and display name for the sprint selector dropdown.</summary>
+/// <summary>Sprint identifier, display name and dates for the sprint selector and header.</summary>
 /// <param name="Id">Sprint primary key.</param>
 /// <param name="Name">Sprint display name (e.g. "Sprint 1 — May 2026").</param>
-public sealed record SprintRefDto(Guid Id, string Name);
+/// <param name="StartDate">First day of the sprint.</param>
+/// <param name="EndDate">Last day of the sprint.</param>
+public sealed record SprintRefDto(Guid Id, string Name, DateOnly StartDate, DateOnly EndDate);
 
 /// <summary>Burndown chart data — one element per sprint working day.</summary>
 /// <param name="Ideal">Linear burn-down from committed story points to zero.</param>

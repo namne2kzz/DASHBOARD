@@ -57,6 +57,29 @@ export interface MemberLoad {
   state:                LoadState;
 }
 
+/**
+ * A single concrete move that would bring the most overloaded member back under capacity.
+ *
+ * Carries the resulting percentages for both people, because the question a planner is
+ * actually asking is not "who is overloaded" but "does this move make things better".
+ */
+export interface RebalanceSuggestion {
+  fromUserId: string;
+  fromName:   string;
+  toUserId:   string;
+  toName:     string;
+
+  /** Hours to move. Never more than the receiver can absorb. */
+  hours: number;
+
+  /** Hours the receiver still has free before the move. */
+  receiverFree: number;
+
+  /** Load percentages after the move, for both people. */
+  fromPercentAfter: number;
+  toPercentAfter:   number;
+}
+
 export interface AddSprintTaskDialogData {
   storyId:    string;
   storyTitle: string;

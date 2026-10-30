@@ -16,7 +16,7 @@ import {
   SprintTaskApiType,
 } from '../models/sprint-planning-api.model';
 import { SprintTaskApiState } from '../core/enums/system.enum';
-import { CloseSprintResult, LoadState, MemberLoad, Sprint, SprintTask } from '../models/sprint-planning.model';
+import { CloseSprintResult, LoadState, MemberLoad, RebalanceSuggestion, Sprint, SprintTask } from '../models/sprint-planning.model';
 import { describeLoadError } from '../utils/http-error.util';
 
 /** Maps SprintTask state string keys → numeric WorkItemState API values. */
@@ -111,6 +111,62 @@ export class SprintPlanningService {
         state:               l.loadState,
       };
     });
+  });
+
+  /**
+   * The same members, heaviest load first.
+   *
+   * Capacity planning is read to find who is overcommitted, and alphabetical order buries
+   * exactly that. Sorting by load percentage rather than by absolute hours means a part-time
+   * member at 130% outranks a full-time one at 90%, which is the comparison that matters.
+   */
+  readonly memberLoadsByLoad = computed(() =>
+    [...this.memberLoads()].sort((a, b) => b.loadPercent - a.loadPercent),
+  );
+
+  /** Members carrying more than their capacity. */
+  readonly overloadedMembers = computed(() => this.memberLoads().filter(m => m.state === 'overloaded'));
+
+  /**
+   * A concrete move that would bring the heaviest member back under capacity.
+   *
+   * Deliberately a single suggestion rather than a plan: it names one person to take hours
+   * from, one to give them to, and the resulting percentages, which is something a planner
+   * can accept or reject at a glance. Null when nobody is overloaded, or when no one else
+   * has room — in that case the sprint is overcommitted and shuffling will not fix it.
+   */
+  readonly rebalanceSuggestion = computed<RebalanceSuggestion | null>(() => {
+    const overloaded = this.overloadedMembers()
+      .slice()
+      .sort((a, b) => b.loadPercent - a.loadPercent)[0];
+    if (!overloaded) return null;
+
+    // Excess hours over capacity, rounded to something a person would actually move.
+    const excess = Math.round(overloaded.workload - overloaded.capacity);
+    if (excess <= 0) return null;
+
+    const candidate = this.memberLoads()
+      .filter(m => m.userId !== overloaded.userId)
+      .map(m => ({ member: m, free: m.capacity - m.workload }))
+      .filter(x => x.free > 0)
+      .sort((a, b) => b.free - a.free)[0];
+    if (!candidate) return null;
+
+    // Never suggest moving more than the receiver can absorb; a move that merely relocates
+    // the overload is worse than none, because it looks like a fix.
+    const hours = Math.min(excess, Math.floor(candidate.free));
+    if (hours <= 0) return null;
+
+    return {
+      fromUserId:   overloaded.userId,
+      fromName:     overloaded.name,
+      toUserId:     candidate.member.userId,
+      toName:       candidate.member.name,
+      hours,
+      receiverFree: Math.round(candidate.free),
+      fromPercentAfter: this.percent(overloaded.workload - hours, overloaded.capacity),
+      toPercentAfter:   this.percent(candidate.member.workload + hours, candidate.member.capacity),
+    };
   });
 
   readonly totalCapacity   = computed(() => this.memberLoads().reduce((s, m) => s + m.capacity, 0));

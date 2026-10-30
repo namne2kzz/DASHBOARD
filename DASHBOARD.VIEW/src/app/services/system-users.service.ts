@@ -71,7 +71,7 @@ export class SystemUsersService {
 
   /**
    * Searches all active system users by name or email — no repo exclusion applied.
-   * Used when assigning a Scrum Master before the repository exists.
+   * Used when assigning a Project Manager before the repository exists.
    * @param q Search term (min 2 chars).
    * @returns Observable of matching UserPickerItem list.
    */

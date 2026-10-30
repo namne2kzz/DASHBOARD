@@ -1,14 +1,14 @@
 <div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
   <div class="space-y-6">
-    <header class="sticky top-0 z-20 -mx-5 flex min-h-[52px] flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-5 py-2.5">
+    <header class="sticky top-0 z-20 -mx-5 flex min-h-[72px] flex-wrap items-center justify-between gap-3 border-b border-nx-border bg-nx-surface px-8 py-3">
       <div>
-        <h1 class="text-lg font-semibold text-slate-100">Repos</h1>
+        <h1 class="text-3xl font-bold text-nx-text">Repos</h1>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
         @if (showSelector()) {
           <select
-            class="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+            class="field-select w-auto"
             [value]="repos.selectedRepoUrl() ?? repos.overview()?.repoUrl"
             (change)="selectConnection($any($event.target).value)"
           >
@@ -32,20 +32,18 @@
     @if (repos.loading()) {
       <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         @for (i of [1, 2, 3, 4]; track i) {
-          <div class="h-24 animate-pulse rounded-lg border border-slate-800 bg-slate-900/60"></div>
+          <div class="h-24 nx-skeleton"></div>
         }
       </section>
     } @else if (repos.error()) {
       <app-load-error [message]="repos.error()!" (retry)="refresh()" />
     } @else if (!repos.hasConnection()) {
-      <section class="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center">
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-sky-300 ring-1 ring-slate-700">
-          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.9a3.4 3.4 0 0 0-.9-2.6c3-.3 6.1-1.5 6.1-6.6a5.1 5.1 0 0 0-1.4-3.6 4.7 4.7 0 0 0-.1-3.6s-1.1-.3-3.7 1.4a12.8 12.8 0 0 0-6.7 0C6.7.4 5.6.7 5.6.7a4.7 4.7 0 0 0-.1 3.6A5.1 5.1 0 0 0 4.1 8c0 5.1 3.1 6.3 6.1 6.6a3.4 3.4 0 0 0-.9 2.6V22" />
-          </svg>
-        </div>
-        <h2 class="mt-4 text-lg font-semibold text-white">No GitHub connection</h2>
-        <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
+      <!-- Nothing is wrong with the data — the integration was never wired up — so the bot wears
+           the hard hat rather than sleeping on an empty list. -->
+      <section class="nx-card flex flex-col items-center gap-3 px-6 py-12 text-center">
+        <app-n-bot mood="maintenance" [size]="80" label="No GitHub connection" />
+        <h2 class="text-base font-semibold text-nx-text">No GitHub connection</h2>
+        <p class="max-w-xl text-sm leading-relaxed text-nx-text-2">
           {{ t('repos.empty') }} Ask whoever manages this project's deployment to add a GitHub connection to the
           server configuration.
         </p>
@@ -63,22 +61,22 @@
 
       @if (overview) {
         <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+          <div class="nx-card p-4">
             <p class="text-xs font-medium text-slate-400">Repository</p>
             <p class="mt-2 text-lg font-semibold text-white">{{ overview.fullName }}</p>
             <p class="truncate text-xs text-slate-400">{{ overview.repoUrl }}</p>
           </div>
-          <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+          <div class="nx-card p-4">
             <p class="text-xs font-medium text-slate-400">Default branch</p>
             <p class="mt-2 font-mono text-lg font-semibold text-white">{{ overview.defaultBranch }}</p>
             <p class="text-xs text-slate-400">{{ overview.branches.length }} branches tracked</p>
           </div>
-          <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+          <div class="nx-card p-4">
             <p class="text-xs font-medium text-slate-400">Pull requests</p>
             <p class="mt-2 text-lg font-semibold text-white">{{ overview.pullRequests.length }}</p>
             <p class="text-xs text-slate-400">Open, closed and merged</p>
           </div>
-          <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+          <div class="nx-card p-4">
             <p class="text-xs font-medium text-slate-400">API rate limit</p>
             @if (overview.rateLimit) {
               <p class="mt-2 text-lg font-semibold text-white">
@@ -92,7 +90,7 @@
         </section>
 
         <section class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+          <div class="nx-card p-4">
             <h2 class="text-sm font-semibold text-slate-100">Commit tracking</h2>
             <ul class="mt-3 divide-y divide-slate-800">
               @for (commit of overview.commits; track commit.sha) {
@@ -114,11 +112,11 @@
             </ul>
           </div>
 
-          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+          <div class="nx-card p-4">
             <h2 class="text-sm font-semibold text-slate-100">Branches</h2>
             <ul class="mt-3 space-y-2">
               @for (branch of overview.branches; track branch.name) {
-                <li class="rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2">
+                <li class="rounded-lg bg-nx-surface-2 px-3 py-2">
                   <div class="flex items-center justify-between gap-3">
                     <span class="truncate font-mono text-sm text-slate-100">{{ branch.name }}</span>
                     <div class="flex shrink-0 gap-2">
@@ -141,7 +139,7 @@
           </div>
         </section>
 
-        <section class="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+        <section class="nx-card p-4">
           <h2 class="text-sm font-semibold text-slate-100">Pull request monitoring</h2>
           <div class="mt-3 overflow-x-auto">
             <table class="w-full min-w-[760px] text-left text-sm">

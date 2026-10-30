@@ -9,6 +9,15 @@ import { MyWorkGrouping, MyWorkGroup, MyWorkItemApiDto } from '../../models/my-w
 import { SprintTaskApiState, SprintTaskApiType, WorkItemApiPriority } from '../../core/enums/system.enum';
 import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL } from '../../core/constants/system.constant';
 import { LoadErrorComponent } from '../../components/load-error/load-error.component';
+import { NBotComponent } from '../../components/n-bot/n-bot.component';
+
+/** The priority bar down a row's left edge, by priority. */
+const PRIORITY_COLORS: Record<WorkItemApiPriority, string> = {
+  [WorkItemApiPriority.Critical]: 'var(--danger)',
+  [WorkItemApiPriority.High]:     'var(--danger)',
+  [WorkItemApiPriority.Medium]:   'var(--warning)',
+  [WorkItemApiPriority.Low]:      'var(--border-strong)',
+};
 
 /**
  * Personal cross-repository work queue: every open work item assigned to the current user,
@@ -16,7 +25,7 @@ import { LoadErrorComponent } from '../../components/load-error/load-error.compo
  */
 @Component({
   selector: 'app-my-work-page',
-  imports: [LoadErrorComponent, CommonModule, NgClass, FormsModule],
+  imports: [LoadErrorComponent, CommonModule, NgClass, FormsModule, NBotComponent],
   templateUrl: './my-work-page.component.html',
   styleUrl: './my-work-page.component.css',
 })
@@ -28,6 +37,53 @@ export class MyWorkPageComponent implements OnInit {
 
   readonly stateBadge = SPRINT_TASK_STATE_BADGE;
   readonly stateLabel = SPRINT_TASK_STATE_LABEL;
+
+  // ── Greeting ──────────────────────────────────────────────────
+
+  /** Today, as "Monday, 27 October". */
+  readonly todayLabel = computed(() =>
+    new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase(),
+  );
+
+  /**
+   * "Good morning, Nam" — time of day plus the first word of the person's name.
+   *
+   * The first word, not the last: display names here are free text and frequently carry a
+   * trailing nickname or note, which a greeting should not read back to them. The boundaries
+   * are the ordinary ones rather than anything clever; a greeting that is occasionally a
+   * little early is better than one that reads as a system message.
+   */
+  readonly greeting = computed(() => {
+    const hour = new Date().getHours();
+    const part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    const [first] = (this.auth.currentUser()?.name ?? '').trim().split(/\s+/).filter(Boolean);
+    return first ? `${part}, ${first}` : part;
+  });
+
+  /**
+   * The day's workload in a sentence.
+   *
+   * Written out rather than left as four counters because the shape of the day — whether
+   * anything is urgent, whether anyone is waiting on a review — is the thing worth knowing
+   * first, and reading it off tiles takes longer than reading it.
+   */
+  readonly summary = computed(() => {
+    const total    = this.myWork.totalCount();
+    const inReview = this.myWork.inReviewCount();
+    if (total === 0) return 'Nothing is assigned to you right now.';
+
+    const urgent = this.myWork.items().filter(
+      i => i.priority === WorkItemApiPriority.Critical || i.priority === WorkItemApiPriority.High,
+    ).length;
+
+    const openPart = `You have ${total} open item${total === 1 ? '' : 's'}`;
+    const urgentPart = urgent > 0 ? `, ${urgent} of them high priority` : '';
+    const reviewPart = inReview > 0
+      ? ` ${inReview} ${inReview === 1 ? 'is' : 'are'} waiting on review.`
+      : ' Nothing is waiting on review.';
+
+    return `${openPart}${urgentPart}.${reviewPart}`;
+  });
 
   // ── Filters ───────────────────────────────────────────────────
   readonly search   = signal('');
@@ -102,6 +158,19 @@ export class MyWorkPageComponent implements OnInit {
   /** @param priority The priority enum value. @returns Tailwind chip classes. */
   priorityBadge(priority: WorkItemApiPriority): string {
     return PRIORITY_BADGE[priority];
+  }
+
+  /**
+   * Colour of the bar down a row's left edge.
+   *
+   * It repeats what the priority chip says, which is deliberate: the chip is hidden on narrow
+   * screens, and the bar stays readable while scrolling a long list where chips do not.
+   *
+   * @param priority The item's priority.
+   * @returns A CSS colour token reference.
+   */
+  priorityColor(priority: WorkItemApiPriority): string {
+    return PRIORITY_COLORS[priority];
   }
 
 

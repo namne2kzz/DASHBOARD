@@ -9,8 +9,10 @@ export interface UserProfile {
   isGlobalAdmin: boolean;
   /** Organization (tenant) the user belongs to. */
   orgId: string;
-  /** Organization URL alias. */
+  /** Organization URL alias — the tenant segment in every app URL. */
   orgAlias: string;
+  /** Organization display name, for labelling the tenant in the UI. */
+  orgName: string;
 }
 
 /** Minimal user snapshot returned by GET /api/users/search — used by the member-picker. */

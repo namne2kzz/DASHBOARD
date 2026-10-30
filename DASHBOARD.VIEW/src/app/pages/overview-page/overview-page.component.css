@@ -1,3 +1,103 @@
+/* ── Attention strip ─────────────────────────────────────────────
+   Each chip is a link, so the problem and the place it is fixed are the same
+   click. Amber for something drifting, red for a limit already breached. */
+/* The strip is a notice, not another card. On the plain white card it shared with every other
+   panel it read as ordinary content and stopped registering as a warning at all, so it takes a
+   tinted field and a thick leading edge instead — the one element on the page that is not a card.
+   Amber by default: most items are a card going stale, which is worth a look but not an alarm.
+   Red is kept for a genuine breach, so that when the page does turn red it means something.
+
+   Not .nx-alert, which uses the same two tints: that primitive is a single sentence behind a 6px
+   dot, and this is a header plus a row of linked chips. It borrows nx-alert's colour pairing
+   rather than its layout. */
+.attention-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+  border-left: 4px solid var(--warning);
+  border-radius: var(--radius);
+  background: var(--warning-soft);
+}
+
+.attention-strip--critical {
+  border-left-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.attention-strip__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--warning);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.attention-strip--critical .attention-strip__head { color: var(--danger); }
+
+.attention-strip__icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* The count sits on the surface rather than another tint: two tints of the same hue stacked
+   on each other lose the boundary between them. */
+.attention-strip__count {
+  display: inline-flex;
+  min-width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Inside the tinted strip every chip goes solid, warning and critical alike: the soft tint they
+   carry elsewhere would sit on a field of the same hue and lose its edge. Severity still reads
+   from the text colour, which the modifier below keeps. Deliberately more specific than
+   .attention-chip--critical so that one cannot put its tint back. */
+.attention-strip .attention-chip {
+  background: var(--surface);
+}
+
+.attention-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: filter var(--motion-hover) var(--ease-out);
+}
+
+.attention-chip:hover { filter: brightness(.95); }
+
+.attention-chip--critical {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* The ideal-pace line is drawn dashed so it reads as a target rather than a
+   second measurement. ngx-charts gives each series its index as a class. */
+:host ::ng-deep .ngx-charts .line-series:first-of-type .line {
+  stroke-dasharray: 6 6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attention-chip { transition: none; }
+}
+
 /* ngx-charts chrome follows the Nexus UI tokens (both themes). */
 :host ::ng-deep .ngx-charts .tick text {
   fill: var(--text-3);

@@ -1,31 +1,67 @@
 <!--
-  Nexus UI column: no tinted panel. Header = name + mono count over a 2px rule;
-  over WIP turns only the rule + count + one line of text red (hard) / amber (soft).
+  Nexus UI v2 column. The whole column is tinted when it is over its WIP limit, not just a
+  rule under its heading: a problem that applies to the column should be visible from
+  anywhere in the column, including while a card is being dragged towards it.
 -->
-<section class="flex w-[300px] shrink-0 flex-col gap-2">
-  <header
-    class="flex flex-col gap-1 border-b-2 px-0.5 pb-2"
-    [class.border-rose-500]="wipExceeded() && wipMode() === 'hard'"
-    [class.border-amber-500]="wipExceeded() && wipMode() !== 'hard'"
-    [class.border-slate-800]="!wipExceeded()"
-  >
+<section
+  class="board-column"
+  [class.board-column--over-soft]="wipExceeded() && wipMode() !== 'hard'"
+  [class.board-column--over-hard]="wipExceeded() && wipMode() === 'hard'"
+  [class.board-column--target]="isDropTarget() && !blocksDrop()"
+  [class.board-column--blocked]="dragInProgress() && pointerOver() && blocksDrop()"
+  [class.board-column--ineligible]="dragInProgress() && !acceptsDraggedType() && !pointerOver()"
+  (mouseenter)="pointerOver.set(true)"
+  (mouseleave)="pointerOver.set(false)"
+>
+  <header class="flex flex-col gap-1 px-1 pb-2">
     <div class="flex items-center gap-2">
-      <h2 class="truncate text-sm font-semibold text-slate-100">{{ title() }}</h2>
+      <h2 class="truncate text-[15px] font-bold text-nx-text">{{ title() }}</h2>
       <span
-        class="font-mono text-xs"
-        [class.text-rose-500]="wipExceeded() && wipMode() === 'hard'"
-        [class.text-amber-500]="wipExceeded() && wipMode() !== 'hard'"
-        [class.text-slate-500]="!wipExceeded()"
+        class="board-column__count"
         [title]="wipLimit() > 0
           ? tasks().length + ' item' + (tasks().length === 1 ? '' : 's') + ' · WIP limit ' + wipLimit()
           : tasks().length + ' item' + (tasks().length === 1 ? '' : 's')"
       >{{ tasks().length }}{{ wipLimit() > 0 ? ' / ' + wipLimit() : '' }}</span>
     </div>
-    @if (wipExceeded()) {
+
+    <!-- Not gated on isDropTarget: the CDK never raises cdkDropListEntered for a list whose
+         enterPredicate refuses, so a column that cannot take this card would otherwise stay
+         silent — refusing the drop without ever saying why. The board tells every column what
+         type is in the air, so this one can speak for itself. -->
+    @if (dragInProgress() && pointerOver() && refusal() === 'type') {
+      <!-- A different problem from a full column, and worded as one: no amount of waiting
+           will make this column accept this card. -->
+      <span class="board-column__note inline-flex items-center gap-1.5">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/>
+        </svg>
+        This state does not apply to that work item type
+      </span>
+    } @else if (dragInProgress() && pointerOver() && refusal() === 'wip') {
+      <!-- Said plainly while the card is still in the air, rather than letting the drop
+           silently fail after the person has committed to it. A hard-stop column refuses in
+           its enterPredicate too, so this also cannot wait for cdkDropListEntered. -->
+      <span class="board-column__note inline-flex items-center gap-1.5">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/>
+        </svg>
+        Column full — not accepting items
+      </span>
+    } @else if (isDropTarget()) {
+      <span class="board-column__note">Drop here</span>
+    } @else if (wipExceeded()) {
       @if (wipMode() === 'hard') {
-        <span class="text-xs text-rose-500">Over WIP — not accepting items</span>
+        <span class="board-column__note inline-flex items-center gap-1.5">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/>
+          </svg>
+          Over WIP — hard stop, not accepting items
+        </span>
       } @else {
-        <span class="text-xs text-amber-500">Over WIP limit of {{ wipLimit() }}</span>
+        <span class="board-column__note">Over the WIP limit of {{ wipLimit() }}</span>
       }
     }
   </header>
@@ -35,12 +71,19 @@
     [id]="listId()"
     [cdkDropListData]="tasks()"
     [cdkDropListEnterPredicate]="enterPredicate()"
-    class="flex min-h-[320px] flex-1 flex-col gap-2 rounded-2xl transition-colors"
+    class="flex min-h-[320px] flex-1 flex-col gap-3"
     (cdkDropListDropped)="onDrop($event)"
+    (cdkDropListEntered)="isDropTarget.set(true)"
+    (cdkDropListExited)="isDropTarget.set(false)"
   >
     @for (t of tasks(); track t.id) {
-      <div cdkDrag [cdkDragData]="t">
+      <div cdkDrag [cdkDragData]="t"
+           (cdkDragStarted)="dragStarted.emit(t)"
+           (cdkDragEnded)="dragEnded.emit()"
+           (cdkDragMoved)="dragMoved.emit($event.pointerPosition.x)">
         <app-task-card [task]="t" [agingLimitDays]="agingLimitDays()" (opened)="opened.emit($event)" />
+        <!-- The gap the card will land in, so the list does not jump at the moment of drop. -->
+        <div class="board-column__placeholder" *cdkDragPlaceholder></div>
       </div>
     }
   </div>

@@ -1,5 +1,6 @@
 using System.Reflection;
 using DASHBOARD.Application.Common.Interfaces;
+using DASHBOARD.Application.Common.Models.Emails;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
@@ -88,6 +89,32 @@ internal sealed class EmailService(IAppSettings settings) : IEmailService
             .Replace("{{ItemUrl}}",        itemUrl);
 
         await SendAsync(toEmail, recipientName, $"[{workItemNumber}] State changed: {oldState} → {newState}", body, ct);
+    }
+
+    /// <summary>
+    /// Sends the welcome email for a newly provisioned organisation using the
+    /// <c>OrganizationWelcomeEmail.html</c> embedded template.
+    /// </summary>
+    /// <remarks>
+    /// The recipient is the administrator alone. Nobody is copied: redeeming the link in this email
+    /// grants administrator access to the whole organisation.
+    /// </remarks>
+    /// <param name="model">Recipient, organisation and link details to render.</param>
+    /// <param name="ct">Cancellation token.</param>
+    public async Task SendOrganizationWelcomeAsync(OrganizationWelcomeEmailModel model, CancellationToken ct)
+    {
+        var body = await LoadTemplateAsync("OrganizationWelcomeEmail.html", ct);
+
+        body = body
+            .Replace("{{OrgName}}",        model.OrgName)
+            .Replace("{{AdminName}}",      model.AdminName)
+            .Replace("{{AdminEmail}}",     model.ToEmail)
+            .Replace("{{LoginUrl}}",       model.LoginUrl)
+            .Replace("{{SetPasswordUrl}}", model.SetPasswordUrl)
+            .Replace("{{ExpiryHours}}",    model.ExpiryHours.ToString());
+
+        await SendAsync(model.ToEmail, model.AdminName,
+            $"Set your password for {model.OrgName} on NFlow", body, ct);
     }
 
     /// <summary>Notifies a user they have been assigned to or unassigned from a work item.</summary>

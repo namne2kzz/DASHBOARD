@@ -44,7 +44,7 @@
       <!-- Fixed dropdown -->
       @if (dropdownRect(); as rect) {
         <div
-          class="fixed z-[9990] rounded-xl border border-slate-700 bg-slate-800/95 py-1.5 shadow-2xl "
+          class="nx-menu fixed z-[9990] "
           [style.top.px]="rect.top"
           [style.left.px]="rect.left"
           [style.width.px]="rect.width"
@@ -78,10 +78,10 @@
 
   <!-- Capacity config — shown after member selected -->
   @if (selectedUserId()) {
-    <div class="space-y-3 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
+    <div class="space-y-3 nx-card p-3">
       <div>
         <p class="mb-1 text-xs text-slate-500">Role</p>
-        <p class="rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm text-slate-300">
+        <p class="rounded-lg bg-nx-surface-2 px-3 py-2 text-sm text-slate-300">
           {{ roleLabel() }}
           <span class="ml-1.5 text-xs text-slate-600">(from repo membership)</span>
         </p>

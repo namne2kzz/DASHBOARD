@@ -27,6 +27,8 @@ export interface LoginResponse {
   isGlobalAdmin: boolean;
   orgId: string;
   orgAlias: string;
+  /** Organization display name. Optional: sessions issued before it was carried omit it. */
+  orgName?: string;
   /** Tailwind CSS background class for the user's avatar chip. */
   avatarClass: string;
 }
@@ -37,4 +39,14 @@ export interface RefreshTokenRequest {
    * automatically. Only non-cookie callers (e.g. the HUB SSO handoff) populate it.
    */
   refreshToken?: string;
+}
+
+/**
+ * Confirmation that an organization alias exists, returned by sign-in step 1.
+ *
+ * Carries the alias alone: the caller is still anonymous at that point, so the backend withholds
+ * the organization's name and every other tenant detail.
+ */
+export interface OrganizationLookup {
+  alias: string;
 }

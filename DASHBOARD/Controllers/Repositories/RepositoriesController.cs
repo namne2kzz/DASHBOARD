@@ -1,6 +1,7 @@
 ﻿using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Repositories.Commands.ArchiveRepository;
 using DASHBOARD.Application.Repositories.Commands.CreateRepository;
+using DASHBOARD.Application.Repositories.Commands.UnarchiveRepository;
 using DASHBOARD.Application.Repositories.Commands.UpdateRepository;
 using DASHBOARD.Application.Repositories.DTOs;
 using DASHBOARD.Application.Repositories.Queries.CheckRepositoryCode;
@@ -77,7 +78,7 @@ public sealed class RepositoriesController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Create([FromBody] CreateRepositoryRequest request, CancellationToken ct)
     {
-        var result = await mediator.Send(new CreateRepositoryCommand(request.Name, request.Code, request.Description, request.ScrumMasterId), ct);
+        var result = await mediator.Send(new CreateRepositoryCommand(request.Name, request.Code, request.Description, request.ProjectManagerId), ct);
         return CreatedAtAction(nameof(Get), new { repoId = result.Id }, result);
     }
 
@@ -94,7 +95,8 @@ public sealed class RepositoriesController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update(Guid repoId, [FromBody] UpdateRepositoryRequest request, CancellationToken ct)
     {
-        var result = await mediator.Send(new UpdateRepositoryCommand(repoId, request.Name, request.Description), ct);
+        var result = await mediator.Send(
+            new UpdateRepositoryCommand(repoId, request.Name, request.Description, request.LeadId), ct);
         if (result.IsFailure) return Forbid();
         return NoContent();
     }
@@ -111,6 +113,22 @@ public sealed class RepositoriesController(ISender mediator) : ControllerBase
     public async Task<IActionResult> Archive(Guid repoId, CancellationToken ct)
     {
         var result = await mediator.Send(new ArchiveRepositoryCommand(repoId), ct);
+        if (result.IsFailure) return Forbid();
+        return NoContent();
+    }
+
+    /// <summary>Restores an archived repository to ordinary views. Restricted to global admins.</summary>
+    /// <param name="repoId">The repository to restore.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 on success, 403 if not a global admin.</returns>
+    [HttpPost("{repoId:guid}/unarchive")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Unarchive(Guid repoId, CancellationToken ct)
+    {
+        var result = await mediator.Send(new UnarchiveRepositoryCommand(repoId), ct);
         if (result.IsFailure) return Forbid();
         return NoContent();
     }

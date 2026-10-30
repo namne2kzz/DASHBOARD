@@ -5,66 +5,116 @@
 @tailwind utilities;
 
 /* ════════════════════════════════════════════════════════════════
-   Nexus UI Foundation v1 — design tokens
-   Neutral grey chrome, one accent (green — user choice over the foundation's blue), semantic colour only when it means
-   something. 1px borders instead of shadows. Dark mode only swaps token
-   values via html[data-theme="dark"] — structure stays identical.
+   Nexus UI Foundation v2 — design tokens
+
+   Colour carries a role, never decoration:
+     violet  action — buttons, focus, the active nav item
+     coral   AI and moments worth noticing — NMate, "new", a finished sprint
+     red     error, over a limit        yellow  risk, nearly overdue
+     green   done, on track             ink     text, sidebar, dark surfaces
+
+   Depth replaces outlines: cards are white on grey with a soft shadow, and a
+   1px border is kept only for inputs and table rules. Radii come from a
+   three-step scale (8 control · 12 card · 16 modal) and spacing from
+   4/8/12/16/24/32, so a screen can only be built out of sizes that already
+   agree with each other.
+
+   Dark mode swaps token values via html[data-theme="dark"] and adds a third
+   elevation (--surface-2) for dropdowns and modals; structure stays identical.
 
    Each colour exists twice:
      --x      hex, for plain CSS (component stylesheets, inline styles)
      --c-x    RGB channels, consumed by tailwind.config.js so opacity
-              modifiers (bg-sky-500/10) keep working.
+              modifiers (bg-accent/10) keep working.
    ════════════════════════════════════════════════════════════════ */
 :root {
   --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --radius-sm: 4px; --radius: 6px; --radius-lg: 8px;
+
+  /* Three steps only. Anything that reaches for a fourth is using the wrong one. */
+  --radius-sm: 4px; --radius: 8px; --radius-lg: 12px; --radius-xl: 16px;
   --control-h: 32px; --control-h-sm: 28px;
 
-  --bg: #F5F6F8;        --surface: #FFFFFF;     --surface-2: #F0F1F4;  --surface-3: #E6E8EC;
-  --border: #E2E4E9;    --border-strong: #C9CDD4;
-  --text: #171A1F;      --text-2: #4B5260;      --text-3: #6B7280;
-  --accent: #15803D;    --accent-hover: #116A32; --accent-soft: #E7F5EC; --on-accent: #FFFFFF;
-  --success: #1A7F4B;   --success-soft: #E7F4EC;
-  --warning: #9A5B00;   --warning-soft: #FBF1E0;
-  --danger: #C33A2E;    --danger-soft: #FBEAE8;
-  --type-story: #3B6FD4; --type-task: #B7791F; --type-bug: #C33A2E; --type-test: #7550C9;
-  --type-improvement: #0E8A8A; /* not in the foundation — teal, kept apart from the green accent */
-  --shadow-pop: 0 0 0 1px var(--border), 0 8px 24px rgba(16,24,40,.10);
+  /* 4 · 8 · 12 · 16 · 24 · 32 */
+  --space-1: 4px; --space-2: 8px;  --space-3: 12px;
+  --space-4: 16px; --space-6: 24px; --space-8: 32px;
 
-  --c-bg: 245 246 248;          --c-surface: 255 255 255;    --c-surface-2: 240 241 244; --c-surface-3: 230 232 236;
-  --c-border: 226 228 233;      --c-border-strong: 201 205 212;
-  --c-text: 23 26 31;           --c-text-2: 75 82 96;        --c-text-3: 107 114 128;
-  --c-accent: 21 128 61;        --c-accent-hover: 17 106 50; --c-accent-soft: 231 245 236; --c-on-accent: 255 255 255;
-  --c-success: 26 127 75;       --c-success-soft: 231 244 236;
-  --c-warning: 154 91 0;        --c-warning-soft: 251 241 224;
-  --c-danger: 195 58 46;        --c-danger-soft: 251 234 232;
-  --c-type-story: 59 111 212;   --c-type-task: 183 121 31;   --c-type-bug: 195 58 46;    --c-type-test: 117 80 201;
+  --bg: #F6F7F9;        --surface: #FFFFFF;     --surface-2: #F0F1F4;  --surface-3: #E6E8EC;
+  --border: #E3E5EA;    --border-strong: #C9CDD4;
+  --text: #0D1117;      --text-2: #57606A;      --text-3: #6B7280;
+  --accent: #7C3AED;    --accent-hover: #6D28D9; --accent-soft: #F1ECFE; --on-accent: #FFFFFF;
+  --accent-ring: #DDD0FD;
+  /* Coral is reserved: AI output, "new", celebration. Never a plain call to action. */
+  --ai: #F0506E;        --ai-soft: #FDECEF;
+  --success: #1A7F37;   --success-soft: #E6F4EA;
+  --warning: #BF8700;   --warning-soft: #FBF1DC;
+  --danger: #CF222E;    --danger-soft: #FCEBEC;
+  --type-story: #3B6FD4; --type-task: #B7791F; --type-bug: #CF222E; --type-test: #7550C9;
+  --type-improvement: #0E8A8A; /* teal — kept apart from both the violet accent and the green "done" */
+
+  /* Elevation: the card shadow does the work a border used to. */
+  --shadow-card: 0 1px 2px rgba(13,17,23,.06), 0 2px 8px rgba(13,17,23,.04);
+  --shadow-raised: 0 2px 4px rgba(13,17,23,.08), 0 8px 16px rgba(13,17,23,.06);
+  --shadow-pop: 0 0 0 1px var(--border), 0 8px 24px rgba(13,17,23,.10);
+  --shadow-accent: none; /* dark mode gives the primary button a violet halo; light mode needs none */
+
+  /* Motion. Every duration a component animates for is one of these. */
+  --motion-hover: 120ms; --motion-enter: 200ms; --motion-overlay: 250ms;
+  --ease-out: cubic-bezier(.2, .8, .2, 1);
+
+  /* The logo's silhouette, reused for avatars and repo codes. */
+  --hex-clip: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+  /* The same shape as a tiling lattice, for sign-in panels and empty states. */
+  --hex-field: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='48.5'%3E%3Cpath d='M14 0 L28 8.08 L28 24.25 L14 32.33 L0 24.25 L0 8.08 Z M14 32.33 L14 48.5' fill='none' stroke='%23C9CDD4' stroke-width='1'/%3E%3C/svg%3E");
+
+  --c-bg: 246 247 249;          --c-surface: 255 255 255;    --c-surface-2: 240 241 244; --c-surface-3: 230 232 236;
+  --c-border: 227 229 234;      --c-border-strong: 201 205 212;
+  --c-text: 13 17 23;           --c-text-2: 87 96 106;       --c-text-3: 107 114 128;
+  --c-accent: 124 58 237;       --c-accent-hover: 109 40 217; --c-accent-soft: 241 236 254; --c-on-accent: 255 255 255;
+  --c-ai: 240 80 110;           --c-ai-soft: 253 236 239;
+  --c-success: 26 127 55;       --c-success-soft: 230 244 234;
+  --c-warning: 191 135 0;       --c-warning-soft: 251 241 220;
+  --c-danger: 207 34 46;        --c-danger-soft: 252 235 236;
+  --c-type-story: 59 111 212;   --c-type-task: 183 121 31;   --c-type-bug: 207 34 46;    --c-type-test: 117 80 201;
   --c-type-improvement: 14 138 138;
 
   --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   color-scheme: light;
 }
 
+/* Dark mode runs on three planes, not two: the page sits at #0D1117, cards lift to
+   #161B22, and anything that floats above them — dropdown, modal, popover — takes the
+   third step at #1C2128 with a deep shadow. Long-form text is #E6EDF3 rather than pure
+   white, which is tiring to read against this background. */
 [data-theme="dark"] {
-  --bg: #0E1013;        --surface: #15181D;     --surface-2: #1C2027;  --surface-3: #252A32;
-  --border: #262B33;    --border-strong: #363C46;
-  --text: #E7E9EC;      --text-2: #A5ACB7;      --text-3: #7D8490;
-  --accent: #3FB97A;    --accent-hover: #5BC98F; --accent-soft: #12261B; --on-accent: #06120B;
-  --success: #4CB782;   --success-soft: #14271E;
-  --warning: #D9A045;   --warning-soft: #2A2114;
-  --danger: #E8695D;    --danger-soft: #2D1916;
-  --shadow-pop: 0 0 0 1px var(--border), 0 8px 24px rgba(0,0,0,.45);
+  --bg: #0D1117;        --surface: #161B22;     --surface-2: #1C2128;  --surface-3: #262C36;
+  --border: #30363D;    --border-strong: #3D444D;
+  --text: #E6EDF3;      --text-2: #9DA7B3;      --text-3: #7D8590;
+  --accent: #8B5CF6;    --accent-hover: #A78BFA; --accent-soft: #221A3C; --on-accent: #FFFFFF;
+  --accent-ring: #4C3A8C;
+  --ai: #F0506E;        --ai-soft: #3A1A22;
+  --success: #3FB950;   --success-soft: #122B17;
+  --warning: #D29922;   --warning-soft: #2D2410;
+  --danger: #F85149;    --danger-soft: #35191B;
 
-  --c-bg: 14 16 19;             --c-surface: 21 24 29;       --c-surface-2: 28 32 39;    --c-surface-3: 37 42 50;
-  --c-border: 38 43 51;         --c-border-strong: 54 60 70;
-  --c-text: 231 233 236;        --c-text-2: 165 172 183;     --c-text-3: 125 132 144;
-  --c-accent: 63 185 122;       --c-accent-hover: 91 201 143; --c-accent-soft: 18 38 27; --c-on-accent: 6 18 11;
-  --c-success: 76 183 130;      --c-success-soft: 20 39 30;
-  --c-warning: 217 160 69;      --c-warning-soft: 42 33 20;
-  --c-danger: 232 105 93;       --c-danger-soft: 45 25 22;
+  --shadow-card: 0 1px 2px rgba(1,4,9,.5);
+  --shadow-raised: 0 8px 24px rgba(1,4,9,.6);
+  --shadow-pop: 0 0 0 1px var(--border), 0 8px 24px rgba(1,4,9,.6);
+  /* A faint violet halo keeps the primary button from sinking into the dark page. */
+  --shadow-accent: 0 0 16px rgba(139,92,246,.45);
 
-  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237D8490' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --c-bg: 13 17 23;             --c-surface: 22 27 34;       --c-surface-2: 28 33 40;    --c-surface-3: 38 44 54;
+  --c-border: 48 54 61;         --c-border-strong: 61 68 77;
+  --c-text: 230 237 243;        --c-text-2: 157 167 179;     --c-text-3: 125 133 144;
+  --c-accent: 139 92 246;       --c-accent-hover: 167 139 250; --c-accent-soft: 34 26 60; --c-on-accent: 255 255 255;
+  --c-ai: 240 80 110;           --c-ai-soft: 58 26 34;
+  --c-success: 63 185 80;       --c-success-soft: 18 43 23;
+  --c-warning: 210 153 34;      --c-warning-soft: 45 36 16;
+  --c-danger: 248 81 73;        --c-danger-soft: 53 25 27;
+
+  --hex-field: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='48.5'%3E%3Cpath d='M14 0 L28 8.08 L28 24.25 L14 32.33 L0 24.25 L0 8.08 Z M14 32.33 L14 48.5' fill='none' stroke='%2330363D' stroke-width='1'/%3E%3C/svg%3E");
+
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237D8590' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   color-scheme: dark;
 }
 
@@ -201,7 +251,14 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   }
   .nx-btn:hover { background: var(--surface-2); }
   .nx-btn--sm { height: var(--control-h-sm); padding: 0 10px; font-size: 12px; }
-  .nx-btn--primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+  /* --shadow-accent is none in light mode and a violet halo in dark, where a flat
+     button would otherwise sit flush against the page. */
+  .nx-btn--primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--on-accent);
+    box-shadow: var(--shadow-accent);
+  }
   .nx-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
   .nx-btn--ghost { border-color: transparent; background: transparent; color: var(--text-2); }
   .nx-btn--ghost:hover { background: var(--surface-2); color: var(--text); }
@@ -233,6 +290,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   .nx-tag--danger  { border-color: transparent; background: var(--danger-soft); color: var(--danger); }
 
   /* Avatar — neutral; only "you" uses the accent. */
+  /* Hexagonal, not round. The logo is a hexagon, and carrying that silhouette into
+     avatars and repo codes is what makes a screenful of NFlow recognisable before the
+     logo is even in view. clip-path replaces the border, which cannot follow the shape. */
   .nx-avatar {
     display: inline-flex;
     align-items: center;
@@ -240,15 +300,33 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     flex: none;
     width: 24px;
     height: 24px;
-    border-radius: 9999px;
-    border: 1px solid var(--border);
-    background: var(--surface-2);
+    clip-path: var(--hex-clip);
+    background: var(--surface-3);
     color: var(--text-2);
     font-size: 10px;
     font-weight: 600;
   }
   .nx-avatar--sm { width: 20px; height: 20px; font-size: 9px; }
-  .nx-avatar--me { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
+  .nx-avatar--lg { width: 32px; height: 32px; font-size: 12px; }
+  .nx-avatar--me { background: var(--accent-soft); color: var(--accent); }
+
+  /* A repository's short code, in the same hexagon as the people who work in it. */
+  /* --hex-size lets a caller resize it without a Tailwind utility having to win a
+     specificity fight against this rule. */
+  .nx-hex-code {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: var(--hex-size, 32px);
+    height: var(--hex-size, 32px);
+    clip-path: var(--hex-clip);
+    background: var(--accent-soft);
+    color: var(--accent-hover);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+  }
 
   /* State — 6px dot + plain text. */
   .nx-dot {
@@ -290,11 +368,13 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     font: 400 13px var(--font-sans);
     cursor: pointer;
   }
+  /* The chosen segment lifts off the track and takes the action colour, so which one is
+     selected is readable at a glance rather than by comparing two greys. */
   .nx-segmented > button.is-active {
     background: var(--surface);
-    box-shadow: 0 0 0 1px var(--border);
-    color: var(--text);
-    font-weight: 500;
+    box-shadow: var(--shadow-card);
+    color: var(--accent-hover);
+    font-weight: 600;
   }
 
   /* Filter chip — dashed when empty, filled when applied. */
@@ -391,7 +471,211 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   }
   .nx-cell-input:hover { border-color: var(--border-strong); }
   .nx-cell-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  /* Floating menu panel — repo picker, field dropdowns, overflow menus.
+     --shadow-pop carries a 1px ring plus a soft drop, so the panel reads as a sheet lifted off
+     the page rather than one hanging in it. */
+  .nx-menu {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-pop);
+    padding: 4px;
+    overflow: hidden;
+  }
+  .nx-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: var(--control-h-sm);
+    padding: 0 8px;
+    border-radius: var(--radius-sm);
+    color: var(--text-2);
+    font-size: 13px;
+    text-align: left;
+    transition: background-color .12s, color .12s;
+  }
+  .nx-menu-item:hover { background: var(--surface-2); color: var(--text); }
+  .nx-menu-item--active { color: var(--text); font-weight: 500; }
+  .nx-menu-label {
+    padding: 6px 8px;
+    color: var(--text-3);
+    font-size: 12px;
+  }
+  .nx-menu-sep {
+    height: 1px;
+    margin: 4px -4px;
+    background: var(--border);
+  }
+
+  /* ── v2 ───────────────────────────────────────────────────────────────────
+     A card is white on the grey page with a soft shadow, and carries no outline.
+     A screen of bordered boxes reads as a spreadsheet; depth lets the same
+     screen read as a set of surfaces. Borders stay on inputs and table rules,
+     where the line marks something you can type into. */
+  .nx-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+  .nx-card--pad { padding: var(--space-6); }
+  .nx-card--hover {
+    transition: box-shadow var(--motion-hover) var(--ease-out),
+                transform var(--motion-hover) var(--ease-out);
+  }
+  .nx-card--hover:hover {
+    box-shadow: var(--shadow-raised);
+    transform: translateY(-1px);
+  }
+
+  /* A status stripe along a card's top edge: the sprint card wears the colour of
+     whether it is on track, which is readable before any of its numbers are. */
+  .nx-card--striped {
+    position: relative;
+    overflow: hidden;
+  }
+  .nx-card--striped::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: var(--stripe, var(--accent));
+  }
+
+  /* A headline number and the small caps label above it. The size gap is the
+     point: at 40/700 against 13/600 the eye knows which to read first. */
+  .nx-metric {
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    /* Tabular figures keep columns of numbers aligned as values change. */
+    font-variant-numeric: tabular-nums;
+  }
+  .nx-label {
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  /* Change against the previous period. Direction is never colour alone — the
+     arrow carries the same meaning for a reader who cannot separate the hues. */
+  .nx-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .nx-delta--up   { color: var(--success); }
+  .nx-delta--down { color: var(--danger); }
+  .nx-delta--flat { color: var(--text-3); }
+
+  /* Anything the assistant produced, or anything brand new, wears coral — so the
+     colour itself tells you where it came from. */
+  .nx-tag--ai {
+    border-color: transparent;
+    background: var(--ai-soft);
+    color: var(--ai);
+  }
+
+  /* A faint hexagon lattice for sign-in panels and empty states. Low contrast on
+     purpose: it should register as texture, never as content. */
+  .nx-hex-field {
+    background-image: var(--hex-field);
+    background-size: 28px 48.5px;
+  }
+
+  /* Skeletons replace spinners: a grey block the shape of what is loading says
+     more about the wait than a rotating circle does. */
+  .nx-skeleton {
+    border-radius: var(--radius);
+    background: linear-gradient(90deg,
+      var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+    background-size: 400% 100%;
+    animation: nx-shimmer 1.4s ease-in-out infinite;
+  }
+  .nx-skeleton--text { height: 12px; }
+  .nx-skeleton--line { height: 12px; margin: 6px 0; }
 }
+
+@keyframes nx-shimmer {
+  from { background-position: 100% 50%; }
+  to   { background-position: 0 50%; }
+}
+
+/* The motion scale exists so a change in data is noticed; it is never decoration.
+   Switching it off must leave every colour and position exactly where it was. */
+@media (prefers-reduced-motion: reduce) {
+  .nx-skeleton,
+  .nx-card--hover {
+    animation: none;
+    transition: none;
+  }
+  .nx-card--hover:hover { transform: none; }
+}
+
+/* ── Toasts ──────────────────────────────────────────────────────
+   Dark in both themes, bottom-left, away from the NMate launcher opposite. A toast is a
+   passing remark over the page rather than part of it, and a surface that does not follow
+   the theme is what makes it read that way. ngx-toastr renders these at the document root,
+   so they stay outside @layer where Tailwind cannot purge them. */
+.toast-container .ngx-toastr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: #0D1117;
+  background-image: none;
+  box-shadow: 0 12px 32px rgba(13, 17, 23, .28);
+  color: #E6EDF3;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  opacity: 1;
+}
+
+.toast-container .ngx-toastr:hover {
+  box-shadow: 0 12px 32px rgba(13, 17, 23, .4);
+  opacity: 1;
+}
+
+/* A coloured rail on the leading edge carries the outcome, leaving the text itself at
+   full contrast rather than tinted. */
+.toast-container .ngx-toastr {
+  border-left: 3px solid var(--border-strong);
+}
+.toast-container .toast-success { border-left-color: #3FB950; }
+.toast-container .toast-error   { border-left-color: #FF7B72; }
+.toast-container .toast-warning { border-left-color: #D29922; }
+.toast-container .toast-info    { border-left-color: #8B5CF6; }
+
+.toast-container .ngx-toastr .toast-title {
+  margin-bottom: 2px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.toast-container .ngx-toastr .toast-message {
+  font-size: 13px;
+}
+
+.toast-container .ngx-toastr .toast-close-button {
+  color: #8B949E;
+  font-size: 16px;
+  font-weight: 400;
+  text-shadow: none;
+  opacity: 1;
+}
+.toast-container .ngx-toastr .toast-close-button:hover { color: #E6EDF3; }
 
 /* Runtime-only classes (Angular form state, server-stored avatar colours) live
    outside @layer so Tailwind never purges them. */
@@ -399,6 +683,15 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 .field-textarea.ng-invalid.ng-touched,
 .field-select.ng-invalid.ng-touched {
   border-color: var(--danger);
+}
+
+/* Edge and Chrome inject their own reveal and autofill buttons into password fields, landing on
+   top of the Show toggle these forms already provide. Vendor pseudo-elements stay outside @layer
+   for the same reason as the rules above. */
+.field-input::-ms-reveal,
+.field-input::-ms-clear,
+.field-input::-webkit-credentials-auto-fill-button {
+  display: none !important;
 }
 
 /* User avatars carry a server-stored colour class (avatarClass = bg-*-600).

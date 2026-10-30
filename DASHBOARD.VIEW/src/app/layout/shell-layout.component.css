@@ -2,15 +2,18 @@
   display: block;
 }
 
-/* ── Sidebar navigation (Nexus UI) ───────────────────────────────
-   30px rows, 16px line icons. Active = surface-2 + a 3px accent bar
-   + accent icon, so the current page reads at a glance without
-   colouring the whole row. */
+/* ── Sidebar navigation (Nexus UI v2) ────────────────────────────
+   36px rows, 18px Lucide icons at 1.75 stroke. The active row takes a
+   translucent violet wash with a 3px inset bar, and its icon fills solid
+   violet — a filled icon against outlined ones says "you are here" faster
+   than a colour change on the same outline does. */
 .nav-label {
-  margin: 10px 8px 4px;
+  margin: var(--space-3) var(--space-2) var(--space-1);
   font-size: 11px;
   line-height: 16px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
   color: var(--text-3);
 }
 
@@ -18,13 +21,14 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 32px;
-  padding: 0 8px;
+  gap: var(--space-3);
+  height: 36px;
+  padding: 0 var(--space-3);
   border-radius: var(--radius);
   font-size: 13px;
   color: var(--text-2);
-  transition: background-color .12s ease, color .12s ease;
+  transition: background-color var(--motion-hover) var(--ease-out),
+              color var(--motion-hover) var(--ease-out);
 }
 
 .nav-item:hover {
@@ -35,22 +39,12 @@
 .nav-item.is-active,
 .nav-item.is-open {
   color: var(--text);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .nav-item.is-active {
-  background: var(--surface-2);
-}
-
-.nav-item.is-active::before {
-  content: '';
-  position: absolute;
-  left: -8px;
-  top: 7px;
-  bottom: 7px;
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .nav-icon {
@@ -58,10 +52,22 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   color: var(--text-3);
-  transition: color .12s ease;
+  transition: color var(--motion-hover) var(--ease-out);
+}
+
+/* Lucide proportions: a slightly heavier stroke with rounded ends and joins,
+   applied here so every icon in the nav matches without repeating attributes. */
+.nav-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .nav-item:hover .nav-icon {
@@ -70,6 +76,12 @@
 
 .nav-item.is-active .nav-icon {
   color: var(--accent);
+}
+
+/* The active icon is filled rather than outlined. Shapes that are meant to stay
+   open (a path, a chevron) opt out with .nav-icon-line. */
+.nav-item.is-active .nav-icon svg :not(.nav-icon-line) {
+  fill: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 /* Settings sub-pages: indented under the parent with a thin guide line. */
@@ -83,11 +95,7 @@
 }
 
 .nav-item--sub {
-  height: 28px;
-}
-
-.nav-item--sub.is-active::before {
-  left: -11px;
+  height: 32px;
 }
 
 /* Notification unread badge — dot on icon (collapsed sidebar) */
@@ -99,8 +107,8 @@
   height: 16px;
   padding: 0 3px;
   border-radius: 8px;
-  background: var(--danger, #f43f5e);
-  color: #fff;
+  background: var(--danger);
+  color: #FFFFFF;
   font-size: 10px;
   font-weight: 700;
   line-height: 16px;
@@ -114,10 +122,63 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 9px;
-  background: var(--danger, #f43f5e);
-  color: #fff;
+  background: var(--danger);
+  color: #FFFFFF;
   font-size: 10px;
   font-weight: 700;
   line-height: 18px;
   text-align: center;
+}
+
+/* ── Theme switch ────────────────────────────────────────────────
+   A two-up segmented control at the foot of the sidebar, beside Logout.
+   Both options stay visible so the current one is legible at rest — a single
+   toggling icon only tells you what it will do, not where you are. */
+.theme-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  margin: var(--space-2) 0;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+
+.theme-switch__option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--motion-hover) var(--ease-out),
+              color var(--motion-hover) var(--ease-out);
+}
+
+.theme-switch__option:hover { color: var(--text-2); }
+
+.theme-switch__option[aria-pressed='true'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.theme-switch__option svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Collapsed sidebar: one square button, since there is no room for two labels. */
+.theme-switch--collapsed {
+  grid-template-columns: 1fr;
 }

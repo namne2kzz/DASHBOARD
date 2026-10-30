@@ -3,10 +3,7 @@
   age shown only when it exceeds the column's aging limit. The whole card is
   the drag target (cdkDrag on the column's wrapper).
 -->
-<div
-  class="flex cursor-grab flex-col gap-1.5 rounded-md border border-slate-800 bg-slate-900 px-3 py-2.5 transition-colors hover:border-slate-700 active:cursor-grabbing"
-  (click)="opened.emit(task())"
->
+<div class="task-card" (click)="opened.emit(task())">
   <!-- type · id · priority (only when unusual) · assignee -->
   <div class="flex items-center gap-1.5">
     <span class="nx-type" [ngClass]="typeSquareClass[task().type]" [title]="typeLabel[task().type]"></span>
@@ -22,15 +19,20 @@
     }
   </div>
 
-  <h3 class="line-clamp-3 text-sm text-slate-100 [text-wrap:pretty]">{{ task().title }}</h3>
+  <h3 class="line-clamp-3 text-sm text-nx-text [text-wrap:pretty]">{{ task().title }}</h3>
 
   @if (isAging() || task().labels.length) {
-    <div class="flex flex-wrap gap-1">
+    <div class="flex flex-wrap gap-1.5">
       @if (isAging()) {
+        <!-- The label deepens from yellow through orange to red with how far past the limit
+             the card has drifted, so a glance down the column finds the forgotten ones. -->
         <span
-          class="nx-tag nx-tag--warning"
+          class="age-tag"
+          [class.age-tag--warn]="ageLevel() === 'warn'"
+          [class.age-tag--late]="ageLevel() === 'late'"
+          [class.age-tag--stale]="ageLevel() === 'stale'"
           [title]="'In this column ' + agingDays() + ' day' + (agingDays() === 1 ? '' : 's') + ' · limit ' + agingLimitDays() + 'd'"
-        >{{ agingDays() }}d · over {{ agingLimitDays() }}d</span>
+        >{{ ageLabel() }}</span>
       }
       @for (label of task().labels; track label) {
         <span class="nx-tag">{{ label }}</span>

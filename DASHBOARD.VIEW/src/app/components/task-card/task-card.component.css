@@ -1,3 +1,54 @@
 :host {
   display: block;
 }
+
+/* White card on the column's tinted panel, lifted by a shadow rather than outlined.
+   The column behind it supplies the colour; the card stays neutral so its own
+   contents — type, age, labels — are the only things carrying meaning. */
+.task-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  cursor: grab;
+  transition: box-shadow var(--motion-hover) var(--ease-out),
+              transform var(--motion-hover) var(--ease-out);
+}
+
+.task-card:hover {
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-1px);
+}
+
+.task-card:active {
+  cursor: grabbing;
+}
+
+/* ── Age label ───────────────────────────────────────────────────
+   Three steps, not one flag: a card one day past its limit and one a hundred days
+   past it are different problems, and that is exactly what someone scanning the
+   board is looking for. */
+.age-tag {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.age-tag--warn  { background: var(--warning-soft); color: var(--warning); }
+.age-tag--late  { background: color-mix(in srgb, var(--warning) 18%, var(--danger-soft)); color: #8A3A00; }
+.age-tag--stale { background: var(--danger-soft);  color: var(--danger); }
+
+[data-theme='dark'] .age-tag--late { color: #E8A33D; }
+
+@media (prefers-reduced-motion: reduce) {
+  .task-card { transition: none; }
+  .task-card:hover { transform: none; }
+}

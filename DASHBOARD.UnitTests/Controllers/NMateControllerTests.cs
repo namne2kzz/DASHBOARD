@@ -5,6 +5,7 @@ using DASHBOARD.Controllers.NMate;
 using DASHBOARD.Controllers.NMate.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace DASHBOARD.UnitTests.Controllers;
@@ -92,6 +93,58 @@ public sealed class NMateControllerTests
         _forwarded.JsonBody.Should().Contain("\"message\":\"Làm sao đóng sprint?\"").And.Contain("\"route\":\"/acme/DASH/sprint-planning\"");
     }
 
+    /// <summary>
+    /// A 401/403 from NMate is about this service's own credential with NMate — a wrong or missing
+    /// X-Internal-Token — not about the caller, whose session [Authorize] already accepted.
+    /// Relaying it verbatim made the SPA read it as an expired session and sign the user out of the
+    /// whole app, so merely opening the assistant panel ejected them while NMate was misconfigured.
+    /// </summary>
+    [Theory]
+    [InlineData(StatusCodes.Status401Unauthorized)]
+    [InlineData(StatusCodes.Status403Forbidden)]
+    public async Task UpstreamRejectsOurCredential_ReportedAs502NotAsTheUsersProblem(int upstreamStatus)
+    {
+        Upstream(upstreamStatus, "application/json", """{"error":"unauthorized"}""");
+        var (controller, context) = CreateController();
+
+        await controller.Status(CancellationToken.None);
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status502BadGateway);
+    }
+
+    /// <summary>
+    /// The upstream's "unauthorized" wording must not reach the widget either: it would read as the
+    /// user's problem rather than a deployment one.
+    /// </summary>
+    [Fact]
+    public async Task UpstreamRejectsOurCredential_DoesNotEchoUnauthorizedWording()
+    {
+        Upstream(StatusCodes.Status401Unauthorized, "application/json", """{"error":"unauthorized","message":"Invalid or missing X-Internal-Token."}""");
+        var (controller, _) = CreateController();
+
+        await controller.Status(CancellationToken.None);
+
+        var body = Encoding.UTF8.GetString(_responseBody.ToArray());
+        body.Should().Contain("NMATE_UNAVAILABLE");
+        body.Should().NotContain("unauthorized");
+        body.Should().NotContain("X-Internal-Token", "the client must not be told about an internal credential");
+    }
+
+    /// <summary>Other upstream failures still pass through unchanged — only the credential ones are translated.</summary>
+    [Theory]
+    [InlineData(429)]
+    [InlineData(500)]
+    [InlineData(503)]
+    public async Task OtherUpstreamFailures_RelayedUnchanged(int upstreamStatus)
+    {
+        Upstream(upstreamStatus, "application/json", """{"error":"boom"}""");
+        var (controller, context) = CreateController();
+
+        await controller.Status(CancellationToken.None);
+
+        context.Response.StatusCode.Should().Be(upstreamStatus);
+    }
+
     /// <summary>Query values are escaped so a crafted route cannot add parameters to the upstream call.</summary>
     [Fact]
     public async Task Suggestions_EscapesRoute()
@@ -108,7 +161,8 @@ public sealed class NMateControllerTests
     {
         var context = new DefaultHttpContext();
         context.Response.Body = _responseBody;
-        var controller = new NMateController(_gateway.Object, _currentUser.Object)
+        var controller = new NMateController(
+            _gateway.Object, _currentUser.Object, NullLogger<NMateController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = context },
         };

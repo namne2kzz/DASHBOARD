@@ -27,6 +27,10 @@ public sealed class LoginCommandHandler(
     /// <returns><see cref="Result{T}.Success"/> with a <see cref="LoginResult"/>, or <see cref="Result{T}.Failure"/> on invalid email or password.</returns>
     public async Task<Result<LoginResult>> Handle(LoginCommand command, CancellationToken ct)
     {
+        // Resolved here from scratch, every time. The sign-in UI confirms the alias in its first
+        // step and carries it in the URL, but that is a convenience for the person typing — the
+        // alias arrives from the client like any other field and is re-checked before it is used
+        // to scope the user lookup below.
         var alias = command.OrgAlias.Trim().ToLowerInvariant();
         var org = await db.Set<Organization>().AsNoTracking()
             .FirstOrDefaultAsync(o => o.Alias == alias, ct);
@@ -39,8 +43,16 @@ public sealed class LoginCommandHandler(
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.OrgId == org.Id && u.Email == command.Email.ToLowerInvariant(), ct);
 
-        if (user is null || !passwordService.VerifyPassword(command.Password, user.PasswordHash, user.PasswordSalt))
+        // An empty hash means the account was provisioned but its owner has not redeemed the
+        // password-setup link yet. Reject explicitly rather than relying on the comparison below
+        // happening to fail on a zero-length hash.
+        if (user is null
+            || string.IsNullOrEmpty(user.PasswordHash)
+            || string.IsNullOrEmpty(user.PasswordSalt)
+            || !passwordService.VerifyPassword(command.Password, user.PasswordHash, user.PasswordSalt))
+        {
             return Result<LoginResult>.Failure("Invalid organization, email or password.");
+        }
 
         var accessToken   = tokenService.GenerateToken(user.Id, user.Email, user.Name, user.OrgId);
         var refreshToken  = tokenService.GenerateRefreshToken();
@@ -72,6 +84,7 @@ public sealed class LoginCommandHandler(
             IsGlobalAdmin:         user.IsGlobalAdmin,
             OrgId:                 org.Id,
             OrgAlias:              org.Alias,
+            OrgName:               org.Name,
             AvatarClass:           user.AvatarClass));
     }
 

@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-27 | 23:19 | Đổi light/dark ngay trên sidebar | Thêm công tắc Light/Dark ở **cuối sidebar, cạnh Logout** — không phải chui vào Settings nữa. Hiện **cả 2 lựa chọn** để nhìn là biết đang ở theme nào (1 icon đổi qua lại chỉ nói nó sẽ làm gì, không nói đang ở đâu). Sidebar thu gọn thì rút về 1 nút toggle. Lệnh ⌘K cũng đổi được theme. Lựa chọn vẫn lưu ở `localStorage` như cũ, không đổi cơ chế. |
 | 2026-10-17 | 11:40 | Thêm per-category push notification | Thêm 3 key `notify.type.workitems`/`notify.type.sprints`/`notify.type.membership` (mặc định `true`): user tắt/bật push theo nhóm sự kiện. Push chỉ gửi khi master `notify.push` ON **và** category tương ứng không bị tắt. Mention (`notify.mentions`) vẫn độc lập push. |
 | 2026-10-11 | 18:33 | Thêm setting ẩn/hiện NMate | Thêm key `ui.nmate-widget` (`true`/`false`, chưa set = hiện): user bật/tắt nút trợ lý NMate ở Settings → General → Appearance |
 | 2026-09-26 | 14:02 | Khởi tạo document | Tạo document business ban đầu cho feature User Settings + avatar upload qua MinIO — đã có trong code từ 2026-09-20 nhưng chưa được document |

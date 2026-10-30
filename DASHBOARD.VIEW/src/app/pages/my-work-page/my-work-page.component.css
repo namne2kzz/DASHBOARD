@@ -1,1 +1,32 @@
-/* Layout and visuals are handled by Tailwind utility classes in the template. */
+/* A work item as a card rather than a table row. The priority bar runs the full height of
+   the left edge, which stays legible while scrolling in a way a cell of text does not. */
+.work-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: box-shadow var(--motion-hover) var(--ease-out),
+              transform var(--motion-hover) var(--ease-out);
+}
+
+.work-row:hover {
+  box-shadow: var(--shadow-raised);
+  transform: translateY(-1px);
+}
+
+.work-row__priority {
+  width: 4px;
+  align-self: stretch;
+  flex: none;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .work-row { transition: none; }
+  .work-row:hover { transform: none; }
+}

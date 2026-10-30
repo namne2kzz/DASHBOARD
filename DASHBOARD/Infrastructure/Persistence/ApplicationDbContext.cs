@@ -25,6 +25,9 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     /// <summary>Repository invitations sent to external email addresses.</summary>
     public DbSet<Invitation> Invitations => Set<Invitation>();
 
+    /// <summary>One-time tokens letting a provisioned user choose their first password.</summary>
+    public DbSet<PasswordSetupToken> PasswordSetupTokens => Set<PasswordSetupToken>();
+
     /// <summary>Project repositories (Jira-style projects).</summary>
     public DbSet<Repository> Repositories => Set<Repository>();
 

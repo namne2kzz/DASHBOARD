@@ -1,19 +1,107 @@
+/* ── Column panel ────────────────────────────────────────────────
+   The column is a tinted panel rather than a bare list under a rule, so a state
+   that applies to the whole column — over WIP, or the target of a drag — is
+   visible anywhere inside it. */
+.board-column {
+  display: flex;
+  width: 300px;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: background-color var(--motion-hover) var(--ease-out),
+              outline-color var(--motion-hover) var(--ease-out);
+}
+
+.board-column__count {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.board-column__note {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+/* Over a soft limit: a warning tint. Work carries on. */
+.board-column--over-soft {
+  background: var(--warning-soft);
+  outline-color: color-mix(in srgb, var(--warning) 35%, transparent);
+}
+.board-column--over-soft .board-column__count,
+.board-column--over-soft .board-column__note { color: var(--warning); }
+
+/* Over a hard limit: red, and the dashed outline says the boundary is a rule and
+   not a suggestion. */
+.board-column--over-hard {
+  background: var(--danger-soft);
+  outline: 2px dashed color-mix(in srgb, var(--danger) 45%, transparent);
+  outline-offset: -2px;
+}
+.board-column--over-hard .board-column__count,
+.board-column--over-hard .board-column__note { color: var(--danger); }
+
+/* Being dragged over: violet, so the destination is unambiguous. */
+.board-column--target {
+  background: var(--accent-soft);
+  outline-color: var(--accent);
+}
+.board-column--target .board-column__note { color: var(--accent-hover); }
+
+/* Being dragged over, but it will not accept the card. Stated before the drop. */
+.board-column--blocked {
+  background: var(--danger-soft);
+  outline-color: var(--danger);
+}
+.board-column--blocked .board-column__note { color: var(--danger); }
+
+/* A column this card's type can never occupy recedes the moment the drag starts, so
+   the eligible destinations are apparent without having to try each one. Kept subtle:
+   these columns are not errors, they are simply not part of this particular move. */
+.board-column--ineligible {
+  opacity: .45;
+}
+
+
+/* The gap the card will land in. */
+.board-column__placeholder {
+  height: 72px;
+  border: 2px dashed var(--accent-ring);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+/* ── Drag chrome ─────────────────────────────────────────────────
+   The lifted card tilts and casts a deep shadow, so it reads as held rather than
+   as another card that happens to be moving. */
 .cdk-drag-preview {
   box-sizing: border-box;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-pop);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 40px rgba(13, 17, 23, .22), 0 0 0 2px var(--accent);
+  transform: rotate(2deg);
+  cursor: grabbing;
 }
 
 .cdk-drag-placeholder {
-  opacity: 0.35;
+  opacity: 0;
 }
 
 .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
-  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+  transition: transform var(--motion-overlay) var(--ease-out);
 }
 
-/* Column highlight while an item is dragged over it. */
-.cdk-drop-list-receiving,
-.cdk-drop-list-dragging {
-  background: var(--surface-2);
+@media (prefers-reduced-motion: reduce) {
+  .board-column,
+  .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+    transition: none;
+  }
+  /* The tilt is decoration; the shadow and ring already say the card is held. */
+  .cdk-drag-preview { transform: none; }
 }

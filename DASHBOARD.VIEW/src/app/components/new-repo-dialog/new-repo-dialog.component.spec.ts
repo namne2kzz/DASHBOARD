@@ -18,6 +18,7 @@ const mockProfile: UserProfile = {
   isGlobalAdmin: false,
   orgId:         'org-1',
   orgAlias:      'acme',
+  orgName:       'Acme Corporation',
 };
 
 const mockPickerItem: UserPickerItem = {
@@ -34,6 +35,9 @@ const mockRepo: RepositoryApiDto = {
   description: '',
   memberCount: 1,
   createdAt:   '2024-01-01T00:00:00Z',
+  isArchived:      false,
+  leadId:   'user-1',
+  leadName: 'Alice',
 };
 
 describe('NewRepoDialogComponent', () => {
@@ -117,7 +121,7 @@ describe('NewRepoDialogComponent', () => {
     expect(component.codeStatus()).toBe('idle');
   });
 
-  // ── Scrum Master picker ─────────────────────────────────────
+  // ── Project Manager picker ──────────────────────────────────
 
   it('searches users after the debounce window', fakeAsync(() => {
     const el = document.createElement('input');
@@ -169,13 +173,13 @@ describe('NewRepoDialogComponent', () => {
     component.submit();
 
     expect(repoCtx.create).toHaveBeenCalledWith({
-      name: 'Test Repo', code: 'TEST', description: '', scrumMasterId: 'user-2',
+      name: 'Test Repo', code: 'TEST', description: '', projectManagerId: 'user-2',
     });
     expect(dialogRef.close).toHaveBeenCalledWith(mockRepo);
     expect(component.submitting()).toBeFalse();
   });
 
-  it('does not submit without a selected Scrum Master', () => {
+  it('does not submit without a selected Project Manager', () => {
     component.name = 'Test Repo';
     component.code = 'TEST';
     component.submit();

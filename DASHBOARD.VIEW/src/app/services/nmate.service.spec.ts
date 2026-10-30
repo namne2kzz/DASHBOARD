@@ -79,6 +79,51 @@ describe('NMateService', () => {
     expect(service.isStreaming()).toBeFalse();
   });
 
+  it('counts an answer that lands while the panel is closed', () => {
+    // Closing does not stop the stream, so without this the reply would arrive unseen and the
+    // user would have no reason to look again.
+    service.close();
+    service.ask('Làm sao đóng sprint?', '/acme/DASH/sprint-planning');
+
+    const req = httpMock.expectOne(`${base}/chat`);
+    req.flush(sse(
+      ['meta',  { conversationId: 'c1' }],
+      ['delta', { text: 'Bấm Close.' }],
+      ['done',  { messageId: 'm1', latencyMs: 900, answered: true }],
+    ));
+
+    expect(service.unreadCount()).toBe(1);
+  });
+
+  it('does not count an answer the user is already watching', () => {
+    service.open();
+    httpMock.match(() => true).forEach(r => r.flush({}, { status: 404, statusText: 'Not Found' }));
+
+    service.ask('Làm sao đóng sprint?', '/acme/DASH/sprint-planning');
+    const req = httpMock.expectOne(`${base}/chat`);
+    req.flush(sse(
+      ['meta',  { conversationId: 'c1' }],
+      ['done',  { messageId: 'm1', latencyMs: 900, answered: true }],
+    ));
+
+    expect(service.unreadCount()).toBe(0);
+  });
+
+  it('clears the unread count on open, because opening is reading', () => {
+    service.close();
+    service.ask('Làm sao đóng sprint?', '/acme/DASH/sprint-planning');
+    httpMock.expectOne(`${base}/chat`).flush(sse(
+      ['meta', { conversationId: 'c1' }],
+      ['done', { messageId: 'm1', latencyMs: 900, answered: true }],
+    ));
+    expect(service.unreadCount()).toBe(1);
+
+    service.open();
+
+    expect(service.unreadCount()).toBe(0);
+    httpMock.match(() => true).forEach(r => r.flush({}, { status: 404, statusText: 'Not Found' }));
+  });
+
   it('marks a declined answer when NMate had no documentation', () => {
     service.ask('Thời tiết?', null);
 

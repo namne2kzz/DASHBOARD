@@ -1,0 +1,14 @@
+<aside class="nm-nudge" role="status">
+  <div class="nm-nudge__head">
+    <span class="nm-nudge__dot" aria-hidden="true"></span>
+    <span class="nm-nudge__brand">NMATE</span>
+    <button type="button" class="nm-nudge__close" (click)="dismissed.emit()" aria-label="Dismiss suggestion">✕</button>
+  </div>
+  <p class="nm-nudge__text">{{ nudge().message }}</p>
+  <div class="nm-nudge__actions">
+    <button type="button" class="nx-btn nx-btn--primary nx-btn--sm" (click)="accepted.emit(nudge())">
+      {{ nudge().action }}
+    </button>
+    <button type="button" class="nx-btn nx-btn--sm nm-nudge__later" (click)="dismissed.emit()">Not now</button>
+  </div>
+</aside>

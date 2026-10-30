@@ -1,0 +1,54 @@
+<!-- The N-bot launcher: a hexagon head from the product mark, with the two strokes of the "N"
+     serving as its eyes. It carries its own state — idle blinks, thinking squints inside a
+     spinning ring, and an unread reply raises a badge. -->
+<button type="button" class="nm-fab"
+        [class.is-open]="nmate.isOpen()"
+        [class.is-thinking]="nmate.isStreaming()"
+        [class.has-nudge]="hasNudge()"
+        (click)="nmate.toggle()"
+        [attr.aria-expanded]="nmate.isOpen()"
+        [attr.aria-label]="fabLabel()"
+        [attr.aria-busy]="nmate.isStreaming()"
+        title="NMate (Ctrl + /)">
+
+  @if (nmate.isOpen()) {
+    <!-- Still the same bot, with its eyes shut: the panel is already open, so this click closes it. -->
+    <svg class="nm-bot nm-bot--closed" viewBox="-4 -4 72 72" width="52" height="52"
+         xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <line class="nm-bot-antenna" x1="32" y1="10" x2="32" y2="4.5" />
+      <circle class="nm-bot-tip" cx="32" cy="4" r="2.6" />
+      <polygon class="nm-bot-head" points="32,10 52.8,22 52.8,46 32,58 11.2,46 11.2,22" />
+      <rect class="nm-bot-eye nm-bot-eye--left"  x="21.5" y="31" width="5.5" height="4" rx="1.5" />
+      <rect class="nm-bot-eye nm-bot-eye--right" x="37"   y="31" width="5.5" height="4" rx="1.5" />
+      <polygon class="nm-bot-stroke" points="27,31 37,31 37,35 27,35" />
+    </svg>
+  } @else {
+    <!-- viewBox is inset so the thinking ring, which sits outside the 64-unit head, still fits. -->
+    <svg class="nm-bot" viewBox="-4 -4 72 72" width="52" height="52"
+         xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+
+      @if (nmate.isStreaming()) {
+        <circle class="nm-bot-ring" cx="32" cy="32" r="33" />
+      }
+
+      <line class="nm-bot-antenna" x1="32" y1="10" x2="32" y2="4.5" />
+      <circle class="nm-bot-tip" cx="32" cy="4" r="2.6" />
+      <polygon class="nm-bot-head" points="32,10 52.8,22 52.8,46 32,58 11.2,46 11.2,22" />
+
+      @if (nmate.isStreaming()) {
+        <!-- Squinted eyes: the same strokes, flattened to a slit while it works. -->
+        <rect class="nm-bot-eye nm-bot-eye--left"  x="21.5" y="31" width="5.5" height="4" rx="1.5" />
+        <rect class="nm-bot-eye nm-bot-eye--right" x="37"   y="31" width="5.5" height="4" rx="1.5" />
+        <polygon class="nm-bot-stroke" points="27,31 37,31 37,35 27,35" />
+      } @else {
+        <rect class="nm-bot-eye nm-bot-eye--left nm-bot-eye--blink"  x="21.5" y="25" width="5.5" height="16" rx="1.5" />
+        <rect class="nm-bot-eye nm-bot-eye--right nm-bot-eye--blink" x="37"   y="25" width="5.5" height="16" rx="1.5" />
+        <polygon class="nm-bot-stroke" points="21.5,25 27,25 42.5,41 37,41" />
+      }
+    </svg>
+
+    @if (nmate.unreadCount() > 0) {
+      <span class="nm-fab-badge" aria-hidden="true">{{ nmate.unreadCount() }}</span>
+    }
+  }
+</button>

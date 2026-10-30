@@ -1,0 +1,22 @@
+:host {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.nx-logo { display: block; }
+
+/* Fixed hex values, not theme tokens: this is the product mark and it must read the
+   same in either theme. The colours come from the brand file (A — Hex N). */
+.nx-logo__head {
+  fill: #161B22;
+  stroke: #161B22;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+/* Dark surfaces: keep the body, swap the rim for a pale edge so the silhouette still reads. */
+.nx-logo--on-dark .nx-logo__head { stroke: #30363D; }
+
+.nx-logo__eye--left  { fill: #8B5CF6; }
+.nx-logo__eye--right { fill: #F0506E; }
+.nx-logo__stroke     { fill: #F5F6FA; }

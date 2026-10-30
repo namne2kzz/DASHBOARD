@@ -1,19 +1,23 @@
-<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
-  <div class="space-y-6">
-    <header class="sticky top-0 z-20 -mx-5 flex min-h-[52px] flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-5 py-2.5">
-      <h1 class="text-lg font-semibold text-slate-100">{{ t('pipelines.header.title') }}</h1>
-    </header>
+<div class="flex h-full flex-col">
 
-    <section class="rounded-lg border border-dashed border-slate-700 bg-slate-900/40 p-8 text-center">
-      <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-sky-300 ring-1 ring-slate-700">
-        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z" stroke-linejoin="round" stroke-linecap="round" />
-        </svg>
-      </div>
-      <h2 class="mt-4 text-lg font-semibold text-white">{{ t('pipelines.empty') }}</h2>
-      <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-400">
-        Set up CI/CD (e.g. GitHub Actions) on a connected repository to see build and deploy runs here.
+  <!-- Header -->
+  <div class="border-b border-nx-border bg-nx-surface px-8 py-4">
+    <h1 class="text-3xl font-bold text-nx-text">{{ t('pipelines.header.title') }}</h1>
+  </div>
+
+  <!-- Body -->
+  <div class="custom-scroll flex-1 overflow-y-auto p-5">
+
+    <!-- Nothing to show because nothing is connected yet — not a failure, so the bot only
+         sleeps, and the card carries the instruction for getting runs to appear here. -->
+    <div class="nx-card flex flex-col items-center gap-3 px-6 py-14 text-center">
+      <app-n-bot mood="sleeping" [size]="88" label="No pipelines connected" />
+      <p class="text-base font-semibold text-nx-text">{{ t('pipelines.empty') }}</p>
+      <p class="max-w-md text-sm leading-relaxed text-nx-text-2">
+        Set up CI/CD (e.g. GitHub Actions) on a connected repository to see build and deploy
+        runs here.
       </p>
-    </section>
+    </div>
+
   </div>
 </div>

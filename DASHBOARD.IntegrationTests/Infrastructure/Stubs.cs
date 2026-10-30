@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using DASHBOARD.Application.Common.Interfaces;
+using DASHBOARD.Application.Common.Models.Emails;
 using MassTransit;
 
 namespace DASHBOARD.IntegrationTests.Infrastructure;
@@ -157,7 +158,7 @@ public sealed class StubEmailService : IEmailService
 {
     private readonly ConcurrentBag<string> _sentTo = [];
 
-    /// <summary>Gets the addresses an invitation email was sent to.</summary>
+    /// <summary>Gets the addresses any email was sent to, across every kind this service sends.</summary>
     public IReadOnlyCollection<string> SentTo => [.. _sentTo];
 
     /// <inheritdoc />
@@ -185,6 +186,13 @@ public sealed class StubEmailService : IEmailService
         bool assigned, string changedByName, string repositoryName, string itemUrl, CancellationToken ct)
     {
         _sentTo.Add(toEmail);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task SendOrganizationWelcomeAsync(OrganizationWelcomeEmailModel model, CancellationToken ct)
+    {
+        _sentTo.Add(model.ToEmail);
         return Task.CompletedTask;
     }
 }

@@ -6,6 +6,7 @@
 
 | Ngày | Giờ | Title | Thay đổi |
 |------|-----|-------|----------|
+| 2026-10-27 | 10:30 | Project Manager là lead mặc định | Người tạo Repository giờ được seed là **Project Manager** (trước là Scrum Master); hai role vốn cùng bộ quyền nên đây là đổi nhãn, không đổi quyền. Guard "repo phải còn người lead" đổi tên `ManageSettingsGuard` → `RepositoryLeadGuard`, **vẫn xét theo quyền `ManageMembers`, không theo tên role** (giữ nguyên BUG-004). API đổi `ScrumMasterId` → `ProjectManagerId` (create) / `LeadId` (update), DTO đổi `ScrumMasterId/Name` → `LeadId/LeadName`. |
 | 2026-09-26 | 14:02 | Cập nhật lại danh sách SystemFunction | `SystemFunction` giờ có 20 quyền (thêm ManageMembers/ManageRoles/InviteMembers/ManageMetadata/AssignWorkItem/ManageBacklog/PromoteToSprint/ActivateSprint/ViewAnalytics/ManagePipeline/ManageRepo/ManageChannels); **bỏ `ManageSettings` và `ManageWiki`**. Cập nhật lại bộ quyền của 5 default role cho khớp `DefaultRoleDefinitions` |
 | 2026-06-28 | 17:00 | Default role per-repo | Bỏ default role global + hardcode GUID (`DefaultRoleIds`). Mỗi repo tự sinh 5 default role + 5 RepoRole discipline lúc `CreateRepository` (template `DefaultRoleDefinitions`). `Role.RepositoryId` luôn set. |
 | 2026-06-28 | 16:00 | Chức danh = RepoRole metadata | Chức danh (`DefaultRole`) đổi từ enum `TeamRole` (đã xoá) sang value RepoRole metadata (string). "TeamRole" trong doc dưới đây = chức danh lấy từ metadata. |
@@ -42,7 +43,7 @@
   | Default role | Quyền |
   |---|---|
   | **Scrum Master** | **Tất cả** `SystemFunction` |
-  | **Project Manager** | **Tất cả** `SystemFunction` (hiện giống Scrum Master) |
+  | **Project Manager** | **Tất cả** `SystemFunction` — role mặc định của người tạo repo |
   | **Developer** | View + Create/Edit/AssignWorkItem + ViewAnalytics + ManagePipeline + ManageRepo |
   | **Tester** | View + Create/Edit/AssignWorkItem + ManageBacklog + ViewAnalytics |
   | **Business Analyst** | View + Create/Edit/Delete/AssignWorkItem + ManageBacklog + PromoteToSprint + ManageSprint + ActivateSprint + ViewAnalytics |
@@ -67,7 +68,7 @@
 
 ## 4. Main Workflows / Use Cases
 
-1. Tạo Repository → tự sinh 5 default role + 5 RepoRole discipline cho repo đó; creator thành Scrum Master.
+1. Tạo Repository → tự sinh 5 default role + 5 RepoRole discipline cho repo đó; người được chỉ định làm lead thành **Project Manager** (founding member duy nhất).
 2. Admin tạo custom role (name, description, list permission) cho Repository.
 3. Admin clone 1 role (default hoặc custom) → custom role mới cùng permission, tên khác.
 4. Admin update custom role → áp dụng ngay cho mọi member đang gán role đó (default role bị chặn).

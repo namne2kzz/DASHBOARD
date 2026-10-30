@@ -15,6 +15,20 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/invite-accept-page/invite-accept-page.component').then(m => m.InviteAcceptPageComponent),
   },
+  // Must stay above the ':orgAlias' route below, which would otherwise swallow it as a tenant alias.
+  {
+    path: 'set-password',
+    loadComponent: () =>
+      import('./pages/set-password-page/set-password-page.component').then(m => m.SetPasswordPageComponent),
+  },
+  // Step 2 of sign-in, once the alias is known: /{orgAlias}/login. It must be declared before the
+  // ':orgAlias' shell below, whose child authGuard would bounce an anonymous visitor straight back
+  // to /login. This is also the URL provisioning emails link to.
+  {
+    path: ':orgAlias/login',
+    loadComponent: () =>
+      import('./pages/login-page/login-page.component').then(m => m.LoginPageComponent),
+  },
   // ── Tenant-scoped app — all authenticated routes live under /{orgAlias}/… ─────
   {
     path: ':orgAlias',
@@ -63,6 +77,13 @@ export const routes: Routes = [
             canActivate: [globalAdminGuard],
             loadComponent: () =>
               import('./pages/settings-users-page/settings-users-page.component').then(m => m.SettingsUsersPageComponent),
+          },
+          {
+            path: 'repositories',
+            canActivate: [globalAdminGuard],
+            loadComponent: () =>
+              import('./pages/settings-repositories-page/settings-repositories-page.component')
+                .then(m => m.SettingsRepositoriesPageComponent),
           },
         ],
       },

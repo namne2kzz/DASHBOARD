@@ -54,8 +54,13 @@ public sealed class RefreshTokenCommandHandler(
 
         // ── Issue new token pair ──────────────────────────────────────────────
         var user          = existingToken.User;
-        var orgAlias      = await db.Set<Organization>().AsNoTracking()
-            .Where(o => o.Id == user.OrgId).Select(o => o.Alias).FirstOrDefaultAsync(ct) ?? string.Empty;
+        // One projection for both: the alias routes the UI, the name labels the tenant for people.
+        var org           = await db.Set<Organization>().AsNoTracking()
+            .Where(o => o.Id == user.OrgId)
+            .Select(o => new { o.Alias, o.Name })
+            .FirstOrDefaultAsync(ct);
+        var orgAlias      = org?.Alias ?? string.Empty;
+        var orgName       = org?.Name  ?? string.Empty;
         var newAccess     = tokenService.GenerateToken(user.Id, user.Email, user.Name, user.OrgId);
         var newRefresh    = tokenService.GenerateRefreshToken();
         var refreshExpiry = DateTime.UtcNow.AddDays(_jwt.RefreshTokenExpiresInDays);
@@ -86,6 +91,7 @@ public sealed class RefreshTokenCommandHandler(
             IsGlobalAdmin:         user.IsGlobalAdmin,
             OrgId:                 user.OrgId,
             OrgAlias:              orgAlias,
+            OrgName:               orgName,
             AvatarClass:           user.AvatarClass);
     }
 }
