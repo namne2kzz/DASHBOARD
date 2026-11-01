@@ -238,12 +238,16 @@
         <h2 class="text-sm font-semibold text-slate-200">Work items by type</h2>
         <p class="mt-1 text-xs text-slate-500">Item count per type for the selected sprint.</p>
         <div class="mt-4 h-64 w-full">
+          <!-- roundEdges off: with a zero-count bar the corner radius exceeds the bar's own
+               height and ngx-charts emits a malformed "d" the SVG parser rejects, filling the
+               console with "<path> attribute d: Expected number". Every type here can legitimately
+               be zero for a sprint, so square corners are the reliable choice. -->
           <ngx-charts-bar-vertical
             [results]="typeChartData()"
             [scheme]="typeScheme"
             [xAxis]="true"
             [yAxis]="true"
-            [roundEdges]="true"
+            [roundEdges]="false"
             [gradient]="false"
             [animations]="true"
           />
@@ -270,12 +274,13 @@
         <h2 class="text-sm font-semibold text-slate-200">Status distribution</h2>
         <p class="mt-1 text-xs text-slate-500">Item count by workflow state in the selected sprint.</p>
         <div class="mt-4 h-64 w-full">
+          <!-- roundEdges off — see the comment on the type chart above. -->
           <ngx-charts-bar-horizontal
             [results]="statusItems()"
             [scheme]="statusScheme"
             [xAxis]="true"
             [yAxis]="true"
-            [roundEdges]="true"
+            [roundEdges]="false"
             [gradient]="false"
             [animations]="true"
           />
@@ -340,12 +345,13 @@
         <p class="mt-1 text-xs text-slate-500">Item count assigned to each member in the selected sprint.</p>
         @if (assigneeWorkload().length > 0) {
           <div class="mt-4 h-56 w-full">
+            <!-- roundEdges off — see the comment on the type chart above. -->
             <ngx-charts-bar-horizontal
               [results]="assigneeWorkloadChartData()"
               [scheme]="workloadScheme"
               [xAxis]="true"
               [yAxis]="true"
-              [roundEdges]="true"
+              [roundEdges]="false"
               [gradient]="false"
               [animations]="true"
             />

@@ -24,6 +24,8 @@ describe('NMateWidgetComponent', () => {
     messages: signal<NMateMessage[]>([]),
     suggestions: signal<string[]>(['Làm sao tạo sprint mới?']),
     isStreaming: signal(false),
+    // Read by the launcher's accessible label, which renders on every spec in this file.
+    unreadCount: signal(0),
     conversationId: signal<string | null>('c2'),
     recentConversations: signal<{ id: string; title: string; lastMessageAt: string }[]>([]),
     historyLoading: signal(false),
@@ -47,6 +49,7 @@ describe('NMateWidgetComponent', () => {
     prefs.showNMate.set(true);
     fake.enabled.set(true);
     fake.isStreaming.set(false);
+    fake.unreadCount.set(0);
     fake.messages.set([]);
     // The fake is shared and Jasmine runs specs in random order, so every signal a spec may change is reset here.
     fake.available.set(true);
@@ -119,7 +122,7 @@ describe('NMateWidgetComponent', () => {
     fake.isStreaming.set(true);
     fixture.detectChanges();
 
-    const stop = Array.from(el.querySelectorAll('.nm-footer button')).find(b => b.textContent?.includes('Dừng')) as HTMLButtonElement;
+    const stop = Array.from(el.querySelectorAll('.nm-footer button')).find(b => b.textContent?.includes('Stop')) as HTMLButtonElement;
     stop.click();
     expect(fake.stop).toHaveBeenCalled();
   });
@@ -185,7 +188,7 @@ describe('NMateWidgetComponent', () => {
     (el.querySelector('.nm-history-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    expect(el.querySelector('.nm-history__empty')?.textContent).toContain('Chưa có');
+    expect(el.querySelector('.nm-history__empty')?.textContent).toContain('No conversations yet');
   });
 
   it('renders nothing and ignores Ctrl + / when the user hid NMate in Settings', () => {

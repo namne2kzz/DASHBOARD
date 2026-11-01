@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, UrlTree, provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
-import { globalAdminGuard, membersPrivilegeGuard } from './privilege.guard';
+import { globalAdminGuard, membersPrivilegeGuard, metadataPrivilegeGuard } from './privilege.guard';
 import { PrivilegeService } from '../core/services/privilege.service';
 import { RepositoryContextService } from '../services/repository-context.service';
 import { RepositoryApiDto } from '../models/repository.model';
@@ -20,6 +20,7 @@ import { RepositoryApiDto } from '../models/repository.model';
  */
 describe('privilege guards', () => {
   let canManageMembers: ReturnType<typeof signal<boolean>>;
+  let canManageMetadata: ReturnType<typeof signal<boolean>>;
   let isGlobalAdmin: ReturnType<typeof signal<boolean>>;
   let selectedRepo: ReturnType<typeof signal<RepositoryApiDto | null>>;
   let router: Router;
@@ -28,17 +29,19 @@ describe('privilege guards', () => {
 
   function configure(options: {
     canManageMembers?: boolean;
+    canManageMetadata?: boolean;
     isGlobalAdmin?: boolean;
     repo?: RepositoryApiDto | null;
   }): void {
-    canManageMembers = signal(options.canManageMembers ?? false);
-    isGlobalAdmin    = signal(options.isGlobalAdmin ?? false);
-    selectedRepo     = signal(options.repo ?? null);
+    canManageMembers  = signal(options.canManageMembers ?? false);
+    canManageMetadata = signal(options.canManageMetadata ?? false);
+    isGlobalAdmin     = signal(options.isGlobalAdmin ?? false);
+    selectedRepo      = signal(options.repo ?? null);
 
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
-        { provide: PrivilegeService,          useValue: { canManageMembers, isGlobalAdmin } },
+        { provide: PrivilegeService,          useValue: { canManageMembers, canManageMetadata, isGlobalAdmin } },
         { provide: RepositoryContextService,  useValue: { selectedRepo } },
       ],
     });
@@ -57,6 +60,29 @@ describe('privilege guards', () => {
   function path(result: boolean | UrlTree): string {
     return router.serializeUrl(result as UrlTree);
   }
+
+  // ── metadataPrivilegeGuard ──────────────────────────────────────────────
+
+  describe('metadataPrivilegeGuard', () => {
+    it('allows a user who can manage metadata', () => {
+      configure({ canManageMetadata: true, repo: repository });
+
+      expect(activate(metadataPrivilegeGuard)).toBeTrue();
+    });
+
+    it('allows a global admin who holds no repository permission', () => {
+      configure({ isGlobalAdmin: true, repo: repository });
+
+      expect(activate(metadataPrivilegeGuard)).toBeTrue();
+    });
+
+    it('turns away a member manager who cannot manage metadata', () => {
+      // The two are separate functions on the server, so holding one must not imply the other.
+      configure({ canManageMembers: true, repo: repository });
+
+      expect(path(activate(metadataPrivilegeGuard))).toBe('/DASH/boards');
+    });
+  });
 
   // ── membersPrivilegeGuard ───────────────────────────────────────────────
 

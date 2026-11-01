@@ -50,6 +50,14 @@ export class AuthService {
   readonly currentUser     = signal<UserProfile | null>(this.storage.get<UserProfile>(StorageKeys.userProfile));
   readonly isAuthenticated = signal<boolean>(this.currentUser() !== null);
 
+  constructor() {
+    // A reload restores the session from the persisted profile without going through
+    // applySession(), which is the only other place the notification stream is opened. Without
+    // this the bell went quiet after every refresh — the stream stayed closed until the user
+    // signed in again, even though the cookie was still perfectly good.
+    if (this.isAuthenticated()) this.notiSvc.connect();
+  }
+
   /**
    * Resolves the organization alias typed on the first step of sign-in. Errors with 404 when no
    * organization has that alias, so the user is told before they type any credentials.

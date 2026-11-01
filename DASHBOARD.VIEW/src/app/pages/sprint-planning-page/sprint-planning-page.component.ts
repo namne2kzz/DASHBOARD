@@ -57,6 +57,21 @@ export class SprintPlanningPageComponent implements OnInit {
   private readonly repoCtx   = inject(RepositoryContextService);
   private readonly auth      = inject(AuthService);
 
+  // Permission gates live on SprintPlanningService, which already re-exposes them for this screen;
+  // these aliases exist only so the template can read them without the `planning.` prefix.
+
+  /** Whether the user may add or remove capacity members and day-off entries. */
+  readonly canManageCapacity  = this.planning.canManageCapacity;
+
+  /** Whether the user may create, edit, or delete sprints. */
+  readonly canManageSprints   = this.planning.canManageSprints;
+
+  /** Whether the user may start or end a sprint — a separate function from planning one. */
+  readonly canActivateSprints = this.planning.canActivateSprint;
+
+  /** Whether the user may reassign a sprint task to another member. */
+  readonly canAssignWorkItem  = this.planning.canAssignWorkItem;
+
   private readonly _stateToApi: Record<SprintTask['state'], SprintTaskApiState> = {
     'open':        SprintTaskApiState.Open,
     'todo':        SprintTaskApiState.ToDo,
@@ -229,6 +244,7 @@ export class SprintPlanningPageComponent implements OnInit {
   /** Opens reassign picker for a task. @param taskId The task to reassign. @param el The trigger element. */
   openReassign(taskId: string, el: HTMLElement, event: MouseEvent): void {
     event.stopPropagation();
+    if (!this.canAssignWorkItem()) return;
     if (this.reassignOpenTaskId() === taskId) { this.closeReassign(); return; }
     this._reassignEl = el;
     this._updateReassignRect();
@@ -373,16 +389,16 @@ export class SprintPlanningPageComponent implements OnInit {
   /** Cancels edit without saving. */
   cancelEdit(): void { this.editMode.set(false); }
 
-  /** Whether the selected sprint can be edited (future and active sprints). */
+  /** Whether the selected sprint can be edited (future and active sprints, with ManageSprint). */
   canEditSelectedSprint(): boolean {
     const s = this.planning.selectedSprint();
-    return !!s && this.planning.sprintStatus(s) !== 'past';
+    return !!s && this.canManageSprints() && this.planning.sprintStatus(s) !== 'past';
   }
 
-  /** Whether the selected sprint can be deleted (future and past, not active). */
+  /** Whether the selected sprint can be deleted (future and past, not active, with ManageSprint). */
   canDeleteSelectedSprint(): boolean {
     const s = this.planning.selectedSprint();
-    return !!s && this.planning.sprintStatus(s) !== 'active';
+    return !!s && this.canManageSprints() && this.planning.sprintStatus(s) !== 'active';
   }
 
   /** Deletes the selected sprint after confirmation. */
@@ -438,14 +454,14 @@ export class SprintPlanningPageComponent implements OnInit {
 
   // ── Sprint lifecycle ──────────────────────────────────────────
 
-  /** Whether the selected sprint can be activated (status = Planning). */
+  /** Whether the selected sprint can be activated (status = Planning, with ActivateSprint). */
   canActivateSelectedSprint(): boolean {
-    return this.planning.selectedSprint()?.status === 'Planning';
+    return this.canActivateSprints() && this.planning.selectedSprint()?.status === 'Planning';
   }
 
-  /** Whether the selected sprint can be closed (status = Active). */
+  /** Whether the selected sprint can be closed (status = Active, with ActivateSprint). */
   canCloseSelectedSprint(): boolean {
-    return this.planning.selectedSprint()?.status === 'Active';
+    return this.canActivateSprints() && this.planning.selectedSprint()?.status === 'Active';
   }
 
   /** Activates the selected sprint after confirmation. */

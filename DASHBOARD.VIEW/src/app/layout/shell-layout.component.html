@@ -371,7 +371,7 @@
                 Members
               </a>
             }
-            @if (privilege.canManageMembers()) {
+            @if (privilege.canManageMetadata() || privilege.isGlobalAdmin()) {
               <a
                 [routerLink]="globalLink('settings/metadata')"
                 routerLinkActive="is-active"

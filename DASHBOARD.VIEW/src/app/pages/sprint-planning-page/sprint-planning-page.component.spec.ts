@@ -4,18 +4,38 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { provideToastr } from 'ngx-toastr';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { signal, WritableSignal } from '@angular/core';
 import { SprintPlanningPageComponent } from './sprint-planning-page.component';
+import { PrivilegeService } from '../../core/services/privilege.service';
+
+/** Every permission this screen reads, each one individually settable by a test. */
+type Gates = Record<
+  'canManageSprints' | 'canManageCapacity' | 'canActivateSprint' | 'canAssignWorkItem' | 'canEditWorkItem',
+  WritableSignal<boolean>
+>;
 
 describe('SprintPlanningPageComponent', () => {
   let component: SprintPlanningPageComponent;
   let fixture: ComponentFixture<SprintPlanningPageComponent>;
+  let gates: Gates;
 
   beforeEach(async () => {
+    // Granted by default so the existing tests see the screen a privileged user sees;
+    // the permission tests revoke what they are about.
+    gates = {
+      canManageSprints:  signal(true),
+      canManageCapacity: signal(true),
+      canActivateSprint: signal(true),
+      canAssignWorkItem: signal(true),
+      canEditWorkItem:   signal(true),
+    };
+
     await TestBed.configureTestingModule({
       imports: [SprintPlanningPageComponent],
       providers: [
         provideHttpClient(), provideHttpClientTesting(), provideRouter([]),
         provideToastr(), provideAnimations(),
+        { provide: PrivilegeService, useValue: gates },
       ],
     }).compileComponents();
 
@@ -60,6 +80,65 @@ describe('SprintPlanningPageComponent', () => {
 
     it('keeps the fill and the overflow within the bar together', () => {
       expect(component.loadFillWidth(180) + component.loadOverWidth(180)).toBeLessThanOrEqual(100);
+    });
+  });
+
+  describe('permission gating', () => {
+    /** Pins the selected sprint so the lifecycle predicates have something to judge. */
+    function selectSprint(status: 'Planning' | 'Active', calendar: 'past' | 'active' | 'future' = 'active'): void {
+      spyOn(component.planning, 'selectedSprint').and.returnValue({ id: 's1', name: 'Sprint 1', status } as never);
+      spyOn(component.planning, 'sprintStatus').and.returnValue(calendar);
+    }
+
+    it('offers activation only to a role holding ActivateSprint', () => {
+      selectSprint('Planning');
+
+      expect(component.canActivateSelectedSprint()).toBeTrue();
+
+      gates.canActivateSprint.set(false);
+
+      expect(component.canActivateSelectedSprint()).toBeFalse();
+    });
+
+    it('offers closing only to a role holding ActivateSprint', () => {
+      // Activate and Close are one permission precisely because they are the same authority.
+      selectSprint('Active');
+
+      expect(component.canCloseSelectedSprint()).toBeTrue();
+
+      gates.canActivateSprint.set(false);
+
+      expect(component.canCloseSelectedSprint()).toBeFalse();
+    });
+
+    it('withholds edit and delete from a role without ManageSprint', () => {
+      selectSprint('Planning', 'future');
+
+      expect(component.canEditSelectedSprint()).toBeTrue();
+      expect(component.canDeleteSelectedSprint()).toBeTrue();
+
+      gates.canManageSprints.set(false);
+
+      expect(component.canEditSelectedSprint()).toBeFalse();
+      expect(component.canDeleteSelectedSprint()).toBeFalse();
+    });
+
+    it('keeps ManageSprint from standing in for ActivateSprint', () => {
+      // The two were conflated in the backend once; nothing here should re-introduce the shortcut.
+      selectSprint('Planning', 'future');
+      gates.canActivateSprint.set(false);
+
+      expect(component.canEditSelectedSprint()).toBeTrue();
+      expect(component.canActivateSelectedSprint()).toBeFalse();
+    });
+
+    it('refuses to open the reassign picker without AssignWorkItem', () => {
+      gates.canAssignWorkItem.set(false);
+      const event = new MouseEvent('click');
+
+      component.openReassign('t1', document.createElement('button'), event);
+
+      expect(component.reassignOpenTaskId()).toBeNull();
     });
   });
 

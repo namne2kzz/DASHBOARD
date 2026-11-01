@@ -300,7 +300,7 @@ export class SettingsMembersPageComponent {
 
   /** Extracts a human-readable message from a role create/update/delete error response. @param err The HTTP error. @returns Message to show in the toast. */
   private roleErrorMessage(err: HttpErrorResponse): string {
-    return err.error?.error ?? err.error?.title ?? 'Có lỗi xảy ra. Vui lòng thử lại.';
+    return err.error?.error ?? err.error?.title ?? 'Something went wrong. Please try again.';
   }
 
   /** Clones a role (default or custom) into a new custom role, prompting for the new name via the dashboard dialog. @param role Source role to clone. */

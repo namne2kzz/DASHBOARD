@@ -52,6 +52,7 @@ describe('AuthService', () => {
     isGlobalAdmin:         false,
     orgId:                 'org-1',
     orgAlias:              'acme',
+    orgName:               'Acme',
     avatarClass:           'bg-emerald-600',
   };
 

@@ -50,6 +50,14 @@ describe('errorInterceptor', () => {
   ): void {
     const { refreshSucceeds = true, signedIn = true, tokenExpired = false } = opts;
 
+    // Several specs re-configure inside the test body to vary one option after the enclosing
+    // beforeEach has already built (and thereby instantiated) the module. Tearing it down first
+    // makes that legal instead of throwing "test module has already been instantiated".
+    TestBed.resetTestingModule();
+    // The module is going away with its interceptor's shared refresh slot still filled; a stale
+    // observable there would be joined by the first 401 of the newly configured module.
+    resetRefreshState();
+
     auth = jasmine.createSpyObj<AuthStub>('AuthService', ['logout', 'refresh', 'isAuthenticated']);
 
     // A real getter on the service, so the stub carries it as a plain property.
@@ -58,6 +66,7 @@ describe('errorInterceptor', () => {
     // The interceptor only spends a refresh attempt when it believes a session exists, so the
     // signal has to answer before any 401 is raised.
     auth.isAuthenticated.and.returnValue(signedIn);
+
     // The interceptor only cares whether the refresh resolves, never what it carries, so an empty
     // object stands in for the session payload.
     auth.refresh.and.returnValue(

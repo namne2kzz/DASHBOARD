@@ -232,6 +232,7 @@ export class KanbanBoardComponent {
   /** Opens the create-work-item dialog pre-set to the chosen type and closes the hover menu. @param type Work item type selected from the menu. */
   openCreateWorkItem(type: SprintTaskApiType): void {
     this.newWorkItemMenuOpen.set(false);
+    if (!this.privilege.canCreateWorkItem()) return;
     this.dialog.open(CreateWorkItemDialogComponent, {
       title: 'New work item',
       width: '40rem',

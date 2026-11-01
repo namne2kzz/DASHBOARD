@@ -23,7 +23,7 @@ public sealed class NMateGateway(
     public const string ClientName = "NMate";
 
     private const string UnavailableBody =
-        """{"error":"NMATE_UNAVAILABLE","message":"NMate đang bảo trì, bạn thử lại sau nhé."}""";
+        """{"error":"NMATE_UNAVAILABLE","message":"NMate is under maintenance. Please try again later."}""";
 
     /// <inheritdoc />
     public bool IsEnabled => !string.IsNullOrWhiteSpace(settings.NMateBaseUrl);

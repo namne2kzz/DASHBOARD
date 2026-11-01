@@ -15,6 +15,18 @@ export const membersPrivilegeGuard: CanActivateFn = () => {
   return router.createUrlTree(code ? ['/', code, 'boards'] : ['/']);
 };
 
+/** Blocks navigation to routes that require metadata-management privileges. */
+export const metadataPrivilegeGuard: CanActivateFn = () => {
+  const privilege = inject(PrivilegeService);
+  const repoCtx   = inject(RepositoryContextService);
+  const router    = inject(Router);
+
+  if (privilege.canManageMetadata() || privilege.isGlobalAdmin()) return true;
+
+  const code = repoCtx.selectedRepo()?.code;
+  return router.createUrlTree(code ? ['/', code, 'boards'] : ['/']);
+};
+
 /** Blocks navigation to routes that require global-admin access. */
 export const globalAdminGuard: CanActivateFn = () => {
   const privilege = inject(PrivilegeService);

@@ -7,6 +7,7 @@ import { of, throwError } from 'rxjs';
 import { SettingsRepositoriesPageComponent } from './settings-repositories-page.component';
 import { RepositoryAdminService } from '../../services/repository-admin.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
+import { PrivilegeService } from '../../core/services/privilege.service';
 import { DialogService } from '../../core/components/dialog/dialog.service';
 import { ToastService } from '../../core/components/toast/toast.service';
 import { RepositoryApiDto } from '../../models/repository.model';
@@ -49,7 +50,13 @@ describe('SettingsRepositoriesPageComponent', () => {
     svc.archive.and.returnValue(of(void 0));
     svc.unarchive.and.returnValue(of(void 0));
 
-    repoCtx = jasmine.createSpyObj<RepositoryContextService>('RepositoryContextService', ['load']);
+    // The page now reads PrivilegeService, which pulls in MembersService; that service's
+    // constructor effect reads the selected repository, so the stub has to answer it.
+    repoCtx = jasmine.createSpyObj<RepositoryContextService>(
+      'RepositoryContextService',
+      ['load'],
+      { selectedRepoId: signal(null), selectedRepo: signal(null) },
+    );
     toast   = jasmine.createSpyObj<ToastService>('ToastService', ['success', 'error', 'info']);
 
     TestBed.configureTestingModule({
@@ -57,6 +64,9 @@ describe('SettingsRepositoriesPageComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        // Repository administration is global-admin only; these tests are about what the page
+        // does once that is granted, so the privilege is stubbed rather than re-asserted here.
+        { provide: PrivilegeService,          useValue: { isGlobalAdmin: signal(true) } },
         { provide: RepositoryAdminService,    useValue: svc },
         { provide: RepositoryContextService,  useValue: repoCtx },
         { provide: ToastService,              useValue: toast },

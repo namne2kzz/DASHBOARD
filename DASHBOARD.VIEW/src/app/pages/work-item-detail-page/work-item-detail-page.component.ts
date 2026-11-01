@@ -14,6 +14,7 @@ import { SprintTaskDetailService } from '../../services/sprint-task-detail.servi
 import { SprintBoardService } from '../../services/sprint-board.service';
 import { MembersService } from '../../services/members.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
+import { PrivilegeService } from '../../core/services/privilege.service';
 import { AttachmentService } from '../../services/attachment.service';
 import { WorkItemLinkService } from '../../services/work-item-link.service';
 import { ConfirmService } from '../../core/components/confirm/confirm.service';
@@ -130,6 +131,7 @@ export class WorkItemDetailPageComponent implements OnInit {
   private readonly links       = inject(WorkItemLinkService);
   private readonly confirm     = inject(ConfirmService);
   private readonly repoCtx     = inject(RepositoryContextService);
+  private readonly privilege   = inject(PrivilegeService);
 
   // ── Exposed constants for the template ──────────────────────────────────────
   readonly sprintTaskApiType = SprintTaskApiType;
@@ -380,7 +382,18 @@ export class WorkItemDetailPageComponent implements OnInit {
   });
 
   readonly isDirty = computed(() => JSON.stringify(this.payload()) !== this._snapshot());
-  readonly canSave = computed(() => this.isDirty() && this.title().trim().length > 0);
+  readonly canSave = computed(() =>
+    this.canEditWorkItem() && this.isDirty() && this.title().trim().length > 0);
+
+  // Permission gates, mirroring what the handlers enforce: field edits and state changes are
+  // EditWorkItem, reassignment is its own AssignWorkItem. Comments and attachments are
+  // deliberately absent — the server gates those on membership and authorship, not on a role.
+
+  /** Whether the user may edit this work item's fields or change its state. */
+  readonly canEditWorkItem = this.privilege.canEditWorkItem;
+
+  /** Whether the user may change who this work item is assigned to. */
+  readonly canAssignWorkItem = this.privilege.canAssignWorkItem;
 
   constructor() {
     // React to itemKey changes so navigating between linked items (same route, different param)
@@ -499,7 +512,7 @@ export class WorkItemDetailPageComponent implements OnInit {
   onStateChange(value: string): void {
     const id = this.taskId();
     const t  = this.task();
-    if (!id || !t?.sprintId) return;
+    if (!id || !t?.sprintId || !this.canEditWorkItem()) return;
     this.detailSvc.changeState(id, t.sprintId, +value);
   }
 
@@ -509,7 +522,7 @@ export class WorkItemDetailPageComponent implements OnInit {
   selectAssignee(userId: string | null): void {
     const id = this.taskId();
     const t  = this.task();
-    if (!id || !t?.sprintId) return;
+    if (!id || !t?.sprintId || !this.canAssignWorkItem()) return;
     this.detailSvc.changeAssignee(id, t.sprintId, userId);
   }
 
@@ -617,8 +630,11 @@ export class WorkItemDetailPageComponent implements OnInit {
    * Handles pasting an image into an editor: uploads it and inserts a Markdown image at the caret.
    * @param e The clipboard event.
    * @param box The textarea the paste happened in.
+   * @param needsEdit True for the description, which is part of the work item and so requires
+   *   EditWorkItem; false for a comment, which the server gates on membership alone.
    */
-  onEditorPaste(e: ClipboardEvent, box: HTMLTextAreaElement): void {
+  onEditorPaste(e: ClipboardEvent, box: HTMLTextAreaElement, needsEdit = false): void {
+    if (needsEdit && !this.canEditWorkItem()) return;
     const file = this._imageFromItems(e.clipboardData?.items);
     if (!file) return;
     e.preventDefault();
@@ -629,8 +645,10 @@ export class WorkItemDetailPageComponent implements OnInit {
    * Handles dropping an image file onto an editor.
    * @param e The drag event.
    * @param box The textarea the drop happened on.
+   * @param needsEdit True for the description; false for a comment. See {@link onEditorPaste}.
    */
-  onEditorDrop(e: DragEvent, box: HTMLTextAreaElement): void {
+  onEditorDrop(e: DragEvent, box: HTMLTextAreaElement, needsEdit = false): void {
+    if (needsEdit && !this.canEditWorkItem()) return;
     const file = this._imageFromFiles(e.dataTransfer?.files);
     if (!file) return;
     e.preventDefault();

@@ -1,6 +1,7 @@
 <div class="relative">
   <!-- Trigger -->
   <button type="button" (click)="toggle(); $event.stopPropagation()"
+    [disabled]="disabled()"
     class="field-input flex w-full items-center gap-2 text-left">
     @if (selectedUser(); as u) {
       <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white" [ngClass]="u.avatarClass">{{ initials(u.name) }}</span>
@@ -8,9 +9,11 @@
     } @else {
       <span class="min-w-0 flex-1 truncate text-slate-500">{{ placeholder() }}</span>
     }
+    @if (!disabled()) {
     <svg class="h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform" [class.rotate-180]="open()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
       <path stroke-linecap="round" d="M6 9l6 6 6-6"/>
     </svg>
+    }
   </button>
 
   <!-- Dropdown -->

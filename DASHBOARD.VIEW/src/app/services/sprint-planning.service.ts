@@ -49,6 +49,8 @@ export class SprintPlanningService {
   readonly canManageSprints  = computed(() => this.privilege.canManageSprints());
   readonly canManageCapacity = computed(() => this.privilege.canManageCapacity());
   readonly canEditWorkItem   = computed(() => this.privilege.canEditWorkItem());
+  readonly canActivateSprint = computed(() => this.privilege.canActivateSprint());
+  readonly canAssignWorkItem = computed(() => this.privilege.canAssignWorkItem());
 
   /** True while either the shared sprint list or this page's own sprint detail is loading. */
   readonly loading = computed(() => this._loading() || this.sprintSelection.loading());

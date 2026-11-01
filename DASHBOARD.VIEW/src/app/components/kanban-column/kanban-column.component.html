@@ -78,6 +78,7 @@
   >
     @for (t of tasks(); track t.id) {
       <div cdkDrag [cdkDragData]="t"
+           [cdkDragDisabled]="!canMove()"
            (cdkDragStarted)="dragStarted.emit(t)"
            (cdkDragEnded)="dragEnded.emit()"
            (cdkDragMoved)="dragMoved.emit($event.pointerPosition.x)">
