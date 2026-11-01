@@ -31,7 +31,7 @@
       />
     </label>
 
-    @if (privilege.canEditWorkItem()) {
+    @if (privilege.canCreateWorkItem()) {
       <div
         class="relative shrink-0"
         (mouseenter)="newWorkItemMenuOpen.set(true)"
@@ -247,6 +247,7 @@
             [wipExceeded]="wip?.exceeded ?? false"
             [agingLimitDays]="col.agingLimitDays"
             [enterPredicate]="getEnterPredicate(col.id)"
+            [canMove]="privilege.canEditWorkItem()"
             [dragInProgress]="draggingType() !== null"
             [acceptsDraggedType]="columnAcceptsType(col.id, draggingType())"
             (dropped)="onDrop($event, col)"

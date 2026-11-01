@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { KanbanColumnComponent } from './kanban-column.component';
 import type { BoardItem } from '../../models/boards.model';
 
@@ -21,7 +23,12 @@ describe('KanbanColumnComponent', () => {
   }
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [KanbanColumnComponent] }).compileComponents();
+    // The card's avatar strip resolves member names through MembersService, so the component
+    // tree needs an HttpClient even though these specs never exercise a request.
+    await TestBed.configureTestingModule({
+      imports: [KanbanColumnComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    }).compileComponents();
     fixture = TestBed.createComponent(KanbanColumnComponent);
     component = fixture.componentInstance;
 

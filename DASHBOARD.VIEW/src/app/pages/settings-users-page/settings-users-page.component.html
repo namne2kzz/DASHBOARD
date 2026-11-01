@@ -5,10 +5,12 @@
     <div>
       <h1 class="text-3xl font-bold text-nx-text">Users</h1>
     </div>
-    <button type="button" (click)="openCreateModal()"
-      class="nx-btn nx-btn--primary nx-btn--sm">
-      + Create account
-    </button>
+    @if (privilege.isGlobalAdmin()) {
+      <button type="button" (click)="openCreateModal()"
+        class="nx-btn nx-btn--primary nx-btn--sm">
+        + Create account
+      </button>
+    }
   </div>
 
   <!-- Body -->
@@ -189,6 +191,7 @@
                         [selectedId]="u.managerId"
                         placeholder="No manager (root)"
                         clearLabel="— No manager (root) —"
+                        [disabled]="!privilege.isGlobalAdmin()"
                         (selected)="changeManager(u, $event ?? '')"
                       />
                     </div>

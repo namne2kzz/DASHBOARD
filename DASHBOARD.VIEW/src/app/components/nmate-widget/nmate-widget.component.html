@@ -1,6 +1,6 @@
 @if (visible()) {
   @if (nmate.isOpen()) {
-    <section class="nm-panel" role="dialog" aria-label="NMate — trợ lý hướng dẫn sử dụng">
+    <section class="nm-panel" role="dialog" aria-label="NMate — the how-to assistant">
       <header class="nm-header">
         <div class="nm-header__title">
           <app-brand-logo [size]="26" />
@@ -12,27 +12,27 @@
           <button type="button" class="nx-btn nx-btn--ghost nx-btn--sm nm-icon-btn nm-history-toggle"
                   [class.is-active]="historyOpen()" (click)="toggleHistory()"
                   [attr.aria-expanded]="historyOpen()" aria-haspopup="menu"
-                  aria-label="Cuộc trò chuyện gần đây" title="Cuộc trò chuyện gần đây">
+                  aria-label="Recent conversations" title="Recent conversations">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
           </button>
           <button type="button" class="nx-btn nx-btn--ghost nx-btn--sm" (click)="startNew()"
-                  [disabled]="nmate.messages().length === 0" title="Cuộc trò chuyện mới">
-            Mới
+                  [disabled]="nmate.messages().length === 0" title="New conversation">
+            New
           </button>
           <button type="button" class="nx-btn nx-btn--ghost nx-btn--sm nm-icon-btn" (click)="nmate.close()"
-                  aria-label="Đóng NMate" title="Đóng (Esc)">
+                  aria-label="Close NMate" title="Close (Esc)">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
       </header>
 
       @if (historyOpen()) {
-        <div class="nm-history" role="menu" aria-label="Cuộc trò chuyện gần đây">
-          <div class="nm-history__title">Gần đây</div>
+        <div class="nm-history" role="menu" aria-label="Recent conversations">
+          <div class="nm-history__title">Recent</div>
           @if (nmate.historyLoading()) {
-            <div class="nm-history__empty">Đang tải…</div>
+            <div class="nm-history__empty">Loading…</div>
           } @else if (nmate.recentConversations().length === 0) {
-            <div class="nm-history__empty">Chưa có cuộc trò chuyện nào.</div>
+            <div class="nm-history__empty">No conversations yet.</div>
           } @else {
             @for (conversation of nmate.recentConversations(); track conversation.id) {
               <button type="button" role="menuitem" class="nm-history__item"
@@ -52,15 +52,15 @@
                the reader caused, and the tone should say so. -->
           <div class="nm-maintenance">
             <app-n-bot mood="maintenance" [size]="72" />
-            <p class="nm-maintenance__text">NMate đang bảo trì, bạn thử lại sau nhé.</p>
+            <p class="nm-maintenance__text">NMate is under maintenance. Please try again later.</p>
           </div>
         }
 
         @if (nmate.conversationLoading()) {
-          <div class="nm-loading">Đang mở cuộc trò chuyện…</div>
+          <div class="nm-loading">Opening conversation…</div>
         } @else if (nmate.messages().length === 0) {
           <div class="nm-empty">
-            <p class="nm-empty__lead">Bạn cần hỗ trợ gì khi dùng NFlow?</p>
+            <p class="nm-empty__lead">What do you need help with in NFlow?</p>
             @if (nmate.suggestions().length > 0) {
               <div class="nm-suggestions">
                 @for (question of nmate.suggestions(); track question) {
@@ -83,14 +83,14 @@
         <div class="nm-compose">
           <textarea #questionInput class="field-textarea nm-input" rows="1"
                     [value]="draft()" (input)="onInput($event)" (keydown)="onInputKeydown($event)"
-                    [attr.maxlength]="maxLength" placeholder="Hỏi NMate…  (Enter để gửi)"
-                    aria-label="Câu hỏi cho NMate"></textarea>
+                    [attr.maxlength]="maxLength" placeholder="Ask NMate…  (Enter to send)"
+                    aria-label="Question for NMate"></textarea>
           @if (nmate.isStreaming()) {
-            <button type="button" class="nx-btn nx-btn--sm" (click)="nmate.stop()">Dừng</button>
+            <button type="button" class="nx-btn nx-btn--sm" (click)="nmate.stop()">Stop</button>
           } @else {
             <button type="button" class="nx-btn nx-btn--primary nx-btn--sm" (click)="send()"
                     [disabled]="!draft().trim() || nmate.available() === false || nmate.conversationLoading()">
-              Gửi
+              Send
             </button>
           }
         </div>

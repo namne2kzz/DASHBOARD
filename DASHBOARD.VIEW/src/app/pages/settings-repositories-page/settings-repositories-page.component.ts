@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DialogService } from '../../core/components/dialog/dialog.service';
 import { RepositoryAdminService } from '../../services/repository-admin.service';
@@ -9,12 +9,13 @@ import { LocalDatePipe } from '../../core/pipes/local-date.pipe';
 import { UserSelectComponent, UserOption } from '../../components/user-select/user-select.component';
 import { NewRepoDialogComponent } from '../../components/new-repo-dialog/new-repo-dialog.component';
 import { RepositoryApiDto } from '../../models/repository.model';
+import { PrivilegeService } from '../../core/services/privilege.service';
 
 /** Which slice of the repository list is on screen. */
 type RepoFilter = 'active' | 'archived' | 'all';
 
 /**
- * Settings → Repositories: the administrator's view of every repository in the organization,
+ * Settings â†’ Repositories: the administrator's view of every repository in the organization,
  * archived ones included.
  *
  * Distinct from the repo switcher in the sidebar, which only ever shows what the signed-in user
@@ -33,11 +34,12 @@ export class SettingsRepositoriesPageComponent implements OnInit {
   private  readonly repoCtx  = inject(RepositoryContextService);
   private  readonly toast    = inject(ToastService);
   private  readonly dialog   = inject(DialogService);
+  protected readonly privilege = inject(PrivilegeService);
 
   readonly searchQuery  = signal('');
   readonly activeFilter = signal<RepoFilter>('active');
 
-  // ── Edit dialog state ─────────────────────────────────────────
+  // â”€â”€ Edit dialog state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   readonly editing          = signal<RepositoryApiDto | null>(null);
   readonly formName         = signal('');
   readonly formDescription  = signal('');
@@ -46,7 +48,7 @@ export class SettingsRepositoriesPageComponent implements OnInit {
   readonly membersLoading   = signal(false);
   readonly saving           = signal(false);
 
-  // ── Archive confirmation ──────────────────────────────────────
+  // â”€â”€ Archive confirmation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   /** Repository awaiting archive confirmation, or null when no prompt is open. */
   readonly archiving = signal<RepositoryApiDto | null>(null);
 
@@ -116,10 +118,11 @@ export class SettingsRepositoriesPageComponent implements OnInit {
     this.svc.load(this.searchQuery());
   }
 
-  // ── Create ────────────────────────────────────────────────────
+  // â”€â”€ Create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /** Opens the shared new-repository dialog and folds the result into the list. */
   async openCreate(): Promise<void> {
+    if (!this.privilege.isGlobalAdmin()) return;
     const ref = this.dialog.open<NewRepoDialogComponent, unknown, RepositoryApiDto>(
       NewRepoDialogComponent,
       { title: 'New Repository', width: '30rem' },
@@ -134,13 +137,14 @@ export class SettingsRepositoriesPageComponent implements OnInit {
     this.toast.success(`Repository "${repo.name}" created.`);
   }
 
-  // ── Edit ──────────────────────────────────────────────────────
+  // â”€â”€ Edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /**
    * Opens the edit form for one repository and loads its members for the Project Manager picker.
    * @param repo The repository to edit.
    */
   openEdit(repo: RepositoryApiDto): void {
+    if (!this.privilege.isGlobalAdmin()) return;
     this.editing.set(repo);
     this.formName.set(repo.name);
     this.formDescription.set(repo.description ?? '');
@@ -174,7 +178,7 @@ export class SettingsRepositoriesPageComponent implements OnInit {
   /** Saves the edit form. */
   save(): void {
     const repo = this.editing();
-    if (!repo || !this.canSave()) return;
+    if (!repo || !this.canSave() || !this.privilege.isGlobalAdmin()) return;
 
     this.saving.set(true);
 
@@ -204,10 +208,11 @@ export class SettingsRepositoriesPageComponent implements OnInit {
     });
   }
 
-  // ── Archive / restore ─────────────────────────────────────────
+  // â”€â”€ Archive / restore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /** Opens the archive prompt. @param repo The repository to archive. */
   confirmArchive(repo: RepositoryApiDto): void {
+    if (!this.privilege.isGlobalAdmin()) return;
     this.archiving.set(repo);
     this.archiveConfirmation.set('');
   }
@@ -222,7 +227,7 @@ export class SettingsRepositoriesPageComponent implements OnInit {
   /** Archives the repository awaiting confirmation. */
   archive(): void {
     const repo = this.archiving();
-    if (!repo || !this.canArchive()) return;
+    if (!repo || !this.canArchive() || !this.privilege.isGlobalAdmin()) return;
 
     this.archivePending.set(true);
 
@@ -242,6 +247,7 @@ export class SettingsRepositoriesPageComponent implements OnInit {
 
   /** Restores an archived repository. @param repo The repository to restore. */
   unarchive(repo: RepositoryApiDto): void {
+    if (!this.privilege.isGlobalAdmin()) return;
     this.svc.unarchive(repo.id).subscribe({
       next: () => {
         this.repoCtx.load();

@@ -45,8 +45,12 @@
         </svg>
       </a>
     }
-    <button type="button" class="nx-btn nx-btn--sm" (click)="openAddCapacityMember()">Add member</button>
-    <button type="button" class="nx-btn nx-btn--primary nx-btn--sm" (click)="openNewSprint()">New sprint</button>
+    @if (canManageCapacity()) {
+      <button type="button" class="nx-btn nx-btn--sm" (click)="openAddCapacityMember()">Add member</button>
+    }
+    @if (canManageSprints()) {
+      <button type="button" class="nx-btn nx-btn--primary nx-btn--sm" (click)="openNewSprint()">New sprint</button>
+    }
   </header>
 
   <div class="space-y-6 p-5">
@@ -253,6 +257,7 @@
                     class="nx-cell-input [appearance:textfield]"
                     aria-label="Hours per day"
                     [ngModel]="member.hoursPerDay"
+                    [disabled]="!canManageCapacity()"
                     (change)="planning.updateHours(member.userId, +$any($event.target).value)"
                   />
                 </td>
@@ -265,6 +270,7 @@
                     class="nx-cell-input [appearance:textfield]"
                     aria-label="Overtime hours per day"
                     [ngModel]="member.overtimeHoursPerDay"
+                    [disabled]="!canManageCapacity()"
                     (change)="planning.updateOvertime(member.userId, +$any($event.target).value)"
                   />
                 </td>
@@ -293,21 +299,25 @@
                   </div>
                 </td>
                 <td class="pr-2">
-                  <button
-                    type="button"
-                    title="Remove member"
-                    class="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 opacity-0 transition hover:bg-rose-50 hover:text-rose-500 focus:opacity-100 group-hover:opacity-100"
-                    (click)="removeCapacityMember(member.userId)"
-                  >
-                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                  </button>
+                  @if (canManageCapacity()) {
+                    <button
+                      type="button"
+                      title="Remove member"
+                      class="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 opacity-0 transition hover:bg-rose-50 hover:text-rose-500 focus:opacity-100 group-hover:opacity-100"
+                      (click)="removeCapacityMember(member.userId)"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  }
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="8" class="px-4 py-6 text-center text-sm text-slate-500">No members yet — use Add member.</td>
+                <td colspan="8" class="px-4 py-6 text-center text-sm text-slate-500">
+                  @if (canManageCapacity()) { No members yet — use Add member. } @else { No members yet. }
+                </td>
               </tr>
             }
           </tbody>
@@ -319,7 +329,7 @@
     <section class="nx-card p-6">
       <div class="flex items-center justify-between gap-3">
         <h2 class="text-sm font-semibold text-slate-100">Days off</h2>
-        @if (!showDayOffForm()) {
+        @if (!showDayOffForm() && canManageCapacity()) {
           <button
             type="button"
             class="nx-btn nx-btn--sm"
@@ -468,16 +478,18 @@
                   <td class="py-2.5 pr-4 text-slate-100">{{ d.hours }}h</td>
                   <td class="py-2.5 pr-4 text-slate-400">{{ d.reason || '—' }}</td>
                   <td class="py-2.5">
-                    <button
-                      type="button"
-                      title="Remove day off"
-                      class="rounded-lg p-1 text-slate-600 transition hover:bg-slate-800 hover:text-rose-400"
-                      (click)="planning.removeDayOff(d.id)"
-                    >
-                      <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                      </svg>
-                    </button>
+                    @if (canManageCapacity()) {
+                      <button
+                        type="button"
+                        title="Remove day off"
+                        class="rounded-lg p-1 text-slate-600 transition hover:bg-slate-800 hover:text-rose-400"
+                        (click)="planning.removeDayOff(d.id)"
+                      >
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                      </button>
+                    }
                   </td>
                 </tr>
               }
@@ -642,15 +654,20 @@
                     step="0.5"
                     class="field-input !h-7 !text-xs w-24 [appearance:textfield]"
                     [ngModel]="task.remainingWork"
+                    [disabled]="!planning.canEditWorkItem()"
                     (change)="planning.updateRemainingWork(task.id, +$any($event.target).value)"
                   />
                 </td>
 
                 <!-- Compact reassign picker -->
                 <td class="py-3">
+                  <!-- Disabled rather than hidden without AssignWorkItem: who a task belongs to is
+                       worth seeing even when you cannot change it. -->
                   <button
                     type="button"
                     class="nx-btn nx-btn--sm flex items-center gap-1.5"
+                    [disabled]="!canAssignWorkItem()"
+                    [title]="canAssignWorkItem() ? 'Reassign task' : 'You do not have permission to assign tasks'"
                     (click)="openReassign(task.id, $any($event.currentTarget), $event)"
                   >
                     @if (members.getMember(task.assignedToId); as m) {
@@ -660,9 +677,11 @@
                     } @else {
                       <span class="text-slate-500">Unassigned</span>
                     }
-                    <svg class="h-3 w-3 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
+                    @if (canAssignWorkItem()) {
+                      <svg class="h-3 w-3 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                      </svg>
+                    }
                   </button>
 
                 </td>

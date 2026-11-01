@@ -4,6 +4,7 @@ import {
   Router,
   RouterStateSnapshot,
   UrlTree,
+  convertToParamMap,
   provideRouter,
 } from '@angular/router';
 import { signal } from '@angular/core';
@@ -35,12 +36,28 @@ describe('authGuard', () => {
     router = TestBed.inject(Router);
   }
 
-  /** Runs the guard for a URL the user was trying to reach. */
-  function activate(url: string): boolean | UrlTree {
+  /**
+   * Builds the route snapshot the guard actually reads: it walks `pathFromRoot` looking for the
+   * `orgAlias` parameter, which real routers put on the shell route rather than on the child the
+   * guard runs against. Modelling both segments keeps the stub honest about that shape.
+   * @param alias Tenant alias on the shell route, or null for a route outside any tenant.
+   */
+  function routeWithAlias(alias: string | null): ActivatedRouteSnapshot {
+    const shell = { paramMap: convertToParamMap(alias ? { orgAlias: alias } : {}) };
+    const child = { paramMap: convertToParamMap({}) };
+
+    return { ...child, pathFromRoot: [shell, child] } as unknown as ActivatedRouteSnapshot;
+  }
+
+  /**
+   * Runs the guard for a URL the user was trying to reach.
+   * @param url The attempted URL. @param alias Tenant alias carried by the route, if any.
+   */
+  function activate(url: string, alias: string | null = null): boolean | UrlTree {
     const state = { url } as RouterStateSnapshot;
 
     return TestBed.runInInjectionContext(
-      () => authGuard({} as ActivatedRouteSnapshot, state),
+      () => authGuard(routeWithAlias(alias), state),
     ) as boolean | UrlTree;
   }
 
@@ -80,6 +97,21 @@ describe('authGuard', () => {
       // Returning false cancels the navigation and leaves the router where it was, which on a cold
       // start is nowhere at all.
       expect(activate('/acme/DASH/boards')).not.toBeFalse();
+    });
+
+    it('sends a tenant URL to that tenant\'s sign-in page', () => {
+      // Resuming at /acme/login skips the "name your organization" step, which the user has
+      // already answered by being on a tenant URL in the first place.
+      const result = activate('/acme/DASH/boards', 'acme') as UrlTree;
+
+      expect(router.serializeUrl(result)).toContain('/acme/login');
+    });
+
+    it('falls back to the generic sign-in page outside any tenant', () => {
+      const result = activate('/settings', null) as UrlTree;
+
+      expect(router.serializeUrl(result)).toContain('/login');
+      expect(router.serializeUrl(result)).not.toContain('/acme');
     });
   });
 

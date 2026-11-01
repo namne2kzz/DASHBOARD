@@ -110,7 +110,9 @@ export class SettingsUsersPageComponent implements OnInit {
 
   /** Promotes or demotes the admin flag on a user. @param user Target user. */
   toggleAdmin(user: SystemUserDto): void {
-    if (!this.privilege.canManageMembers() || !this.canActOnUser(user)) return;
+    // isGlobalAdmin, not canManageMembers: this screen is org-wide, while ManageMembers is scoped
+    // to one repository — a repo lead holding it must not be able to promote org admins.
+    if (!this.privilege.isGlobalAdmin() || !this.canActOnUser(user)) return;
     if (user.isGlobalAdmin) {
       if (this.activeAdminCount() <= 1) {
         this.toast.warning('Cannot demote the last active global admin account.');
@@ -128,7 +130,7 @@ export class SettingsUsersPageComponent implements OnInit {
 
   /** Activates or deactivates a user account. @param user Target user. */
   toggleActive(user: SystemUserDto): void {
-    if (!this.privilege.canManageMembers() || !this.canActOnUser(user)) return;
+    if (!this.privilege.isGlobalAdmin() || !this.canActOnUser(user)) return;
     if (user.isActive && user.isGlobalAdmin && this.activeAdminCount() <= 1) {
       this.toast.warning('Cannot deactivate the last active global admin account.');
       return;

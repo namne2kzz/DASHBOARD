@@ -34,6 +34,8 @@ export class UserSelectComponent {
   readonly allowClear = input(true);
   /** Label for the clear option. */
   readonly clearLabel = input('— None —');
+  /** When true the picker shows the current selection but refuses to open. */
+  readonly disabled = input(false);
 
   /** Emits the newly-selected user id, or null when cleared. */
   readonly selected = output<string | null>();
@@ -60,6 +62,7 @@ export class UserSelectComponent {
 
   /** Toggles the dropdown open/closed, resetting the search on open. */
   toggle(): void {
+    if (this.disabled()) return;
     this.search.set('');
     this.open.update(v => !v);
   }

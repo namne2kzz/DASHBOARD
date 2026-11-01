@@ -111,17 +111,25 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   /** The shared refresh exchange, joined by every caller that needs one while it runs. */
   const refresh = (): Observable<unknown> => {
-    refreshInFlight ??= auth.refresh().pipe(
-      // Before shareReplay, so this runs once on the shared source rather than once per
-      // subscriber — a copy after shareReplay would let the first arrival null the slot while
-      // the others are still queueing behind it.
+    if (refreshInFlight) return refreshInFlight;
+
+    const shared = auth.refresh().pipe(
+      // Clearing the slot is deferred to a microtask rather than done the instant the exchange
+      // settles. The burst this exists to collapse is synchronous — eight panels' 401s all land
+      // in one task — so a slot cleared synchronously on completion is already empty when the
+      // second 401 of that same burst arrives, and each one starts its own refresh after all.
+      // Waiting a microtask keeps the slot occupied for the whole burst while still releasing it
+      // long before the next one. Placed before shareReplay so it runs once on the shared source
+      // rather than once per subscriber.
       tap({
-        complete: () => { refreshInFlight = null; },
-        error:    () => { refreshInFlight = null; },
+        complete: () => queueMicrotask(() => { refreshInFlight = null; }),
+        error:    () => queueMicrotask(() => { refreshInFlight = null; }),
       }),
       shareReplay({ bufferSize: 1, refCount: false }),
     );
-    return refreshInFlight;
+
+    refreshInFlight = shared;
+    return shared;
   };
 
   // Known-expired token: renew before sending rather than letting the request be rejected and

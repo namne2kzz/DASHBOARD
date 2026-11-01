@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { repoContextGuard, rootRedirectGuard } from './guards/repo-context.guard';
 import { orgContextGuard, orgHomeRedirectGuard } from './guards/org-context.guard';
-import { membersPrivilegeGuard, globalAdminGuard } from './guards/privilege.guard';
+import { membersPrivilegeGuard, metadataPrivilegeGuard, globalAdminGuard } from './guards/privilege.guard';
 
 export const routes: Routes = [
   {
@@ -68,7 +68,7 @@ export const routes: Routes = [
           },
           {
             path: 'metadata',
-            canActivate: [membersPrivilegeGuard],
+            canActivate: [metadataPrivilegeGuard],
             loadComponent: () =>
               import('./pages/settings-metadata-page/settings-metadata-page.component').then(m => m.SettingsMetadataPageComponent),
           },

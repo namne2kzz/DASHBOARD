@@ -19,6 +19,8 @@ export class KanbanColumnComponent {
   readonly wipExceeded    = input(false);
   readonly agingLimitDays = input<number>(0);
   readonly enterPredicate = input<(drag: CdkDrag, drop: CdkDropList) => boolean>(() => true);
+  /** When false the cards render normally but cannot be picked up. */
+  readonly canMove        = input(true);
   readonly dropped        = output<CdkDragDrop<BoardItem[]>>();
   readonly opened         = output<BoardItem>();
 

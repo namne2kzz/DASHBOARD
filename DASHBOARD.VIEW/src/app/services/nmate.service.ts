@@ -31,11 +31,11 @@ const ORG_LEVEL_SEGMENTS = new Set(['settings', 'my-work', 'profile']);
 
 /** Friendly text per error code returned by NMate or the DASHBOARD proxy. */
 const ERROR_TEXT: Record<string, string> = {
-  NMATE_QUOTA_EXCEEDED: 'NMate tạm hết lượt sử dụng, bạn thử lại sau ít phút nhé.',
-  NMATE_UNAVAILABLE: 'NMate đang bảo trì, bạn thử lại sau nhé.',
-  NMATE_STREAM_IN_PROGRESS: 'NMate đang trả lời câu trước của bạn.',
-  RATE_LIMITED: 'Bạn hỏi hơi nhanh — đợi khoảng một phút rồi hỏi tiếp nhé.',
-  INTERRUPTED: 'Đã dừng.',
+  NMATE_QUOTA_EXCEEDED: 'NMate has used up its quota for now. Please try again in a few minutes.',
+  NMATE_UNAVAILABLE: 'NMate is under maintenance. Please try again later.',
+  NMATE_STREAM_IN_PROGRESS: 'NMate is still answering your previous question.',
+  RATE_LIMITED: 'That was a little quick — wait about a minute before asking again.',
+  INTERRUPTED: 'Stopped.',
 };
 
 /**
@@ -274,10 +274,10 @@ export class NMateService {
   /**
    * Human-readable text for an error code.
    * @param code Error code.
-   * @returns Vietnamese message.
+   * @returns The message to show the user.
    */
   errorText(code: string | undefined): string {
-    return (code && ERROR_TEXT[code]) || 'NMate gặp sự cố, bạn thử lại sau nhé.';
+    return (code && ERROR_TEXT[code]) || 'NMate ran into a problem. Please try again later.';
   }
 
   private apply(answerId: string, raw: SseMessage[]): void {

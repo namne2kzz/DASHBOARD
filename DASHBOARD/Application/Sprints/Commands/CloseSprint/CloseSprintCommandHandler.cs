@@ -29,8 +29,10 @@ public sealed class CloseSprintCommandHandler(
     /// <returns>A <see cref="CloseSprintResult"/> indicating outcome and incomplete-item count.</returns>
     public async Task<Result<CloseSprintResult>> Handle(CloseSprintCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSprint, ct))
-            throw new ForbiddenException("You do not have permission to manage sprints in this repository.");
+        // Closing ends the sprint for everyone working in it, so it is gated by ActivateSprint —
+        // the same function that guards starting one — not by the broader ManageSprint.
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ActivateSprint, ct))
+            throw new ForbiddenException("You do not have permission to close sprints in this repository.");
 
         var sprint = await db.Set<Sprint>()
             .AsTracking()

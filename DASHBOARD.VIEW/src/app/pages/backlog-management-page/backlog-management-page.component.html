@@ -8,14 +8,16 @@
       </div>
 
       <div class="flex flex-wrap gap-2">
-        <button
-          type="button"
-          class="nx-btn nx-btn--primary"
-          [disabled]="backlog.loading()"
-          (click)="openAddDialog()"
-        >
-          Add item
-        </button>
+        @if (backlog.canManageBacklog()) {
+          <button
+            type="button"
+            class="nx-btn nx-btn--primary"
+            [disabled]="backlog.loading()"
+            (click)="openAddDialog()"
+          >
+            Add item
+          </button>
+        }
       </div>
     </header>
 
@@ -315,7 +317,7 @@
               @for (item of backlog.pagedItems(); track item.id; let idx = $index) {
                 <article
                   cdkDrag
-                  [cdkDragDisabled]="selectionMode()"
+                  [cdkDragDisabled]="selectionMode() || !backlog.canManageBacklog()"
                   class="nx-card nx-card--hover p-4"
                   [class.relative]="selectionMode()"
                   [class.pl-9]="selectionMode()"
@@ -344,19 +346,23 @@
                       (click)="openDetail(item)"
                     >
                       <div class="flex flex-wrap items-center gap-2">
-                        <div
-                          cdkDragHandle
-                          class="flex w-5 shrink-0 cursor-grab flex-col items-center justify-center gap-0.5 rounded-md bg-slate-800/40 py-2 text-slate-500 hover:bg-slate-800 hover:text-slate-300 active:cursor-grabbing"
-                          title="Drag to reorder"
-                          (click)="$event.stopPropagation()"
-                        >
-                          <span class="h-1 w-1 rounded-full bg-current"></span>
-                          <span class="h-1 w-1 rounded-full bg-current"></span>
-                          <span class="h-1 w-1 rounded-full bg-current"></span>
-                          <span class="h-1 w-1 rounded-full bg-current"></span>
-                          <span class="h-1 w-1 rounded-full bg-current"></span>
-                          <span class="h-1 w-1 rounded-full bg-current"></span>
-                        </div>
+                        <!-- Hidden without ManageBacklog: a grab cursor on a card that cannot be
+                             dragged is worse than no handle at all. -->
+                        @if (backlog.canManageBacklog()) {
+                          <div
+                            cdkDragHandle
+                            class="flex w-5 shrink-0 cursor-grab flex-col items-center justify-center gap-0.5 rounded-md bg-slate-800/40 py-2 text-slate-500 hover:bg-slate-800 hover:text-slate-300 active:cursor-grabbing"
+                            title="Drag to reorder"
+                            (click)="$event.stopPropagation()"
+                          >
+                            <span class="h-1 w-1 rounded-full bg-current"></span>
+                            <span class="h-1 w-1 rounded-full bg-current"></span>
+                            <span class="h-1 w-1 rounded-full bg-current"></span>
+                            <span class="h-1 w-1 rounded-full bg-current"></span>
+                            <span class="h-1 w-1 rounded-full bg-current"></span>
+                            <span class="h-1 w-1 rounded-full bg-current"></span>
+                          </div>
+                        }
                         <span class="rounded bg-slate-800 px-2 py-1 text-xs font-mono text-sky-300">
                           {{ item.rank | number: '1.0-4' }}
                         </span>

@@ -62,7 +62,8 @@ export class LoginPageComponent implements AfterViewInit {
     // Already signed in: honour an external returnUrl (SSO pass-through to an add-on app)
     // instead of bouncing to the dashboard home — otherwise HUB can never get its tokens.
     if (this.auth.isAuthenticated()) {
-      if (this.tryExternalReturn()) return;
+      const external = this.externalReturnUrl();
+      if (external) { this.redirectExternally(external); return; }
       void this.router.navigate(['/']);
     }
   }
@@ -235,19 +236,69 @@ export class LoginPageComponent implements AfterViewInit {
    * If the query has an external (http/https) returnUrl — an add-on app like Nexus HUB —
    * redirects there with the current tokens appended so it can bootstrap its own session.
    * HUB's AppComponent stores the tokens and strips them from the URL immediately.
+   *
+   * The add-on lives on its own origin, so this handoff cannot ride on the cookie: that is what
+   * the tokens in the URL are for. They are only in memory for the page-load that signed in, so
+   * an already-signed-in visitor arriving here after a reload has none — see
+   * {@link redirectExternally}, which mints a fresh pair first.
+   *
    * @returns true if a redirect was issued (caller should stop), false otherwise.
    */
   private tryExternalReturn(): boolean {
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    if (!returnUrl || !/^https?:\/\//.test(returnUrl)) return false;
+    const returnUrl = this.externalReturnUrl();
+    if (!returnUrl) return false;
 
-    const accessToken  = this.auth.getToken() ?? '';
-    const refreshToken = this.auth.getRefreshToken() ?? '';
+    const accessToken = this.auth.getToken();
     if (!accessToken) return false;
 
+    this.redirectTo(returnUrl, accessToken, this.auth.getRefreshToken() ?? '');
+    return true;
+  }
+
+  /**
+   * The external returnUrl from the query string, if there is one.
+   * @returns The http/https URL to hand off to, or null.
+   */
+  private externalReturnUrl(): string | null {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    return returnUrl && /^https?:\/\//.test(returnUrl) ? returnUrl : null;
+  }
+
+  /**
+   * Hands an already-signed-in visitor off to an add-on app, minting tokens if needed.
+   *
+   * The common case is someone using NFlow who clicks through to NHub: they have a valid session
+   * cookie but no token in memory, because this page was loaded fresh rather than reached by
+   * signing in. Exchanging the refresh cookie for a new pair is what makes the handoff possible
+   * at all — without it the SSO attempt silently gave up and bounced them to the dashboard home,
+   * so the add-on could never start a session.
+   *
+   * @param returnUrl The add-on URL to return to.
+   */
+  private redirectExternally(returnUrl: string): void {
+    const token = this.auth.getToken();
+    if (token) {
+      this.redirectTo(returnUrl, token, this.auth.getRefreshToken() ?? '');
+      return;
+    }
+
+    this.loading.set(true);
+    this.auth.refresh().subscribe({
+      next: session => this.redirectTo(returnUrl, session.accessToken, session.refreshToken),
+      // The cookie is gone or rejected, so there is no session to pass on. Falling through to the
+      // sign-in form lets them create one; the returnUrl survives in the query string, so the
+      // handoff happens on the far side of that.
+      error: () => this.loading.set(false),
+    });
+  }
+
+  /**
+   * Sends the browser to the add-on with the tokens appended.
+   * @param returnUrl The add-on URL. @param accessToken Access token. @param refreshToken Refresh token.
+   */
+  private redirectTo(returnUrl: string, accessToken: string, refreshToken: string): void {
     const sep = returnUrl.includes('?') ? '&' : '?';
     window.location.href =
       `${returnUrl}${sep}t=${encodeURIComponent(accessToken)}&r=${encodeURIComponent(refreshToken)}`;
-    return true;
   }
 }

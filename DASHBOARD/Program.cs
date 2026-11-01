@@ -243,13 +243,33 @@ try
         // instead of hammering a limited endpoint; without it a rejected caller only sees a bare 429.
         opt.OnRejected = (context, cancellationToken) =>
         {
-            if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-                context.HttpContext.Response.Headers.RetryAfter =
-                    ((int)retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // The sliding-window limiter does not publish MetadataName.RetryAfter (only the
+            // fixed-window and token-bucket limiters do), and every limiter here is a sliding
+            // window — so without a fallback the header was never written. One segment is the
+            // right wait: that is when the oldest bucket expires and frees its permits.
+            var seconds = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter)
+                ? (int)Math.Ceiling(retryAfter.TotalSeconds)
+                : RetryAfterSecondsFor(context.HttpContext);
+
+            context.HttpContext.Response.Headers.RetryAfter =
+                Math.Max(1, seconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
             context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             return ValueTask.CompletedTask;
         };
+
+        // Mirrors the global limiter's own user-vs-IP partitioning so the advertised wait matches
+        // the budget that actually rejected the caller.
+        int RetryAfterSecondsFor(HttpContext http)
+        {
+            var authenticated = !string.IsNullOrEmpty(http.User.FindFirst("sub")?.Value);
+
+            var (window, segments) = authenticated
+                ? (rl.GlobalRateLimitUserWindow, rl.GlobalRateLimitUserSegments)
+                : (rl.GlobalRateLimitIpWindow,   rl.GlobalRateLimitIpSegments);
+
+            return (int)Math.Ceiling(window.TotalSeconds / Math.Max(1, segments));
+        }
     });
 
     // ── Forwarded headers ──────────────────────────────────────────────────────

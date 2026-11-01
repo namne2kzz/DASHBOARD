@@ -235,17 +235,33 @@ public sealed class MinioStorageService : IStorageService, IAsyncDisposable
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Replaces the internal MinIO endpoint host in a presigned URL with the public base URL.
+    /// Rewrites the origin of a presigned URL to the public base URL.
     /// Needed in Docker: the SDK signs using <c>MinioEndpoint</c> (e.g. http://minio:9000) but the
     /// browser must reach <c>MinioPublicBaseUrl</c> (e.g. http://localhost:9100).
     /// </summary>
+    /// <remarks>
+    /// The origin is rebuilt from the parsed URL rather than string-replaced: the SDK does not
+    /// always sign with the scheme configured on <c>MinioEndpoint</c> (it emitted
+    /// <c>https://minio:9000/…</c> for an <c>http://</c> endpoint), so searching for the configured
+    /// prefix found nothing and the browser was handed the unreachable internal host. Only the
+    /// scheme/host/port change — path and query carry the signature and must be left untouched.
+    /// </remarks>
     private string ReplaceEndpoint(string presignedUrl)
     {
-        var internalBase = _settings.MinioEndpoint.TrimEnd('/');
-        var publicBase   = _settings.MinioPublicBaseUrl.TrimEnd('/');
+        var publicBase = _settings.MinioPublicBaseUrl.TrimEnd('/');
 
-        return internalBase == publicBase
-            ? presignedUrl
-            : presignedUrl.Replace(internalBase, publicBase, StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(publicBase)
+            || !Uri.TryCreate(presignedUrl, UriKind.Absolute, out var signed)
+            || !Uri.TryCreate(publicBase, UriKind.Absolute, out var target))
+            return presignedUrl;
+
+        var rewritten = new UriBuilder(signed)
+        {
+            Scheme = target.Scheme,
+            Host   = target.Host,
+            Port   = target.IsDefaultPort ? -1 : target.Port,
+        };
+
+        return rewritten.Uri.AbsoluteUri;
     }
 }

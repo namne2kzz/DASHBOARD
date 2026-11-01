@@ -23,8 +23,10 @@ public sealed class ActivateSprintCommandHandler(
     /// <returns><see cref="Result.Ok"/> on success; failure if another sprint is already active.</returns>
     public async Task<Result> Handle(ActivateSprintCommand command, CancellationToken ct)
     {
-        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ManageSprint, ct))
-            throw new ForbiddenException("You do not have permission to manage sprints in this repository.");
+        // ActivateSprint, not ManageSprint: the two are separate functions precisely so a role can
+        // be allowed to plan and edit sprints without being allowed to start or end one.
+        if (!await user.CanAsync(command.RepositoryId, SystemFunction.ActivateSprint, ct))
+            throw new ForbiddenException("You do not have permission to activate sprints in this repository.");
 
         var sprint = await db.Set<Sprint>()
             .AsTracking()

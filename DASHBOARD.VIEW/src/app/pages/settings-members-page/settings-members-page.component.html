@@ -23,16 +23,22 @@
           <h2 class="text-xs font-medium text-slate-400">
             Members ({{ filteredMembers().length }})
           </h2>
-          @if (privilege.canManageMembers()) {
+          <!-- Invite and Add are separate permissions on the server, so they are gated
+               separately here: a role may hold InviteMembers without ManageMembers. -->
+          @if (privilege.canInviteMembers() || privilege.canManageMembers()) {
             <div class="flex items-center gap-2">
-              <button type="button" (click)="openPanel('invite-email')"
-                class="nx-btn nx-btn--sm">
-                Invite by email
-              </button>
-              <button type="button" (click)="openPanel('add-member')"
-                class="nx-btn nx-btn--primary nx-btn--sm">
-                + Add member
-              </button>
+              @if (privilege.canInviteMembers()) {
+                <button type="button" (click)="openPanel('invite-email')"
+                  class="nx-btn nx-btn--sm">
+                  Invite by email
+                </button>
+              }
+              @if (privilege.canManageMembers()) {
+                <button type="button" (click)="openPanel('add-member')"
+                  class="nx-btn nx-btn--primary nx-btn--sm">
+                  + Add member
+                </button>
+              }
             </div>
           }
         </div>

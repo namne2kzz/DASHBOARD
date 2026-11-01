@@ -28,11 +28,21 @@ describe('MyWorkPageComponent', () => {
   });
 
   describe('greeting', () => {
+    /**
+     * Reads the greeting as it would be computed at the given hour.
+     *
+     * A fresh component each time, because `greeting` is a `computed` whose clock reading is not
+     * a signal: once the fixture built in the outer `beforeEach` has evaluated it at the real
+     * wall-clock hour, the memoised value is what every later read returns no matter what the
+     * mocked clock says — so the suite passed or failed on the time of day it happened to run.
+     * @param hour Hour of day to evaluate the greeting at.
+     */
     function at(hour: number): string {
       const clock = new Date();
       clock.setHours(hour, 0, 0, 0);
       jasmine.clock().mockDate(clock);
-      return component.greeting();
+
+      return TestBed.createComponent(MyWorkPageComponent).componentInstance.greeting();
     }
 
     beforeEach(() => jasmine.clock().install());

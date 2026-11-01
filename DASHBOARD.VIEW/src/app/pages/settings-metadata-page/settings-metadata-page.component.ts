@@ -54,12 +54,15 @@ export class SettingsMetadataPageComponent {
   readonly formIsGlobal = signal(false);
 
   /** True when the current user may create/edit/delete the given entry. @param entry Target entry. @returns Whether the action is allowed. */
+  // ManageMetadata, not ManageMembers: the API's metadata commands check ManageMetadata, so
+  // gating on member management both hid the page's actions from roles the server allows and
+  // offered them to roles it refuses. A global entry still needs a global admin.
   canManage(entry: MetadataDto): boolean {
-    return entry.isGlobal ? this.privilege.isGlobalAdmin() : this.privilege.canManageMembers();
+    return entry.isGlobal ? this.privilege.isGlobalAdmin() : this.privilege.canManageMetadata();
   }
 
   /** True when the user can create any metadata (repo-level at minimum). */
-  readonly canCreate = computed(() => this.privilege.canManageMembers() || this.privilege.isGlobalAdmin());
+  readonly canCreate = computed(() => this.privilege.canManageMetadata() || this.privilege.isGlobalAdmin());
 
   /** Opens the create panel with defaults. */
   openCreate(): void {
@@ -91,6 +94,7 @@ export class SettingsMetadataPageComponent {
     if (!repoId || !value) return;
 
     const editing = this.editing();
+    if (editing ? !this.canManage(editing) : !this.canCreate()) return;
     let obs$: Observable<unknown>;
     if (editing) {
       const payload: UpdateMetadataPayload = { value };

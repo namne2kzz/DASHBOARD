@@ -189,9 +189,19 @@ describe('HorizontalPagerDirective', () => {
       // would burn frames for the rest of the drag.
       geometry(900);
       const cancel = spyOn(window, 'cancelAnimationFrame');
-      spyOn(window, 'requestAnimationFrame').and.callFake((cb: FrameRequestCallback) => { cb(0); return 1; });
+
+      // The callback is queued, not run inline. A real rAF returns its handle before the frame
+      // fires, which is what lets the directive record the handle it later cancels; running the
+      // callback inside the call instead means the cancel happens while the handle is still
+      // unassigned, and the directive's "nothing to cancel" guard skips it.
+      let frame: FrameRequestCallback | null = null;
+      spyOn(window, 'requestAnimationFrame').and.callFake((cb: FrameRequestCallback) => {
+        frame = cb;
+        return 1;
+      });
 
       host.pager().trackPointer(295);
+      frame!(0);
 
       expect(cancel).toHaveBeenCalled();
     });

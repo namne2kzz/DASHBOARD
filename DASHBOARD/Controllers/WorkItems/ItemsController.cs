@@ -11,6 +11,7 @@ using DASHBOARD.Core.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Asp.Versioning;
 
 namespace DASHBOARD.Controllers.WorkItems;
@@ -102,15 +103,16 @@ public sealed class ItemsController(ISender mediator) : ControllerBase
     /// <summary>Transitions a work item to a new state.</summary>
     /// <param name="repoId">The repository ID.</param>
     /// <param name="taskId">The work item to transition.</param>
-    /// <param name="newState">The target state.</param>
+    /// <param name="newState">The target state. Required: omitting it is rejected rather than
+    /// treated as the enum's default, which silently moved the item to Open.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>204 on success.</returns>
+    /// <returns>204 on success; 400 when <paramref name="newState"/> is missing or not a state.</returns>
     [HttpPatch("{taskId:guid}/state")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ChangeState(Guid repoId, Guid taskId, [FromQuery] WorkItemState newState, CancellationToken ct)
+    public async Task<IActionResult> ChangeState(Guid repoId, Guid taskId, [FromQuery][BindRequired] WorkItemState newState, CancellationToken ct)
     {
         var result = await mediator.Send(new ChangeSprintTaskStateCommand(repoId, taskId, newState), ct);
         if (result.IsFailure) return BadRequest(new { error = result.Error });
