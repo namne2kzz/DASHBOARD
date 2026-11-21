@@ -4,7 +4,7 @@
 
   <!-- Palette -->
   <div class="fixed inset-x-0 top-[12vh] z-[9996] mx-auto w-[92vw] max-w-2xl px-2">
-    <div class="overflow-hidden rounded-2xl bg-nx-surface shadow-[0_24px_64px_rgba(13,17,23,0.32)]"
+    <div class="overflow-hidden rounded-2xl bg-nx-surface shadow-lg"
          (click)="$event.stopPropagation()">
 
       <!-- Input row -->
@@ -27,7 +27,7 @@
             <path stroke-linecap="round" d="M12 3a9 9 0 1 0 9 9"/>
           </svg>
         } @else {
-          <kbd class="hidden shrink-0 rounded-md border border-nx-border-strong px-2 py-0.5 font-mono text-[11px] text-nx-text-2 sm:block">Esc</kbd>
+          <kbd class="hidden shrink-0 rounded-md border border-nx-border-strong px-2 py-0.5 font-mono text-xs text-nx-text-2 sm:block">Esc</kbd>
         }
       </div>
 
@@ -36,7 +36,7 @@
 
         @if (search.term().trim().length >= 2) {
           @for (group of search.groups(); track group.kind) {
-            <p class="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[.08em] text-nx-text-2">{{ group.label }}</p>
+            <p class="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-[.08em] text-nx-text-2">{{ group.label }}</p>
             @for (item of group.items; track item.id) {
               <button type="button" class="palette-row" (click)="goTo(item)">
                 <span class="nx-type shrink-0" [ngClass]="kindAccent(item.kind)"></span>
@@ -56,7 +56,7 @@
         }
 
         @if (commands().length > 0) {
-          <p class="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[.08em] text-nx-text-2">Commands</p>
+          <p class="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-[.08em] text-nx-text-2">Commands</p>
           @for (command of commands(); track command.id) {
             <button type="button" class="palette-row" (click)="runCommand(command)">
               <svg class="h-[18px] w-[18px] shrink-0 text-nx-text-2" viewBox="0 0 24 24" fill="none"
@@ -66,7 +66,7 @@
               </svg>
               <span class="flex-1 text-sm text-nx-text">{{ command.label }}</span>
               @if (command.hint) {
-                <kbd class="font-mono text-[11px] text-nx-text-3">{{ command.hint }}</kbd>
+                <kbd class="font-mono text-xs text-nx-text-3">{{ command.hint }}</kbd>
               }
             </button>
           }
@@ -79,7 +79,7 @@
             <span class="flex h-[18px] w-[18px] shrink-0 items-center justify-center" aria-hidden="true">
               <span class="h-2 w-2 rounded-full bg-nx-ai"></span>
             </span>
-            <span class="flex-1 truncate text-sm text-nx-text">Ask NMate: “{{ search.term().trim() }}”</span>
+            <span class="min-w-0 flex-1 truncate text-sm text-nx-text">Ask NMate: “{{ search.term().trim() }}”</span>
           </button>
         }
 

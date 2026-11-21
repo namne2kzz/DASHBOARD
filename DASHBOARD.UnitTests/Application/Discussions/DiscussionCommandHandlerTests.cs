@@ -7,6 +7,7 @@ using DASHBOARD.Domain.Entities;
 using DASHBOARD.Domain.Enums;
 using DASHBOARD.UnitTests.Common;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace DASHBOARD.UnitTests.Application.Discussions;
@@ -27,6 +28,8 @@ public sealed class DiscussionCommandHandlerTests : IDisposable
     private readonly Guid                     _authorId     = Guid.NewGuid();
     private readonly Guid                     _taskId       = Guid.NewGuid();
     private readonly Mock<INotificationService> _notifications = new();
+    private readonly Mock<IStorageService>      _storage       = new();
+    private readonly Mock<IAppSettings>         _settings      = new();
 
     /// <summary>Sets up an isolated database with one sprint task and the comment author.</summary>
     public DiscussionCommandHandlerTests()
@@ -49,6 +52,9 @@ public sealed class DiscussionCommandHandlerTests : IDisposable
             AvatarClass  = "bg-sky-600",
         }.WithId(_authorId));
         _db.SaveChanges();
+
+        _settings.SetupGet(x => x.MinioPublicBaseUrl).Returns("http://localhost:9100");
+        _settings.SetupGet(x => x.MinioAttachmentBucket).Returns("dashboard-attachments");
     }
 
     /// <summary>Disposes the in-memory database.</summary>
@@ -58,23 +64,25 @@ public sealed class DiscussionCommandHandlerTests : IDisposable
         new(_db, user, _database.Uow, _notifications.Object);
 
     private UpdateDiscussionCommandHandler UpdateHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow);
+        new(_db, user, _database.Uow, _storage.Object, _settings.Object,
+            NullLogger<UpdateDiscussionCommandHandler>.Instance);
 
     private DeleteDiscussionCommandHandler DeleteHandler(IRequestUserContext user) =>
-        new(_db, user, _database.Uow);
+        new(_db, user, _database.Uow, _storage.Object, _settings.Object,
+            NullLogger<DeleteDiscussionCommandHandler>.Instance);
 
     private IRequestUserContext AuthorUser() =>
         RequestUserContextMock.ForUser(_authorId).AsMember(_repositoryId).Object;
 
     private async Task<DiscussionEntry> AddEntryAsync(
-        Guid? authorId = null, Guid? taskId = null, Guid? repositoryId = null)
+        Guid? authorId = null, Guid? taskId = null, Guid? repositoryId = null, string body = "Original comment")
     {
         var entry = new DiscussionEntry
         {
             SprintTaskId = taskId ?? _taskId,
             RepositoryId = repositoryId ?? _repositoryId,
             AuthorId     = authorId ?? _authorId,
-            Body         = "Original comment",
+            Body         = body,
         };
         _db.Set<DiscussionEntry>().Add(entry);
         await _db.SaveChangesAsync();
@@ -286,5 +294,153 @@ public sealed class DiscussionCommandHandlerTests : IDisposable
             new DeleteDiscussionCommand(_repositoryId, _taskId, target.Id), CancellationToken.None);
 
         (await _db.Set<DiscussionEntry>().AnyAsync(d => d.Id == bystander.Id)).Should().BeTrue();
+    }
+
+    // ── Threading: the tree is deliberately capped at two levels ─────────────────
+
+    [Fact]
+    public async Task Add_WhenReplyingToARootComment_ParentsTheReplyToIt()
+    {
+        var root    = await AddEntryAsync();
+        var handler = AddHandler(AuthorUser());
+
+        var reply = await handler.Handle(
+            new AddDiscussionCommand(_repositoryId, _taskId, "A reply", root.Id), CancellationToken.None);
+
+        reply.ParentId.Should().Be(root.Id);
+    }
+
+    [Fact]
+    public async Task Add_WhenReplyingToAReply_ReparentsToTheSameRoot()
+    {
+        var root    = await AddEntryAsync();
+        var handler = AddHandler(AuthorUser());
+
+        var first  = await handler.Handle(
+            new AddDiscussionCommand(_repositoryId, _taskId, "First", root.Id), CancellationToken.None);
+        var second = await handler.Handle(
+            new AddDiscussionCommand(_repositoryId, _taskId, "Answer to first", first.Id), CancellationToken.None);
+
+        // Not first.Id: nesting a reply under a reply would make the stored thread deeper than the
+        // one indent level the UI draws.
+        second.ParentId.Should().Be(root.Id);
+    }
+
+    [Fact]
+    public async Task Add_WhenTheParentBelongsToAnotherTask_ThrowsNotFound()
+    {
+        var foreign = await AddEntryAsync(taskId: Guid.NewGuid());
+        var handler = AddHandler(AuthorUser());
+
+        var act = () => handler.Handle(
+            new AddDiscussionCommand(_repositoryId, _taskId, "Reply", foreign.Id), CancellationToken.None);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task Delete_WhenTheCommentHasReplies_RemovesThemToo()
+    {
+        var root    = await AddEntryAsync();
+        var reply   = await AddReplyAsync(root.Id);
+        var handler = DeleteHandler(AuthorUser());
+
+        await handler.Handle(
+            new DeleteDiscussionCommand(_repositoryId, _taskId, root.Id), CancellationToken.None);
+
+        (await _db.Set<DiscussionEntry>().AnyAsync(d => d.Id == reply.Id)).Should().BeFalse();
+    }
+
+    // ── Images: a comment body is the only record that a pasted image is in use ──
+
+    [Fact]
+    public async Task Update_WhenAnImageIsRemoved_DeletesItFromStorage()
+    {
+        var entry = await AddEntryAsync(
+            body: "before ![image](http://localhost:9100/dashboard-attachments/inline/pic.png) after");
+        var handler = UpdateHandler(AuthorUser());
+
+        await handler.Handle(
+            new UpdateDiscussionCommand(_repositoryId, _taskId, entry.Id, "no image any more"),
+            CancellationToken.None);
+
+        _storage.Verify(x => x.DeleteAsync("dashboard-attachments", "inline/pic.png", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Update_WhenTheImageIsKept_LeavesStorageAlone()
+    {
+        const string body = "text ![image](http://localhost:9100/dashboard-attachments/inline/pic.png)";
+        var entry   = await AddEntryAsync(body: body);
+        var handler = UpdateHandler(AuthorUser());
+
+        await handler.Handle(
+            new UpdateDiscussionCommand(_repositoryId, _taskId, entry.Id, body + " plus a new sentence"),
+            CancellationToken.None);
+
+        _storage.Verify(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_WhenTheImageIsHostedElsewhere_LeavesItAlone()
+    {
+        var entry = await AddEntryAsync(body: "![image](https://example.com/not-ours.png)");
+        var handler = UpdateHandler(AuthorUser());
+
+        await handler.Handle(
+            new UpdateDiscussionCommand(_repositoryId, _taskId, entry.Id, "removed"), CancellationToken.None);
+
+        // Deleting someone else's URL is both wrong and impossible — it must not even be attempted.
+        _storage.Verify(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Update_WhenStorageFails_StillSavesTheEdit()
+    {
+        var entry = await AddEntryAsync(
+            body: "![image](http://localhost:9100/dashboard-attachments/inline/pic.png)");
+        _storage
+            .Setup(x => x.DeleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("object store down"));
+        var handler = UpdateHandler(AuthorUser());
+
+        await handler.Handle(
+            new UpdateDiscussionCommand(_repositoryId, _taskId, entry.Id, "edited"), CancellationToken.None);
+
+        // Losing the object store costs disk space; failing the edit costs the user their work.
+        var saved = await _db.Set<DiscussionEntry>().AsNoTracking().FirstAsync(d => d.Id == entry.Id);
+        saved.Body.Should().Be("edited");
+    }
+
+    [Fact]
+    public async Task Delete_RemovesTheImagesOfTheCommentAndItsReplies()
+    {
+        var root = await AddEntryAsync(
+            body: "![image](http://localhost:9100/dashboard-attachments/inline/root.png)");
+        await AddReplyAsync(root.Id,
+            body: "![image](http://localhost:9100/dashboard-attachments/inline/reply.png)");
+        var handler = DeleteHandler(AuthorUser());
+
+        await handler.Handle(
+            new DeleteDiscussionCommand(_repositoryId, _taskId, root.Id), CancellationToken.None);
+
+        _storage.Verify(x => x.DeleteAsync("dashboard-attachments", "inline/root.png", It.IsAny<CancellationToken>()), Times.Once);
+        _storage.Verify(x => x.DeleteAsync("dashboard-attachments", "inline/reply.png", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>Adds a reply under an existing root comment.</summary>
+    private async Task<DiscussionEntry> AddReplyAsync(Guid parentId, string body = "A reply")
+    {
+        var entry = new DiscussionEntry
+        {
+            SprintTaskId = _taskId,
+            RepositoryId = _repositoryId,
+            AuthorId     = _authorId,
+            Body         = body,
+            ParentId     = parentId,
+        };
+        _db.Set<DiscussionEntry>().Add(entry);
+        await _db.SaveChangesAsync();
+        return entry;
     }
 }

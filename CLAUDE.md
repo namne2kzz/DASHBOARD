@@ -186,6 +186,7 @@ Detailed patterns and code templates in `C:\DEV\DASHBOARD\.claude\skills\`:
 | Backend | `generate-dotnet` · `clean-architecture` · `ddd-cqrs` · `unit-testing` · `testcontainers` · `aspire-orchestration` · `opentelemetry` · `resilience-patterns` · `snapshot-testing` · `api-versioning` |
 | Frontend | `generate-angular` · `angular-signals` · `angular-rxjs` · `unit-testing-angular` |
 | Database | `efcore-sqlserver` · `efcore-postgresql` · `redis-cache` · `migrations` · `query-optimization` |
+| Process | `brainstorming` (làm rõ yêu cầu trước khi code) · `systematic-debugging` (4 phase tìm root cause trước khi fix) · `c4-architecture` (sinh doc kiến trúc C4 từ code) · `business-doc` (scan code → viết/audit `.dod.md`) |
 
 Agents: `auto` · `dotnet-coder` · `angular-coder` · `reviewer` · `architect` · `db-optimizer` · `security-auditor` · `build-error-resolver` · `ui-tester`
 

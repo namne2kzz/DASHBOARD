@@ -1,8 +1,8 @@
 <div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
   <div class="space-y-6">
-    <header class="sticky top-0 z-20 -mx-5 flex min-h-[72px] flex-wrap items-center justify-between gap-3 border-b border-nx-border bg-nx-surface px-8 py-3">
+    <header class="sticky top-0 z-20 -mx-5 flex h-[60px] flex-wrap items-center justify-between gap-3 border-b border-nx-border nx-page-header px-11 py-3">
       <div>
-        <h1 class="text-3xl font-bold text-nx-text">Workflow</h1>
+        <h1 class="text-lg font-semibold text-nx-text">Workflow</h1>
       </div>
     </header>
 
@@ -12,9 +12,9 @@
 
     <!-- Summary line (Nexus UI: no KPI tiles) -->
     <div class="flex flex-wrap items-center gap-x-8 gap-y-2 text-sm text-slate-400">
-      <span><b class="font-mono font-medium text-slate-100">{{ board.columns().length }}</b> columns</span>
-      <span><b class="font-mono font-medium text-slate-100">{{ board.wipColumns().length }}</b> with WIP limit</span>
-      <span><b class="font-mono font-medium text-slate-100">{{ board.columns().length }} / 6</b> states mapped</span>
+      <span><b class="font-medium text-nx-text">{{ board.columns().length }}</b> columns</span>
+      <span><b class="font-medium text-nx-text">{{ board.wipColumns().length }}</b> with WIP limit</span>
+      <span><b class="font-medium text-nx-text">{{ board.columns().length }} / 6</b> states mapped</span>
     </div>
 
     <section class="nx-card p-6">
@@ -45,9 +45,6 @@
                   class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-slate-800"
                   (click)="startAddColumn()"
                 >
-                  <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                  </svg>
                   Add column
                 </button>
               </div>

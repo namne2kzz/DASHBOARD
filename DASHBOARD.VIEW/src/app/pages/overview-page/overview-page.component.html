@@ -1,10 +1,16 @@
-<div class="min-h-0 flex-1 overflow-auto bg-slate-950 px-5 pb-5">
-  <div class="space-y-6">
-    <header class="sticky top-0 z-20 -mx-5 flex min-h-[72px] flex-wrap items-center gap-3 border-b border-nx-border bg-nx-surface px-8 py-3">
-      <h1 class="text-3xl font-bold text-nx-text">Overview</h1>
+<!-- The spacing lives on the scroller itself, with no wrapper between it and the sticky
+     header: position:sticky only sticks within its own parent, so a wrapper here let the
+     header scroll away with it while every other page kept theirs pinned. -->
+<div class="custom-scroll min-h-0 flex-1 space-y-3 overflow-auto bg-slate-950 px-5 pb-5">
+    <!-- No surface or border behind the title: the page already has one background and the
+         cards below carry the only borders, so a band here was a frame around nothing. -->
+    <header class="sticky top-0 z-20 -mx-5 flex h-[60px] items-center gap-3 border-b border-nx-border nx-page-header px-5">
+      <h1 class="text-lg font-semibold text-nx-text">Overview</h1>
       @if (availableSprints().length > 0) {
+        <!-- ml-auto: the sprint picker is a control, not part of the title, so it sits at
+             the far edge where the page's other actions are. -->
         <select
-          class="field-select !h-7 !text-xs w-auto"
+          class="field-select ml-auto w-auto !text-sm"
           [ngModel]="selectedSprintId()"
           (ngModelChange)="selectSprint($event)"
         >
@@ -29,54 +35,66 @@
     <!-- Needs attention — the problems on the board, each linking to where it is fixed.
          Absent entirely when the sprint is healthy, so its presence is itself the signal. -->
     @if (attention().length > 0) {
+      <!-- A list with weight, not a banner. The earlier tinted fill + warning triangle + count
+           badge + per-row arrow were four ways of saying "look here" around one short sentence;
+           stripping all four left a list so quiet it read as ordinary content. What carries it
+           now: a heading that names the block, a left edge in the worst severity present, and
+           the problem text at full strength. The colour sits on the edge and the dot, never
+           behind the text, so the rows stay readable. -->
       <section
-        class="attention-strip"
-        [class.attention-strip--critical]="attentionLevel() === 'critical'"
+        class="nx-card overflow-hidden border-l-[3px]"
+        [style.border-left-color]="attentionLevel() === 'critical' ? 'var(--danger)' : 'var(--warning)'"
         role="status"
         aria-label="Needs attention"
       >
-        <div class="attention-strip__head">
-          <svg class="attention-strip__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
-            <path d="M12 9v4M12 17h.01"/>
-          </svg>
+        <h2 class="border-b border-nx-border px-4 py-2.5 text-sm font-semibold text-nx-text">
           {{ attentionLevel() === 'critical' ? 'Needs attention' : 'Worth a look' }}
-          <span class="attention-strip__count">{{ attention().length }}</span>
-        </div>
-        @for (item of attention(); track item.message) {
-          <a
-            class="attention-chip"
-            [class.attention-chip--critical]="item.severity === 'Critical'"
-            [routerLink]="repoLink(item.route)"
-          >
-            {{ item.message }}
-            <span aria-hidden="true">→</span>
-          </a>
-        }
+        </h2>
+        <ul class="divide-y divide-nx-border">
+          @for (item of attention(); track item.message) {
+            <li>
+              <a
+                class="group flex items-center gap-2.5 px-4 py-2.5 text-sm"
+                [routerLink]="repoLink(item.route)"
+                (mousedown)="$event.preventDefault()"
+              >
+                <span
+                  class="h-1.5 w-1.5 shrink-0 rounded-full"
+                  [style.background]="item.severity === 'Critical' ? 'var(--danger)' : 'var(--warning)'"
+                  aria-hidden="true"
+                ></span>
+                <span class="min-w-0 flex-1 truncate font-medium text-nx-text group-hover:text-nx-accent-text">
+                  {{ item.message }}
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
       </section>
     }
 
     <!-- Current sprint: the one card that earns a status stripe, plus the burn-down that
          justifies the label it is wearing. -->
-    <section class="nx-card nx-card--striped grid gap-8 p-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]"
+    <section class="nx-card nx-card--striped grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]"
              [style.--stripe]="healthStripe()">
-      <div class="flex flex-col gap-3.5">
+      <div class="flex flex-col gap-2">
         <p class="nx-label">Current sprint</p>
         <div class="flex flex-wrap items-center gap-3">
-          <h2 class="text-2xl font-bold text-nx-text">{{ selectedSprintName() }}</h2>
+          <!-- One rung below the page title: this is the subject of the card, not of the
+               page, and at 24px it wrapped to two lines and shouted over the burn-down. -->
+          <h2 class="text-base font-semibold text-nx-text">{{ selectedSprintName() }}</h2>
           @if (sprintHealth(); as health) {
-            <span
-              class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ring-1"
-              [class]="healthBadge().classes"
-            >
-              <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+            <!-- Dot plus word, not a tinted pill: the status reads the same and the card
+                 keeps one less block of colour competing with the burn-down beside it. -->
+            <span class="inline-flex items-center gap-2 text-sm font-semibold"
+                  [style.color]="healthBadge().color">
+              <span class="h-2 w-2 rounded-full bg-current" aria-hidden="true"></span>
               {{ healthBadge().label }}
             </span>
           }
         </div>
         @if (sprintRange(); as range) {
-          <p class="font-mono text-sm text-nx-text-2">
+          <p class="text-sm text-nx-text-2">
             {{ range }}
             @if (sprintHealth(); as health) {
               · {{ health.daysRemaining > 0 ? health.daysRemaining + ' days left' : 'ended' }}
@@ -85,12 +103,12 @@
         }
 
         @if (storyPoints(); as points) {
-          <div class="mt-2 flex flex-col gap-2.5">
+          <div class="mt-1 flex flex-col gap-2">
             <div class="flex items-baseline justify-between">
               <span class="text-sm font-semibold text-nx-text">Story points</span>
               <span>
-                <span class="text-2xl font-bold tabular-nums text-nx-text">{{ points.completed }}</span>
-                <span class="text-nx-text-2"> / {{ points.committed }} pts</span>
+                <span class="text-base font-semibold tabular-nums text-nx-text">{{ points.completed }}</span>
+                <span class="text-sm text-nx-text-2"> / {{ points.committed }} pts</span>
               </span>
             </div>
             <!-- The grey tick is where a sprint on schedule would be today, so the bar is read
@@ -118,7 +136,7 @@
           <span class="inline-flex items-center gap-1.5">
             <span class="h-[3px] w-4 rounded-sm bg-nx-accent"></span>Actual
           </span>
-          <span class="ml-auto font-mono">pts remaining</span>
+          <span class="ml-auto">pts remaining</span>
         </figcaption>
         <!-- The same series as the full burn-down section below, drawn compact and without
              axis furniture: here it is evidence for the health badge, not a chart to read off. -->
@@ -138,105 +156,82 @@
 
     <!-- Stat cards. Each number carries its change against the previous sprint — a figure on
          its own says nothing about whether it is good news. -->
-    <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-      <div class="nx-card p-6">
+    <!-- One card split by dividers, not four cards. Four separate cards cost four borders
+         and four lots of padding to show four short numbers, and they wrapped to a 2x2 block
+         below 1280px that filled half the screen. A divided row keeps them on one line and
+         comparable side by side, which is the only reason to show them together. -->
+    <section class="nx-card grid grid-cols-2 divide-nx-border sm:grid-cols-4 sm:divide-x">
+      <div class="px-4 py-3">
         <p class="nx-label">Total items</p>
-        <div class="nx-metric mt-1.5 text-nx-text">{{ sprintTotal() }}</div>
+        <div class="nx-metric mt-1 text-nx-text">{{ sprintTotal() }}</div>
         <app-metric-delta [delta]="totalDelta()" unit="items" />
       </div>
-      <div class="nx-card p-6">
+      <div class="px-4 py-3">
         <p class="nx-label">In progress</p>
-        <div class="nx-metric mt-1.5 text-nx-text">{{ sprintInProgress() }}</div>
+        <div class="nx-metric mt-1 text-nx-text">{{ sprintInProgress() }}</div>
       </div>
-      <div class="nx-card p-6">
+      <div class="border-t border-nx-border px-4 py-3 sm:border-t-0">
         <p class="nx-label">Done</p>
-        <div class="nx-metric mt-1.5 text-nx-text">{{ sprintDone() }}</div>
+        <div class="nx-metric mt-1 text-nx-text">{{ sprintDone() }}</div>
         <app-metric-delta [delta]="doneDelta()" unit="items" />
       </div>
-      <div class="nx-card p-6">
+      <div class="border-t border-nx-border px-4 py-3 sm:border-t-0">
         <p class="nx-label">Avg. cycle time</p>
         @if (cycleTime().sampleCount > 0) {
-          <div class="nx-metric mt-1.5 text-nx-text">
+          <div class="nx-metric mt-1 text-nx-text">
             {{ cycleTime().averageDays }}<span class="text-base font-normal text-nx-text-2"> days</span>
           </div>
           <!-- Faster is better here, so the arrow's colour is inverted against the other tiles. -->
           <app-metric-delta [delta]="cycleTimeDelta()" unit="days" [lowerIsBetter]="true" />
         } @else {
-          <div class="nx-metric mt-1.5 text-nx-text-3">—</div>
+          <div class="nx-metric mt-1 text-nx-text-3">—</div>
           <p class="mt-1 text-xs text-nx-text-3">No completed items yet</p>
         }
       </div>
     </section>
 
-    <!-- Story points progress -->
-    @if (storyPoints(); as sp) {
-      <section class="nx-card p-6">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-sm font-semibold text-slate-200">Story points</h2>
-            <p class="mt-1 text-xs text-slate-500">Committed vs completed for the selected sprint.</p>
-          </div>
-          <div class="text-right">
-            <span class="text-2xl font-semibold text-white">{{ sp.completed }}</span>
-            <span class="text-sm text-slate-400"> / {{ sp.committed }} pts</span>
-          </div>
-        </div>
-        <div class="mt-4 h-3 overflow-hidden rounded-full bg-slate-800">
-          <div
-            class="h-full rounded-full bg-sky-500 transition-all duration-500"
-            [style.width]="(sp.committed > 0 ? (sp.completed / sp.committed) * 100 : 0) + '%'"
-          ></div>
-        </div>
-      </section>
-    }
-
     <!-- Sprint report card -->
     @if (report(); as r) {
-      <section class="nx-card p-6">
-        <div class="mb-4 flex items-center justify-between">
-          <div>
-            <h2 class="text-sm font-semibold text-slate-200">Sprint report</h2>
-            <p class="mt-1 text-xs text-slate-500">Completion and scope change for the selected sprint.</p>
+      <!-- Same divided row as the metric strip above, for the same reason: four tinted boxes
+           inside a card is a card holding cards, and the `xl:` breakpoint needed 1280px, so on
+           a 1275px screen it collapsed to a 2x2 block of four large zeros. One card, four
+           columns, no breakpoint to miss. -->
+      <section class="nx-card">
+        <h2 class="border-b border-nx-border px-4 py-3 text-sm font-semibold text-nx-text">Sprint report</h2>
+        <div class="grid grid-cols-2 divide-nx-border sm:grid-cols-4 sm:divide-x">
+          <div class="px-4 py-3">
+            <p class="nx-label">Task completion</p>
+            <div class="nx-metric mt-1 text-nx-text">{{ (r.taskCompletionRate * 100) | number:'1.0-0' }}%</div>
+            <p class="mt-1 text-xs text-nx-text-3">{{ r.completedTasks }} / {{ r.totalTasks }} tasks done</p>
           </div>
-        </div>
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <!-- Task completion -->
-          <div class="rounded-lg bg-nx-surface-2 p-4">
-            <p class="text-xs text-slate-400">Task completion</p>
-            <div class="mt-2 text-2xl font-semibold text-white">{{ (r.taskCompletionRate * 100) | number:'1.0-0' }}%</div>
-            <p class="mt-1 text-[11px] text-slate-500">{{ r.completedTasks }} / {{ r.totalTasks }} tasks done</p>
+          <div class="px-4 py-3">
+            <p class="nx-label">Point completion</p>
+            <div class="nx-metric mt-1 text-nx-text">{{ (r.pointCompletionRate * 100) | number:'1.0-0' }}%</div>
+            <p class="mt-1 text-xs text-nx-text-3">story points delivered</p>
           </div>
-          <!-- Point completion -->
-          <div class="rounded-lg bg-nx-surface-2 p-4">
-            <p class="text-xs text-slate-400">Point completion</p>
-            <div class="mt-2 text-2xl font-semibold text-white">{{ (r.pointCompletionRate * 100) | number:'1.0-0' }}%</div>
-            <p class="mt-1 text-[11px] text-slate-500">story points delivered</p>
-          </div>
-          <!-- Scope added -->
-          <div class="rounded-lg bg-nx-surface-2 p-4">
-            <p class="text-xs text-slate-400">Scope added</p>
-            <div class="mt-2 text-2xl font-semibold" [class.text-amber-400]="r.addedAfterStart > 0" [class.text-white]="r.addedAfterStart === 0">
+          <div class="border-t border-nx-border px-4 py-3 sm:border-t-0">
+            <p class="nx-label">Scope added</p>
+            <!-- Amber only when scope actually moved; a zero is not news and must not wear a colour. -->
+            <div class="nx-metric mt-1" [class.text-nx-warning]="r.addedAfterStart > 0" [class.text-nx-text]="r.addedAfterStart === 0">
               {{ r.addedAfterStart }}
             </div>
-            <p class="mt-1 text-[11px] text-slate-500">item(s) added after start</p>
+            <p class="mt-1 text-xs text-nx-text-3">item(s) added after start</p>
           </div>
-          <!-- Scope points -->
-          <div class="rounded-lg bg-nx-surface-2 p-4">
-            <p class="text-xs text-slate-400">Scope change pts</p>
-            <div class="mt-2 text-2xl font-semibold" [class.text-amber-400]="r.scopeChangePoints > 0" [class.text-white]="r.scopeChangePoints === 0">
+          <div class="border-t border-nx-border px-4 py-3 sm:border-t-0">
+            <p class="nx-label">Scope change pts</p>
+            <div class="nx-metric mt-1" [class.text-nx-warning]="r.scopeChangePoints > 0" [class.text-nx-text]="r.scopeChangePoints === 0">
               +{{ r.scopeChangePoints }}
             </div>
-            <p class="mt-1 text-[11px] text-slate-500">points added mid-sprint</p>
+            <p class="mt-1 text-xs text-nx-text-3">points added mid-sprint</p>
           </div>
         </div>
       </section>
     }
 
     <!-- Work items by type + type distribution -->
-    <div class="grid gap-6 lg:grid-cols-2">
-      <section class="nx-card p-6">
+    <div class="grid gap-4 lg:grid-cols-2">
+      <section class="nx-card p-4">
         <h2 class="text-sm font-semibold text-slate-200">Work items by type</h2>
-        <p class="mt-1 text-xs text-slate-500">Item count per type for the selected sprint.</p>
         <div class="mt-4 h-64 w-full">
           <!-- roundEdges off: with a zero-count bar the corner radius exceeds the bar's own
                height and ngx-charts emits a malformed "d" the SVG parser rejects, filling the
@@ -254,9 +249,8 @@
         </div>
       </section>
 
-      <section class="nx-card p-6">
+      <section class="nx-card p-4">
         <h2 class="text-sm font-semibold text-slate-200">Type distribution</h2>
-        <p class="mt-1 text-xs text-slate-500">Share of work item types in the selected sprint.</p>
         <div class="mt-4 h-64 w-full">
           <ngx-charts-advanced-pie-chart
             [results]="typeChartData()"
@@ -269,10 +263,9 @@
     </div>
 
     <!-- Status distribution + velocity trend -->
-    <div class="grid gap-6 lg:grid-cols-2">
-      <section class="nx-card p-6">
+    <div class="grid gap-4 lg:grid-cols-2">
+      <section class="nx-card p-4">
         <h2 class="text-sm font-semibold text-slate-200">Status distribution</h2>
-        <p class="mt-1 text-xs text-slate-500">Item count by workflow state in the selected sprint.</p>
         <div class="mt-4 h-64 w-full">
           <!-- roundEdges off — see the comment on the type chart above. -->
           <ngx-charts-bar-horizontal
@@ -287,7 +280,7 @@
         </div>
       </section>
 
-      <section class="nx-card p-6">
+      <section class="nx-card p-4">
         <h2 class="text-sm font-semibold text-slate-200">Velocity trend</h2>
         <p class="mt-1 text-xs text-slate-500">Committed vs completed story points across the last 5 sprints.</p>
         <div class="mt-4 h-64 w-full">
@@ -305,7 +298,7 @@
     </div>
 
     <!-- Work item trend by type (7 sprints) -->
-    <section class="nx-card p-6">
+    <section class="nx-card p-4">
       <h2 class="text-sm font-semibold text-slate-200">Work item trend by type</h2>
       <p class="mt-1 text-xs text-slate-500">Item count per type — current sprint vs the up to 6 preceding sprints.</p>
       <div class="mt-4 h-80 w-full">
@@ -322,7 +315,7 @@
     </section>
 
     <!-- Burndown -->
-    <section class="nx-card p-6">
+    <section class="nx-card p-4">
       <h2 class="text-sm font-semibold text-slate-200">{{ t('overview.burndown.title') }}</h2>
       <p class="mt-1 text-xs text-slate-500">{{ t('overview.burndown.note') }}</p>
       <div class="mt-4 h-64 w-full">
@@ -339,10 +332,9 @@
     </section>
 
     <!-- Workload by assignee + recent activity -->
-    <div class="grid gap-6 lg:grid-cols-2">
-      <section class="nx-card p-6">
+    <div class="grid gap-4 lg:grid-cols-2">
+      <section class="nx-card p-4">
         <h2 class="text-sm font-semibold text-slate-200">Workload by assignee</h2>
-        <p class="mt-1 text-xs text-slate-500">Item count assigned to each member in the selected sprint.</p>
         @if (assigneeWorkload().length > 0) {
           <div class="mt-4 h-56 w-full">
             <!-- roundEdges off — see the comment on the type chart above. -->
@@ -369,26 +361,46 @@
         }
       </section>
 
-      <section class="nx-card p-6">
+      <section class="nx-card p-4">
         <h2 class="text-sm font-semibold text-slate-200">Recent activity</h2>
-        <p class="mt-1 text-xs text-slate-500">Latest changes across the repository.</p>
         @if (recentActivity().length > 0) {
-          <ul class="mt-4 space-y-3">
+          <!-- Each row opens the work item it happened to. The item's title leads and the
+               author drops to the second line: the feed answers "what moved?", and a list
+               of identical author names is not the answer. -->
+          <ul class="mt-3 -mx-2">
             @for (item of recentActivity(); track item.sprintTaskId + item.createdAt) {
-              <li class="flex items-start gap-3 text-sm">
-                <span
-                  class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                  [class]="item.avatarClass ?? 'bg-slate-600'"
+              <li>
+                <!-- The route resolves a key ("DASH-10"), not the UUID, so the link is built
+                     from workItemNumber. Hover takes the accent tint and the title the accent
+                     colour, so it is obvious the whole row is one clickable target. -->
+                <!-- mousedown.prevent stops the row taking focus from a click, so the focus
+                     ring is not left sitting on a row the pointer has already left. The click
+                     still navigates, and Tab still focuses and rings the row as usual. -->
+                <a
+                  [routerLink]="repoLink('boards/' + item.workItemNumber)"
+                  (mousedown)="$event.preventDefault()"
+                  class="group flex items-center gap-3 rounded px-2 py-2 text-sm"
                 >
-                  {{ item.authorName | slice: 0 : 1 }}
-                </span>
-                <div class="min-w-0 flex-1">
-                  <p class="truncate text-slate-200">
-                    <span class="font-medium text-white">{{ item.authorName }}</span>
-                    · {{ item.message }}
-                  </p>
-                  <p class="mt-0.5 truncate text-xs text-slate-500">{{ item.taskTitle }} · {{ timeAgo(item.createdAt) }}</p>
-                </div>
+                  <span
+                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                    [class]="item.avatarClass ?? 'bg-slate-600'"
+                    [title]="item.authorName"
+                  >
+                    {{ item.authorName | slice: 0 : 1 }}
+                  </span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block truncate font-medium text-nx-text group-hover:text-nx-accent-text">{{ item.taskTitle }}</span>
+                    <span class="block truncate text-xs text-nx-text-3">
+                      {{ item.message }} · {{ item.authorName }} · {{ timeAgo(item.createdAt) }}
+                    </span>
+                  </span>
+                  <!-- The chevron only firms up on hover, so eight rows do not read as eight arrows. -->
+                  <svg class="h-4 w-4 shrink-0 text-nx-text-3 opacity-40 transition group-hover:text-nx-accent-text group-hover:opacity-100"
+                       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </a>
               </li>
             }
           </ul>
@@ -397,5 +409,4 @@
         }
       </section>
     </div>
-  </div>
 </div>

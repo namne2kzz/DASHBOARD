@@ -49,7 +49,7 @@
 .nm-bot-eye--right { fill: #F0506E; }
 .nm-bot-stroke     { fill: #F5F6FA; }
 
-/* Hover: the head grows a violet rim and the whole mark lifts slightly. */
+/* Hover: the head grows an accent rim and the whole mark lifts slightly. */
 .nm-fab:hover { transform: scale(1.1); }
 .nm-fab:hover .nm-bot { filter: drop-shadow(0 6px 12px rgb(75 43 196 / .45)); }
 .nm-fab:hover .nm-bot-head { stroke: #8B5CF6; }
@@ -72,7 +72,7 @@
   96%           { transform: scaleY(.15); }
 }
 
-/* Thinking: a violet arc circles the head while a reply streams in. */
+/* Thinking: an accent arc circles the head while a reply streams in. */
 .nm-bot-ring {
   fill: none;
   stroke: #8B5CF6;
@@ -95,13 +95,13 @@
   right: -2px;
   min-width: 18px;
   height: 18px;
-  padding: 0 5px;
+  padding: 0 6px;
   box-sizing: border-box;
   border: 2px solid var(--bg);
-  border-radius: 9px;
+  border-radius: 999px;   /* pill: badge cao 18px, 9px la nua chieu cao -- dung token thay so le */
   background: var(--danger);
-  color: #FFFFFF;
-  font-size: 10px;
+  color: var(--on-danger);
+  font-size: var(--text-xs);
   font-weight: 600;
   line-height: 14px;
   text-align: center;

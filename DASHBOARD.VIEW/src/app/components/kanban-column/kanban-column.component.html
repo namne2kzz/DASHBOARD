@@ -2,6 +2,11 @@
   Nexus UI v2 column. The whole column is tinted when it is over its WIP limit, not just a
   rule under its heading: a problem that applies to the column should be visible from
   anywhere in the column, including while a card is being dragged towards it.
+
+  --ineligible keys on blocksDrop(), not acceptsDraggedType(): a column refuses a card for two
+  reasons — wrong type, or a hard WIP limit already reached — and both mean "you cannot drop
+  here". Keying it on the type check alone dimmed the type-blocked columns while a WIP-blocked
+  one still looked available, so two columns in the same state looked different.
 -->
 <section
   class="board-column"
@@ -9,13 +14,13 @@
   [class.board-column--over-hard]="wipExceeded() && wipMode() === 'hard'"
   [class.board-column--target]="isDropTarget() && !blocksDrop()"
   [class.board-column--blocked]="dragInProgress() && pointerOver() && blocksDrop()"
-  [class.board-column--ineligible]="dragInProgress() && !acceptsDraggedType() && !pointerOver()"
+  [class.board-column--ineligible]="dragInProgress() && blocksDrop() && !pointerOver()"
   (mouseenter)="pointerOver.set(true)"
   (mouseleave)="pointerOver.set(false)"
 >
   <header class="flex flex-col gap-1 px-1 pb-2">
     <div class="flex items-center gap-2">
-      <h2 class="truncate text-[15px] font-bold text-nx-text">{{ title() }}</h2>
+      <h2 class="truncate text-base font-bold text-nx-text">{{ title() }}</h2>
       <span
         class="board-column__count"
         [title]="wipLimit() > 0
@@ -66,12 +71,17 @@
     }
   </header>
 
+  <!-- The card list is the scroller, so a long column scrolls its own cards instead of
+       stretching the board. min-h-0 lets a flex child shrink below its content, which is
+       what makes overflow-y actually engage; the 320px floor keeps an empty column a
+       reasonable drop target, capped so it cannot push past the visible height. -->
   <div
     cdkDropList
     [id]="listId()"
     [cdkDropListData]="tasks()"
     [cdkDropListEnterPredicate]="enterPredicate()"
-    class="flex min-h-[320px] flex-1 flex-col gap-3"
+    class="custom-scroll flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto"
+    style="min-height: min(320px, 100%)"
     (cdkDropListDropped)="onDrop($event)"
     (cdkDropListEntered)="isDropTarget.set(true)"
     (cdkDropListExited)="isDropTarget.set(false)"

@@ -95,13 +95,19 @@ export class ConfirmComponent {
     }[this.type];
   }
 
-  /** Tailwind classes for the confirm action button. @returns CSS class string. */
+  /**
+   * Tone classes for the confirm action button. Geometry (height, radius, font) comes
+   * from `.nx-btn .nx-btn--sm` so this button matches Cancel beside it; these classes
+   * only tint it. They previously carried their own padding and radius, which is why
+   * the two actions were visibly different shapes.
+   * @returns CSS class string.
+   */
   protected get confirmBtnClass(): string {
     return {
-      danger:  'bg-rose-500    hover:bg-rose-400    text-white',
-      warning: 'bg-amber-500   hover:bg-amber-400   text-white',
-      info:    'bg-sky-500     hover:bg-sky-400     text-slate-950',
-      success: 'bg-emerald-500 hover:bg-emerald-400 text-slate-950',
+      danger:  'nx-btn--tone-danger',
+      warning: 'nx-btn--tone-warning',
+      info:    'nx-btn--primary',
+      success: 'nx-btn--tone-success',
     }[this.type];
   }
 

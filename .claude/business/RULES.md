@@ -29,7 +29,10 @@ Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/u
 ├── repositories.dod.md
 ├── git-repositories.dod.md
 ├── discussions.dod.md
+├── attachments.dod.md      # file đính kèm work item qua MinIO presigned upload
+├── work-item-links.dod.md  # liên kết có hướng giữa các work item
 ├── history.dod.md
+├── notifications.dod.md    # thông báo in-app (chuông) + push realtime SSE
 ├── search.dod.md           # command palette Ctrl/Cmd+K
 ├── my-work.dod.md          # dashboard cá nhân xuyên repository
 ├── overview.dod.md

@@ -82,21 +82,105 @@ export class SprintTaskDetailService {
       });
   }
 
-  /** Posts a new comment and prepends it to the discussion list. @param taskId The sprint task. @param body Comment text. */
-  postComment(taskId: string, body: string): void {
+  /**
+   * Posts a comment, or a reply to an existing one, and inserts it into the thread.
+   * @param taskId The sprint task.
+   * @param body Comment text.
+   * @param parentId The comment being replied to, or null to post a root comment.
+   */
+  postComment(taskId: string, body: string, parentId: string | null = null): void {
     const repoId = this.repoCtx.selectedRepoId();
     const trimmed = body.trim();
     if (!repoId || !trimmed) return;
 
     this.http
-      .post<DiscussionApiDto>(`${API}/${repoId}/sprint-tasks/${taskId}/discussions`, JSON.stringify(trimmed), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+      .post<DiscussionApiDto>(`${API}/${repoId}/sprint-tasks/${taskId}/discussions`, { body: trimmed, parentId })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: dto => this.discussions.update(list => [...list, dto]),
+        next: dto => this.discussions.update(list => this.insert(list, dto)),
         error: () => this.toast.error('Failed to post comment'),
       });
+  }
+
+  /**
+   * Places a newly posted entry in the flat thread list.
+   *
+   * A root comment goes last. A reply goes after the last entry already under its root, so it lands
+   * at the end of that thread rather than at the end of the page, and the root's reply count is
+   * bumped to keep the "show more" control honest.
+   * @param list The current thread.
+   * @param dto The newly created entry.
+   * @returns The updated thread.
+   */
+  private insert(list: DiscussionApiDto[], dto: DiscussionApiDto): DiscussionApiDto[] {
+    if (!dto.parentId) return [...list, dto];
+
+    const bumped = list.map(d =>
+      d.id === dto.parentId ? { ...d, replyCount: d.replyCount + 1 } : d);
+
+    let at = bumped.findIndex(d => d.id === dto.parentId);
+    if (at < 0) return [...bumped, dto];
+
+    while (at + 1 < bumped.length && bumped[at + 1].parentId === dto.parentId) at++;
+    return [...bumped.slice(0, at + 1), dto, ...bumped.slice(at + 1)];
+  }
+
+  /**
+   * Edits an existing comment in place.
+   * @param taskId The sprint task.
+   * @param entryId The comment to edit.
+   * @param body The replacement text.
+   * @returns Observable that completes when the edit is saved.
+   */
+  editComment(taskId: string, entryId: string, body: string): Observable<void> {
+    const repoId = this.repoCtx.selectedRepoId();
+    return this.http
+      .put<void>(`${API}/${repoId}/sprint-tasks/${taskId}/discussions/${entryId}`, { body: body.trim() })
+      .pipe(tap(() => this.discussions.update(list => list.map(d =>
+        d.id === entryId ? { ...d, body: body.trim(), updatedAt: new Date().toISOString() } : d))));
+  }
+
+  /**
+   * Deletes a comment, dropping its replies too when it is a root comment.
+   * @param taskId The sprint task.
+   * @param entryId The comment to delete.
+   * @returns Observable that completes when the comment is gone.
+   */
+  deleteComment(taskId: string, entryId: string): Observable<void> {
+    const repoId = this.repoCtx.selectedRepoId();
+    return this.http
+      .delete<void>(`${API}/${repoId}/sprint-tasks/${taskId}/discussions/${entryId}`)
+      .pipe(tap(() => this.discussions.update(list =>
+        // Replies go with their root on the server, so they must go here too.
+        list.filter(d => d.id !== entryId && d.parentId !== entryId))));
+  }
+
+  /**
+   * Loads the next page of replies under one root comment and appends them to the thread.
+   * @param taskId The sprint task.
+   * @param parentId The root comment whose replies to load.
+   * @param skip How many of its replies are already shown.
+   * @param take How many more to fetch.
+   * @returns Observable that completes when the page has been merged in.
+   */
+  loadReplies(taskId: string, parentId: string, skip: number, take: number): Observable<DiscussionApiDto[]> {
+    const repoId = this.repoCtx.selectedRepoId();
+    const params = new HttpParams().set('skip', skip).set('take', take);
+
+    return this.http
+      .get<DiscussionApiDto[]>(`${API}/${repoId}/sprint-tasks/${taskId}/discussions/${parentId}/replies`, { params })
+      .pipe(tap(page => this.discussions.update(list => {
+        // Skip anything already on screen: a double click on "show more" would otherwise
+        // insert the same replies twice.
+        const known = new Set(list.map(d => d.id));
+        const fresh = page.filter(d => !known.has(d.id));
+        if (fresh.length === 0) return list;
+
+        let at = list.findIndex(d => d.id === parentId);
+        if (at < 0) return [...list, ...fresh];
+        while (at + 1 < list.length && list[at + 1].parentId === parentId) at++;
+        return [...list.slice(0, at + 1), ...fresh, ...list.slice(at + 1)];
+      })));
   }
 
   /**

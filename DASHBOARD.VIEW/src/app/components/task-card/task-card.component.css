@@ -38,15 +38,16 @@
   gap: 6px;
   padding: 2px 8px;
   border-radius: var(--radius);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
 }
 
-.age-tag--warn  { background: var(--warning-soft); color: var(--warning); }
-.age-tag--late  { background: color-mix(in srgb, var(--warning) 18%, var(--danger-soft)); color: #8A3A00; }
-.age-tag--stale { background: var(--danger-soft);  color: var(--danger); }
-
-[data-theme='dark'] .age-tag--late { color: #E8A33D; }
+/* All three steps mix the two *-soft tokens, never the bright foreground ones: blending
+   --warning into the background made the middle step a solid brown that sat far louder on a
+   dark card than the steps either side of it, breaking the scale it belongs to. */
+.age-tag--warn  { background: var(--warning-soft); color: var(--warning-text); }
+.age-tag--late  { background: color-mix(in srgb, var(--danger-soft) 50%, var(--warning-soft)); color: var(--warning-text); }
+.age-tag--stale { background: var(--danger-soft);  color: var(--danger-text); }
 
 @media (prefers-reduced-motion: reduce) {
   .task-card { transition: none; }

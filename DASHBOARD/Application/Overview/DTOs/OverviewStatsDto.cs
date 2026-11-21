@@ -186,6 +186,8 @@ public sealed record AssigneeWorkloadItemDto(
 
 /// <summary>One audit-trail entry for the repository-wide recent activity feed.</summary>
 /// <param name="SprintTaskId">The sprint task the entry belongs to.</param>
+/// <param name="WorkItemNumber">Per-repository item number, used to build the detail-page link. The
+/// detail route resolves a key such as "DASH-10", so the UUID alone cannot address the page.</param>
 /// <param name="TaskTitle">Title of the sprint task at read time.</param>
 /// <param name="Message">Human-readable description of the change.</param>
 /// <param name="AuthorName">Display name of the user who made the change.</param>
@@ -193,6 +195,7 @@ public sealed record AssigneeWorkloadItemDto(
 /// <param name="CreatedAt">UTC timestamp the entry was recorded.</param>
 public sealed record RecentActivityItemDto(
     Guid SprintTaskId,
+    int WorkItemNumber,
     string TaskTitle,
     string Message,
     string AuthorName,

@@ -13,24 +13,31 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="icon" type="image/png" sizes="512x512" href="logo.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <!-- Nexus UI Foundation: IBM Plex Sans for UI, IBM Plex Mono for IDs / numbers / hours. -->
+  <!-- Nexus UI v3: Plus Jakarta Sans for UI, JetBrains Mono for IDs / numbers / hours. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!--
-    Apply the persisted theme synchronously, before Angular bootstraps, to
-    avoid a flash of the default theme on load. Key must match
-    StorageKeys.theme ('nxs.ui.theme'); ThemeService keeps it in sync after.
+    Apply the persisted theme and accent synchronously, before Angular bootstraps,
+    to avoid a flash of the defaults on load. Keys must match StorageKeys.theme
+    ('nxs.ui.theme') and StorageKeys.accent ('nxs.ui.accent'); ThemeService keeps
+    both in sync after. The two are independent: theme sets the surfaces, accent
+    the single hue on top of them.
   -->
   <script>
     (function () {
+      var ACCENTS = ['blue', 'teal', 'slate'];
+      var theme = 'dark';
+      var accent = 'blue';
       try {
-        var theme = localStorage.getItem('nxs.ui.theme') === 'light' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', theme);
+        theme = localStorage.getItem('nxs.ui.theme') === 'light' ? 'light' : 'dark';
+        var stored = localStorage.getItem('nxs.ui.accent');
+        if (ACCENTS.indexOf(stored) !== -1) accent = stored;
       } catch (e) {
-        /* localStorage unavailable — fall back to the default theme */
-        document.documentElement.setAttribute('data-theme', 'dark');
+        /* localStorage unavailable — fall back to the defaults above */
       }
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.setAttribute('data-accent', accent);
     })();
   </script>
   <!-- Google Identity Services — used by GoogleIdentityService for the invite-accept sign-in flow. -->

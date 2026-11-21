@@ -1,6 +1,6 @@
 @for (entry of svc.dialogs(); track trackById($index, entry)) {
   <div
-    class="fixed inset-0 z-[9980] flex items-center justify-center bg-black/40  animate-fade-in"
+    class="fixed inset-0 z-[9980] flex items-center justify-center bg-black/40 animate-fade-in"
     (click)="close(entry)"
   >
     <div
@@ -8,12 +8,16 @@
       [ngClass]="panelClass(entry)"
       [ngStyle]="panelStyle(entry)"
       (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-labelledby]="entry.config.title ? titleId(entry) : null"
+      [attr.aria-label]="entry.config.title ? null : 'Dialog'"
     >
       <!-- Header -->
       @if (entry.config.title || entry.config.closable) {
         <div class="flex shrink-0 items-center justify-between border-b border-slate-800/80 px-6 py-4">
           @if (entry.config.title) {
-            <h2 class="text-sm font-semibold text-white truncate">{{ entry.config.title }}</h2>
+            <h2 [id]="titleId(entry)" class="text-sm font-semibold text-white truncate">{{ entry.config.title }}</h2>
           }
           @if (entry.config.closable) {
             <div class="ml-auto flex items-center gap-1">
@@ -47,7 +51,9 @@
       }
 
       <!-- Content -->
-      <div class="custom-scroll flex-1 overflow-y-auto px-6 py-4">
+      <!-- The pb-4 is dropped by dialog-body.scss only when the content ends in a sticky
+           action row; with it kept, that row floated above a dead strip of padding. -->
+      <div class="dialog-body custom-scroll flex-1 overflow-y-auto px-6 py-4">
         <ng-container
           [ngComponentOutlet]="entry.component"
           [ngComponentOutletInjector]="injectorFor(entry)"

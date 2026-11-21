@@ -43,7 +43,8 @@
 
 .panel-title {
   flex: 1;
-  font-size: 14px;
+  /* 14px sat qua body 13px de doc ra thu bac; 15px la bac tren that su trong thang. */
+  font-size: var(--text-md);
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.01em;
@@ -56,9 +57,10 @@
 }
 
 .action-link {
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--lh-xs);
   color: var(--accent);
-  padding: 3px 6px;
+  padding: 4px 6px;
   border-radius: 4px;
   transition: background 0.12s, color 0.12s;
 
@@ -97,10 +99,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   padding: 72px 24px;
   color: var(--text-3);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 
 .empty-icon {
@@ -138,7 +140,7 @@
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--surface-2);
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .noti-type-icon {
@@ -155,7 +157,8 @@
 }
 
 .noti-title {
-  font-size: 13px;
+  font-size: var(--text-sm);
+  line-height: var(--lh-sm);
   font-weight: 500;
   color: var(--text);
   white-space: nowrap;
@@ -164,7 +167,7 @@
 }
 
 .noti-body {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--text-2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -174,9 +177,10 @@
 }
 
 .noti-time {
-  font-size: 11px;
+  font-size: var(--text-xs);
+  line-height: var(--lh-xs);
   color: var(--text-3);
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .unread-dot {
@@ -192,7 +196,7 @@
 .panel-filters {
   display: flex;
   gap: 6px;
-  padding: 10px 16px;
+  padding: 12px 16px;
   overflow-x: auto;
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
@@ -200,12 +204,13 @@
 
 .filter-chip {
   flex-shrink: 0;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border: 1px solid var(--border);
   border-radius: 9999px;
   background: transparent;
   color: var(--text-2);
-  font-size: 12px;
+  font-size: var(--text-xs);
+  line-height: var(--lh-xs);
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
@@ -218,7 +223,7 @@
 .filter-chip--active {
   background: var(--accent-soft);
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ── Load more ───────────────────────────────────────────────────────────── */
@@ -231,7 +236,7 @@
   border-radius: var(--radius);
   background: transparent;
   color: var(--text-2);
-  font-size: 13px;
+  font-size: var(--text-sm);
   cursor: pointer;
   transition: background 0.15s;
 }

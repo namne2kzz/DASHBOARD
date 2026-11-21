@@ -9,9 +9,9 @@
   height: 16px;
   padding: 0 3px;
   border-radius: 8px;
-  background: var(--color-danger, #f43f5e);
-  color: #fff;
-  font-size: 10px;
+  background: var(--danger);
+  color: var(--on-danger);
+  font-size: var(--text-xs);
   font-weight: 700;
   line-height: 16px;
   text-align: center;
@@ -21,11 +21,11 @@
 .badge-inline {
   min-width: 18px;
   height: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-  background: var(--color-danger, #f43f5e);
-  color: #fff;
-  font-size: 10px;
+  padding: 0 6px;
+  border-radius: 999px;   /* pill: badge cao 18px, 9px la nua chieu cao -- dung token thay so le */
+  background: var(--danger);
+  color: var(--on-danger);
+  font-size: var(--text-xs);
   font-weight: 700;
   line-height: 18px;
   text-align: center;

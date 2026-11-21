@@ -7,7 +7,7 @@
   <!-- type · id · priority (only when unusual) · assignee -->
   <div class="flex items-center gap-1.5">
     <span class="nx-type" [ngClass]="typeSquareClass[task().type]" [title]="typeLabel[task().type]"></span>
-    <span class="font-mono text-[11px] text-slate-500">{{ task().workItemNumber }}</span>
+    <span class="font-mono text-xs text-slate-500">{{ task().workItemNumber }}</span>
     @if (priorityFlagClass[task().priority]; as flag) {
       <span class="nx-dot" [ngClass]="flag" [title]="task().priority + ' priority'"></span>
     }

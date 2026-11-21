@@ -151,6 +151,7 @@ public sealed class GetOverviewStatsQueryHandler(
             .Take(8)
             .Select(h => new RecentActivityItemDto(
                 h.SprintTaskId,
+                h.SprintTask!.WorkItemNumber,
                 h.SprintTask!.Title,
                 h.Message,
                 h.Author!.Name,

@@ -329,6 +329,10 @@ try
     // should carry the correlation id.
     app.UseMiddleware<CorrelationIdMiddleware>();
 
+    // Early in the pipeline so the security headers (CSP, X-Frame-Options, nosniff, …) are present
+    // on every response, including error responses produced further down.
+    app.UseMiddleware<SecurityHeadersMiddleware>();
+
     // Before ExceptionHandlingMiddleware so a request that ends in a 500 still gets one
     // complete HTTP summary line with its status and elapsed time.
     app.UseSerilogRequestLogging(opt =>
@@ -360,6 +364,11 @@ try
 
     if (app.Environment.IsDevelopment())
         app.MapOpenApi();
+
+    // HSTS tells the browser to only ever reach this host over HTTPS. Only meaningful on a real
+    // HTTPS origin, so it is skipped in Development where the app is served over plain HTTP on localhost.
+    if (!app.Environment.IsDevelopment())
+        app.UseHsts();
 
     app.UseHttpsRedirection();
     app.UseCors(AppConstants.AngularCorsPolicy);

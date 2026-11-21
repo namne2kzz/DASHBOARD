@@ -211,6 +211,7 @@ export class BacklogManagementPageComponent implements OnInit {
     this.dialog.open(BacklogItemDetailDialogComponent, {
       title: 'User story details',
       width: '40rem',
+      mode:  'max',
       data: { item },
     });
   }

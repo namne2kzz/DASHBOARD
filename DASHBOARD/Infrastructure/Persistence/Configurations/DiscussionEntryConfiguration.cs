@@ -29,7 +29,17 @@ internal sealed class DiscussionEntryConfiguration : IEntityTypeConfiguration<Di
             .HasForeignKey(d => d.AuthorId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Restrict, not Cascade: SQL Server refuses a self-referencing cascade (multiple
+        // cascade paths), and replies are removed explicitly with their root anyway.
+        builder.HasOne(d => d.Parent)
+            .WithMany(d => d.Replies)
+            .HasForeignKey(d => d.ParentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(d => d.SprintTaskId);
         builder.HasIndex(d => d.RepositoryId);
+
+        // The thread query filters roots (ParentId == null) and counts/loads replies per root.
+        builder.HasIndex(d => new { d.SprintTaskId, d.ParentId });
     }
 }

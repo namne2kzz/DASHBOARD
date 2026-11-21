@@ -85,7 +85,12 @@ module.exports = {
         nx: Object.fromEntries(
           ['bg', 'surface', 'surface-2', 'surface-3', 'border', 'border-strong', 'text', 'text-2', 'text-3',
             'accent', 'accent-hover', 'accent-soft', 'on-accent', 'ai', 'ai-soft', 'success', 'success-soft',
-            'warning', 'warning-soft', 'danger', 'danger-soft'].map((n) => [n, t(n)]),
+            'warning', 'warning-soft', 'danger', 'danger-soft',
+            // *-text are the readable-on-soft-background variants; without them markup reached
+            // for amber-100/200, which this config maps to *-soft -- a background, not a colour
+            // you can read text in.
+            'warning-text', 'danger-text', 'success-text',
+            'on-solid', 'on-danger', 'on-warning', 'on-success', 'accent-text'].map((n) => [n, t(n)]),
         ),
       },
       backgroundColor: { slate: slateBg, sky: accentBg, indigo: accentBg },
@@ -94,32 +99,39 @@ module.exports = {
       textColor: { slate: slateText, white: t('text') },
       ringColor: { white: t('text') },
       fontFamily: {
-        sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
-      // Density of a work tool, with the v2 type scale on top: a headline metric is
-      // 40/700 so it wins the page outright, while its label drops to 13/600 uppercase.
-      // The gap between them is the hierarchy — at the old sizes the eye had no lead.
+      // The v3 scale: 12 · 14 · 16 · 18 · 24 · 32, one line-height each and nothing
+      // between, so no template can invent a step.
+      //
+      // 2xl/3xl/4xl were briefly folded onto a single 32px. That removed the steps
+      // instead of tidying them: a page title, a section heading and a headline metric
+      // all came out the same size, the hierarchy went flat and every screen read as
+      // shouting. Each alias now lands on a DIFFERENT rung of the six.
       fontSize: {
         xs: ['12px', '16px'],
-        sm: ['13px', '20px'],
-        base: ['14px', '22px'],
-        lg: ['15px', '22px'],
-        xl: ['18px', '26px'],
-        '2xl': ['20px', '28px'],
+        sm: ['14px', '20px'],
+        base: ['16px', '24px'],
+        lg: ['18px', '26px'],
+        xl: ['24px', '32px'],
+        '2xl': ['24px', '32px'],
         '3xl': ['24px', '32px'],
+        // Only a headline number reaches the top rung; it is the one thing on a
+        // dashboard that should win the page outright.
         '4xl': ['32px', '40px'],
-        metric: ['40px', '48px'],
+        metric: ['32px', '40px'],
       },
-      // 8 control/input · 12 card · 16 modal/drawer. Nothing in between.
+      // 4 control · 6 panel · 8 modal. Aliases fold onto those three so a template
+      // cannot reach a fourth; `full` stays for avatars and true pills.
       borderRadius: {
         sm: '4px',
-        DEFAULT: '8px',
-        md: '8px',
-        lg: '12px',
-        xl: '12px',
-        '2xl': '16px',
-        '3xl': '16px',
+        DEFAULT: '4px',
+        md: '4px',
+        lg: '6px',
+        xl: '6px',
+        '2xl': '8px',
+        '3xl': '8px',
       },
       // Depth instead of outlines: a card carries a soft shadow on the grey page,
       // and only overlays go deeper.

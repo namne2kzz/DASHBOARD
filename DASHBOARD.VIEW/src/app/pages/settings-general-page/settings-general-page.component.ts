@@ -24,6 +24,11 @@ import { AVATAR_COLORS } from '../../core/constants/system.constant';
 })
 export class SettingsGeneralPageComponent implements OnInit {
   readonly themeService    = inject(ThemeService);
+
+  /** Name of the selected accent, for the row's secondary line. */
+  readonly accentLabel = computed(
+    () => this.themeService.accents.find(a => a.value === this.themeService.accent())?.label ?? '',
+  );
   readonly prefs           = inject(PreferencesService);
   readonly avatarService   = inject(AvatarService);
   private readonly auth    = inject(AuthService);

@@ -1,1 +1,10 @@
+/* The component host is the shell column's flex child, so it must be a flex column
+   itself for the body below the header to receive a height and scroll. */
+:host {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 0%;
+  flex-direction: column;
+}
+
 /* Layout and visuals are handled by Tailwind utility classes in the template. */

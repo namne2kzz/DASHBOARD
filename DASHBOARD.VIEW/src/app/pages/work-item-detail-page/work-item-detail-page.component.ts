@@ -24,7 +24,7 @@ import type { WorkItemLinkDto, WorkItemLinkType } from '../../models/work-item-l
 import { LINK_TYPE_OPTIONS } from '../../models/work-item-link.model';
 import { SprintTaskApiState, SprintTaskApiType, WorkItemApiPriority } from '../../core/enums/system.enum';
 import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS } from '../../core/constants/system.constant';
-import type { UpdateSprintTaskPayload } from '../../models/sprint-task-detail.model';
+import type { DiscussionApiDto, EditorTarget, UpdateSprintTaskPayload } from '../../models/sprint-task-detail.model';
 import type { WorkItemPickerApiDto } from '../../models/sprint-planning-api.model';
 
 // ── Type icon styling ────────────────────────────────────────────────────────
@@ -169,6 +169,22 @@ export class WorkItemDetailPageComponent implements OnInit {
   readonly activeTab    = signal<'details' | 'discussion' | 'attachments' | 'history'>('details');
   readonly commentDraft = signal('');
 
+  // ── Reply / edit state ───────────────────────────────────────────────────────
+  /** Id of the comment currently being replied to, or null when the reply box is closed. */
+  readonly replyingTo   = signal<string | null>(null);
+  /** Draft text of the open reply box. */
+  readonly replyDraft   = signal('');
+  /** Id of the comment currently being edited, or null when no comment is in edit mode. */
+  readonly editingId    = signal<string | null>(null);
+  /** Draft text of the comment being edited. */
+  readonly editDraft    = signal('');
+  /** Id of the comment awaiting delete confirmation. */
+  readonly confirmingDeleteId = signal<string | null>(null);
+  /** Root comment ids whose replies are being fetched, so the control can show it is busy. */
+  readonly loadingReplies = signal<ReadonlySet<string>>(new Set());
+  /** Error text shown under the open reply or edit box. */
+  readonly commentError = signal<string | null>(null);
+
   // ── Attachments tab state ──────────────────────────────────────────────────────
   readonly attachmentList      = signal<AttachmentDto[]>([]);
   readonly attachmentUploading = signal(false);
@@ -192,6 +208,24 @@ export class WorkItemDetailPageComponent implements OnInit {
   /** Maps a work item type to its nx-type dot modifier class. @param type The work item type. */
   typeDot(type: SprintTaskApiType): string {
     return TYPE_DOT_CLASS[type] ?? 'nx-type--task';
+  }
+
+  /**
+   * Human name for a work item type, for the colour dot's tooltip.
+   *
+   * The dot bound its title straight to the enum, so hovering a Task showed the API's own
+   * member name rather than the word the rest of the UI uses.
+   *
+   * @param type The work item type.
+   * @returns The label shown to a reader, e.g. "User Story".
+   */
+  typeName(type: SprintTaskApiType): string {
+    return {
+      [SprintTaskApiType.UserStory]: 'User Story',
+      [SprintTaskApiType.Task]:      'Task',
+      [SprintTaskApiType.Bug]:       'Bug',
+      [SprintTaskApiType.TestPlan]:  'Test Plan',
+    }[type] ?? 'Task';
   }
 
   /**
@@ -624,6 +658,149 @@ export class WorkItemDetailPageComponent implements OnInit {
     this.mentionOpen.set(false);
   }
 
+  // ── Reply / edit / delete ────────────────────────────────────────────────────
+
+  /** How many replies to fetch each time the reader asks for more. */
+  private static readonly REPLY_PAGE = 10;
+
+  /**
+   * Replies already on screen under one root comment.
+   * @param rootId The root comment.
+   * @returns The number of its replies currently rendered.
+   */
+  shownReplies(rootId: string): number {
+    return this.detailSvc.discussions().filter(d => d.parentId === rootId).length;
+  }
+
+  /**
+   * Replies that exist but are not on screen yet.
+   * @param root The root comment.
+   * @returns How many more replies can be loaded.
+   */
+  hiddenReplies(root: DiscussionApiDto): number {
+    return Math.max(0, root.replyCount - this.shownReplies(root.id));
+  }
+
+  /**
+   * Fetches the next page of replies under a root comment.
+   * @param root The root comment whose replies to load.
+   */
+  loadMoreReplies(root: DiscussionApiDto): void {
+    const taskId = this.taskId();
+    if (!taskId || this.loadingReplies().has(root.id)) return;
+
+    this.loadingReplies.update(set => new Set(set).add(root.id));
+    this.detailSvc
+      .loadReplies(taskId, root.id, this.shownReplies(root.id), WorkItemDetailPageComponent.REPLY_PAGE)
+      .subscribe({
+        next:  () => this.clearReplyLoading(root.id),
+        error: () => {
+          this.clearReplyLoading(root.id);
+          this.commentError.set('Could not load more replies.');
+        },
+      });
+  }
+
+  /** Drops a root id from the in-flight set once its page has settled. */
+  private clearReplyLoading(rootId: string): void {
+    this.loadingReplies.update(set => {
+      const next = new Set(set);
+      next.delete(rootId);
+      return next;
+    });
+  }
+
+  /**
+   * Opens the reply box under a comment, pre-addressed when replying to a reply.
+   * @param entry The comment being replied to.
+   */
+  startReply(entry: DiscussionApiDto): void {
+    this.editingId.set(null);
+    this.commentError.set(null);
+    this.replyingTo.set(entry.id);
+    // Replying to a reply keeps the same one-level indent, so the addressee is named in the text
+    // instead — otherwise there is nothing on screen saying who is being answered.
+    this.replyDraft.set(entry.parentId ? `@${entry.authorName} ` : '');
+  }
+
+  /** Closes the reply box, discarding its draft. */
+  cancelReply(): void {
+    this.replyingTo.set(null);
+    this.replyDraft.set('');
+    this.commentError.set(null);
+  }
+
+  /** Posts the open reply box against the comment it was opened on. */
+  submitReply(): void {
+    const taskId = this.taskId();
+    const target = this.replyingTo();
+    const body   = this.replyDraft().trim();
+    if (!taskId || !target || !body) return;
+
+    this.detailSvc.postComment(taskId, this.encodeMentions(body), target);
+    this.cancelReply();
+  }
+
+  /**
+   * Switches a comment into edit mode with its current body loaded.
+   * @param entry The comment to edit.
+   */
+  startEdit(entry: DiscussionApiDto): void {
+    this.replyingTo.set(null);
+    this.commentError.set(null);
+    this.editingId.set(entry.id);
+    this.editDraft.set(entry.body);
+  }
+
+  /** Leaves edit mode without saving. */
+  cancelEdit(): void {
+    this.editingId.set(null);
+    this.editDraft.set('');
+    this.commentError.set(null);
+  }
+
+  /** Saves the comment being edited. */
+  saveEdit(): void {
+    const taskId  = this.taskId();
+    const entryId = this.editingId();
+    const body    = this.editDraft().trim();
+    if (!taskId || !entryId || !body) return;
+
+    this.detailSvc.editComment(taskId, entryId, this.encodeMentions(body)).subscribe({
+      next:  () => this.cancelEdit(),
+      error: () => this.commentError.set('Could not save the edit.'),
+    });
+  }
+
+  /**
+   * Asks for confirmation before deleting a comment.
+   * @param entry The comment to delete.
+   */
+  askDeleteComment(entry: DiscussionApiDto): void {
+    this.commentError.set(null);
+    this.confirmingDeleteId.set(entry.id);
+  }
+
+  /** Dismisses the delete confirmation. */
+  cancelDeleteComment(): void {
+    this.confirmingDeleteId.set(null);
+  }
+
+  /** Deletes the comment awaiting confirmation. */
+  confirmDeleteComment(): void {
+    const taskId  = this.taskId();
+    const entryId = this.confirmingDeleteId();
+    if (!taskId || !entryId) return;
+
+    this.detailSvc.deleteComment(taskId, entryId).subscribe({
+      next:  () => this.confirmingDeleteId.set(null),
+      error: () => {
+        this.confirmingDeleteId.set(null);
+        this.commentError.set('Could not delete the comment.');
+      },
+    });
+  }
+
   // ── Inline image paste / drop ─────────────────────────────────────────────────
 
   /**
@@ -632,13 +809,14 @@ export class WorkItemDetailPageComponent implements OnInit {
    * @param box The textarea the paste happened in.
    * @param needsEdit True for the description, which is part of the work item and so requires
    *   EditWorkItem; false for a comment, which the server gates on membership alone.
+   * @param target Which draft to insert the image into.
    */
-  onEditorPaste(e: ClipboardEvent, box: HTMLTextAreaElement, needsEdit = false): void {
+  onEditorPaste(e: ClipboardEvent, box: HTMLTextAreaElement, needsEdit = false, target: EditorTarget = 'comment'): void {
     if (needsEdit && !this.canEditWorkItem()) return;
     const file = this._imageFromItems(e.clipboardData?.items);
     if (!file) return;
     e.preventDefault();
-    void this._uploadAndInsert(file, box);
+    void this._uploadAndInsert(file, box, target);
   }
 
   /**
@@ -647,12 +825,22 @@ export class WorkItemDetailPageComponent implements OnInit {
    * @param box The textarea the drop happened on.
    * @param needsEdit True for the description; false for a comment. See {@link onEditorPaste}.
    */
-  onEditorDrop(e: DragEvent, box: HTMLTextAreaElement, needsEdit = false): void {
+  onEditorDrop(e: DragEvent, box: HTMLTextAreaElement, needsEdit = false, target: EditorTarget = 'comment'): void {
     if (needsEdit && !this.canEditWorkItem()) return;
     const file = this._imageFromFiles(e.dataTransfer?.files);
     if (!file) return;
     e.preventDefault();
-    void this._uploadAndInsert(file, box);
+    void this._uploadAndInsert(file, box, target);
+  }
+
+  /** Maps an editor target to the signal holding its draft text. */
+  private draftFor(target: EditorTarget) {
+    switch (target) {
+      case 'description': return this.description;
+      case 'reply':       return this.replyDraft;
+      case 'edit':        return this.editDraft;
+      default:            return this.commentDraft;
+    }
   }
 
   /** Finds the first image file among clipboard items. */
@@ -672,24 +860,31 @@ export class WorkItemDetailPageComponent implements OnInit {
     return null;
   }
 
-  /** Uploads an image then inserts `![](url)` at the textarea caret, updating the bound signal. */
-  private async _uploadAndInsert(file: File, box: HTMLTextAreaElement): Promise<void> {
+  /**
+   * Uploads an image then inserts `![](url)` at the textarea caret, updating the bound signal.
+   * @param file The image to upload.
+   * @param box The textarea the image was pasted or dropped into.
+   * @param target Which draft the textarea is bound to. Named rather than sniffed from the
+   *   placeholder text, which broke as soon as the thread grew reply and edit boxes of its own.
+   */
+  private async _uploadAndInsert(file: File, box: HTMLTextAreaElement, target: EditorTarget): Promise<void> {
     const repoId = this.repoCtx.selectedRepoId();
     const taskId = this.taskId();
     if (!repoId || !taskId) return;
 
     this.imageUploading.set(true);
+    this.attachmentError.set(null);
     try {
       const url     = await this.attachments.uploadInlineImage(repoId, taskId, file);
       const snippet = `![image](${url})`;
       const start   = box.selectionStart ?? box.value.length;
       const end     = box.selectionEnd ?? box.value.length;
       const next    = box.value.slice(0, start) + snippet + box.value.slice(end);
-      // Route the update to whichever field this textarea is bound to.
-      if (box.placeholder.startsWith('Describe')) this.description.set(next);
-      else this.commentDraft.set(next);
-    } catch {
-      // Upload failed — keep the text as-is.
+      this.draftFor(target).set(next);
+    } catch (err) {
+      // Silence here read as "paste does nothing": the type/size guards in the service throw
+      // before any request, so without this the user got no text and no reason.
+      this.attachmentError.set(err instanceof Error ? err.message : 'Image upload failed.');
     } finally {
       this.imageUploading.set(false);
     }
@@ -910,7 +1105,14 @@ export class WorkItemDetailPageComponent implements OnInit {
   /** Removes the document at the given index. @param index Row to remove. */
   removeDocument(index: number): void {
     this.documents.update(d => d.filter((_, i) => i !== index));
-    if (this.editingDocIndex() === index) this.editingDocIndex.set(null);
+
+    // The editing marker is an index into the same array, so removing a row above the one
+    // being edited shifts it: left alone it pointed past the end and the open input vanished
+    // mid-typing. Shift it down to stay on the same row.
+    const editing = this.editingDocIndex();
+    if (editing === null) return;
+    if (editing === index) this.editingDocIndex.set(null);
+    else if (editing > index) this.editingDocIndex.set(editing - 1);
   }
 
   /** Updates a document URL at the given index. @param index Row index. @param value New URL or label. */

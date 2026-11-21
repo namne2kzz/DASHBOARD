@@ -42,7 +42,9 @@ export class MyWorkPageComponent implements OnInit {
 
   /** Today, as "Monday, 27 October". */
   readonly todayLabel = computed(() =>
-    new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase(),
+    // No .toUpperCase(): it sits in an .nx-label, whose own rule rejects uppercase as
+    // shouting, and the doc comment above already promised sentence case.
+    new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }),
   );
 
   /**

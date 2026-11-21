@@ -236,6 +236,7 @@ export class KanbanBoardComponent {
     this.dialog.open(CreateWorkItemDialogComponent, {
       title: 'New work item',
       width: '40rem',
+      mode:  'max',
       data:  { type },
     });
   }

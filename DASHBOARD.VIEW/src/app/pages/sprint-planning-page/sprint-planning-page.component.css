@@ -18,7 +18,7 @@
 
 .rebalance__brand {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: .06em;
   color: var(--ai);

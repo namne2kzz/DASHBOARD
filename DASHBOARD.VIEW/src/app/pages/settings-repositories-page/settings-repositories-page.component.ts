@@ -15,7 +15,7 @@ import { PrivilegeService } from '../../core/services/privilege.service';
 type RepoFilter = 'active' | 'archived' | 'all';
 
 /**
- * Settings â†’ Repositories: the administrator's view of every repository in the organization,
+ * Settings → Repositories: the administrator's view of every repository in the organization,
  * archived ones included.
  *
  * Distinct from the repo switcher in the sidebar, which only ever shows what the signed-in user
@@ -39,7 +39,7 @@ export class SettingsRepositoriesPageComponent implements OnInit {
   readonly searchQuery  = signal('');
   readonly activeFilter = signal<RepoFilter>('active');
 
-  // â”€â”€ Edit dialog state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Edit dialog state ──
   readonly editing          = signal<RepositoryApiDto | null>(null);
   readonly formName         = signal('');
   readonly formDescription  = signal('');
@@ -48,7 +48,7 @@ export class SettingsRepositoriesPageComponent implements OnInit {
   readonly membersLoading   = signal(false);
   readonly saving           = signal(false);
 
-  // â”€â”€ Archive confirmation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Archive confirmation ──
   /** Repository awaiting archive confirmation, or null when no prompt is open. */
   readonly archiving = signal<RepositoryApiDto | null>(null);
 
@@ -118,7 +118,7 @@ export class SettingsRepositoriesPageComponent implements OnInit {
     this.svc.load(this.searchQuery());
   }
 
-  // â”€â”€ Create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Create ──
 
   /** Opens the shared new-repository dialog and folds the result into the list. */
   async openCreate(): Promise<void> {
@@ -137,7 +137,7 @@ export class SettingsRepositoriesPageComponent implements OnInit {
     this.toast.success(`Repository "${repo.name}" created.`);
   }
 
-  // â”€â”€ Edit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Edit ──
 
   /**
    * Opens the edit form for one repository and loads its members for the Project Manager picker.
@@ -208,7 +208,7 @@ export class SettingsRepositoriesPageComponent implements OnInit {
     });
   }
 
-  // â”€â”€ Archive / restore â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Archive / restore ──
 
   /** Opens the archive prompt. @param repo The repository to archive. */
   confirmArchive(repo: RepositoryApiDto): void {

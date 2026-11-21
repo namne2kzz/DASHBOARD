@@ -46,10 +46,10 @@
 .nb-z {
   fill: #8B5CF6;
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 700;
 }
-.nb-z--small { font-size: 7px; }
+.nb-z--small { font-size: var(--text-xs); }
 
 .nb-hat      { fill: #E3A008; }
 .nb-hat-brim { fill: #BF8700; }

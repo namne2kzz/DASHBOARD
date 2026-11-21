@@ -2,9 +2,9 @@
   <div class="space-y-6">
 
     <!-- ── Header ─────────────────────────────────────────────────────────── -->
-    <header class="sticky top-0 z-20 -mx-5 flex min-h-[72px] flex-wrap items-center justify-between gap-3 border-b border-nx-border bg-nx-surface px-8 py-3">
+    <header class="sticky top-0 z-20 -mx-5 flex h-[60px] flex-wrap items-center justify-between gap-3 border-b border-nx-border nx-page-header px-11 py-3">
       <div>
-        <h1 class="text-3xl font-bold text-nx-text">Backlog</h1>
+        <h1 class="text-lg font-semibold text-nx-text">Backlog</h1>
       </div>
 
       <div class="flex flex-wrap gap-2">
@@ -25,86 +25,79 @@
       <app-load-error [message]="backlog.error()!" (retry)="backlog.retryLoad()" />
     }
 
-    <!-- ── Summary cards ──────────────────────────────────────────────────── -->
+    <!-- ── Summary line ───────────────────────────────────────────────────── -->
+    <!-- One line, not four cards: these are four plain counts nobody acts on, and as cards
+         they took a band of the page and pulled the eye away from the backlog itself. -->
     @if (backlog.loading()) {
-      <section class="grid gap-3 md:grid-cols-4">
+      <div class="flex flex-wrap items-center gap-x-5 gap-y-1">
         @for (_ of [1, 2, 3, 4]; track $index) {
-          <div class="nx-skeleton">
-            <div class="h-3 w-16 rounded bg-slate-700"></div>
-            <div class="mt-2 h-7 w-10 rounded bg-slate-700"></div>
-          </div>
+          <div class="nx-skeleton h-4 w-24 rounded"></div>
         }
-      </section>
+      </div>
     } @else {
-      <section class="grid gap-3 md:grid-cols-4">
-        <div class="nx-card p-4">
-          <p class="text-xs font-medium text-slate-400">Epics</p>
-          <p class="mt-1 text-xl font-semibold text-white">{{ backlog.epics().length }}</p>
-        </div>
-        <div class="nx-card p-4">
-          <p class="text-xs font-medium text-slate-400">Features</p>
-          <p class="mt-1 text-xl font-semibold text-white">{{ backlog.features().length }}</p>
-        </div>
-        <div class="nx-card p-4">
-          <p class="text-xs font-medium text-slate-400">User stories</p>
-          <p class="mt-1 text-xl font-semibold text-white">{{ backlog.stories().length }}</p>
-        </div>
-        <div class="nx-card p-4">
-          <p class="text-xs font-medium text-slate-400">Ready</p>
-          <p class="mt-1 text-xl font-semibold text-white">{{ backlog.readyStories() }}</p>
-        </div>
-      </section>
+      <p class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-nx-text-2">
+        <span><span class="font-semibold text-nx-text">{{ backlog.epics().length }}</span> epics</span>
+        <span><span class="font-semibold text-nx-text">{{ backlog.features().length }}</span> features</span>
+        <span><span class="font-semibold text-nx-text">{{ backlog.stories().length }}</span> user stories</span>
+        <span><span class="font-semibold text-nx-text">{{ backlog.readyStories() }}</span> ready</span>
+      </p>
     }
 
     <!-- ── Priority rank + portfolio ──────────────────────────────────────── -->
-    <section class="nx-card p-6">
+    <!-- No card here: the rows inside are cards, and a card holding cards gives the same
+         surface two borders and two shadows for one piece of content. This is the region
+         they sit in, so it carries the spacing and leaves the elevation to them. -->
+    <section class="p-6">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex flex-wrap items-center gap-2">
+          <div class="nx-segmented">
           @for (level of backlog.levels; track level) {
             <button
               type="button"
-              class="rounded-lg px-3 py-2 text-sm font-semibold ring-1 transition"
-              [class]="
-                backlog.activeLevel() === level
-                  ? 'bg-sky-500/10 text-sky-500 ring-transparent'
-                  : 'bg-slate-950/60 text-slate-300 ring-slate-700 hover:bg-slate-800'
-              "
+              [class.is-active]="backlog.activeLevel() === level"
               (click)="backlog.setLevel(level)"
             >
               {{ backlog.levelLabel(level) }}
             </button>
           }
+          </div>
 
           @if (backlog.epics().length > 0) {
             <div class="relative" (click)="$event.stopPropagation()">
-              <div
+              <button
+                type="button"
                 class="flex min-w-[10rem] items-center gap-1.5 rounded-lg border px-2 py-1.5 text-xs transition cursor-pointer"
                 [class]="backlog.selectedEpicId()
                   ? 'border-sky-500/50 bg-sky-500/10 text-sky-200'
                   : 'border-slate-700 bg-slate-950 text-slate-400'"
                 (click)="epicPickerOpen.set(!epicPickerOpen())"
+                [attr.aria-expanded]="epicPickerOpen()"
+                aria-haspopup="listbox"
               >
                 <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
                 </svg>
-                <span class="flex-1 truncate max-w-[8rem]">
+                <span class="min-w-0 flex-1 truncate max-w-[8rem]">
                   {{ selectedEpicTitle() }}
                 </span>
-                @if (backlog.selectedEpicId()) {
-                  <button
-                    type="button"
-                    class="ml-1 text-sky-400 hover:text-white"
-                    (click)="$event.stopPropagation(); selectEpicFilter(null)"
-                  >✕</button>
-                }
-              </div>
+              </button>
+              <!-- Clear sits outside the toggle: a button inside a button is invalid HTML and
+                   the inner one never gets its own turn in the tab order. -->
+              @if (backlog.selectedEpicId()) {
+                <button
+                  type="button"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 text-sky-400 hover:text-white"
+                  (click)="$event.stopPropagation(); selectEpicFilter(null)"
+                  aria-label="Clear epic filter"
+                >✕</button>
+              }
 
               @if (epicPickerOpen()) {
                 <div appFlipDrop class="absolute left-0 top-full z-30 mt-1 w-64 nx-menu overflow-hidden">
                   <div class="p-2">
                     <input
                       type="text"
-                      placeholder="Search epics..."
+                      placeholder="Search epics..." aria-label="Search epics"
                       class="field-input !h-7 !text-xs w-full"
                       [ngModel]="epicSearch()"
                       (ngModelChange)="epicSearch.set($event)"
@@ -171,7 +164,7 @@
             @if (selectionMode()) {
               <p class="text-xs text-slate-500">Tick rows to select. Dragging is paused.</p>
             } @else {
-              <p class="text-xs text-slate-500">Drag rows to recalculate decimal stack rank.</p>
+              <p class="text-xs text-nx-text-3">Drag to reorder.</p>
             }
           </div>
 
@@ -221,7 +214,7 @@
 
               @if (pendingBulkDelete()) {
                 <div class="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-rose-500/40 bg-rose-950/30 px-3 py-2">
-                  <span class="text-xs text-rose-200">Delete {{ selectedIds().size }} selected item{{ selectedIds().size === 1 ? '' : 's' }}? This cannot be undone. Parents with unselected children are skipped.</span>
+                  <span class="text-xs text-nx-danger-text">Delete {{ selectedIds().size }} selected item{{ selectedIds().size === 1 ? '' : 's' }}? This cannot be undone. Parents with unselected children are skipped.</span>
                   <span class="ml-auto"></span>
                   <button type="button" class="rounded px-2 py-1 text-xs text-slate-400 transition hover:text-slate-200" (click)="cancelBulkDelete()">Cancel</button>
                   <button type="button" class="nx-btn nx-btn--danger nx-btn--sm" (click)="confirmBulkDelete()">Delete</button>
@@ -234,7 +227,7 @@
             <div class="mb-3 flex flex-wrap items-center gap-2">
               <input
                 type="text"
-                placeholder="Search title..."
+                placeholder="Search title..." aria-label="Search backlog by title"
                 class="field-input !h-7 !text-xs min-w-[10rem] flex-1"
                 [ngModel]="backlog.filterKeyword()"
                 (ngModelChange)="backlog.setFilterKeyword($event)"
@@ -339,11 +332,19 @@
                     </label>
                   }
                   <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <!-- A whole row is the click target, which a <button> cannot wrap (it holds
+                         its own buttons and tags). It takes the button role and key handling
+                         instead, so the keyboard reaches it the same way the pointer does. -->
                     <div
                       class="min-w-0 flex-1"
                       [class.cursor-pointer]="item.type === 'user-story'"
                       [title]="item.type === 'user-story' ? 'Click to view/edit details' : ''"
                       (click)="openDetail(item)"
+                      [attr.role]="item.type === 'user-story' ? 'button' : null"
+                      [attr.tabindex]="item.type === 'user-story' ? 0 : null"
+                      [attr.aria-label]="item.type === 'user-story' ? 'Open ' + item.title : null"
+                      (keydown.enter)="item.type === 'user-story' && openDetail(item)"
+                      (keydown.space)="item.type === 'user-story' && openDetail(item); $event.preventDefault()"
                     >
                       <div class="flex flex-wrap items-center gap-2">
                         <!-- Hidden without ManageBacklog: a grab cursor on a card that cannot be
@@ -363,14 +364,17 @@
                             <span class="h-1 w-1 rounded-full bg-current"></span>
                           </div>
                         }
-                        <span class="rounded bg-slate-800 px-2 py-1 text-xs font-mono text-sky-300">
-                          {{ item.rank | number: '1.0-4' }}
+                        <!-- The position in the list, not item.rank: rank is a fractional sort
+                             key (7.8125, 15.625) that exists so an item can be dropped between
+                             two others without renumbering the rest. It means nothing to a reader. -->
+                        <span class="font-mono text-xs tabular-nums text-nx-text-3">
+                          {{ idx + 1 }}
                         </span>
                         <span
                           class="nx-tag"
                           [class]="
                             item.state === 'ready'
-                              ? 'bg-emerald-500/15 text-emerald-200 ring-transparent'
+                              ? 'bg-emerald-500/15 text-nx-success-text ring-transparent'
                               : item.state === 'committed'
                                 ? 'bg-sky-500/10 text-sky-500 ring-transparent'
                                 : 'bg-slate-700/50 text-slate-300 ring-slate-600'
@@ -393,8 +397,13 @@
                       } @else {
                         <h3 class="mt-2 font-semibold text-slate-100">{{ item.title }}</h3>
                       }
-                      <p class="mt-1 text-xs text-slate-500">
-                        Parent: {{ backlog.parentTitle(item) }} - Children: {{ backlog.childCount(item.id) }}
+                      <!-- "Children: 0" is a property name and a developer's zero; a reader sees it
+                           as something broken. Say it in words, and only when there is something to say. -->
+                      <p class="mt-1 text-xs text-nx-text-3">
+                        {{ backlog.parentTitle(item) }}
+                        @if (backlog.childCount(item.id); as n) {
+                          · {{ n }} sub-item{{ n === 1 ? '' : 's' }}
+                        }
                       </p>
                     </div>
 

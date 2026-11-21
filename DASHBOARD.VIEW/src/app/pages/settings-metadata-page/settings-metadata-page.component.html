@@ -1,19 +1,19 @@
 <div class="flex h-full flex-col">
 
   <!-- Header -->
-  <div class="flex items-center justify-between border-b border-nx-border bg-nx-surface px-8 py-4">
+  <div class="flex h-[60px] items-center justify-between border-b border-nx-border nx-page-header px-8">
     <div>
-      <h1 class="text-3xl font-bold text-nx-text">
-        Metadata
-        @if (repoCtx.selectedRepo(); as repo) {
-          <span class="ml-1.5 text-slate-500">— {{ repo.name }}</span>
-        }
-      </h1>
+      <!-- The heading names the screen; which repository it belongs to is context, so it
+           goes on its own line rather than padding out the title. -->
+      <h1 class="text-lg font-semibold leading-tight text-nx-text">Metadata</h1>
+      @if (repoCtx.selectedRepo(); as repo) {
+        <p class="text-xs leading-tight text-nx-text-3">{{ repo.name }}</p>
+      }
     </div>
     @if (canCreate()) {
       <button type="button" (click)="openCreate()"
         class="nx-btn nx-btn--primary nx-btn--sm">
-        + New entry
+        New entry
       </button>
     }
   </div>
@@ -41,7 +41,7 @@
                       Global
                     </span>
                   }
-                  <span class="hidden w-24 shrink-0 text-right text-[11px] text-slate-600 md:block">
+                  <span class="hidden w-24 shrink-0 text-right text-xs text-slate-600 md:block">
                     {{ dt.format(m.createdAt, 'MMM d, y') }}
                   </span>
                   @if (canManage(m)) {
@@ -51,7 +51,7 @@
                         Edit
                       </button>
                       <button type="button" (click)="remove(m)"
-                        class="rounded-lg px-2.5 py-1 text-xs text-rose-500/70 transition hover:bg-rose-500/10 hover:text-rose-400">
+                        class="rounded-lg px-2.5 py-1 text-xs text-rose-500 transition hover:bg-rose-500/10 hover:text-rose-400">
                         Delete
                       </button>
                     </div>
@@ -67,9 +67,9 @@
 
   <!-- ── Create / Edit modal ─────────────────────────────────────── -->
   @if (activePanel()) {
-    <div class="fixed inset-0 z-40 bg-slate-950/60 " (click)="closePanel()"></div>
+    <div class="fixed inset-0 z-40 bg-slate-950/60" (click)="closePanel()"></div>
 
-    <div class="fixed inset-0 z-50 m-auto h-fit w-full max-w-md rounded-2xl bg-nx-surface shadow-[0_24px_64px_rgba(13,17,23,0.28)] p-6 shadow-2xl">
+    <div class="fixed inset-0 z-50 m-auto h-fit w-full max-w-md rounded-2xl bg-nx-surface shadow-lg p-6 shadow-2xl">
       <div class="flex items-start justify-between gap-3">
         <h3 class="text-sm font-semibold text-white">
           {{ activePanel() === 'edit' ? 'Edit Metadata' : 'New Metadata' }}

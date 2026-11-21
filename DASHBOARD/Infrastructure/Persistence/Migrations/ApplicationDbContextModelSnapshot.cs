@@ -244,6 +244,9 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("RepositoryId")
                         .HasColumnType("uniqueidentifier");
 
@@ -257,9 +260,13 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("AuthorId");
 
+                    b.HasIndex("ParentId");
+
                     b.HasIndex("RepositoryId");
 
                     b.HasIndex("SprintTaskId");
+
+                    b.HasIndex("SprintTaskId", "ParentId");
 
                     b.ToTable("DiscussionEntries", (string)null);
                 });
@@ -1641,6 +1648,11 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("DASHBOARD.Domain.Entities.DiscussionEntry", "Parent")
+                        .WithMany("Replies")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("DASHBOARD.Domain.Entities.SprintTask", "SprintTask")
                         .WithMany("Discussions")
                         .HasForeignKey("SprintTaskId")
@@ -1648,6 +1660,8 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Author");
+
+                    b.Navigation("Parent");
 
                     b.Navigation("SprintTask");
                 });
@@ -1924,6 +1938,11 @@ namespace DASHBOARD.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("DASHBOARD.Domain.Entities.BacklogItem", b =>
                 {
                     b.Navigation("Children");
+                });
+
+            modelBuilder.Entity("DASHBOARD.Domain.Entities.DiscussionEntry", b =>
+                {
+                    b.Navigation("Replies");
                 });
 
             modelBuilder.Entity("DASHBOARD.Domain.Entities.Sprint", b =>

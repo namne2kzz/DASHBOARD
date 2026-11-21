@@ -59,7 +59,7 @@ describe('SprintPlanningPageComponent', () => {
       expect(component.loadOverWidth(100)).toBe(0);
     });
 
-    it('stops the violet fill at the tick however overloaded someone is', () => {
+    it('stops the fill at the tick however overloaded someone is', () => {
       expect(component.loadFillWidth(125)).toBe(component.LOAD_MARKER_AT);
       expect(component.loadFillWidth(300)).toBe(component.LOAD_MARKER_AT);
     });

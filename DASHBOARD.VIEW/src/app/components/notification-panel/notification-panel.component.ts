@@ -97,7 +97,7 @@ export class NotificationPanelComponent {
       case 'MentionedInDiscussion': return 'text-amber-400';
       case 'AddedToRepository':    return 'text-teal-400';
       case 'RemovedFromRepository':return 'text-slate-400';
-      case 'AddedToSprint':        return 'text-indigo-400';
+      case 'AddedToSprint':        return 'text-violet-400';
       case 'RemovedFromSprint':    return 'text-slate-400';
       default:                      return 'text-slate-400';
     }

@@ -165,6 +165,68 @@ protected override void Up(MigrationBuilder migrationBuilder)
 }
 ```
 
+### Expand–Contract (đổi/xóa cột an toàn, nhiều deploy)
+
+Không bao giờ đổi hay xóa cột trong một lần. Tách thành 3 migration + 3 lần deploy:
+
+| Phase | DB | Code | Rollback |
+|---|---|---|---|
+| **1. Expand** | Thêm cột mới (nullable), index CONCURRENTLY/ONLINE. Cột cũ **giữ nguyên** | Code đọc cột cũ, **ghi cả hai** | Drop cột mới |
+| **2. Migrate** | Backfill theo batch (xem dưới) | Code đọc cột **mới**, vẫn ghi cả hai | Chuyển đọc về cột cũ |
+| **3. Contract** | Drop cột cũ, enforce NOT NULL cho cột mới | Code chỉ dùng cột mới | Không rollback được — chỉ chạy khi phase 2 đã ổn định qua vài ngày |
+
+**Luật:** mỗi phase là 1 migration + 1 deploy riêng. Không gộp. Giữa phase 2 và 3 phải để app chạy ổn định đã, vì phase 3 là điểm không quay lại.
+
+### Backfill theo batch (bảng lớn)
+
+Một câu `UPDATE` trên bảng triệu dòng sẽ khóa bảng và thổi bay transaction log. Chia batch, commit từng mẻ, nghỉ giữa các mẻ:
+
+```csharp
+protected override void Up(MigrationBuilder migrationBuilder)
+{
+    // Backfill 10k dòng mỗi vòng, commit từng mẻ để không giữ lock dài
+    // và không phình transaction log. WAITFOR nhường nhịp cho traffic thật.
+    migrationBuilder.Sql("""
+        WHILE 1 = 1
+        BEGIN
+            UPDATE TOP (10000) Orders
+            SET ExternalRef = CONCAT('LEGACY-', CAST(Id AS varchar(36)))
+            WHERE ExternalRef IS NULL;
+
+            IF @@ROWCOUNT = 0 BREAK;
+            WAITFOR DELAY '00:00:00.100';
+        END
+        """, suppressTransaction: true);
+}
+```
+
+PostgreSQL: dùng `DO $$ ... LOOP ... COMMIT; PERFORM pg_sleep(0.1); END LOOP $$` với `LIMIT batch_size`.
+
+**Bảng rất lớn (>10M dòng):** đừng backfill trong migration. Viết job/hosted service chạy nền, migration chỉ thêm cột.
+
+### Rollback — kiểm tra trước khi tin
+
+`Down()` tồn tại không có nghĩa là rollback được. Trước khi deploy, tự trả lời:
+
+- [ ] `Down()` có **thật sự** khôi phục trạng thái cũ, hay chỉ drop cột (mất data)?
+- [ ] Đã chạy thử `dotnet ef database update <PreviousMigration>` trên bản copy của production chưa?
+- [ ] Có backup trước khi chạy không? Restore mất bao lâu?
+- [ ] Migration này đã qua điểm không quay lại chưa (phase Contract đã drop cột)?
+- [ ] Nếu app version mới đã chạy, rollback DB có làm nó crash không? (DB và code phải rollback cùng nhau)
+
+**Thao tác không thể rollback bằng `Down()`** — cần backup/restore: drop column, drop table, đổi kiểu dữ liệu làm mất độ chính xác (`decimal(18,4)` → `decimal(18,2)`), `TRUNCATE`.
+
+### Trước khi merge — checklist
+
+- [ ] Có `Down()` và đã chạy thử
+- [ ] Không có destructive operation ở cùng migration với thay đổi khác
+- [ ] Cột NOT NULL mới có default, hoặc đi theo expand–contract
+- [ ] FK mới có index đi kèm
+- [ ] Index tạo bằng `ONLINE = ON` (SQL Server) / `CONCURRENTLY` (PostgreSQL)
+- [ ] Ước lượng số dòng bị ảnh hưởng; >100k thì backfill theo batch
+- [ ] Đã sinh script bằng `dotnet ef migrations script` và **đọc SQL thật** trước khi chạy production
+- [ ] Một migration cho một thay đổi logic
+
 ## Migration Commands Reference
 ```bash
 # Add migration

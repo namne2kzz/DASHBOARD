@@ -5,7 +5,7 @@
   width: 100%;
   align-items: center;
   gap: var(--space-3);
-  padding: 10px var(--space-3);
+  padding: 8px var(--space-3);
   border: 0;
   border-radius: var(--radius);
   background: transparent;

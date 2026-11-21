@@ -16,6 +16,7 @@ public sealed class MinioStorageService : IStorageService, IAsyncDisposable
     private readonly AmazonS3Client    _client;
     private readonly IAppSettings      _settings;
     private readonly ILogger<MinioStorageService> _logger;
+    private readonly AmazonS3Client _presignClient;
 
     /// <summary>Initialises the S3 client pointed at the configured MinIO endpoint.</summary>
     public MinioStorageService(IAppSettings settings, ILogger<MinioStorageService> logger)
@@ -23,18 +24,50 @@ public sealed class MinioStorageService : IStorageService, IAsyncDisposable
         _settings = settings;
         _logger   = logger;
 
-        _client = new AmazonS3Client(
+        // Presigned URLs came out Signature V2 (AWSAccessKeyId=…&Signature=…) and MinIO rejected
+        // every PUT with SignatureDoesNotMatch. Per the SDK's own docs, the default uses V4 for
+        // all requests EXCEPT presigned URLs when the region is us-east-1 — which is the region
+        // set below. Setting this explicitly is what forces V4 for presigns too; the config's
+        // SignatureVersion property does not govern them.
+        AWSConfigsS3.UseSignatureVersion4 = true;
+
+        _client       = BuildClient(settings, settings.MinioEndpoint);
+
+        // Separate client signing against the PUBLIC host, used only to presign URLs. SigV4 signs
+        // the Host header (X-Amz-SignedHeaders=host), so rewriting minio:9000 -> localhost:9100
+        // after signing invalidated the signature and MinIO answered every browser PUT with 403
+        // SignatureDoesNotMatch — verified by replaying one URL: 200 at the signed host, 403 at
+        // the rewritten one. Signing for the host the browser actually calls removes the rewrite.
+        _presignClient = settings.MinioPublicBaseUrl.TrimEnd('/') == settings.MinioEndpoint.TrimEnd('/')
+            ? _client
+            : BuildClient(settings, settings.MinioPublicBaseUrl);
+    }
+
+    /// <summary>Scheme presigned URLs must use, taken from the public base URL.</summary>
+    /// <returns><see cref="Protocol.HTTP"/> for an http:// base, otherwise HTTPS.</returns>
+    private Protocol PresignProtocol() =>
+        _settings.MinioPublicBaseUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+            ? Protocol.HTTP
+            : Protocol.HTTPS;
+
+    /// <summary>Builds an S3 client for MinIO against the given endpoint.</summary>
+    /// <param name="settings">Credentials source.</param>
+    /// <param name="endpoint">Base URL this client signs and talks to.</param>
+    /// <returns>A configured <see cref="AmazonS3Client"/>.</returns>
+    private static AmazonS3Client BuildClient(IAppSettings settings, string endpoint)
+    {
+        return new AmazonS3Client(
             settings.MinioAccessKey,
             settings.MinioSecretKey,
             new AmazonS3Config
             {
-                ServiceURL       = settings.MinioEndpoint,
+                ServiceURL       = endpoint,
                 ForcePathStyle   = true,   // required for MinIO — virtual-hosted style not supported
                 SignatureVersion = "4",
                 AuthenticationRegion = "us-east-1", // MinIO ignores region but SDK requires a value
                 // Without this the SDK signs presigned URLs as https even for an http endpoint,
                 // so the browser's PUT fails with ERR_SSL_PROTOCOL_ERROR against the plain-HTTP MinIO.
-                UseHttp = settings.MinioEndpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase),
+                UseHttp = endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase),
             });
     }
 
@@ -50,15 +83,15 @@ public sealed class MinioStorageService : IStorageService, IAsyncDisposable
             Key        = objectKey,
             Verb       = HttpVerb.PUT,
             Expires    = DateTime.UtcNow.Add(expiry),
+            // AmazonS3Config.UseHttp does not reach presigned URLs — the SDK emitted
+            // https://localhost:9100 against a plain-HTTP MinIO and the browser failed with
+            // ERR_SSL_PROTOCOL_ERROR. Protocol is the switch that actually applies here.
+            Protocol   = PresignProtocol(),
         };
 
         // GetPreSignedURL is synchronous in AWSSDK.S3 — wrap to satisfy async interface.
-        var url = _client.GetPreSignedURL(request);
-
-        // Swap the internal Docker endpoint for the public base URL so the browser can reach it.
-        url = ReplaceEndpoint(url);
-
-        return Task.FromResult(url);
+        // Signed by the public-host client, so the URL needs no rewriting afterwards.
+        return Task.FromResult(_presignClient.GetPreSignedURL(request));
     }
 
     /// <inheritdoc/>
@@ -176,9 +209,10 @@ public sealed class MinioStorageService : IStorageService, IAsyncDisposable
                 Expires    = expires,
                 UploadId   = uploadId,
                 PartNumber = i,
+                Protocol   = PresignProtocol(),
             };
 
-            var url = ReplaceEndpoint(_client.GetPreSignedURL(request));
+            var url = _presignClient.GetPreSignedURL(request);
             urls.Add(url);
         }
 
@@ -234,34 +268,4 @@ public sealed class MinioStorageService : IStorageService, IAsyncDisposable
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Rewrites the origin of a presigned URL to the public base URL.
-    /// Needed in Docker: the SDK signs using <c>MinioEndpoint</c> (e.g. http://minio:9000) but the
-    /// browser must reach <c>MinioPublicBaseUrl</c> (e.g. http://localhost:9100).
-    /// </summary>
-    /// <remarks>
-    /// The origin is rebuilt from the parsed URL rather than string-replaced: the SDK does not
-    /// always sign with the scheme configured on <c>MinioEndpoint</c> (it emitted
-    /// <c>https://minio:9000/…</c> for an <c>http://</c> endpoint), so searching for the configured
-    /// prefix found nothing and the browser was handed the unreachable internal host. Only the
-    /// scheme/host/port change — path and query carry the signature and must be left untouched.
-    /// </remarks>
-    private string ReplaceEndpoint(string presignedUrl)
-    {
-        var publicBase = _settings.MinioPublicBaseUrl.TrimEnd('/');
-
-        if (string.IsNullOrWhiteSpace(publicBase)
-            || !Uri.TryCreate(presignedUrl, UriKind.Absolute, out var signed)
-            || !Uri.TryCreate(publicBase, UriKind.Absolute, out var target))
-            return presignedUrl;
-
-        var rewritten = new UriBuilder(signed)
-        {
-            Scheme = target.Scheme,
-            Host   = target.Host,
-            Port   = target.IsDefaultPort ? -1 : target.Port,
-        };
-
-        return rewritten.Uri.AbsoluteUri;
-    }
 }

@@ -1,7 +1,11 @@
 ﻿using DASHBOARD.Application.Common.Models;
 using DASHBOARD.Application.Discussions.Commands.AddDiscussion;
 using DASHBOARD.Application.Discussions.DTOs;
+using DASHBOARD.Controllers.Sprints.Requests;
+using DASHBOARD.Application.Discussions.Commands.DeleteDiscussion;
+using DASHBOARD.Application.Discussions.Commands.UpdateDiscussion;
 using DASHBOARD.Application.Discussions.Queries.ListDiscussions;
+using DASHBOARD.Application.Discussions.Queries.ListReplies;
 using DASHBOARD.Application.Discussions.Queries.ListMentionCandidates;
 using DASHBOARD.Application.History.DTOs;
 using DASHBOARD.Application.History.Queries.ListHistory;
@@ -99,20 +103,77 @@ public sealed class SprintTaskDetailController(ISender mediator) : ControllerBas
         return Ok(result);
     }
 
-    /// <summary>Posts a new comment on the sprint task's discussion thread.</summary>
+    /// <summary>Returns a page of replies to one root comment, oldest first.</summary>
     /// <param name="repoId">The repository ID.</param>
     /// <param name="taskId">The sprint task ID.</param>
-    /// <param name="body">The comment text.</param>
+    /// <param name="entryId">The root comment whose replies to fetch.</param>
+    /// <param name="skip">How many replies are already shown.</param>
+    /// <param name="take">How many replies to return.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the requested page of <see cref="DiscussionDto"/>.</returns>
+    [HttpGet("discussions/{entryId:guid}/replies")]
+    [ProducesResponseType<IReadOnlyList<DiscussionDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ListReplies(
+        Guid repoId, Guid taskId, Guid entryId,
+        [FromQuery] int skip, [FromQuery] int take, CancellationToken ct)
+    {
+        var result = await mediator.Send(new ListRepliesQuery(repoId, taskId, entryId, skip, take), ct);
+        return Ok(result);
+    }
+
+    /// <summary>Posts a new comment, or a reply to an existing one, on the sprint task's discussion thread.</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="taskId">The sprint task ID.</param>
+    /// <param name="request">The comment body and optional parent comment.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>201 with the new <see cref="DiscussionDto"/>.</returns>
     [HttpPost("discussions")]
     [ProducesResponseType<DiscussionDto>(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> AddDiscussion(Guid repoId, Guid taskId, [FromBody] string body, CancellationToken ct)
+    public async Task<IActionResult> AddDiscussion(Guid repoId, Guid taskId, [FromBody] AddDiscussionRequest request, CancellationToken ct)
     {
-        var result = await mediator.Send(new AddDiscussionCommand(repoId, taskId, body), ct);
+        var result = await mediator.Send(new AddDiscussionCommand(repoId, taskId, request.Body, request.ParentId), ct);
         return StatusCode(StatusCodes.Status201Created, result);
+    }
+
+    /// <summary>Edits an existing comment. Only the original author may edit.</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="taskId">The sprint task ID.</param>
+    /// <param name="entryId">The comment to edit.</param>
+    /// <param name="request">The replacement body.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 when the edit is applied.</returns>
+    [HttpPut("discussions/{entryId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateDiscussion(
+        Guid repoId, Guid taskId, Guid entryId,
+        [FromBody] UpdateDiscussionRequest request, CancellationToken ct)
+    {
+        await mediator.Send(new UpdateDiscussionCommand(repoId, taskId, entryId, request.Body), ct);
+        return NoContent();
+    }
+
+    /// <summary>Deletes a comment, along with its replies when it is a root comment.</summary>
+    /// <param name="repoId">The repository ID.</param>
+    /// <param name="taskId">The sprint task ID.</param>
+    /// <param name="entryId">The comment to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>204 when the comment is removed.</returns>
+    [HttpDelete("discussions/{entryId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteDiscussion(Guid repoId, Guid taskId, Guid entryId, CancellationToken ct)
+    {
+        await mediator.Send(new DeleteDiscussionCommand(repoId, taskId, entryId), ct);
+        return NoContent();
     }
 
     /// <summary>Returns the users who can be @mentioned in this task's discussion (sprint capacity members, or repo members for a backlog task).</summary>

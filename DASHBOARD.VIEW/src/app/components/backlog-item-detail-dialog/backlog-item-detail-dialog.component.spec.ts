@@ -93,6 +93,30 @@ describe('BacklogItemDetailDialogComponent', () => {
     expect(component.documents()).toEqual([]);
   });
 
+  it('removeDoc keeps the editing marker on the same row when an earlier row goes', () => {
+    // The marker is an index: without shifting it, deleting a row above the one being edited
+    // left it pointing past the end and the open input disappeared mid-typing.
+    component.documents.set(['a', 'b', 'c']);
+    component.editDoc(2);
+    component.removeDoc(0);
+    expect(component.editingDocIndex()).toBe(1);
+    expect(component.documents()).toEqual(['b', 'c']);
+  });
+
+  it('removeDoc closes the editor when the edited row itself goes', () => {
+    component.documents.set(['a', 'b', 'c']);
+    component.editDoc(1);
+    component.removeDoc(1);
+    expect(component.editingDocIndex()).toBeNull();
+  });
+
+  it('removeDoc leaves the marker alone when a later row goes', () => {
+    component.documents.set(['a', 'b', 'c']);
+    component.editDoc(0);
+    component.removeDoc(2);
+    expect(component.editingDocIndex()).toBe(0);
+  });
+
   it('addAcRow appends an empty row', () => {
     component.addAcRow();
     expect(component.acRows().length).toBe(2);

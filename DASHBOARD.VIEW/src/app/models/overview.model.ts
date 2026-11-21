@@ -144,6 +144,8 @@ export interface AssigneeWorkloadItemDto {
 /** One audit-trail entry for the repository-wide recent activity feed. */
 export interface RecentActivityItemDto {
   sprintTaskId: string;
+  /** Per-repository item number. The detail route resolves a key like "DASH-10", so the UUID alone cannot address the page. */
+  workItemNumber: number;
   taskTitle: string;
   message: string;
   authorName: string;

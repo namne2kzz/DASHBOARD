@@ -2,12 +2,20 @@
 export interface DiscussionApiDto {
   id:           string;
   sprintTaskId: string;
+  /** Root comment this replies to; null when it is itself a root comment. */
+  parentId:     string | null;
   authorId:     string;
   authorName:   string;
   authorAvatar: string;
   body:         string;
   createdAt:    string;
   updatedAt:    string | null;
+  /** Total replies to this comment; always 0 on a reply. */
+  replyCount:   number;
+  /** Whether the signed-in user may edit this comment. */
+  canEdit:      boolean;
+  /** Whether the signed-in user may delete this comment. */
+  canDelete:    boolean;
 }
 
 /** A single audit-trail entry for a sprint task. */
@@ -47,3 +55,11 @@ export interface UpdateSprintTaskPayload {
   /** Remaining work hours (Task/Bug — updated by the user; for other types pass 0). */
   remainingWork:      number;
 }
+
+/**
+ * Which draft a pasted or dropped image should be inserted into.
+ *
+ * The work-item page has four Markdown editors — description, new comment, reply and edit — and the
+ * upload handler needs to be told which one it is serving.
+ */
+export type EditorTarget = 'description' | 'comment' | 'reply' | 'edit';

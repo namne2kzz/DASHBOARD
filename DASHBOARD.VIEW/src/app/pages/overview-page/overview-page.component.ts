@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { DateTimeService } from '../../core/services/date-time.service';
 import { FormsModule } from '@angular/forms';
 import { Component, computed, effect, inject, untracked } from '@angular/core';
 import { Color, NgxChartsModule, ScaleType } from '@swimlane/ngx-charts';
@@ -25,7 +26,7 @@ const TYPE_SCHEME: Color = {
   name: 'type',
   selectable: true,
   group: ScaleType.Ordinal,
-  domain: ['#3B6FD4', '#B7791F', '#CF222E', '#7550C9'], // type-story · type-task · type-bug · type-test
+  domain: ['#3B6FD4', '#B7791F', '#CF222E', '#0E7490'], // type-story · type-task · type-bug · type-test
 };
 
 const STATUS_SCHEME: Color = {
@@ -39,27 +40,32 @@ const VELOCITY_SCHEME: Color = {
   name: 'velocity',
   selectable: true,
   group: ScaleType.Ordinal,
-  domain: ['#8B949E', '#7C3AED'], // committed (neutral) · completed (accent)
+  domain: ['#8B949E', '#3B82F6'], // committed (neutral) · completed (accent)
 };
 
 const BURNDOWN_SCHEME: Color = {
   name: 'burndown',
   selectable: true,
   group: ScaleType.Ordinal,
-  domain: ['#8B949E', '#7C3AED'], // ideal (neutral, drawn dashed) · actual (accent)
+  domain: ['#8B949E', '#3B82F6'], // ideal (neutral, drawn dashed) · actual (accent)
 };
 
 const WORKLOAD_SCHEME: Color = {
   name: 'workload',
   selectable: true,
   group: ScaleType.Ordinal,
-  domain: ['#7C3AED'],
+  domain: ['#3B82F6'],
 };
 
-const HEALTH_BADGES: Record<string, { label: string; classes: string }> = {
-  OnTrack: { label: 'On track', classes: 'bg-nx-success-soft text-nx-success ring-transparent' },
-  AtRisk:  { label: 'At risk',  classes: 'bg-nx-warning-soft text-nx-warning ring-transparent' },
-  Behind:  { label: 'Behind',   classes: 'bg-nx-danger-soft text-nx-danger ring-transparent' },
+/**
+ * Sprint health, as a coloured dot beside plain text rather than a tinted pill.
+ * A pill reads as a decorative chip; the dot plus the word carries the same meaning
+ * with less ink, and the text colour alone is enough once the fill is gone.
+ */
+const HEALTH_BADGES: Record<string, { label: string; color: string }> = {
+  OnTrack: { label: 'On track', color: 'var(--success-text)' },
+  AtRisk:  { label: 'At risk',  color: 'var(--warning-text)' },
+  Behind:  { label: 'Behind',   color: 'var(--danger-text)' },
 };
 
 /** The stripe colour along the top of the current-sprint card, by health. */
@@ -81,6 +87,7 @@ export class OverviewPageComponent {
   private readonly auth        = inject(AuthService);
   private readonly nudges      = inject(NMateNudgeService);
   readonly resource = inject(ResourceService);
+  private readonly dateTime    = inject(DateTimeService);
   readonly t = this.resource.get.bind(this.resource);
   readonly timeAgo = timeAgo;
 
@@ -225,13 +232,15 @@ export class OverviewPageComponent {
     return Math.max(0, Math.min(100, Math.round((burned / points.committed) * 100)));
   });
 
-  /** The selected sprint's date range, as "2026-06-29 → 2026-07-10". */
+  /** The selected sprint's date range, as "Jun 29, 2026 → Jul 10, 2026". */
   readonly sprintRange = computed(() => {
     const id = this.selectedSprintId();
     const sprints = this.availableSprints();
     const sprint = id ? sprints.find(s => s.id === id) : sprints[0];
     if (!sprint?.startDate || !sprint?.endDate) return '';
-    return `${sprint.startDate.slice(0, 10)} → ${sprint.endDate.slice(0, 10)}`;
+    // Through DateTimeService, not slice(0, 10): the raw ISO prefix ignored the reader's
+    // timezone, so a sprint could show a day earlier than every other date on the page.
+    return `${this.dateTime.format(sprint.startDate, 'MMM d, y')} → ${this.dateTime.format(sprint.endDate, 'MMM d, y')}`;
   });
 
   readonly typeChartData = computed(() =>

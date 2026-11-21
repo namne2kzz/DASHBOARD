@@ -14,7 +14,7 @@
   max-width: 88%;
   border-radius: var(--radius-lg);
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   line-height: 1.55;
   word-wrap: break-word;
 }
@@ -55,7 +55,7 @@
 
 .nm-sources__label {
   color: var(--text-3);
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .nm-source {
@@ -63,7 +63,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: var(--text-xs);
   text-decoration: none;
 }
 
@@ -130,5 +130,5 @@
   padding-top: 6px;
   border-top: 1px solid var(--border);
   color: var(--text-3);
-  font-size: 11px;
+  font-size: var(--text-xs);
 }

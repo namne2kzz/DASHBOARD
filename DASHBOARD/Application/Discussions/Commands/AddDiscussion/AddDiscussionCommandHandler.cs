@@ -40,20 +40,51 @@ public sealed partial class AddDiscussionCommandHandler(
         var author = await db.Set<User>().AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == user.UserId, ct)!;
 
+        var rootId = await ResolveRootAsync(command, ct);
+
         var entry = new DiscussionEntry
         {
             SprintTaskId = command.SprintTaskId,
             RepositoryId = command.RepositoryId,
             AuthorId     = user.UserId,
             Body         = command.Body,
+            ParentId     = rootId,
         };
         db.Set<DiscussionEntry>().Add(entry);
         await uow.CommitAsync(ct);
 
         await NotifyMentionedUsersAsync(command.Body, author!, task.Title, command.RepositoryId, command.SprintTaskId, ct);
 
-        return new DiscussionDto(entry.Id, entry.SprintTaskId, user.UserId,
-            author!.Name, author.AvatarClass, entry.Body, entry.CreatedAt, null);
+        return new DiscussionDto(entry.Id, entry.SprintTaskId, entry.ParentId, user.UserId,
+            author!.Name, author.AvatarClass, entry.Body, entry.CreatedAt, null,
+            ReplyCount: 0, CanEdit: true, CanDelete: true);
+    }
+
+    /// <summary>
+    /// Resolves the root comment a new reply belongs under, keeping the thread two levels deep.
+    /// </summary>
+    /// <param name="command">The add command carrying the requested parent.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The root comment's id, or null when posting a root comment.</returns>
+    /// <remarks>
+    /// Replying to a reply re-parents the new entry to that reply's own root, so the stored tree can
+    /// never be deeper than what the UI draws. The target must belong to the same task, otherwise a
+    /// crafted id could graft a comment onto another work item's thread.
+    /// </remarks>
+    private async Task<Guid?> ResolveRootAsync(AddDiscussionCommand command, CancellationToken ct)
+    {
+        if (command.ParentId is not { } parentId)
+            return null;
+
+        var target = await db.Set<DiscussionEntry>().AsNoTracking()
+            .Where(d => d.Id == parentId
+                     && d.SprintTaskId == command.SprintTaskId
+                     && d.RepositoryId == command.RepositoryId)
+            .Select(d => new { d.Id, d.ParentId })
+            .FirstOrDefaultAsync(ct)
+            ?? throw new NotFoundException(nameof(DiscussionEntry), parentId);
+
+        return target.ParentId ?? target.Id;
     }
 
     /// <summary>Parses @mention tokens from the body and pushes a notification to each distinct mentioned user (except the author) who has mention notifications enabled.</summary>

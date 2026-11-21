@@ -1,0 +1,7 @@
+/* The page's scroller is a flex child of the shell, but Angular puts this host element
+   between them. Left as display:block it sized itself to the content, so the scroller
+   inherited the full content height and had nothing left to scroll. */
+:host {
+  display: contents;
+}
+

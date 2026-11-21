@@ -8,6 +8,11 @@
   flex-direction: column;
   gap: var(--space-3);
   flex-shrink: 0;
+  /* Never taller than the board track. Without this a column with 20 cards grew to
+     3000px, the page grew with it, and the cards past the fold could not be reached
+     because nothing in the chain scrolled vertically. The card list scrolls instead. */
+  max-height: 100%;
+  min-height: 0;
   padding: var(--space-3) var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--surface-2);
@@ -18,8 +23,9 @@
 }
 
 .board-column__count {
-  font-family: var(--font-mono);
-  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  line-height: var(--lh-sm);
   font-weight: 600;
   color: var(--text-2);
 }
@@ -48,7 +54,7 @@
 .board-column--over-hard .board-column__count,
 .board-column--over-hard .board-column__note { color: var(--danger); }
 
-/* Being dragged over: violet, so the destination is unambiguous. */
+/* Being dragged over: accent, so the destination is unambiguous. */
 .board-column--target {
   background: var(--accent-soft);
   outline-color: var(--accent);

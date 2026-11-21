@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { LocalDatePipe } from '../../core/pipes/local-date.pipe';
 import { Component, computed, effect, ElementRef, HostListener, inject, OnInit, QueryList, signal, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgClass } from '@angular/common';
@@ -14,7 +15,7 @@ import { AddCapacityMemberDialogComponent } from '../../components/add-capacity-
 import { NBotComponent } from '../../components/n-bot/n-bot.component';
 import { SprintStoryDetailDialogComponent } from '../../components/sprint-story-detail-dialog/sprint-story-detail-dialog.component';
 import type { SprintTask } from '../../models/sprint-planning.model';
-import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS, SPRINT_TASK_STATE_KEY_OPTIONS } from '../../core/constants/system.constant';
+import { SPRINT_TASK_STATE_BADGE, SPRINT_TASK_STATE_LABEL, SPRINT_TASK_STATE_OPTIONS, SPRINT_TASK_STATE_KEY_OPTIONS, WORK_ITEM_TYPE_LABELS } from '../../core/constants/system.constant';
 import { getStateCategory, SprintTaskApiState, StateCategory } from '../../core/enums/system.enum';
 import { ConfirmService } from '../../core/components/confirm/confirm.service';
 import { RepositoryContextService } from '../../services/repository-context.service';
@@ -24,7 +25,7 @@ import { LoadErrorComponent } from '../../components/load-error/load-error.compo
 
 @Component({
   selector: 'app-sprint-planning-page',
-  imports: [LoadErrorComponent, CommonModule, FormsModule, NgClass, InfiniteScrollDirective, FlipDropDirective, NBotComponent],
+  imports: [LoadErrorComponent, CommonModule, FormsModule, NgClass, InfiniteScrollDirective, FlipDropDirective, NBotComponent, LocalDatePipe],
   templateUrl: './sprint-planning-page.component.html',
   styleUrl: './sprint-planning-page.component.css',
 })
@@ -106,6 +107,9 @@ export class SprintPlanningPageComponent implements OnInit {
     if (!orgAlias || !repoCode) return;
     this.router.navigate(['/', orgAlias, repoCode, 'boards', workItemNumber]);
   }
+
+  /** Human names for the type dot tooltips, so hovering shows "User Story", not a key. */
+  readonly typeLabels = WORK_ITEM_TYPE_LABELS;
 
   /** Maps a work item type key to its nx-type dot modifier class. @param type The task type key. */
   taskTypeDot(type: 'user-story' | 'task' | 'bug' | 'test-plan'): string {
@@ -303,7 +307,7 @@ export class SprintPlanningPageComponent implements OnInit {
 
   /** Opens the add capacity member dialog. */
   /**
-   * Width of the violet part of a load meter.
+   * Width of the filled part of a load meter.
    *
    * @param percent The member's load as a percentage of capacity.
    * @returns Width as a percentage of the bar.

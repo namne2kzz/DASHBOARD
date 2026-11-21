@@ -68,7 +68,14 @@ export class BacklogItemDetailDialogComponent {
   /** Removes a document row and clears editing state if needed. @param index Zero-based position to remove. */
   removeDoc(index: number): void {
     this.documents.update(list => list.filter((_, i) => i !== index));
-    if (this.editingDocIndex() === index) this.editingDocIndex.set(null);
+
+    // The editing marker is an index into the same array, so removing a row above the one
+    // being edited shifts it: left alone it pointed past the end and the open input vanished
+    // mid-typing. Shift it down to stay on the same row.
+    const editing = this.editingDocIndex();
+    if (editing === null) return;
+    if (editing === index) this.editingDocIndex.set(null);
+    else if (editing > index) this.editingDocIndex.set(editing - 1);
   }
 
   /** Updates the text of a document row. @param index Zero-based row index. @param value New text value. */

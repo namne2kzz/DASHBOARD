@@ -21,7 +21,7 @@
     <div class="flex flex-col gap-1">
       <label class="text-xs font-medium text-slate-300" for="nr-code">
         Code <span class="text-red-400">*</span>
-        <span class="text-[10px] font-normal text-slate-500"> max 10</span>
+        <span class="text-xs font-normal text-slate-500"> max 10</span>
       </label>
       <div class="relative">
         <input id="nr-code" type="text" [(ngModel)]="code" name="code" maxlength="10"
@@ -52,9 +52,9 @@
         }
       </div>
       @if (codeStatus() === 'taken') {
-        <p class="mt-0.5 text-[11px] text-red-400">Code is not available.</p>
+        <p class="mt-0.5 text-xs text-red-400">Code is not available.</p>
       } @else if (codeStatus() === 'available') {
-        <p class="mt-0.5 text-[11px] text-emerald-400">Available.</p>
+        <p class="mt-0.5 text-xs text-emerald-400">Available.</p>
       }
     </div>
   </div>
@@ -73,11 +73,11 @@
 
     @if (selectedUser(); as picked) {
       <div class="flex items-center gap-2 rounded-lg border border-sky-500/40 bg-sky-500/5 px-3 py-1.5">
-        <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white ring-1 ring-slate-700"
+        <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ring-1 ring-slate-700"
           [class]="picked.avatarClass">{{ initials(picked.name) }}</div>
         <div class="min-w-0 flex-1">
           <p class="truncate text-xs font-medium text-slate-200">{{ picked.name }}</p>
-          <p class="truncate text-[11px] text-slate-500">{{ picked.email }}</p>
+          <p class="truncate text-xs text-slate-500">{{ picked.email }}</p>
         </div>
         <button type="button" (click)="clearUser()" title="Change user"
           class="shrink-0 rounded p-0.5 text-slate-500 transition hover:text-rose-400">
@@ -101,12 +101,12 @@
 
         <!-- Fixed dropdown — floats outside dialog's overflow clipping -->
         @if (dropdownRect(); as rect) {
-          <div class="nx-menu fixed z-[9990] "
+          <div class="nx-menu fixed z-[9990]"
             [style.top.px]="rect.top" [style.left.px]="rect.left" [style.width.px]="rect.width">
 
             @if (searching()) {
               @for (i of [1, 2, 3]; track i) {
-                <div class="flex items-center gap-2.5 px-3 py-1.5">
+                <div class="flex items-center gap-3 px-3 py-1.5">
                   <div class="h-6 w-6 shrink-0 nx-skeleton !rounded-full"></div>
                   <div class="flex flex-1 flex-col gap-1.5">
                     <div class="h-2.5 w-2/3 nx-skeleton"></div>
@@ -118,12 +118,12 @@
               <div class="overflow-y-auto" style="max-height:11rem">
                 @for (u of searchResults(); track u.userId) {
                   <button type="button" (click)="selectUser(u)"
-                    class="flex w-full items-center gap-2.5 px-3 py-1.5 text-left transition hover:bg-slate-700/60">
-                    <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white ring-1 ring-slate-700"
+                    class="flex w-full items-center gap-3 px-3 py-1.5 text-left transition hover:bg-slate-700/60">
+                    <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ring-1 ring-slate-700"
                       [class]="u.avatarClass">{{ initials(u.name) }}</div>
                     <div class="min-w-0">
                       <p class="truncate text-xs font-medium text-slate-200">{{ u.name }}</p>
-                      <p class="truncate text-[11px] text-slate-500">{{ u.email }}</p>
+                      <p class="truncate text-xs text-slate-500">{{ u.email }}</p>
                     </div>
                   </button>
                 }
@@ -133,7 +133,7 @@
         }
 
         @if (!searching() && searchTerm().trim().length >= 2 && searchResults().length === 0) {
-          <p class="mt-1 text-[11px] text-slate-500">No users found.</p>
+          <p class="mt-1 text-xs text-slate-500">No users found.</p>
         }
       </div>
     }

@@ -20,6 +20,7 @@ export const StorageKeys = {
   // ── UI preferences ───────────────────────────────────────────
   // User-selected UI settings persisted across sessions.
   theme:      'nxs.ui.theme',
+  accent:     'nxs.ui.accent',
   dateFormat: 'nxs.ui.date-format',
   timezone:   'nxs.ui.timezone',
 
