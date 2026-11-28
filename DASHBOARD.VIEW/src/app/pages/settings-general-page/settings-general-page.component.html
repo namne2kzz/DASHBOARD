@@ -499,18 +499,31 @@
               </div>
               <div>
                 <p class="text-xs font-medium text-slate-200">Timezone</p>
-                <p class="text-xs text-slate-500">Used for dates and deadlines</p>
+                <p class="text-xs text-slate-500">
+                  Used for dates and deadlines, in NFlow and HUB. Stored as an IANA zone name, so
+                  daylight saving follows each date.
+                </p>
               </div>
             </div>
-            <select
-              class="field-select !h-7 !text-xs w-auto"
-              [ngModel]="prefs.timezone()" (ngModelChange)="onTimezone($event)">
-              <option value="">Local (device)</option>
-              <option value="utc7">(UTC+7) Ho Chi Minh</option>
-              <option value="utc0">(UTC+0) London</option>
-              <option value="utc-5">(UTC-5) New York</option>
-              <option value="utc9">(UTC+9) Tokyo</option>
-            </select>
+            <div class="flex shrink-0 flex-col items-end gap-1.5">
+              <!-- Filter first: the list is every zone the browser knows (~420 of them). -->
+              <input
+                type="search" autocomplete="off"
+                class="field-input !h-7 !text-xs w-52"
+                placeholder="Filter — hanoi, berlin, +07"
+                [ngModel]="tzFilter()" (ngModelChange)="tzFilter.set($event)" />
+              <select
+                class="field-select !h-7 !text-xs w-auto max-w-[18rem]"
+                [ngModel]="prefs.timezone()" (ngModelChange)="onTimezone($event)">
+                @for (opt of timezoneOptions(); track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+              @if (!prefs.timezone()) {
+                <!-- "Local" alone hides which zone that actually is — name it. -->
+                <p class="text-[11px] text-slate-500">Following this device: {{ browserZoneLabel }}</p>
+              }
+            </div>
           </div>
 
           <!-- Date format -->

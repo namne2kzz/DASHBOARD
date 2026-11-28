@@ -7,6 +7,9 @@ import { LocalDatePipe } from '../../core/pipes/local-date.pipe';
 import { DateTimeService } from '../../core/services/date-time.service';
 import { PreferencesService } from '../../core/services/preferences.service';
 import type { DateFormat, TimezoneId } from '../../models/preferences.model';
+import {
+  browserTimezone, listTimezones, timezoneLabel, withSavedZone, zoneMatches,
+} from '../../core/utils/timezone.util';
 import { ThemeService } from '../../core/services/theme.service';
 import { ToastService } from '../../core/components/toast/toast.service';
 import { AuthService } from '../../services/auth.service';
@@ -82,13 +85,27 @@ export class ProfilePageComponent {
     { value: 'ymd', label: 'YYYY-MM-DD', example: '2026-12-25' },
   ];
 
-  readonly TIMEZONE_OPTIONS: ReadonlyArray<{ value: TimezoneId; label: string }> = [
-    { value: '',      label: 'Browser local time' },
-    { value: 'utc0',  label: 'UTC+0 (London)' },
-    { value: 'utc7',  label: 'UTC+7 (Bangkok / Hanoi)' },
-    { value: 'utc9',  label: 'UTC+9 (Tokyo / Seoul)' },
-    { value: 'utc-5', label: 'UTC−5 (New York)' },
-  ];
+  /** Free-text filter over the zone list; ~450 entries is too many to scroll blindly. */
+  protected readonly tzFilter = signal('');
+
+  /** The browser's own zone, shown as the label for the "follow browser" choice. */
+  protected readonly browserZone = browserTimezone();
+
+  /**
+   * Zone options: "follow the browser" first, then every IANA zone the browser knows, filtered.
+   * Each label carries the zone's current offset so the user can sanity-check their choice.
+   */
+  protected readonly timezoneOptions = computed<ReadonlyArray<{ value: TimezoneId; label: string }>>(() => {
+    const zones = withSavedZone(listTimezones(), this.prefs.timezone())
+      // Matches id, label and city aliases — "hanoi" has to find Asia/Saigon.
+      .filter(z => zoneMatches(z, this.tzFilter()))
+      .map(z => ({ value: z as TimezoneId, label: timezoneLabel(z) }));
+
+    return [
+      { value: '' as TimezoneId, label: `Local (device) — ${timezoneLabel(this.browserZone)}` },
+      ...zones,
+    ];
+  });
 
   /** Saves the display name to the backend and updates the local auth signal. */
   saveProfile(): void {

@@ -43,7 +43,10 @@ export class DateTimeService {
    */
   format(utc: string | null | undefined, format?: string): string {
     if (!utc) return '';
-    return formatDate(this.normalise(utc), format ?? this.defaultFormat(), this.locale, this.prefs.timezoneOffset());
+    const at = new Date(this.normalise(utc));
+    // Offset resolved for THIS date, not for today: a zone with daylight saving has two different
+    // offsets through the year, so formatting a July date with January's offset would be an hour out.
+    return formatDate(at, format ?? this.defaultFormat(), this.locale, this.prefs.timezoneOffset(at));
   }
 
   /**

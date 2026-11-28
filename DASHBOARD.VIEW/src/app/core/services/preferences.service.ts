@@ -4,7 +4,8 @@ import { catchError, map, of } from 'rxjs';
 import type { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { StorageKeys } from '../constants/storage-keys.constant';
-import { DATE_FORMAT_PATTERN, SETTING_KEYS, TIMEZONE_OFFSET } from '../constants/system.constant';
+import { DATE_FORMAT_PATTERN, LEGACY_TIMEZONE_IDS, SETTING_KEYS } from '../constants/system.constant';
+import { browserTimezone, offsetFor } from '../utils/timezone.util';
 import type { AppLanguage, DateFormat, TimezoneId } from '../../models/preferences.model';
 
 export type { AppLanguage, DateFormat, TimezoneId };
@@ -24,8 +25,15 @@ export class PreferencesService {
   readonly dateFormat = signal<DateFormat>(
     (localStorage.getItem(StorageKeys.dateFormat) as DateFormat | null) ?? 'dmy',
   );
+  /**
+   * Preferred display zone as an IANA id; empty means "follow the browser".
+   * Seeded from localStorage, migrating any legacy fixed-offset id left from an older build.
+   */
   readonly timezone = signal<TimezoneId>(
-    (localStorage.getItem(StorageKeys.timezone) as TimezoneId | null) ?? '',
+    (() => {
+      const stored = localStorage.getItem(StorageKeys.timezone) ?? '';
+      return LEGACY_TIMEZONE_IDS[stored] ?? stored;
+    })(),
   );
   readonly language = signal<AppLanguage>(
     (localStorage.getItem('nxs.ui.language') as AppLanguage | null) ?? 'en',
@@ -81,7 +89,7 @@ export class PreferencesService {
         const v = (k: string) => s[k];
         if (v(SETTING_KEYS.dateFormat))   this.dateFormat.set(v(SETTING_KEYS.dateFormat) as DateFormat);
         const tz = v(SETTING_KEYS.timezone);
-        if (tz !== undefined && tz !== null) this.timezone.set(tz as TimezoneId);
+        if (tz !== undefined && tz !== null) this.setTimezoneFromServer(tz);
         if (v(SETTING_KEYS.language))     this.language.set(v(SETTING_KEYS.language) as AppLanguage);
         if (v(SETTING_KEYS.notifyEmail)  != null) this.notifyEmail.set(v(SETTING_KEYS.notifyEmail) === 'true');
         if (v(SETTING_KEYS.notifyPush)   != null) this.notifyPush.set(v(SETTING_KEYS.notifyPush) === 'true');
@@ -134,8 +142,33 @@ export class PreferencesService {
   /** The Angular date-part pattern for the current date-format preference. */
   datePattern(): string { return DATE_FORMAT_PATTERN[this.dateFormat()]; }
 
-  /** The Angular `formatDate` timezone offset for the current preference (undefined = local). */
-  timezoneOffset(): string | undefined { return TIMEZONE_OFFSET[this.timezone()]; }
+  /**
+   * The Angular `formatDate` offset for the preferred zone **at a given instant**.
+   * @param at The instant being formatted; defaults to now.
+   * @returns An offset like `"+0700"`, or undefined to use the browser's own zone.
+   * @remarks
+   * Resolved per instant, never stored: a zone's offset changes with daylight saving, so the same
+   * Berlin preference must yield +0100 for a January date and +0200 for a July one. Callers that
+   * format a specific date should pass it.
+   */
+  timezoneOffset(at?: Date): string | undefined { return offsetFor(this.timezone(), at); }
+
+  /** The effective zone id — the preference, or the browser's zone when unset. */
+  effectiveTimezone(): string { return this.timezone() || browserTimezone(); }
+
+  /**
+   * Applies a zone value received from the server, migrating the legacy fixed-offset ids.
+   * @param raw The stored value: an IANA id, a legacy `utc7`-style id, or empty for browser local.
+   * @remarks
+   * Old rows hold values like `"utc7"`. Mapping them on read (and re-saving as IANA) upgrades each
+   * user the first time they load, so no data migration is needed for a key-value settings table.
+   */
+  private setTimezoneFromServer(raw: string): void {
+    const migrated = LEGACY_TIMEZONE_IDS[raw];
+    this.timezone.set(migrated ?? raw);
+    // Re-save so the legacy value disappears for good rather than being re-migrated every load.
+    if (migrated) this._save({ [SETTING_KEYS.timezone]: migrated });
+  }
 
   // ── Internals ───────────────────────────────────────────────────────────────
 

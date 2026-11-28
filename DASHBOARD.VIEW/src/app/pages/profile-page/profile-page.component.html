@@ -245,16 +245,29 @@
 
             <!-- Timezone -->
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-slate-400">Timezone</label>
+              <label class="text-xs font-medium text-slate-400" for="tz-select">Timezone</label>
+              <!-- Filter first: the list holds every IANA zone (~450), too many to scroll through. -->
+              <input
+                type="search"
+                class="field-input w-auto"
+                placeholder="Filter zones — e.g. hanoi, berlin, +07"
+                autocomplete="off"
+                [ngModel]="tzFilter()"
+                (ngModelChange)="tzFilter.set($event)"
+              />
               <select
+                id="tz-select"
                 class="field-select w-auto"
                 [ngModel]="prefs.timezone()"
                 (ngModelChange)="prefs.setTimezone($event)"
               >
-                @for (opt of TIMEZONE_OPTIONS; track opt.value) {
+                @for (opt of timezoneOptions(); track opt.value) {
                   <option [value]="opt.value">{{ opt.label }}</option>
                 }
               </select>
+              <p class="text-[11px] text-slate-500">
+                Stored as an IANA zone name, so daylight saving is handled per date.
+              </p>
             </div>
           </div>
         </section>

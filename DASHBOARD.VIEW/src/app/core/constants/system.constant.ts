@@ -1,7 +1,7 @@
 import { WorkItemApiState, Permission, SprintTaskApiState, StateCategory } from '../enums/system.enum';
 import { WorkItemPriority, WorkItemStatus, WorkItemType } from '../../models/work-item.model';
 import type { BacklogLevel, TshirtSize } from '../../models/backlog.model';
-import type { DateFormat, TimezoneId } from '../../models/preferences.model';
+import type { DateFormat } from '../../models/preferences.model';
 
 // ── Preferences ───────────────────────────────────────────────────────────────
 
@@ -12,13 +12,19 @@ export const DATE_FORMAT_PATTERN: Record<DateFormat, string> = {
   ymd: 'y-MM-dd',
 };
 
-/** Maps a {@link TimezoneId} to an Angular `formatDate` timezone offset (undefined = browser local). */
-export const TIMEZONE_OFFSET: Record<TimezoneId, string | undefined> = {
-  '':      undefined,
-  utc7:    '+0700',
-  utc0:    '+0000',
-  'utc-5': '-0500',
-  utc9:    '+0900',
+/**
+ * Legacy fixed-offset timezone values, kept only to migrate settings saved before zones were stored
+ * as IANA ids. Mapped to the matching zone on read; never written again.
+ *
+ * @remarks
+ * These were the bug: a stored offset cannot express daylight saving, so `"utc0"` was wrong for London
+ * every summer. See `timezone.util.ts` — the offset is now derived per instant from the zone id.
+ */
+export const LEGACY_TIMEZONE_IDS: Record<string, string> = {
+  utc0:    'Europe/London',
+  utc7:    'Asia/Ho_Chi_Minh',
+  utc9:    'Asia/Tokyo',
+  'utc-5': 'America/New_York',
 };
 
 /**

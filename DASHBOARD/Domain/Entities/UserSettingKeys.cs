@@ -11,7 +11,18 @@ public static class UserSettingKeys
     /// <summary>Date ordering: <c>"dmy"</c> | <c>"mdy"</c> | <c>"ymd"</c>.</summary>
     public const string DateFormat = "ui.date-format";
 
-    /// <summary>Display timezone: empty string = browser local, or <c>"utc7"</c> / <c>"utc0"</c> / <c>"utc-5"</c> / <c>"utc9"</c>.</summary>
+    /// <summary>
+    /// Display timezone as an <b>IANA zone id</b> (e.g. <c>"Asia/Ho_Chi_Minh"</c>, <c>"Europe/Berlin"</c>).
+    /// Empty string = follow the viewer's own zone.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately NOT a fixed offset. An offset cannot express daylight saving — Berlin is UTC+1 in
+    /// winter and UTC+2 in summer, so a stored <c>"+0100"</c> is wrong for half the year. The id names
+    /// the zone and the offset is derived per instant. Accepted by both <c>Intl</c> in the browser and
+    /// <c>TimeZoneInfo.FindSystemTimeZoneById</c> in .NET, so one value serves UI and server-side
+    /// formatting (e.g. HUB's reminder emails).
+    /// Legacy rows may still hold <c>"utc7"</c>-style values; the frontend migrates them on read.
+    /// </remarks>
     public const string Timezone = "ui.timezone";
 
     /// <summary>UI colour theme: <c>"dark"</c> | <c>"light"</c> | <c>"system"</c>.</summary>

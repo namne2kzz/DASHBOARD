@@ -14,6 +14,9 @@ import { AuthService } from '../../services/auth.service';
 import { AvatarService } from '../../services/avatar.service';
 import { environment } from '../../../environments/environment';
 import { AVATAR_COLORS } from '../../core/constants/system.constant';
+import {
+  browserTimezone, listTimezones, timezoneLabel, withSavedZone, zoneMatches,
+} from '../../core/utils/timezone.util';
 
 @Component({
   selector: 'app-settings-general-page',
@@ -163,6 +166,35 @@ export class SettingsGeneralPageComponent implements OnInit {
         },
       });
   }
+
+  // ── Timezone picker ─────────────────────────────────────────────────────────
+  /** Free-text filter over the zone list; ~450 entries is too many to scroll blindly. */
+  readonly tzFilter = signal('');
+
+  /** The device's own zone id, e.g. `"Asia/Ho_Chi_Minh"`. */
+  readonly browserZone = browserTimezone();
+
+  /** The device's zone with its offset — so "Local" never hides which zone that actually is. */
+  readonly browserZoneLabel = timezoneLabel(this.browserZone);
+
+  /**
+   * Zone options: "follow this device" first, then every IANA zone the browser knows, filtered.
+   * Labels carry the zone's current offset so a choice can be sanity-checked at a glance.
+   */
+  readonly timezoneOptions = computed<ReadonlyArray<{ value: TimezoneId; label: string }>>(() => {
+    const q = this.tzFilter();
+    // Keep the saved zone present even if this engine lists it under its other name, or the
+    // dropdown would render blank and the next save would quietly change the user's zone.
+    const zones = withSavedZone(listTimezones(), this.prefs.timezone())
+      // Matches id, label and city aliases — "hanoi" has to find Asia/Saigon.
+      .filter(z => zoneMatches(z, q))
+      .map(z => ({ value: z as TimezoneId, label: timezoneLabel(z) }));
+
+    return [
+      { value: '' as TimezoneId, label: `Local (device) — ${this.browserZoneLabel}` },
+      ...zones,
+    ];
+  });
 
   // ── Preference setters (delegate to PreferencesService) ──────────────────────
   /** @param v Date format value from the select. */
