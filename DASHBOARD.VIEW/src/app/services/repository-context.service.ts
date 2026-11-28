@@ -6,6 +6,7 @@ import { CreateRepositoryPayload, RepositoryApiDto } from '../models/repository.
 import { StorageKeys } from '../core/constants/storage-keys.constant';
 import { TokenService } from '../core/services/token.service';
 import { describeLoadError } from '../utils/http-error.util';
+import { readStorage, removeStorage, writeStorage } from '../core/utils/safe-storage.util';
 
 @Injectable({ providedIn: 'root' })
 export class RepositoryContextService {
@@ -19,7 +20,7 @@ export class RepositoryContextService {
   readonly ready$: Observable<true> = this.loaded$.asObservable();
 
   readonly repositories  = signal<RepositoryApiDto[]>([]);
-  readonly selectedRepoId = signal<string | null>(localStorage.getItem(this.repoKey()));
+  readonly selectedRepoId = signal<string | null>(readStorage(this.repoKey()));
   readonly loading = signal(false);
   readonly error   = signal<string | null>(null);
 
@@ -65,7 +66,7 @@ export class RepositoryContextService {
   load(): void {
     this.repositories.set([]);
     // Re-read from the user-scoped key so a user switch mid-session picks up the correct value.
-    this.selectedRepoId.set(localStorage.getItem(this.repoKey()));
+    this.selectedRepoId.set(readStorage(this.repoKey()));
     this.loading.set(true);
     this.error.set(null);
     this.http.get<RepositoryApiDto[]>(this.baseUrl).subscribe({
@@ -78,7 +79,7 @@ export class RepositoryContextService {
             this.select(repos[0].id);
           } else {
             this.selectedRepoId.set(null);
-            localStorage.removeItem(this.repoKey());
+            removeStorage(this.repoKey());
           }
         }
         this.loading.set(false);
@@ -95,6 +96,6 @@ export class RepositoryContextService {
   /** Sets the active repository and persists the selection under the current user's key. @param id Repository ID. */
   select(id: string): void {
     this.selectedRepoId.set(id);
-    localStorage.setItem(this.repoKey(), id);
+    writeStorage(this.repoKey(), id);
   }
 }

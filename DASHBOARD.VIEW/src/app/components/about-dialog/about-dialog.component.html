@@ -1,0 +1,166 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+  (click)="closed.emit()"
+>
+  <div
+    class="flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl bg-nx-surface shadow-lg"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="about-title"
+    (click)="$event.stopPropagation()"
+  >
+
+    <!-- Header -->
+    <div class="flex shrink-0 items-start gap-3 border-b border-nx-border px-5 py-4">
+      <div class="min-w-0 flex-1">
+        <h3 id="about-title" class="text-base font-semibold text-nx-text">
+          {{ info()?.application ?? 'NFlow Dashboard' }}
+        </h3>
+        @if (info(); as i) {
+          <p class="mt-0.5 font-mono text-xs text-nx-text-2">{{ i.fullVersion }}</p>
+        } @else {
+          <span class="nx-skeleton mt-1 block h-3 w-28"></span>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="shrink-0 rounded-md p-1 text-nx-text-3 transition hover:bg-nx-surface-2 hover:text-nx-text"
+        aria-label="Close"
+        (click)="closed.emit()"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="custom-scroll min-h-0 flex-1 overflow-auto px-5 py-4">
+
+      @if (error()) {
+        <p class="text-sm text-rose-400">{{ error() }}</p>
+
+      } @else {
+
+        <!-- Build -->
+        <h4 class="mb-2 text-xs font-semibold uppercase tracking-wide text-nx-text-3">Build</h4>
+        <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-xs">
+          @if (info(); as i) {
+            <dt class="text-nx-text-3">Version</dt>
+            <dd class="font-mono text-nx-text">{{ i.version }}</dd>
+
+            <dt class="text-nx-text-3">Build number</dt>
+            <dd class="font-mono text-nx-text">
+              @if (i.buildNumber > 0) {
+                {{ i.buildNumber }}
+              } @else {
+                <span class="text-nx-text-3">local build</span>
+              }
+            </dd>
+
+            @if (i.commitHash) {
+              <dt class="text-nx-text-3">Commit</dt>
+              <dd class="truncate font-mono text-nx-text" [title]="i.commitHash">
+                {{ i.commitHash.slice(0, 12) }}
+              </dd>
+            }
+
+            @if (i.buildDate) {
+              <dt class="text-nx-text-3">Built</dt>
+              <dd class="text-nx-text">{{ i.buildDate | date: 'medium' }}</dd>
+            }
+
+            <dt class="text-nx-text-3">Environment</dt>
+            <dd class="text-nx-text">{{ i.environment }}</dd>
+
+            <dt class="text-nx-text-3">Runtime</dt>
+            <dd class="text-nx-text">.NET {{ i.runtime }}</dd>
+          } @else {
+            @for (_ of [1, 2, 3, 4]; track $index) {
+              <dt><span class="nx-skeleton block h-3 w-20"></span></dt>
+              <dd><span class="nx-skeleton block h-3 w-32"></span></dd>
+            }
+          }
+        </dl>
+
+        <!-- Services -->
+        <h4 class="mt-5 mb-2 text-xs font-semibold uppercase tracking-wide text-nx-text-3">
+          Connected services
+        </h4>
+
+        @if (info(); as i) {
+          <ul class="divide-y divide-nx-border rounded-lg border border-nx-border">
+            @for (s of i.services; track s.kind) {
+              <li class="flex items-center gap-3 px-3 py-2.5">
+                <span
+                  class="h-2 w-2 shrink-0 rounded-full"
+                  [style.background]="statusColor(s.status)"
+                  aria-hidden="true"
+                ></span>
+
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-medium text-nx-text">{{ s.name }}</p>
+                  @if (s.detail) {
+                    <p class="truncate text-xs text-nx-text-3" [title]="s.detail">{{ s.detail }}</p>
+                  }
+                </div>
+
+                <div class="shrink-0 text-right">
+                  <p class="text-xs text-nx-text-2">{{ statusLabel(s.status) }}</p>
+                  @if (s.latencyMs !== null) {
+                    <p class="font-mono text-xs text-nx-text-3">{{ s.latencyMs }}ms</p>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <div class="divide-y divide-nx-border rounded-lg border border-nx-border">
+            @for (_ of [1, 2, 3, 4, 5]; track $index) {
+              <div class="flex items-center gap-3 px-3 py-2.5">
+                <span class="nx-skeleton h-2 w-2 shrink-0 rounded-full"></span>
+                <div class="min-w-0 flex-1 space-y-1.5">
+                  <span class="nx-skeleton block h-3 w-24"></span>
+                  <span class="nx-skeleton block h-3 w-40"></span>
+                </div>
+                <span class="nx-skeleton h-3 w-16 shrink-0"></span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- This browser -->
+        <h4 class="mt-5 mb-2 text-xs font-semibold uppercase tracking-wide text-nx-text-3">
+          This session
+        </h4>
+        <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-xs">
+          <dt class="text-nx-text-3">Web app</dt>
+          <dd class="truncate text-nx-text" [title]="client().url">{{ client().url }}</dd>
+
+          <dt class="text-nx-text-3">Time zone</dt>
+          <dd class="text-nx-text">{{ client().timeZone }}</dd>
+
+          @if (info(); as i) {
+            <dt class="text-nx-text-3">Server time</dt>
+            <dd class="text-nx-text">{{ i.serverTimeUtc | date: 'medium' : 'UTC' }} UTC</dd>
+          }
+        </dl>
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="flex shrink-0 items-center justify-end gap-2 border-t border-nx-border px-5 py-3">
+      <button
+        type="button"
+        class="nx-btn nx-btn--ghost"
+        [disabled]="loading()"
+        (click)="refresh()"
+      >
+        {{ loading() ? 'Checking…' : 'Re-check' }}
+      </button>
+      <button type="button" class="nx-btn" (click)="closed.emit()">Close</button>
+    </div>
+
+  </div>
+</div>

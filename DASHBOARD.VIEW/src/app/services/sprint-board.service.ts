@@ -192,7 +192,7 @@ export class SprintBoardService {
     const rows   = this.queryRows();
     return items.filter(i => {
       if (meOnly && i.assignedToId !== meId) return false;
-      if (q && !i.title.toLowerCase().includes(q) && !`${i.workItemNumber}`.includes(q)) return false;
+      if (q && !i.title.toLowerCase().includes(q) && !`${i.workItemNumber}`.toLowerCase().includes(q)) return false;
       return matchQuery(i, rows);
     });
   });

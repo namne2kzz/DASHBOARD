@@ -16,11 +16,12 @@ import { NotificationPanelComponent } from '../components/notification-panel/not
 import { NotificationService } from '../services/notification.service';
 import { SearchService } from '../services/search.service';
 import { ThemeService } from '../core/services/theme.service';
+import { AboutDialogComponent } from '../components/about-dialog/about-dialog.component';
 import { RepositoryApiDto } from '../models/repository.model';
 
 @Component({
   selector: 'app-shell-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LoadingOverlayComponent, DialogComponent, GlobalSearchComponent, NMateWidgetComponent, NotificationPanelComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LoadingOverlayComponent, DialogComponent, GlobalSearchComponent, NMateWidgetComponent, NotificationPanelComponent, AboutDialogComponent],
   templateUrl: './shell-layout.component.html',
   styleUrl: './shell-layout.component.css',
 })
@@ -29,6 +30,8 @@ export class ShellLayoutComponent {
   readonly repoDropdownOpen = signal(false);
   readonly settingsOpen     = signal(false);
   readonly notiPanelOpen    = signal(false);
+  /** Whether the About dialog is open. */
+  readonly aboutOpen        = signal(false);
   readonly auth      = inject(AuthService);
   readonly repoCtx   = inject(RepositoryContextService);
   readonly privilege = inject(PrivilegeService);

@@ -1,9 +1,13 @@
 <div class="border-b border-slate-800/60 bg-slate-900/30 px-4 py-3">
 
   @if (svc.loading()) {
-    <div class="flex items-center gap-2 text-xs text-slate-500">
-      <span class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-slate-700 border-t-sky-400"></span>
-      Loading sprint info…
+    <!-- Shaped like the loaded row below (badge · name · dates · days-left) so the panel
+         does not jump when the real content arrives. -->
+    <div class="flex flex-wrap items-center gap-x-5 gap-y-2" aria-busy="true" aria-label="Loading sprint info">
+      <span class="nx-skeleton h-5 w-20 rounded-full"></span>
+      <span class="nx-skeleton h-4 w-40"></span>
+      <span class="nx-skeleton h-3 w-44"></span>
+      <span class="nx-skeleton h-5 w-16 rounded-full"></span>
     </div>
 
   } @else if (!svc.activeSprint()) {

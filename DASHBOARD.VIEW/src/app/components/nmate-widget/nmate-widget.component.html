@@ -30,7 +30,11 @@
         <div class="nm-history" role="menu" aria-label="Recent conversations">
           <div class="nm-history__title">Recent</div>
           @if (nmate.historyLoading()) {
-            <div class="nm-history__empty">Loading…</div>
+            <div aria-busy="true" aria-label="Loading conversations">
+              @for (_ of [1, 2, 3]; track $index) {
+                <div class="nm-history__item"><span class="nx-skeleton block h-3 w-full"></span></div>
+              }
+            </div>
           } @else if (nmate.recentConversations().length === 0) {
             <div class="nm-history__empty">No conversations yet.</div>
           } @else {

@@ -103,6 +103,11 @@ public static class DependencyInjection
         services.AddScoped<IRequestUserContext, RequestUserContext>();
         services.AddScoped<IHistoryService, HistoryService>();
 
+        // ── Build identity (About dialog) ─────────────────────────────────────
+        // Singleton: the assembly metadata it reflects over cannot change while the process runs,
+        // so the reflection happens once at startup rather than on every request.
+        services.AddSingleton<IBuildInfoProvider, AssemblyBuildInfoProvider>();
+
         // ── Email ─────────────────────────────────────────────────────────────
         services.AddScoped<IEmailService, EmailService>();
 

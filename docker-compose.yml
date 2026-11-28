@@ -63,6 +63,11 @@ services:
     build:
       context: .
       dockerfile: DASHBOARD/Dockerfile
+      args:
+        # Surfaced in the About dialog. Override per build:
+        #   BUILD_NUMBER=123 docker compose --profile app build api
+        BUILD_NUMBER: ${BUILD_NUMBER:-0}
+        SOURCE_REVISION: ${SOURCE_REVISION:-}
     container_name: dashboard-api
     profiles: ["app"]
     depends_on:

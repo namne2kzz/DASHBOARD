@@ -50,7 +50,18 @@
 
       <!-- List -->
       @if (svc.loading()) {
-        <p class="px-4 py-8 text-center text-sm text-nx-text-3">Loading repositories…</p>
+        <!-- Same row shape as the loaded list: hex code, then name over description. -->
+        <div class="space-y-2" aria-busy="true" aria-label="Loading repositories">
+          @for (_ of [1, 2, 3, 4, 5]; track $index) {
+            <div class="nx-card flex items-center gap-3 px-4 py-3">
+              <span class="nx-skeleton h-[38px] w-[38px] shrink-0"></span>
+              <div class="min-w-0 flex-1 space-y-1.5">
+                <span class="nx-skeleton block h-3 w-44"></span>
+                <span class="nx-skeleton block h-3 w-64"></span>
+              </div>
+            </div>
+          }
+        </div>
       } @else if (!filteredRepos().length) {
         <p class="px-4 py-8 text-center text-sm text-nx-text-3">
           @if (activeFilter() === 'archived') {
@@ -168,7 +179,9 @@
           <label class="field-label">Project Manager</label>
           <div class="mt-1.5">
             @if (membersLoading()) {
-              <p class="text-xs text-nx-text-3">Loading members…</p>
+              <!-- Exactly the height of the select it replaces, so the form does not shift. -->
+              <span class="nx-skeleton block w-full" style="height: var(--control-h)"
+                    aria-busy="true" aria-label="Loading members"></span>
             } @else {
               <app-user-select
                 [users]="memberOptions()"

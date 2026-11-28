@@ -20,18 +20,15 @@
       <span class="text-slate-700">/</span>
 
       <!-- ── States (loading/not-found shown inline) ── -->
-      @if (resolving()) {
-        <div class="flex items-center gap-2 text-slate-500">
-          <svg class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-          </svg>
-          <span class="text-sm">Loading…</span>
+      @if (resolving() || (detailSvc.loading() && !task())) {
+        <!-- Shaped like the loaded header: type dot, then breadcrumb over title. -->
+        <span class="nx-skeleton h-3.5 w-3.5 shrink-0 rounded-full" aria-hidden="true"></span>
+        <div class="min-w-0 flex-1 space-y-1.5" aria-busy="true" aria-label="Loading work item">
+          <span class="nx-skeleton block h-3 w-32"></span>
+          <span class="nx-skeleton block h-4 w-72 max-w-full"></span>
         </div>
       } @else if (notFound()) {
         <p class="text-sm text-rose-400">Work item "{{ itemKey() }}" was not found.</p>
-      } @else if (detailSvc.loading() && !task()) {
-        <p class="text-sm text-slate-500">Loading…</p>
       } @else if (!task()) {
         <p class="text-sm text-rose-500">{{ detailSvc.error() ?? 'Task not found.' }}</p>
       } @else {

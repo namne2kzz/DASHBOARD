@@ -415,7 +415,17 @@ export class WorkItemDetailPageComponent implements OnInit {
     };
   });
 
-  readonly isDirty = computed(() => JSON.stringify(this.payload()) !== this._snapshot());
+  /**
+   * Serializes the payload for dirty-checking, minus the fields that save themselves immediately.
+   * Assignee is changed through its own PATCH (not "Save changes"), so letting it into the
+   * comparison would light up the Save button after a reassignment the user already persisted.
+   */
+  private dirtyKey(p: UpdateSprintTaskPayload): string {
+    const { assignedToId: _assignedToId, ...rest } = p;
+    return JSON.stringify(rest);
+  }
+
+  readonly isDirty = computed(() => this.dirtyKey(this.payload()) !== this._snapshot());
   readonly canSave = computed(() =>
     this.canEditWorkItem() && this.isDirty() && this.title().trim().length > 0);
 
@@ -497,7 +507,7 @@ export class WorkItemDetailPageComponent implements OnInit {
         t.parentId ? { id: t.parentId, workItemNumber: t.parentWorkItemNumber ?? '', title: t.parentTitle ?? '' } : null,
       );
       this._seededId.set(t.id);
-      this._snapshot.set(JSON.stringify(this.payload()));
+      this._snapshot.set(this.dirtyKey(this.payload()));
     }, { allowSignalWrites: true });
 
     // Clamp remainingWork whenever originalEstimate shrinks below it.
@@ -538,7 +548,7 @@ export class WorkItemDetailPageComponent implements OnInit {
     if (!this.canSave() || !id) return;
     const parent = this.selectedParent();
     this.detailSvc.updateTask(id, this.payload(), parent ? { workItemNumber: parent.workItemNumber, title: parent.title } : null).subscribe({
-      next: () => this._snapshot.set(JSON.stringify(this.payload())),
+      next: () => this._snapshot.set(this.dirtyKey(this.payload())),
     });
   }
 

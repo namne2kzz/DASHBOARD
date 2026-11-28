@@ -1,6 +1,7 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { StorageKeys } from '../constants/storage-keys.constant';
+import { readStorage, writeStorage } from '../utils/safe-storage.util';
 
 export type Theme = 'dark' | 'light';
 
@@ -29,25 +30,25 @@ export class ThemeService {
   private readonly document = inject(DOCUMENT);
 
   readonly theme = signal<Theme>(
-    (localStorage.getItem(StorageKeys.theme) as Theme | null) ?? 'dark',
+    (readStorage(StorageKeys.theme) as Theme | null) ?? 'dark',
   );
 
   /** The selected accent hue. Persisted separately from the light/dark theme. */
-  readonly accent = signal<Accent>(toAccent(localStorage.getItem(StorageKeys.accent)));
+  readonly accent = signal<Accent>(toAccent(readStorage(StorageKeys.accent)));
 
   readonly accents = ACCENTS;
 
   constructor() {
     effect(() => {
       const t = this.theme();
-      localStorage.setItem(StorageKeys.theme, t);
+      writeStorage(StorageKeys.theme, t);
       // Design tokens in styles.css switch on html[data-theme].
       this.document.documentElement.setAttribute('data-theme', t);
     });
 
     effect(() => {
       const a = this.accent();
-      localStorage.setItem(StorageKeys.accent, a);
+      writeStorage(StorageKeys.accent, a);
       // Accent palettes in styles.css switch on html[data-accent], independently
       // of the theme, so the two can be combined freely.
       this.document.documentElement.setAttribute('data-accent', a);

@@ -32,10 +32,14 @@ describe('SprintSummaryPanelComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should show loading spinner when loading', () => {
+  it('should show a loading skeleton when loading', () => {
     (svcSpy.loading as ReturnType<typeof signal>).set(true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Loading sprint info');
+
+    // The skeleton carries no text, so the accessible label is what announces the wait.
+    const busy: HTMLElement | null = fixture.nativeElement.querySelector('[aria-busy="true"]');
+    expect(busy?.getAttribute('aria-label')).toBe('Loading sprint info');
+    expect(fixture.nativeElement.querySelectorAll('.nx-skeleton').length).toBeGreaterThan(0);
   });
 
   it('should show empty state when no active sprint', () => {

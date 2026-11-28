@@ -7,6 +7,7 @@ import { RoleService } from './role.service';
 import { RepositoryContextService } from './repository-context.service';
 import { MemberApiDto } from '../models/member.model';
 import { UserPickerItem } from '../models/user.model';
+import { describeLoadError } from '../utils/http-error.util';
 
 @Injectable({ providedIn: 'root' })
 export class MembersService {
@@ -16,6 +17,8 @@ export class MembersService {
   private readonly roleService = inject(RoleService);
 
   readonly members = signal<MemberApiDto[]>([]);
+  readonly loading = signal(false);
+  readonly error   = signal<string | null>(null);
 
   /** The logged-in user's ID from the JWT session. */
   readonly currentUserId = computed(() => this.auth.currentUser()?.userId ?? null);
@@ -117,8 +120,19 @@ export class MembersService {
 
   /** Loads (or reloads) the member list for a repository into the signal. @param repoId Repository ID. */
   load(repoId: string): void {
+    this.loading.set(true);
+    this.error.set(null);
     this.http
       .get<MemberApiDto[]>(`${environment.apiBaseUrl}/repositories/${repoId}/members`)
-      .subscribe({ next: members => this.members.set(members) });
+      .subscribe({
+        next: members => { this.members.set(members); this.loading.set(false); },
+        error: (err: unknown) => {
+          // Clear the list: it belongs to whichever repository last loaded successfully, and
+          // displayName() would otherwise keep resolving that repo's names under the new one.
+          this.members.set([]);
+          this.error.set(describeLoadError(err, 'Failed to load members'));
+          this.loading.set(false);
+        },
+      });
   }
 }

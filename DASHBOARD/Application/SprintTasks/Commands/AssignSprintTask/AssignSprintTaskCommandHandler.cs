@@ -36,6 +36,10 @@ public sealed class AssignSprintTaskCommandHandler(
             .FirstOrDefaultAsync(t => t.Id == command.TaskId && t.SprintId == command.SprintId, ct)
             ?? throw new NotFoundException(nameof(SprintTask), command.TaskId);
 
+        // UserStory must not have an assignee — same rule CreateSprintTask enforces at creation.
+        if (task.Type == SprintTaskType.UserStory && command.AssignedToId.HasValue)
+            return Result.Failure("User stories cannot be assigned to an individual. Assign sub-tasks instead.");
+
         string? assigneeName = null;
 
         // Verify the target user is actually a member of this repo (skip check when unassigning).

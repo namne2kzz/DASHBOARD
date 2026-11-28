@@ -38,6 +38,7 @@ Tài liệu này quy định cách Claude (và bất kỳ ai khác) ghi/đọc/u
 ├── overview.dod.md
 ├── hub-integration.dod.md  # kênh chat HUB theo sprint + internal API
 ├── nmate.dod.md            # trợ lý AI NMate (proxy sang service SUPPORT, knowledge ở Knowledge/)
+├── system-info.dod.md      # dialog About: version/build number + trạng thái service đang kết nối
 └── wiki.dod.md             # ⚠️ DEPRECATED — Wiki đã chuyển sang HUB, giữ để tra cứu lịch sử
 ```
 

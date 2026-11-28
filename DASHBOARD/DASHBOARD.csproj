@@ -6,6 +6,22 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- Version shown in the About dialog, read off this assembly at runtime.
+       VersionPrefix is the product version; bump it by hand on a release.
+       BuildNumber is whatever CI passes in (-p:BuildNumber=$(Build.BuildId)); it stays 0
+       on a developer machine so a local build is visibly not a release build.
+       SourceRevisionId likewise carries the commit (-p:SourceRevisionId=$(Build.SourceVersion)),
+       which the SDK appends to InformationalVersion after a '+'. -->
+  <PropertyGroup>
+    <Product>NFlow Dashboard</Product>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <BuildNumber Condition="'$(BuildNumber)' == ''">0</BuildNumber>
+    <!-- File/assembly versions take four numeric parts; the build number is the fourth. -->
+    <AssemblyVersion>$(VersionPrefix).$(BuildNumber)</AssemblyVersion>
+    <FileVersion>$(VersionPrefix).$(BuildNumber)</FileVersion>
+    <Version>$(VersionPrefix)</Version>
+  </PropertyGroup>
+
   <ItemGroup>
     <EmbeddedResource Include="Infrastructure\Email\Templates\InvitationEmail.html" />
     <EmbeddedResource Include="Infrastructure\Email\Templates\StateChangedEmail.html" />
@@ -23,10 +39,9 @@
   <ItemGroup>
     <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
     <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
-    <PackageReference Include="AutoMapper" Version="16.1.1" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.414.5" />
     <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
-    <PackageReference Include="MailKit" Version="4.7.1.1" />
+    <PackageReference Include="MailKit" Version="4.16.0" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.6" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
@@ -36,7 +51,7 @@
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.8" />
     <PackageReference Include="Octokit" Version="14.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -46,6 +61,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <!-- Direct reference only to force the transitive version up: both MailKit→MimeKit and
+         EF Core→Microsoft.Data.SqlClient still resolve a Pkcs below the patched 10.0.13
+         (CVE-2026-84008 quadratic CPU in SignedCms.CheckSignature, CVE-2026-70162 in
+         EnvelopedCms.Decode). Drop this line once both parents ship a patched dependency. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />

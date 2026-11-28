@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import { RepositoryContextService } from './repository-context.service';
 import { SprintApiDto } from '../models/sprint-planning-api.model';
 import { describeLoadError } from '../utils/http-error.util';
+import { readStorage, writeStorage } from '../core/utils/safe-storage.util';
 
 const STORAGE_KEY_PREFIX = 'selectedSprintId:';
 
@@ -52,7 +53,7 @@ export class SprintSelectionService {
   selectSprint(sprintId: string): void {
     this._selectedSprintId.set(sprintId);
     const repoId = this.repoCtx.selectedRepoId();
-    if (repoId) localStorage.setItem(this.storageKey(repoId), sprintId);
+    if (repoId) writeStorage(this.storageKey(repoId), sprintId);
   }
 
   /** Appends a newly created sprint to the list and selects it. @param sprint The created sprint. */
@@ -84,7 +85,7 @@ export class SprintSelectionService {
           this._sprints.set(sprints);
           this._loading.set(false);
 
-          const savedId = localStorage.getItem(this.storageKey(repoId));
+          const savedId = readStorage(this.storageKey(repoId));
           const target   = (savedId ? sprints.find(s => s.id === savedId) : undefined)
             ?? this.pickDefaultSprint(sprints);
           if (target) this._selectedSprintId.set(target.id);

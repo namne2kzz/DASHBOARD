@@ -228,7 +228,18 @@
 
           <div class="mt-3 nx-card overflow-hidden">
             @if (invitationsService.loading()) {
-              <p class="px-4 py-8 text-center text-sm text-slate-500">Loading invitations…</p>
+              <!-- Same row shape as the loaded list: email over role, status on the right. -->
+              <div class="divide-y divide-slate-800/60" aria-busy="true" aria-label="Loading invitations">
+                @for (_ of [1, 2, 3]; track $index) {
+                  <div class="flex flex-wrap items-center gap-3 px-4 py-3">
+                    <div class="min-w-0 flex-1 basis-48 space-y-1.5">
+                      <span class="nx-skeleton block h-3 w-48"></span>
+                      <span class="nx-skeleton block h-3 w-28"></span>
+                    </div>
+                    <span class="nx-skeleton h-5 w-20 rounded-full"></span>
+                  </div>
+                }
+              </div>
             } @else if (!invitationsService.invitations().length) {
               <p class="px-4 py-8 text-center text-sm text-slate-500">No invitations sent yet.</p>
             } @else {

@@ -22,9 +22,29 @@
     </header>
 
     @if (loading()) {
-      <div class="flex items-center gap-3 text-sm text-slate-400">
-        <span class="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-sky-400"></span>
-        Loading overview…
+      <!-- Mirrors the real layout below: the wide sprint card (summary + burn-down),
+           then the metric card grid. Shaped blocks tell the reader what is coming;
+           a spinner only says "wait". -->
+      <div class="flex flex-col gap-4" aria-busy="true" aria-label="Loading overview">
+        <section class="nx-card grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+          <div class="flex flex-col gap-3">
+            <span class="nx-skeleton h-5 w-32"></span>
+            <span class="nx-skeleton h-3 w-48"></span>
+            <span class="nx-skeleton h-2 w-full rounded-full"></span>
+            <span class="nx-skeleton h-3 w-40"></span>
+          </div>
+          <span class="nx-skeleton h-40 w-full"></span>
+        </section>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          @for (_ of [1, 2, 3, 4, 5, 6]; track $index) {
+            <section class="nx-card flex flex-col gap-3 p-4">
+              <span class="nx-skeleton h-3 w-24"></span>
+              <span class="nx-skeleton h-7 w-16"></span>
+              <span class="nx-skeleton h-3 w-32"></span>
+            </section>
+          }
+        </div>
       </div>
     }
 

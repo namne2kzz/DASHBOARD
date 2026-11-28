@@ -4,12 +4,20 @@
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
+
+# Stamped into the assembly and shown in the About dialog. Pass with
+# --build-arg BUILD_NUMBER=$(Build.BuildId) from CI; 0 marks an untagged local image.
+ARG BUILD_NUMBER=0
+ARG SOURCE_REVISION=
+
 COPY DASHBOARD/DASHBOARD.csproj DASHBOARD/
 RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
     dotnet restore DASHBOARD/DASHBOARD.csproj
 COPY DASHBOARD/ DASHBOARD/
 RUN --mount=type=cache,target=/root/.nuget/packages,sharing=locked \
-    dotnet publish DASHBOARD/DASHBOARD.csproj -c Release -o /app/publish
+    dotnet publish DASHBOARD/DASHBOARD.csproj -c Release -o /app/publish \
+        -p:BuildNumber=$BUILD_NUMBER \
+        -p:SourceRevisionId=$SOURCE_REVISION
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app

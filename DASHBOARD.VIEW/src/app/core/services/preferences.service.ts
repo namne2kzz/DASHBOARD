@@ -7,6 +7,7 @@ import { StorageKeys } from '../constants/storage-keys.constant';
 import { DATE_FORMAT_PATTERN, LEGACY_TIMEZONE_IDS, SETTING_KEYS } from '../constants/system.constant';
 import { browserTimezone, offsetFor } from '../utils/timezone.util';
 import type { AppLanguage, DateFormat, TimezoneId } from '../../models/preferences.model';
+import { readStorage, writeStorage } from '../utils/safe-storage.util';
 
 export type { AppLanguage, DateFormat, TimezoneId };
 
@@ -23,7 +24,7 @@ export class PreferencesService {
 
   // ── UI display ──────────────────────────────────────────────────────────────
   readonly dateFormat = signal<DateFormat>(
-    (localStorage.getItem(StorageKeys.dateFormat) as DateFormat | null) ?? 'dmy',
+    (readStorage(StorageKeys.dateFormat) as DateFormat | null) ?? 'dmy',
   );
   /**
    * Preferred display zone as an IANA id; empty means "follow the browser".
@@ -31,12 +32,12 @@ export class PreferencesService {
    */
   readonly timezone = signal<TimezoneId>(
     (() => {
-      const stored = localStorage.getItem(StorageKeys.timezone) ?? '';
+      const stored = readStorage(StorageKeys.timezone) ?? '';
       return LEGACY_TIMEZONE_IDS[stored] ?? stored;
     })(),
   );
   readonly language = signal<AppLanguage>(
-    (localStorage.getItem('nxs.ui.language') as AppLanguage | null) ?? 'en',
+    (readStorage('nxs.ui.language') as AppLanguage | null) ?? 'en',
   );
 
   // ── Notifications ───────────────────────────────────────────────────────────
@@ -57,19 +58,19 @@ export class PreferencesService {
 
   constructor() {
     // Mirror all changes to localStorage immediately.
-    effect(() => localStorage.setItem(StorageKeys.dateFormat,       this.dateFormat()));
-    effect(() => localStorage.setItem(StorageKeys.timezone,         this.timezone()));
-    effect(() => localStorage.setItem('nxs.ui.language',            this.language()));
-    effect(() => localStorage.setItem('nxs.notify.email',           String(this.notifyEmail())));
-    effect(() => localStorage.setItem('nxs.notify.push',            String(this.notifyPush())));
-    effect(() => localStorage.setItem('nxs.notify.digest',          String(this.notifyDigest())));
-    effect(() => localStorage.setItem('nxs.notify.mentions',        String(this.notifyMentions())));
-    effect(() => localStorage.setItem('nxs.notify.type.workitems',  String(this.notifyTypeWorkItems())));
-    effect(() => localStorage.setItem('nxs.notify.type.sprints',    String(this.notifyTypeSprints())));
-    effect(() => localStorage.setItem('nxs.notify.type.membership', String(this.notifyTypeMembership())));
-    effect(() => localStorage.setItem('nxs.a11y.reduce-motion',     String(this.reduceMotion())));
-    effect(() => localStorage.setItem('nxs.ui.compact-mode',        String(this.compactMode())));
-    effect(() => localStorage.setItem('nxs.ui.nmate-widget',        String(this.showNMate())));
+    effect(() => writeStorage(StorageKeys.dateFormat,       this.dateFormat()));
+    effect(() => writeStorage(StorageKeys.timezone,         this.timezone()));
+    effect(() => writeStorage('nxs.ui.language',            this.language()));
+    effect(() => writeStorage('nxs.notify.email',           String(this.notifyEmail())));
+    effect(() => writeStorage('nxs.notify.push',            String(this.notifyPush())));
+    effect(() => writeStorage('nxs.notify.digest',          String(this.notifyDigest())));
+    effect(() => writeStorage('nxs.notify.mentions',        String(this.notifyMentions())));
+    effect(() => writeStorage('nxs.notify.type.workitems',  String(this.notifyTypeWorkItems())));
+    effect(() => writeStorage('nxs.notify.type.sprints',    String(this.notifyTypeSprints())));
+    effect(() => writeStorage('nxs.notify.type.membership', String(this.notifyTypeMembership())));
+    effect(() => writeStorage('nxs.a11y.reduce-motion',     String(this.reduceMotion())));
+    effect(() => writeStorage('nxs.ui.compact-mode',        String(this.compactMode())));
+    effect(() => writeStorage('nxs.ui.nmate-widget',        String(this.showNMate())));
   }
 
   // ── Server sync ─────────────────────────────────────────────────────────────
@@ -181,7 +182,7 @@ export class PreferencesService {
 
   /** Reads a boolean from localStorage; returns {@param defaultValue} if missing. */
   private _loadBool(key: string, defaultValue: boolean): boolean {
-    const v = localStorage.getItem(key);
+    const v = readStorage(key);
     return v === null ? defaultValue : v === 'true';
   }
 }
